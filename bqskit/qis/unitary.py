@@ -3,15 +3,14 @@ This module implements the Unitary base class.
 
 Represents a unitary matrix that can be retrieved from get_unitary.
 """
-
 import abc
 
 
-class Unitary ( abc.ABC ):
+class Unitary (abc.ABC):
     """Unitary Base Class."""
 
-    @abc.abstractmethod    
-    def get_unitary ( self, params = None ):
+    @abc.abstractmethod
+    def get_unitary(self, params=None):
         """
         Abstract method that should return this unitary
         as a numpy matrix.
@@ -19,4 +18,3 @@ class Unitary ( abc.ABC ):
         Returns:
             (np.ndarray): The unitary matrix.
         """
-

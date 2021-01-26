@@ -1,10 +1,11 @@
 import abc
 
-class Pass ( abc.ABC ):
-    
-    def __init__ ( self ):
+
+class Pass (abc.ABC):
+
+    def __init__(self):
         pass
-    
+
     @abc.abstractmethod
-    def run ( self ):
+    def run(self):
         pass

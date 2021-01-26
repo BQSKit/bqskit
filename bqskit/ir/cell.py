@@ -5,10 +5,11 @@ A Circuit is composed of a grid of CircuitCells.
 A cell groups together a gate and its parameters.
 """
 
+
 class CircuitCell():
     """The CircuitCell class."""
 
-    def __init__ ( self, gate, params = [], qudit_idx = 0 ):
+    def __init__(self, gate, params=[], qudit_idx=0):
         """
         CircuitCell Constructor.
 

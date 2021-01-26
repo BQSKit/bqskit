@@ -1,6 +1,6 @@
 class Executor:
-    def __init__ ( self ):
+    def __init__(self):
         pass
-    
-    def run ( self ):
+
+    def run(self):
         pass
