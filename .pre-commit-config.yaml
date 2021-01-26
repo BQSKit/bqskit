@@ -14,6 +14,11 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
     -   id: mixed-line-ending
+    -   id: check-added-large-files
+        args: ['--maxkb=8192']
+    -   id: fix-byte-order-marker
+    -   id: fix-encoding-pragma
+        args: ['--remove']
     # TODO: enable once we make a release
     #-   id: no-commit-to-branch
     #    args: [--branch, master]
@@ -49,3 +54,5 @@ repos:
     rev: v0.800
     hooks:
     -   id: mypy
+    # TODO: do once numpy 1.20 is released.
+    #    additional_dependencies: [numpy>=1.20]

@@ -1,6 +1,4 @@
-from setuptools import find_packages
 from setuptools import setup
-
-setup(
-    packages=find_packages(exclude=['tests*', 'examples*']),
-)
+# Everything is in setup.cfg, this is for compatibility
+# pip install works the same.
+setup()
