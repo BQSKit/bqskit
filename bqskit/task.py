@@ -1,8 +1,9 @@
 import uuid
 
+
 class CompilationTask():
 
-    def __init__ ( self ):
+    def __init__(self):
         self.task_id = uuid.uuid4()
 
     # TODO:

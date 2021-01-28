@@ -4,21 +4,22 @@ This module implements the WorkQueue class.
 The WorkQueue Class starts a new work thread that executes and tracks
 the tasks enqueued in it.
 """
-
 import time
 import uuid
-from queue import Queue
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe
+from multiprocessing import Process
 from multiprocessing.connection import Connection
+from queue import Queue
 from threading import Thread
 from typing import Dict
 
 from bqskit.task import CompilationTask
 
+
 class WorkQueue:
     """The WorkQueue class."""
 
-    def __init__ ( self ) -> None:
+    def __init__(self) -> None:
         """
         WorkQueue Constructor.
         Creates an empty queue and starts a worker thread. CompilationTasks
@@ -33,56 +34,56 @@ class WorkQueue:
             RUNNING
         """
 
-        self.work_thread = Thread(target = self.do_work)
+        self.work_thread = Thread(target=self.do_work)
         self.work_queue = Queue()
         self.is_running = True
         self.work_thread.start()
         self.tasks: Dict[uuid.UUID, CompilationTask] = {}
         # TODO: self.tasks should be Dict[uuid.UUID, Executor]
 
-    def do_work ( self ) -> None:
+    def do_work(self) -> None:
         """Worker thread loop: gets work from queue and executes it"""
         while self.is_running:
             if self.work_queue.empty():
                 time.sleep(1)
                 continue
             task = self.work_queue.get()
-            self.tasks[ task.task_id ] = { "status": "RUNNING" }
-            self.process_task( task )
-            self.tasks[ task.task_id ] = { "status": "DONE", "result": "YAY!" }
+            self.tasks[task.task_id] = {'status': 'RUNNING'}
+            self.process_task(task)
+            self.tasks[task.task_id] = {'status': 'DONE', 'result': 'YAY!'}
 
-    def process_task ( self, task : CompilationTask ) -> None:
+    def process_task(self, task: CompilationTask) -> None:
         """Executes a CompilationTask"""
-        print( "Starting processing task: %s" % task.task_id )
+        print('Starting processing task: %s' % task.task_id)
         time.sleep(1)
-        print( "Finished processing task: %s" % task.task_id )
+        print('Finished processing task: %s' % task.task_id)
 
-    def stop ( self ) -> None:
+    def stop(self) -> None:
         """Stops the worker thread from starting another task."""
         self.is_running = False
 
-    def enqueue ( self, task: CompilationTask ) -> None:
+    def enqueue(self, task: CompilationTask) -> None:
         """Enqueues a CompilationTask."""
-        self.tasks[ task.task_id ] = { "status": "WAITING" }
-        self.work_queue.put( task )
+        self.tasks[task.task_id] = {'status': 'WAITING'}
+        self.work_queue.put(task)
 
-    def status ( self, task: CompilationTask ) -> str: # TODO: Status Enum
+    def status(self, task: CompilationTask) -> str:  # TODO: Status Enum
         """Retrieve the status of the specified CompilationTask."""
         if task.task_id in self.tasks:
-            return self.tasks[ task.task_id ]["status"]
-        return "ERROR"
+            return self.tasks[task.task_id]['status']
+        return 'ERROR'
 
-    def result ( self, task: CompilationTask ) -> str: # TODO: Result Class
+    def result(self, task: CompilationTask) -> str:  # TODO: Result Class
         """Block until the CompilationTask is finished, return its result."""
         if task.task_id in self.tasks:
-            status = self.tasks[ task.task_id ]["status"]
-            while status != "DONE" and status != "ERROR":
+            status = self.tasks[task.task_id]['status']
+            while status != 'DONE' and status != 'ERROR':
                 time.sleep(1)
-                status = self.tasks[ task.task_id ]["status"]
-            return self.tasks[ task.task_id ]["result"]
+                status = self.tasks[task.task_id]['status']
+            return self.tasks[task.task_id]['result']
 
     @staticmethod
-    def run( conn: Connection ) -> None:
+    def run(conn: Connection) -> None:
         """
         Static Process Function.
 
@@ -102,20 +103,20 @@ class WorkQueue:
 
             msg = conn.recv()
 
-            if msg == "CLOSE":
+            if msg == 'CLOSE':
                 wq.stop()
                 conn.close()
                 break
 
-            elif msg == "SUBMIT":
+            elif msg == 'SUBMIT':
                 task = conn.recv()
-                wq.enqueue( task )
-                conn.send( "OKAY" )
+                wq.enqueue(task)
+                conn.send('OKAY')
 
-            elif msg == "STATUS":
+            elif msg == 'STATUS':
                 task = conn.recv()
-                conn.send( wq.status( task ) )
+                conn.send(wq.status(task))
 
-            elif msg == "RESULT":
+            elif msg == 'RESULT':
                 task = conn.recv()
-                conn.send( wq.result( task ) )
+                conn.send(wq.result(task))
