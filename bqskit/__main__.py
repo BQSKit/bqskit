@@ -1,5 +1,18 @@
 import argparse
 
+from bqskit import Backend, CompilationTask
+
+# Simple Test
+backend = Backend()
+task1 = CompilationTask()
+task2 = CompilationTask()
+backend.submit( task1 )
+backend.submit( task2 )
+print( backend.status( task1 ) )
+print( backend.status( task2 ) )
+print( backend.result( task1 ) )
+print( backend.result( task2 ) )
+backend.close()
 
 # Example workflow
 # import bqskit
