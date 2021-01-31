@@ -4,6 +4,8 @@ This module implements the WorkQueue class.
 The WorkQueue Class starts a new work thread that executes and tracks
 the tasks enqueued in it.
 """
+
+
 import time
 import uuid
 from multiprocessing import Pipe
@@ -13,7 +15,8 @@ from queue import Queue
 from threading import Thread
 from typing import Dict
 
-from bqskit.task import CompilationTask
+from bqskit.tasks import CompilationTask
+from bqskit.tasks import TaskResult, TaskStatus
 
 
 class WorkQueue:
@@ -48,9 +51,10 @@ class WorkQueue:
                 time.sleep(1)
                 continue
             task = self.work_queue.get()
-            self.tasks[task.task_id] = {'status': 'RUNNING'}
+            self.tasks[task.task_id] = {'status': TaskStatus.RUNNING}
             self.process_task(task)
-            self.tasks[task.task_id] = {'status': 'DONE', 'result': 'YAY!'}
+            self.tasks[task.task_id] = {'status': TaskStatus.DONE,
+                                        'result': TaskResult('YAY!')}
 
     def process_task(self, task: CompilationTask) -> None:
         """Executes a CompilationTask"""
@@ -64,23 +68,33 @@ class WorkQueue:
 
     def enqueue(self, task: CompilationTask) -> None:
         """Enqueues a CompilationTask."""
-        self.tasks[task.task_id] = {'status': 'WAITING'}
+        self.tasks[task.task_id] = {'status': TaskStatus.WAITING}
         self.work_queue.put(task)
 
-    def status(self, task: CompilationTask) -> str:  # TODO: Status Enum
+    def status(self, task_id: uuid.UUID) -> TaskStatus:
         """Retrieve the status of the specified CompilationTask."""
-        if task.task_id in self.tasks:
-            return self.tasks[task.task_id]['status']
-        return 'ERROR'
+        if task_id in self.tasks:
+            return self.tasks[task_id]['status']
+        return TaskStatus.ERROR
 
-    def result(self, task: CompilationTask) -> str:  # TODO: Result Class
+    def result(self, task_id: uuid.UUID) -> TaskResult:
         """Block until the CompilationTask is finished, return its result."""
-        if task.task_id in self.tasks:
-            status = self.tasks[task.task_id]['status']
-            while status != 'DONE' and status != 'ERROR':
+        if task_id in self.tasks:
+            status = self.tasks[task_id]['status']
+            while status != TaskStatus.DONE and status != TaskStatus.ERROR:
                 time.sleep(1)
-                status = self.tasks[task.task_id]['status']
-            return self.tasks[task.task_id]['result']
+                status = self.tasks[task_id]['status']
+            if 'result' not in self.tasks[task_id]:
+                return TaskResult('ERROR')
+            return self.tasks[task_id]['result']
+    
+    def remove(self, task_id: uuid.UUID) -> None:
+        if task_id in self.tasks:
+            # TODO: Lock
+            # If waiting, error, or done, remove easy
+            # If running, remove carefully
+            # unlock
+            pass
 
     @staticmethod
     def run(conn: Connection) -> None:
@@ -110,13 +124,26 @@ class WorkQueue:
 
             elif msg == 'SUBMIT':
                 task = conn.recv()
+                if not isinstance( task, CompilationTask ):
+                    pass # TODO: Handle Error
                 wq.enqueue(task)
                 conn.send('OKAY')
 
             elif msg == 'STATUS':
-                task = conn.recv()
+                task_id = conn.recv()
+                if not isinstance( task, uuid.UUID ):
+                    pass # TODO: Handle Error
                 conn.send(wq.status(task))
 
             elif msg == 'RESULT':
-                task = conn.recv()
+                task_id = conn.recv()
+                if not isinstance( task, uuid.UUID ):
+                    pass # TODO: Handle Error
                 conn.send(wq.result(task))
+
+            elif msg == 'REMOVE':
+                task_id = conn.recv()
+                if not isinstance( task, uuid.UUID ):
+                    pass # TODO: Handle Error
+                wq.remove(task_id)
+                conn.send('OKAY')

@@ -3,13 +3,14 @@ This module implements the Circuit class.
 
 A circuit represents a quantum program composed of gate objects.
 """
+from typing import Optional, List
 from bqskit import qis
 
 
 class Circuit(qis.Unitary):
     """The Circuit class."""
 
-    def __init__(self, num_qudits, qudit_radixes: Union[None, List[int]] = None):
+    def __init__(self, num_qudits, qudit_radixes: Optional[List[int]] = None):
         """
         Circuit constructor. Builds an empty circuit with
         the specified number of qudits. By default, all qudits
