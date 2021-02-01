@@ -1,19 +1,22 @@
-import argparse
+import logging
 
-from bqskit import Backend
+from bqskit import Circuit
 from bqskit import CompilationTask
+from bqskit import Compiler
 
+logger = logging.getLogger('bqskit')
+logger.setLevel(logging.INFO)
 # Simple Test
-backend = Backend()
-task1 = CompilationTask()
-task2 = CompilationTask()
-backend.submit(task1)
-backend.submit(task2)
-print(backend.status(task1))
-print(backend.status(task2))
-print(backend.result(task1))
-print(backend.result(task2))
-backend.close()
+compiler = Compiler()
+task1 = CompilationTask(Circuit(2), 'QASM')
+task2 = CompilationTask(Circuit(2), 'QASM')
+compiler.submit(task1)
+compiler.submit(task2)
+print(compiler.status(task1))
+print(compiler.status(task2))
+print(compiler.result(task1))
+print(compiler.result(task2))
+del compiler
 
 # Example workflow
 # import bqskit
@@ -27,7 +30,7 @@ backend.close()
 # backend = bqskit.Backend("ip address") # connection other machine in future
 
 # backend.submit( task ) <---
-#task.submit( backend )
+# task.submit( backend )
 
 # ...
 

@@ -1,4 +1,8 @@
 *.egg-info/
+*.qasm
+*.unitary
 .tox/
 .env/
 .venv/
+.vscode/
+.mypy_cache/

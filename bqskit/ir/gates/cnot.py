@@ -1,7 +1,8 @@
 """This module implements the CNOT Gate."""
 import numpy as np
 
-from bqskit.ir import Gate
+from bqskit.ir.fixedgate import FixedGate
+from bqskit.ir.qubitgate import QubitGate
 
 
 class CNOTGate(FixedGate, QubitGate):

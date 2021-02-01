@@ -3,14 +3,28 @@ This module implements the Circuit class.
 
 A circuit represents a quantum program composed of gate objects.
 """
-from typing import Optional, List
-from bqskit import qis
+from __future__ import annotations
+
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Set
+
+import numpy as np
+
+from bqskit.ir.cell import CircuitCell
+from bqskit.ir.gate import Gate
+from bqskit.qis.unitary import Unitary
 
 
-class Circuit(qis.Unitary):
+class Circuit(Unitary):
     """The Circuit class."""
 
-    def __init__(self, num_qudits, qudit_radixes: Optional[List[int]] = None):
+    def __init__(
+        self, num_qudits: int,
+        qudit_radixes: Optional[List[int]] = None,
+    ) -> None:
         """
         Circuit constructor. Builds an empty circuit with
         the specified number of qudits. By default, all qudits
@@ -40,46 +54,58 @@ class Circuit(qis.Unitary):
 
         self.num_qudits = num_qudits
         self.qudit_radixes = qudit_radixes or [2 for q in range(num_qudits)]
-        self._circuit = [[] for q in range(num_qudits)]
-        self.gate_set = set()
+        self._circuit: List[List[CircuitCell]] = [[]
+                                                  for q in range(num_qudits)]
+        self.gate_set: Set[Gate] = set()
 
-    def get_num_params(self):
+    def get_num_params(self) -> int:
         pass
 
-    def get_gate(self, qudit, time_step):
+    def get_gate(self, qudit: int, time_step: int) -> Gate:
         pass
 
-    def get_num_gates(self):
+    def get_num_gates(self) -> int:
         pass
 
-    def append_gate(self, gate, qudits):
+    def append_gate(self, gate: Gate, qudits: Iterable[int]) -> None:
         pass
 
-    def remove_gate(self, qudit, time_step):
+    def remove_gate(self, qudit: int, time_step: int) -> None:
         pass
 
-    def insert_gate(self, gate, qudits, time_step):
+    def insert_gate(
+        self, gate: Gate, qudits: Iterable[int],
+        time_step: int,
+    ) -> None:
         pass
 
-    def get_unitary(self, params=None):
-        assert(params is None or len(params) == num_params)
+    def get_unitary(self, params: Optional[List[float]] = None) -> np.ndarray:
+        assert(params is None or len(params) == self.get_num_params())
         pass
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Gate]:
         pass
 
-    def __str__(self):
+    def __str__(self) -> str:
         pass
 
-    def __add__(self, rhs):
+    def __add__(self, rhs: Circuit) -> Circuit:
         pass
 
-    def __mul__(self, rhs):
+    def __mul__(self, rhs: int) -> Circuit:
         pass
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         pass
 
     @staticmethod
-    def load(filename):
+    def load(filename: str) -> Circuit:
+        pass
+
+    @staticmethod
+    def from_str(str: str) -> Circuit:
+        pass
+
+    # staticmethod
+    def from_unitary(utry: np.ndarray) -> Circuit:
         pass

@@ -1,1 +1,1 @@
-from .unitary import Unitary
+from bqskit.qis.unitary import Unitary

@@ -4,19 +4,22 @@ This module implements the WorkQueue class.
 The WorkQueue Class starts a new work thread that executes and tracks
 the tasks enqueued in it.
 """
-
-
+import logging
 import time
 import uuid
-from multiprocessing import Pipe
-from multiprocessing import Process
 from multiprocessing.connection import Connection
 from queue import Queue
 from threading import Thread
+from typing import Any
 from typing import Dict
 
-from bqskit.tasks import CompilationTask
-from bqskit.tasks import TaskResult, TaskStatus
+from bqskit.compiler.executor import Executor
+from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.task import TaskStatus
+from bqskit.ir.circuit import Circuit
+
+
+_logger = logging.getLogger('bqskit')
 
 
 class WorkQueue:
@@ -38,29 +41,39 @@ class WorkQueue:
         """
 
         self.work_thread = Thread(target=self.do_work)
-        self.work_queue = Queue()
+        self.work_queue: Queue[CompilationTask] = Queue()
         self.is_running = True
         self.work_thread.start()
-        self.tasks: Dict[uuid.UUID, CompilationTask] = {}
-        # TODO: self.tasks should be Dict[uuid.UUID, Executor]
+        self.tasks: Dict[uuid.UUID, Dict[str, Any]] = {}
 
     def do_work(self) -> None:
         """Worker thread loop: gets work from queue and executes it"""
+        _logger.info('Worker thread started.')
         while self.is_running:
+
+            # Wait for work
             if self.work_queue.empty():
                 time.sleep(1)
                 continue
             task = self.work_queue.get()
             self.tasks[task.task_id] = {'status': TaskStatus.RUNNING}
-            self.process_task(task)
-            self.tasks[task.task_id] = {'status': TaskStatus.DONE,
-                                        'result': TaskResult('YAY!')}
+            _logger.info('Started executing task: %s' % task.task_id)
 
-    def process_task(self, task: CompilationTask) -> None:
-        """Executes a CompilationTask"""
-        print('Starting processing task: %s' % task.task_id)
-        time.sleep(1)
-        print('Finished processing task: %s' % task.task_id)
+            # Execute task
+            try:
+                executor = Executor(task)
+                executor.run()
+                self.tasks[task.task_id] = {
+                    'status': TaskStatus.DONE,
+                    'result': executor.get_result(),
+                }
+                _logger.info('Finished executing task: %s' % task.task_id)
+
+            # Handle Errors
+            except Exception as e:
+                _logger.debug('Error executing task: %s' % task.task_id)
+                _logger.debug(e)
+                self.tasks[task.task_id] = {'status': TaskStatus.ERROR}
 
     def stop(self) -> None:
         """Stops the worker thread from starting another task."""
@@ -77,19 +90,26 @@ class WorkQueue:
             return self.tasks[task_id]['status']
         return TaskStatus.ERROR
 
-    def result(self, task_id: uuid.UUID) -> TaskResult:
+    def result(self, task_id: uuid.UUID) -> Circuit:
         """Block until the CompilationTask is finished, return its result."""
-        if task_id in self.tasks:
+        if task_id not in self.tasks:
+            return Circuit.from_str('')  # TODO: Better invalid circuit
+
+        # wait for it to finish
+        status = self.tasks[task_id]['status']
+        while status != TaskStatus.DONE and status != TaskStatus.ERROR:
+            time.sleep(1)
             status = self.tasks[task_id]['status']
-            while status != TaskStatus.DONE and status != TaskStatus.ERROR:
-                time.sleep(1)
-                status = self.tasks[task_id]['status']
-            if 'result' not in self.tasks[task_id]:
-                return TaskResult('ERROR')
-            return self.tasks[task_id]['result']
-    
+
+        # Handle errors
+        if 'result' not in self.tasks[task_id]:
+            return Circuit.from_str('')  # TODO: Better invalid circuit
+
+        return self.tasks[task_id]['result']
+
     def remove(self, task_id: uuid.UUID) -> None:
         if task_id in self.tasks:
+            _logger.info('Removing task: %s' % task_id)
             # TODO: Lock
             # If waiting, error, or done, remove easy
             # If running, remove carefully
@@ -124,26 +144,26 @@ class WorkQueue:
 
             elif msg == 'SUBMIT':
                 task = conn.recv()
-                if not isinstance( task, CompilationTask ):
-                    pass # TODO: Handle Error
+                if not isinstance(task, CompilationTask):
+                    pass  # TODO: Handle Error
                 wq.enqueue(task)
                 conn.send('OKAY')
 
             elif msg == 'STATUS':
                 task_id = conn.recv()
-                if not isinstance( task, uuid.UUID ):
-                    pass # TODO: Handle Error
-                conn.send(wq.status(task))
+                if not isinstance(task_id, uuid.UUID):
+                    pass  # TODO: Handle Error
+                conn.send(wq.status(task_id))
 
             elif msg == 'RESULT':
                 task_id = conn.recv()
-                if not isinstance( task, uuid.UUID ):
-                    pass # TODO: Handle Error
-                conn.send(wq.result(task))
+                if not isinstance(task_id, uuid.UUID):
+                    pass  # TODO: Handle Error
+                conn.send(wq.result(task_id))
 
             elif msg == 'REMOVE':
                 task_id = conn.recv()
-                if not isinstance( task, uuid.UUID ):
-                    pass # TODO: Handle Error
+                if not isinstance(task_id, uuid.UUID):
+                    pass  # TODO: Handle Error
                 wq.remove(task_id)
                 conn.send('OKAY')
