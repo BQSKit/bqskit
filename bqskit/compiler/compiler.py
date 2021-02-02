@@ -6,6 +6,8 @@ The backend compiler is responsible for executing compilation tasks.
 When creating a Compiler class, by default, a new process
 is started where compilation tasks can be submitted to be run.
 """
+from __future__ import annotations
+
 import logging
 from multiprocessing import Pipe
 from multiprocessing import Process

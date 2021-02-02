@@ -4,7 +4,7 @@ This module implements the Gate base class.
 A gate is a potentially parameterized unitary operation
 that can be applied to a circuit.
 """
-from typing import List
+from __future__ import annotations
 
 from bqskit.qis.unitary import Unitary
 
@@ -19,7 +19,7 @@ class Gate(Unitary):
 
         raise AttributeError
 
-    def get_radix(self) -> List[int]:
+    def get_radix(self) -> list[int]:
         """Returns the number of orthogonal states for each qudit."""
         if hasattr(self.__class__, 'radix'):
             return self.__class__.radix

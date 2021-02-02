@@ -3,6 +3,8 @@ This module implements the Executor class.
 
 The Executor class is responsible for executing a compilation task.
 """
+from __future__ import annotations
+
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 

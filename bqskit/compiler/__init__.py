@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.executor import Executor
 from bqskit.compiler.passbase import PassBase

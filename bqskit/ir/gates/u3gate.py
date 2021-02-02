@@ -1,5 +1,4 @@
-from typing import List
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 
@@ -11,5 +10,5 @@ class U3Gate(QubitGate):
     num_params = 3
     gate_size = 1
 
-    def get_unitary(self, params: Optional[List[float]] = None) -> np.ndarray:
+    def get_unitary(self, params: list[float] | None = None) -> np.ndarray:
         return np.zeros(2, 2)  # TODO

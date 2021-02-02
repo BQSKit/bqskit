@@ -4,10 +4,10 @@ This module implements the PassBase class.
 All bqskit passes must inherit from the PaseBase class and implement
 the run function. A pass represents a sweep over a circuit.
 """
+from __future__ import annotations
+
 import abc
 from typing import Any
-from typing import Dict
-from typing import Optional
 
 from bqskit.ir.circuit import Circuit
 
@@ -20,7 +20,7 @@ class PassBase (abc.ABC):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    def run(self, circuit: Circuit, data: Optional[Dict[str, Any]] = None) -> None:
+    def run(self, circuit: Circuit, data: dict[str, Any] | None = None) -> None:
         """
         The run function performs this pass's operation on the circuit.
 
@@ -32,7 +32,6 @@ class PassBase (abc.ABC):
                 previous runs. This function should never fail based on
                 what is in this dictionary.
         """
-        pass
 
     def __getstate__(self) -> Any:
         raise NotImplementedError()  # TODO

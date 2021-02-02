@@ -7,10 +7,7 @@ from __future__ import annotations
 
 from typing import Iterable
 from typing import Iterator
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Set
 
 import numpy as np
 
@@ -24,7 +21,7 @@ class Circuit(Unitary):
 
     def __init__(
         self, num_qudits: int,
-        qudit_radixes: Optional[List[int]] = None,
+        qudit_radixes: list[int] | None = None,
     ) -> None:
         """
         Circuit constructor. Builds an empty circuit with
@@ -55,9 +52,9 @@ class Circuit(Unitary):
 
         self.num_qudits = num_qudits
         self.qudit_radixes = qudit_radixes or [2 for q in range(num_qudits)]
-        self._circuit: List[List[CircuitCell]] = [[]
+        self._circuit: list[list[CircuitCell]] = [[]
                                                   for q in range(num_qudits)]
-        self.gate_set: Set[Gate] = set()
+        self.gate_set: set[Gate] = set()
 
     def get_num_params(self) -> int:
         pass
@@ -80,9 +77,8 @@ class Circuit(Unitary):
     ) -> None:
         pass
 
-    def get_unitary(self, params: Optional[List[float]] = None) -> np.ndarray:
+    def get_unitary(self, params: list[float] | None = None) -> np.ndarray:
         assert(params is None or len(params) == self.get_num_params())
-        pass
 
     def __iter__(self) -> Iterator[Gate]:
         pass

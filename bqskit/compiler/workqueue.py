@@ -4,6 +4,8 @@ This module implements the WorkQueue class.
 The WorkQueue Class starts a new work thread that executes and tracks
 the tasks enqueued in it.
 """
+from __future__ import annotations
+
 import logging
 import time
 import uuid
@@ -11,7 +13,6 @@ from multiprocessing.connection import Connection
 from queue import Queue
 from threading import Thread
 from typing import Any
-from typing import Dict
 
 from bqskit.compiler.executor import Executor
 from bqskit.compiler.task import CompilationTask
@@ -44,7 +45,7 @@ class WorkQueue:
         self.work_queue: Queue[CompilationTask] = Queue()
         self.is_running = True
         self.work_thread.start()
-        self.tasks: Dict[uuid.UUID, Dict[str, Any]] = {}
+        self.tasks: dict[uuid.UUID, dict[str, Any]] = {}
 
     def do_work(self) -> None:
         """Worker thread loop: gets work from queue and executes it"""
@@ -114,7 +115,6 @@ class WorkQueue:
             # If waiting, error, or done, remove easy
             # If running, remove carefully
             # unlock
-            pass
 
     @staticmethod
     def run(conn: Connection) -> None:

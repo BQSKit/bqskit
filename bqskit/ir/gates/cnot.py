@@ -1,4 +1,6 @@
 """This module implements the CNOT Gate."""
+from __future__ import annotations
+
 import numpy as np
 
 from bqskit.ir.fixedgate import FixedGate
