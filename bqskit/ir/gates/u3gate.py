@@ -12,4 +12,4 @@ class U3Gate(QubitGate):
     gate_size = 1
 
     def get_unitary(self, params: Optional[List[float]] = None) -> np.ndarray:
-        return np.zeros(2, 2)
+        return np.zeros(2, 2)  # TODO

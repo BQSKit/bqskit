@@ -51,7 +51,9 @@ class Compiler:
         """Submit a CompilationTask to the Compiler."""
         self.conn.send('SUBMIT')
         self.conn.send(task)
-        self.conn.recv()  # Block until response
+        okay_msg = self.conn.recv()  # Block until response
+        # if (okay_msg != "OKAY"):
+        #     raise Exception
         _logger.info('Submitted task: %s' % task.task_id)
 
     def status(self, task: CompilationTask) -> TaskStatus:
@@ -76,9 +78,7 @@ class Compiler:
     def compile(self, task: CompilationTask) -> Circuit:
         """Execute the CompilationTask."""
         _logger.info('Compiling task: %s' % task.task_id)
-        self.conn.send('SUBMIT')
-        self.conn.send(task)
-        self.conn.recv()  # Block until response
-        self.conn.send('RESULT')
-        self.conn.send(task.task_id)
-        return self.conn.recv()  # Block until response
+        self.submit(task)
+        return self.result(task)
+
+    # def get_supported_passes(...): TODO

@@ -5,10 +5,13 @@ The CompilationTask class describes a compilation problem. These
 can be submitted to an engine. The different CompilationTask states
 are enumerated in TaskStatus.
 """
+from __future__ import annotations
+
 import uuid
 from enum import Enum
-from typing import List
+from typing import Sequence
 
+from bqskit.compiler.passbase import PassBase
 from bqskit.ir.circuit import Circuit
 
 
@@ -23,20 +26,17 @@ class TaskStatus(Enum):
 class CompilationTask():
     """The CompilationTask class."""
 
-    def __init__(
-        self, task_input: Circuit, output_format: str,
-        passes: List[str] = [], **kwargs,
-    ) -> None:
+    def __init__(self, task_input: Circuit, passes: Sequence[PassBase]) -> None:
         """
         CompilationTask Constructor.
 
         Args:
             task_input (Circuit): The input circuit to be compiled.
-
-            output_format
         """
         self.task_id = uuid.uuid4()
         self.task_input = task_input
-        self.output_format = output_format
         self.passes = passes
-        self.configuration = kwargs
+
+    @staticmethod
+    def qfast_task(circ: Circuit) -> CompilationTask:
+        pass  # TODO

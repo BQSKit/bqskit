@@ -9,6 +9,7 @@ from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 
 import numpy as np
@@ -67,7 +68,7 @@ class Circuit(Unitary):
     def get_num_gates(self) -> int:
         pass
 
-    def append_gate(self, gate: Gate, qudits: Iterable[int]) -> None:
+    def append_gate(self, gate: Gate, qudits: Sequence[int]) -> None:
         pass
 
     def remove_gate(self, qudit: int, time_step: int) -> None:

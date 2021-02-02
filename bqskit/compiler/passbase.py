@@ -7,6 +7,7 @@ the run function. A pass represents a sweep over a circuit.
 import abc
 from typing import Any
 from typing import Dict
+from typing import Optional
 
 from bqskit.ir.circuit import Circuit
 
@@ -19,7 +20,7 @@ class PassBase (abc.ABC):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    def run(self, circuit: Circuit, data: Dict[str, Any] = {}) -> None:
+    def run(self, circuit: Circuit, data: Optional[Dict[str, Any]] = None) -> None:
         """
         The run function performs this pass's operation on the circuit.
 
@@ -32,3 +33,9 @@ class PassBase (abc.ABC):
                 what is in this dictionary.
         """
         pass
+
+    def __getstate__(self) -> Any:
+        raise NotImplementedError()  # TODO
+
+    def __setstate__(self, state: Any) -> None:
+        raise NotImplementedError()  # TODO
