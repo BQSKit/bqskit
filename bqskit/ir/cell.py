@@ -6,26 +6,30 @@ A cell groups together a gate and its parameters.
 """
 from __future__ import annotations
 
-from bqskit.ir.gate import Gate
+from typing import Iterable, Optional, Sequence
 
 
 class CircuitCell():
     """The CircuitCell class."""
 
     def __init__(
-        self, gate: Gate, params: list[float] | None = None,
-        qudit_idx: int = 0,
-    ):
+        self, gate_index: int,
+        location: Iterable[int],
+        params: Optional[Sequence[float]] = None,
+    ) -> None:
         """
         CircuitCell Constructor.
 s
         Args:
-            gate (Gate): The gate in this Cell.
+            gate_index (int): The index in the circuit's gate set
+                that determines the gate in this cell.
+            
+            location:  The set of qudits this gate affects.
 
-            params (List[float]): The parameters for the gate, if any.
-
-            qudit_idx (int): This cell's qudit index in the gate.
+            params (Optional[Sequence[float]]): The parameters for the
+                gate, if any.
         """
-        self.gate = gate
+        self.gate_index = gate_index
+        self.location = location
         self.params = params
-        self.qudit_idx = qudit_idx
+
