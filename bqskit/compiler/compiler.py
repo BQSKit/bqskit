@@ -17,7 +17,7 @@ from bqskit.compiler.task import TaskStatus
 from bqskit.compiler.workqueue import WorkQueue
 from bqskit.ir.circuit import Circuit
 
-_logger = logging.getLogger('bqskit')
+_logger = logging.getLogger( __name__ )
 
 
 class Compiler:
