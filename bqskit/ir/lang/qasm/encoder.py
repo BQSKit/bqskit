@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bqskit.ir.circuit import Circuit
 
 
@@ -6,5 +8,5 @@ class QASMEncoder():
         pass
 
     @staticmethod
-    def encode( circuit: Circuit ) -> str:
+    def encode(circuit: Circuit) -> str:
         pass

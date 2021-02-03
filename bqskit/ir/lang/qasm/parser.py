@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bqskit.ir.circuit import Circuit
 
 
@@ -6,5 +8,5 @@ class QASMParser():
         pass
 
     @staticmethod
-    def parse( qasm_str: str ) -> Circuit:
+    def parse(qasm_str: str) -> Circuit:
         pass
