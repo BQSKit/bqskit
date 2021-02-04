@@ -9,12 +9,14 @@ import abc
 
 import numpy as np
 
+from bqskit.qis.unitarymatrix import UnitaryMatrix
+
 
 class Unitary (abc.ABC):
     """Unitary Base Class."""
 
     @abc.abstractmethod
-    def get_unitary(self, params: list[float] | None = None) -> np.ndarray:
+    def get_unitary(self, params: list[float] | None = None) -> UnitaryMatrix:
         """
         Abstract method that should return this unitary
         as a numpy matrix.

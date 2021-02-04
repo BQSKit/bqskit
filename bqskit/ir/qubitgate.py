@@ -5,5 +5,7 @@ from bqskit.ir.gate import Gate
 
 class QubitGate(Gate):
 
-    def get_radix(self) -> list[int]:
+    @property
+    def radixes(self) -> list[int]:
+        """Returns the number of orthogonal states for each qudit."""
         return [2] * self.get_gate_size()

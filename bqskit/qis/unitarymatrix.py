@@ -7,10 +7,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from bqskit.qis import Unitary
 
-
-class UnitaryMatrix (Unitary):
+class UnitaryMatrix():
     """The UnitaryMatrix Class."""
 
     def __init__(self, utry: np.ndarray):
@@ -18,6 +16,3 @@ class UnitaryMatrix (Unitary):
         Unitary Matrix Constructor
         """
         self.utry = utry
-
-    def get_unitary(self, params: list[float] | None = None) -> np.ndarray:
-        return self.utry

@@ -15,6 +15,7 @@ import numpy as np
 from bqskit.ir.cell import CircuitCell
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary import Unitary
+from bqskit.qis.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_valid_location
@@ -293,7 +294,7 @@ class Circuit(Unitary):
 
         del cell
 
-    def get_unitary(self, params: list[float] | None = None) -> np.ndarray:
+    def get_unitary(self, params: list[float] | None = None) -> UnitaryMatrix:
         assert(params is None or len(params) == self.get_num_params())
 
     def append_time_step(self) -> None:
