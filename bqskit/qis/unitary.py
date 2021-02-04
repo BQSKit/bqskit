@@ -6,6 +6,7 @@ Represents a unitary matrix that can be retrieved from get_unitary.
 from __future__ import annotations
 
 import abc
+from typing import Optional, Sequence
 
 import numpy as np
 
@@ -16,7 +17,7 @@ class Unitary (abc.ABC):
     """Unitary Base Class."""
 
     @abc.abstractmethod
-    def get_unitary(self, params: Optional[list[float]] = None) -> UnitaryMatrix:
+    def get_unitary(self, params: Optional[Sequence[float]] = None) -> UnitaryMatrix:
         """
         Abstract method that should return this unitary
         as a numpy matrix.

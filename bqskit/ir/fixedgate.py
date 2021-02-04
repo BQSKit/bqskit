@@ -11,15 +11,20 @@ from bqskit.qis.unitarymatrix import UnitaryMatrix
 class FixedGate(Gate):
 
     num_params = 0
+    utry: UnitaryMatrix
 
     def get_unitary(self, params: Sequence[float] | None = None) -> UnitaryMatrix:
         if params is not None:
             raise ValueError('Fixed gates do not take parameters.')
 
-        if hasattr(self.__class__, 'utry'):
-            return self.__class__.utry
+        if hasattr(self, 'utry'):
+            return self.utry
 
         raise AttributeError(
             'Expected utry class variable for gate %s.'
-            % self.__class__.name,
+            % self.__class__.__name__,
         )
+
+    @property
+    def size(self) -> int:
+        return len(self.radixes)

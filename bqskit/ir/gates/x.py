@@ -9,8 +9,8 @@ from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
 class XGate(FixedGate, QubitGate):
+    """The Pauli X gate."""
 
-    size = 1
     utry = UnitaryMatrix(
         np.array(
             [

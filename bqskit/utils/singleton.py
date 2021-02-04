@@ -23,7 +23,7 @@ class Singleton():
     """
     _instance = None
 
-    def __new__(cls):
+    def __new__(cls) -> Singleton:
         if cls._instance is None:
             _logger.debug(
                 'Creating singleton instance for class: %s'

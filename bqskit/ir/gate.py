@@ -7,10 +7,10 @@ that can be applied to a circuit.
 from __future__ import annotations
 
 from bqskit.qis.unitary import Unitary
-from bqskit.utils.singleton import Singleton
+from bqskit.utils.cachedclass import CachedClass
 
 
-class Gate(Unitary, Singleton):
+class Gate(Unitary, CachedClass):
     """Gate Base Class."""
 
     @property
@@ -23,7 +23,7 @@ class Gate(Unitary, Singleton):
         """Returns the number of parameters for this gate."""
         raise AttributeError(
             'Expected num_params class property for gate %s.'
-            % self.__class__.name,
+            % self.name,
         )
 
     @property
@@ -31,7 +31,7 @@ class Gate(Unitary, Singleton):
         """Returns the number of orthogonal states for each qudit."""
         raise AttributeError(
             'Expected radixes class property for gate %s.'
-            % self.__class__.name,
+            % self.name,
         )
 
     @property
@@ -39,5 +39,8 @@ class Gate(Unitary, Singleton):
         """Returns the number of qudits this gate acts on."""
         raise AttributeError(
             'Expected size class property for gate %s.'
-            % self.__class__.name,
+            % self.name,
         )
+
+    def __repr__(self) -> str:
+        return f'{self.name}()'

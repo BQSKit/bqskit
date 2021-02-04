@@ -1,4 +1,4 @@
-"""This module implements the CNOT Gate."""
+"""This module implements the Z Gate."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,17 +8,14 @@ from bqskit.ir.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class CNOTGate(FixedGate, QubitGate):
-    """The controlled not or controlled X gate."""
+class ZGate(FixedGate, QubitGate):
+    """The Pauli Z gate."""
 
-    size = 2
     utry = UnitaryMatrix(
         np.array(
             [
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, 0, 1],
-                [0, 0, 1, 0],
+                [1, 0],
+                [0, -1],
             ], dtype=np.complex128,
         ),
     )
