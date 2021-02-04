@@ -262,6 +262,7 @@ class Circuit(Unitary):
         for qudit_index in location:
             self._circuit[time_step][qudit_index] = cell
 
+    # TODO: Remove Empty Timesteps
     def remove_gate(self, time_step: int, qudit_index: int) -> None:
         """
         Removes the gate at the specified position if it is occupied,

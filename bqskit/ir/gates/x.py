@@ -1,5 +1,4 @@
 """This module implements the X Gate."""
-
 from __future__ import annotations
 
 import numpy as np

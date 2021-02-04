@@ -16,40 +16,28 @@ class Gate(Unitary, Singleton):
     @property
     def name(self) -> str:
         """Returns the name of the gate, defaults to the class name."""
-        if hasattr(self.__class__, 'name'):
-            return self.__class__.name
-
         return self.__class__.__name__
 
     @property
     def num_params(self) -> int:
         """Returns the number of parameters for this gate."""
-        if hasattr(self.__class__, 'num_params'):
-            return self.__class__.num_params  # TODO: Decide on fix for name issue
-
         raise AttributeError(
-            'Expected num_params class variable for gate %s.'
+            'Expected num_params class property for gate %s.'
             % self.__class__.name,
         )
 
     @property
     def radixes(self) -> list[int]:
         """Returns the number of orthogonal states for each qudit."""
-        if hasattr(self.__class__, 'radixes'):
-            return self.__class__.radixes  # TODO: Decide on fix for name issue
-
         raise AttributeError(
-            'Expected radixes class variable for gate %s.'
+            'Expected radixes class property for gate %s.'
             % self.__class__.name,
         )
 
     @property
     def size(self) -> int:
         """Returns the number of qudits this gate acts on."""
-        if hasattr(self.__class__, 'size'):
-            return self.__class__.size  # TODO: Decide on fix for name issue
-
         raise AttributeError(
-            'Expected size class variable for gate %s.'
+            'Expected size class property for gate %s.'
             % self.__class__.name,
         )
