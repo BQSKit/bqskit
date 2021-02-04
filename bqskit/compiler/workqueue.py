@@ -38,7 +38,7 @@ class WorkQueue:
             >>> task = CompilationTask(...)
             >>> wq.enqueue(task)
             >>> print(wq.status(task))
-            RUNNING
+            TaskStatus.RUNNING
         """
 
         self.work_thread = Thread(target=self.do_work)

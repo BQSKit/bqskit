@@ -34,7 +34,7 @@ class Compiler:
             >>> task = CompilationTask(...)
             >>> compiler.submit(task)
             >>> print(compiler.status(task))
-            RUNNING
+            TaskStatus.RUNNING
         """
 
         self.conn, backend_conn = Pipe()
