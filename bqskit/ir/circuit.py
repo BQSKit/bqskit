@@ -62,11 +62,11 @@ class Circuit(Unitary):
         self.num_qudits = num_qudits
         self.qudit_radixes = qudit_radixes or [2] * num_qudits
 
-        if not is_valid_radixes(qudit_radixes, self.num_qudits):
+        if not is_valid_radixes(self.qudit_radixes, self.num_qudits):
             raise TypeError('Invalid qudit radixes.')
 
         self._circuit: list[list[CircuitCell]] = []
-        self.gate_set: dict[Gate, int] = []
+        self.gate_set: dict[Gate, int] = {}
 
     @property
     def num_params(self) -> int:
@@ -162,17 +162,17 @@ class Circuit(Unitary):
         if not is_valid_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        if len(location) != gate.get_gate_size():
+        if len(location) != gate.size:
             raise ValueError('Gate and location size mismatch.')
 
-        for gate_radix, circ_radix_idx in zip(gate.get_radix(), location):
+        for gate_radix, circ_radix_idx in zip(gate.radixes, location):
             if gate_radix != self.qudit_radixes[circ_radix_idx]:
                 raise ValueError('Gate and location radix mismatch.')
 
         if params is None:
-            params = [0.0] * gate.get_num_params()  # TODO: Re-evaluate later
+            params = [0.0] * gate.num_params  # TODO: Re-evaluate later
 
-        if len(params) != gate.get_num_params():
+        if len(params) != gate.num_params:
             raise ValueError('Gate and parameter mismatch.')
 
         if gate not in self.gate_set:
@@ -234,17 +234,17 @@ class Circuit(Unitary):
         if not is_valid_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        if len(location) != gate.get_gate_size():
+        if len(location) != gate.size:
             raise ValueError('Gate and location size mismatch.')
 
-        for gate_radix, circ_radix_idx in zip(gate.get_radix(), location):
+        for gate_radix, circ_radix_idx in zip(gate.radixes, location):
             if gate_radix != self.qudit_radixes[circ_radix_idx]:
                 raise ValueError('Gate and location radix mismatch.')
 
         if params is None:
-            params = [0.0] * gate.get_num_params()  # TODO: Re-evaluate later
+            params = [0.0] * gate.num_params  # TODO: Re-evaluate later
 
-        if len(params) != gate.get_num_params():
+        if len(params) != gate.num_params:
             raise ValueError('Gate and parameter mismatch.')
 
         if time_step < 0:
@@ -295,25 +295,36 @@ class Circuit(Unitary):
         del cell
 
     def get_unitary(self, params: list[float] | None = None) -> UnitaryMatrix:
-        assert(params is None or len(params) == self.get_num_params())
-
-    def append_time_step(self) -> None:
-        pass
-
-    def insert_time_step(self, time_step: int) -> None:
-        pass
+        assert(params is None or len(params) == self.num_params)
 
     def find_available_time_step(self, location: Iterable[int]) -> int:
         """
         Finds the first available time step where all qudits described
-        in location are free.
+        in location are free. Returns -1 if no suitable time_step found.
+
+        Args:
+            localtion (Iterable[int]): Find a time_step for this location.
+
+        Examples:
+            >>> circ = Circuit(2)
+            >>> circ.append_gate(gates.H, [0])
+            >>> circ.find_available_time_step([1])
+            0
+            >>> circ.find_available_time_step([0])
+            -1
         """
+
         if not is_valid_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        for time_step in range(self.time_step):
-            if self.is_time_step_available(time_step, location):
-                return time_step
+        # Iterate through time_steps in reverse order
+        # Find the first unavailable time_step
+        # The first available time_step is the previous one
+        for time_step in range(self.time_steps - 1, -1, -1):
+            if not self.is_time_step_available(time_step, location):
+                if time_step == self.time_steps - 1:
+                    return -1
+                return time_step + 1
 
         return -1
 
@@ -328,7 +339,15 @@ class Circuit(Unitary):
 
         return True
 
-    def __getitem__(self, position: Sequence[int]) -> CircuitCell:
+    def append_time_step(self) -> None:
+        """Appends an empty time_step to the end of the circuit."""
+        self._circuit.append([None] * self.num_qudits)
+
+    def insert_time_step(self, time_step: int) -> None:
+        """Inserts an empty time_step in the circuit."""
+        self._circuit.insert(time_step, [None] * self.num_qudits)
+
+    def __getitem__(self, position: Sequence[int]) -> CircuitCell | None:
         if not is_sequence(position):
             raise TypeError('Invalid position.')
 

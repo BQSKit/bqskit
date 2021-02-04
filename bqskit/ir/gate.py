@@ -25,7 +25,7 @@ class Gate(Unitary, Singleton):
     def num_params(self) -> int:
         """Returns the number of parameters for this gate."""
         if hasattr(self.__class__, 'num_params'):
-            return self.__class__.num_params
+            return self.__class__.num_params  # TODO: Decide on fix for name issue
 
         raise AttributeError(
             'Expected num_params class variable for gate %s.'
@@ -36,7 +36,7 @@ class Gate(Unitary, Singleton):
     def radixes(self) -> list[int]:
         """Returns the number of orthogonal states for each qudit."""
         if hasattr(self.__class__, 'radixes'):
-            return self.__class__.radixes
+            return self.__class__.radixes  # TODO: Decide on fix for name issue
 
         raise AttributeError(
             'Expected radixes class variable for gate %s.'
@@ -47,7 +47,7 @@ class Gate(Unitary, Singleton):
     def size(self) -> int:
         """Returns the number of qudits this gate acts on."""
         if hasattr(self.__class__, 'size'):
-            return self.__class__.size
+            return self.__class__.size  # TODO: Decide on fix for name issue
 
         raise AttributeError(
             'Expected size class variable for gate %s.'

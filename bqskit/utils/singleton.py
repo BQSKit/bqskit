@@ -1,5 +1,5 @@
 """This module implements the singleton base class."""
-
+from __future__ import annotations
 
 import logging
 
@@ -25,7 +25,9 @@ class Singleton():
 
     def __new__(cls):
         if cls._instance is None:
-            _logger.debug("Creating singleton instance for class: "
-                          % cls.__name__)
-            cls._instance = super(Singleton, cls).__new__(cls)
+            _logger.debug(
+                'Creating singleton instance for class: %s'
+                % cls.__name__,
+            )
+            cls._instance = super().__new__(cls)
         return cls._instance
