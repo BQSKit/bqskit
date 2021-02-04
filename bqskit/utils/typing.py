@@ -50,7 +50,7 @@ def is_valid_location(location: Iterable[int], num_qudits: int | None = None) ->
         return False
 
     if not all([isinstance(qudit, int) for qudit in location]):
-        _logger.debug('Location is not a tuple of ints.')
+        _logger.debug('Location is not an iterable of ints.')
         return False
 
     if len(location) != len(set(location)):
@@ -65,5 +65,40 @@ def is_valid_location(location: Iterable[int], num_qudits: int | None = None) ->
         if not all([qudit < num_qudits for qudit in location]):
             _logger.debug('Location has an erroneously large qudit.')
             return False
+
+    return True
+
+
+def is_valid_radixes(radixes: Sequence[int], num_qudits: int | None = None) -> bool:
+    """
+    Determines if the sequence of radixes are valid. Radixes must
+    be integers greater than or equal to 2. If num_qudits is specified,
+    then the length of radixes must be equal to num_qudits.
+
+    Args:
+        radixes (Sequence[int]): The radixes to check.
+
+        num_qudits (Optional[int]): The total number of qudits.
+            All qudit indices should be less than this. If None,
+            don't check.
+
+    Returns:
+        (bool): True if the radixes are valid.
+    """
+
+    if not is_sequence(radixes):
+        return False
+
+    if not all([isinstance(qudit, int) for qudit in radixes]):
+        _logger.debug('Radixes is not a tuple of ints.')
+        return False
+
+    if not all([radix >= 2 for radix in radixes]):
+        _logger.debug('Radixes invalid; radix indices must be >= 2.')
+        return False
+
+    if num_qudits is not None and len(radixes) != num_qudits:
+        _logger.debug('Invalid number of radixes.')
+        return False
 
     return True
