@@ -13,6 +13,7 @@ class RZGate(QubitGate):
 
     size = 1
     num_params = 1
+    qasm_name = "rz"
     
     def get_unitary(self, params: Sequence[float] | None = None) -> UnitaryMatrix:
         if params is None or len(params) != self.num_params:

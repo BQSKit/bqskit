@@ -1,17 +1,18 @@
-"""This module implements the CNOT Gate."""
+"""This module implements the CNOTGate/CXGate."""
 from __future__ import annotations
 
 import numpy as np
 
-from bqskit.ir.fixedgate import FixedGate
-from bqskit.ir.qubitgate import QubitGate
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class CNOTGate(FixedGate, QubitGate):
-    """The controlled not or controlled X gate."""
+class CNOTGate(ConstantGate, QubitGate):
+    """The controlled-not or controlled-X gate."""
 
     size = 2
+    qasm_name = "cx"
     utry = UnitaryMatrix(
         np.array(
             [
@@ -22,3 +23,5 @@ class CNOTGate(FixedGate, QubitGate):
             ], dtype=np.complex128,
         ),
     )
+
+CXGate = CNOTGate

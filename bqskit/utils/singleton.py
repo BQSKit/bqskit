@@ -13,7 +13,7 @@ class Singleton():
 
     Any class that inherits from Singleton will be instantiated once.
     Any subsequent attempts to instantiate a Singleton will return the
-    same object.
+    same object. Singleton is not thread-safe.
 
     Examples:
         >>> x = Singleton()

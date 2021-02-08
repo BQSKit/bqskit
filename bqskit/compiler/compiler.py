@@ -81,6 +81,8 @@ class Compiler:
         """Execute the CompilationTask."""
         _logger.info('Compiling task: %s' % task.task_id)
         self.submit(task)
-        return self.result(task)
+        result = self.result(task)
+        result.reraise()
+        return result._circuit
 
     # def get_supported_passes(...): TODO

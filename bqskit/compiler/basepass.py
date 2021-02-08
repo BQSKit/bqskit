@@ -1,8 +1,8 @@
 """
-This module implements the PassBase class.
+This module implements the BasePass class.
 
-All bqskit passes must inherit from the PaseBase class and implement
-the run function. A pass represents a sweep over a circuit.
+All bqskit passes must inherit from the BasePass class and implement
+the run function. A pass represents an operation on a circuit.
 """
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from typing import Any
 from bqskit.ir.circuit import Circuit
 
 
-class PassBase (abc.ABC):
-    """The PaseBase Class."""
+class BasePass (abc.ABC):
+    """The BasePass Class."""
 
     def name(self) -> str:
         """Get the name of the pass."""

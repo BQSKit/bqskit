@@ -1,16 +1,18 @@
-"""This module implements the CZ Gate."""
+"""This module implements the CZGate."""
 from __future__ import annotations
 
 import numpy as np
 
-from bqskit.ir.fixedgate import FixedGate
-from bqskit.ir.qubitgate import QubitGate
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class CZGate(FixedGate, QubitGate):
-    """The controlled Z gate."""
+class CZGate(ConstantGate, QubitGate):
+    """The controlled-Z gate."""
 
+    size = 2
+    qasm_name = "cz"
     utry = UnitaryMatrix(
         np.array(
             [

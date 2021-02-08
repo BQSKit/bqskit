@@ -14,7 +14,8 @@ class CachedClass:
 
     Any class that inherits from CachedClass will be instantiated once per
     parameter set. Any subsequent attempts to instantiate a CachedClass with
-    the same parameters will return the same object.
+    the same parameters will return the same object. CachedClass is not
+    thread-safe.
 
     Examples:
         >>> x = CachedClass(1)
@@ -30,8 +31,9 @@ class CachedClass:
     def __new__(cls, *args: Any, **kwargs: Any) -> CachedClass:
         if cls._instances.get((cls, args, tuple(kwargs.items())), None) is None:
             _logger.debug(
-                'Creating singleton instance for class: %s'
-                % cls.__name__,
+                ( 'Creating cached instance for class: %s,'
+                  ' with args %s, and kwargs %s' )
+                % (cls.__name__, args, kwargs)
             )
             cls._instances[(cls, args, tuple(kwargs.items()))] = super().__new__(cls)
         return cls._instances[(cls, args, tuple(kwargs.items()))]

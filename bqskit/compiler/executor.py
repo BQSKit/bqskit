@@ -5,6 +5,9 @@ The Executor class is responsible for executing a compilation task.
 """
 from __future__ import annotations
 
+import copy
+from typing import Any
+
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 
@@ -18,12 +21,21 @@ class Executor:
 
         Creates a executor ready to execute the specified task.
         """
-
-        self.task = task
-        # TODO: Initialize passes with configurations
+        self.task_id = task.task_id
+        self.circuit = copy.deepcopy( task.input_circuit )
+        self.passes = task.passes
+        self.data: dict[str, Any] = {}
+        self.done = False
 
     def run(self) -> None:
-        pass
+        """Executes the task."""
+        for pass_obj in self.passes:
+            pass_obj.run(self.circuit, self.data)
+        self.done = True
 
     def get_result(self) -> Circuit:
-        pass
+        """Retrieve result."""
+        if not self.done:
+            raise Exception  # TODO: Re-evaluate
+
+        return self.circuit

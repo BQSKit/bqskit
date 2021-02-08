@@ -21,6 +21,7 @@ from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -65,7 +66,7 @@ class Circuit(Unitary):
         if not is_valid_radixes(self.qudit_radixes, self.num_qudits):
             raise TypeError('Invalid qudit radixes.')
 
-        self._circuit: list[list[CircuitCell]] = []
+        self._circuit: list[list[CircuitCell | None]] = []
         self.gate_set: dict[Gate, int] = {}
 
     @property
@@ -360,8 +361,36 @@ class Circuit(Unitary):
 
         return self._circuit[position[0]][position[1]]
 
-    def __iter__(self) -> Iterator[Gate]:
-        pass
+    class CircuitIterator:
+        def __init__(self, circuit: list[list[CircuitCell | None]]) -> None:
+            self.circuit = circuit
+            self.time_step = 0
+            self.qudit_index = 0
+            self.max_time_step = len( circuit )
+            self.max_qudit_index = 0 if self.max_time_step == 0 else len( circuit[0] )
+            self.qudits_to_skip = []
+        
+        def increment_iter(self) -> None:
+            self.qudit_index += 1
+            if self.qudit_index >= self.max_qudit_index:
+                self.qudit_index = 0
+                self.time_step += 1
+            if self.time_step >= self.max_time_step:
+                raise StopIteration
+        
+        def dereference(self) -> CircuitCell | None:
+            return self.circuit[self.time_step][self.qudit_index]
+        
+        def __iter__(self) -> Iterator[CircuitCell]:
+            return self
+        
+        def __next__(self) -> CircuitCell:
+            while self.dereference() is None:
+                self.increment_iter()
+            return self.dereference()
+            
+    def __iter__(self) -> self.CircuitIterator:
+        return self.CircuitIterator(self._circuit)
 
     def __str__(self) -> str:
         pass

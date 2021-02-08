@@ -26,7 +26,7 @@ s
         Args:
             gate (Gate): The cell's gate.
 
-            location:  The set of qudits this gate affects.
+            location (Iterable[int]):  The set of qudits this gate affects.
 
             params (Optional[Sequence[float]]): The parameters for the
                 gate, if any.
@@ -34,3 +34,15 @@ s
         self.gate = gate
         self.location = location
         self.params = params
+    
+    def get_qasm(self) -> str:
+        """Returns the qasm string for this operation."""
+        return "%s(%s) q[%s];" % ( self.gate.get_qasm_name(),
+                                   ", ".join(self.params),
+                                   "], q[".join(self.location))
+
+    def __str__(self) -> str:
+        pass  # TODO
+    
+    def __repr__(self) -> str:
+        pass  # TODO

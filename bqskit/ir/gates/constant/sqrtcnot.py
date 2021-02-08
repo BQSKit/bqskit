@@ -1,15 +1,17 @@
-"""This module implements the SQRTCNOT Gate."""
+"""This module implements the SqrtCNOTGate."""
 from __future__ import annotations
 
 import numpy as np
 
-from bqskit.ir.fixedgate import FixedGate
-from bqskit.ir.qubitgate import QubitGate
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class SQRTCNOTGate(FixedGate, QubitGate):
+class SqrtCNOTGate(ConstantGate, QubitGate):
 
+    size = 2
+    qasm_name = "csx"
     utry = UnitaryMatrix(
         np.array(
             [
