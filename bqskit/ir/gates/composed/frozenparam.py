@@ -1,4 +1,4 @@
-"""This module implements the FixedParameter Gate."""
+"""This module implements the FrozenParameterGate."""
 from __future__ import annotations
 from typing import Sequence
 
@@ -8,7 +8,7 @@ from bqskit.ir import Gate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class SemiFixedParameterGate(Gate):
+class FrozenParameterGate(Gate):
     """A composed gate which fixes some parameters of another gate."""
 
     def __init__(self, gate: Gate, fixed_params: dict[int, float]) -> None:
