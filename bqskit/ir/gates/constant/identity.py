@@ -25,6 +25,9 @@ class IdentityGate(ConstantGate):
     
     def get_qasm_gate_def(self) -> str:
         """Returns a qasm gate definition block for this gate."""
-        # header = "gate identity%d %s" % (self.size, ",".join())
-        # TODO
-        pass
+        param_symbols = ["a%d" % i for i in range(self.size)]
+        param_str = ",".join(param_symbols)
+        header = "gate identity%d %s" % (self.size, param_str)
+        body_stmts = [ "\tU(0,0,0) %s;" % sym for sym in param_symbols ]
+        body = "\n".join(body_stmts)
+        return "%s\n{\n%s\n}\n" % ( header, body )

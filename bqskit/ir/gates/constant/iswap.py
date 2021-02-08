@@ -1,4 +1,4 @@
-"""This module implements the ISWAPGate."""
+"""This module implements the ISwapGate."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,7 +8,7 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class ISWAPGate(ConstantGate, QubitGate):
+class ISwapGate(ConstantGate, QubitGate):
     """The two qubit swap and phase iSWAP gate."""
 
     size = 2
@@ -26,4 +26,12 @@ class ISWAPGate(ConstantGate, QubitGate):
 
     def get_qasm_gate_def(self) -> str:
         """Returns a qasm gate definition block for this gate."""
-        return "" # TODO
+        return ( "gate iswap a,b\n"
+                 "{\n"
+                 "\ts a;\n"
+                 "\ts b;\n"
+                 "\th a;\n"
+                 "\tcx a, b;\n"
+                 "\tcx b, a;\n"
+                 "\th b;\n"
+                 "}\n" )

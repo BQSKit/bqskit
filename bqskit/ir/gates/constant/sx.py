@@ -1,4 +1,4 @@
-"""This module implements the SXGate."""
+"""This module implements the SqrtXGate."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,7 +8,7 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
-class SXGate(ConstantGate, QubitGate):
+class SqrtXGate(ConstantGate, QubitGate):
     """The Sqrt(X) gate."""
 
     size = 1

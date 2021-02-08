@@ -28,5 +28,11 @@ class UnitaryMatrix():
         if not self.is_qubit_unitary():
             raise TypeError("Unitary does not represent a pure qubit system.")
         return int(np.log2(len(self.utry)))
+    
+    @staticmethod
+    def identity(dim: int) -> UnitaryMatrix:
+        if dim <= 0:
+            raise ValueError("Invalid dimension for identity matrix.")
+        return UnitaryMatrix( np.identity(dim))
 
 UnitaryLike: TypeAlias = Union[UnitaryMatrix, np.ndarray]
