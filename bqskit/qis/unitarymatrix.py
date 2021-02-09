@@ -12,7 +12,7 @@ import numpy as np
 class UnitaryMatrix():
     """The UnitaryMatrix Class."""
 
-    def __init__(self, utry: np.ndarray):
+    def __init__(self, utry: np.ndarray): # TODO: Make utry take ndarraylike
         """
         Unitary Matrix Constructor
         """
@@ -28,6 +28,10 @@ class UnitaryMatrix():
         if not self.is_qubit_unitary():
             raise TypeError("Unitary does not represent a pure qubit system.")
         return int(np.log2(len(self.utry)))
+    
+    def dagger(self) -> UnitaryMatrix:
+        """Returns the conjugate transpose of the unitary matrix."""
+        return UnitaryMatrix( self.utry.conj().T )
     
     @staticmethod
     def identity(dim: int) -> UnitaryMatrix:

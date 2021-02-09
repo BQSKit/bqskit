@@ -1,21 +1,22 @@
-"""This module implements the IBM U2 Gate."""
+"""This module implements the U2Gate."""
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 
-from bqskit.ir.qubitgate import QubitGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 from bqskit.utils.rotation import rot_z
 
 class U2Gate(QubitGate):
-    """IBM's U2 single qubit gate."""
+    """The U2 single qubit gate."""
 
     num_params = 2
     size = 1
+    qasm_name = "u2"
 
-    def get_unitary(self, params: Sequence[float] | None = None) -> UnitaryMatrix:
+    def get_unitary(self, params: Optional[Sequence[float]] = None) -> UnitaryMatrix:
         if params is None or len(params) != self.num_params:
             raise ValueError(f"{self.name} takes {self.num_params} parameters.")
 

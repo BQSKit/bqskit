@@ -21,3 +21,5 @@ class SqrtXGate(ConstantGate, QubitGate):
             ], dtype=np.complex128,
         ),
     )
+
+SXGate = SqrtXGate

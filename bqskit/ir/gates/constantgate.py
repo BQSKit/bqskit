@@ -32,13 +32,13 @@ class ConstantGate(Gate):
             % self.__class__.__name__,
         )
 
-    def get_grad(self, params: Optional[Sequence[float]] = None) -> list[float]:
-        """Returns the gradient for the gate as a list of floats."""
+    def get_grad(self, params: Optional[Sequence[float]] = None) -> np.ndarray:
+        """Returns the gradient for the gate, See Gate for more info."""
         if params is not None:
             raise ValueError('Constant gates do not take parameters.')
 
         return []
 
-    def optimize(self, env_matrix) -> None:
-        """Optimizes the gate with respect to an environment matrix."""
-        return
+    def optimize(self, env_matrix) -> list[float]:
+        """Returns optimal parameters with respect to an environment matrix."""
+        return []

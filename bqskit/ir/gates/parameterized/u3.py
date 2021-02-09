@@ -1,19 +1,21 @@
+"""This module implements the U3Gate."""
 from __future__ import annotations
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 
-from bqskit.ir.qubitgate import QubitGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
 class U3Gate(QubitGate):
-    """IBM's U3 single qubit gate."""
+    """The U3 single qubit gate."""
 
     num_params = 3
     size = 1
+    qasm_name = "u3"
 
-    def get_unitary(self, params: Sequence[float] | None = None) -> UnitaryMatrix:
+    def get_unitary(self, params: Optional[Sequence[float]] = None) -> UnitaryMatrix:
         if params is None or len(params) != self.num_params:
             raise ValueError(f"{self.name} takes {self.num_params} parameters.")
 
