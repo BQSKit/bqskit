@@ -20,7 +20,7 @@ class IdentityGate(ConstantGate):
         """
         self.radixes = radixes or [2]
         self.size = len(radixes)
-        self.utry = UnitaryMatrix(np.identity(2**np.prod(self.radixes)))
+        self.utry = UnitaryMatrix.identity(2**np.prod(self.radixes))
         self.qasm_name = "identity%d" % self.size
     
     def get_qasm_gate_def(self) -> str:

@@ -14,12 +14,10 @@ class SwapGate(ConstantGate, QubitGate):
     size = 2
     qasm_name = "swap"
     utry = UnitaryMatrix(
-        np.array(
-            [
-                [1, 0, 0, 0],
-                [0, 0, 1, 0],
-                [0, 1, 0, 0],
-                [0, 0, 0, 1],
-            ], dtype=np.complex128,
-        ),
+        [
+            [1, 0, 0, 0],
+            [0, 0, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1],
+        ]
     )

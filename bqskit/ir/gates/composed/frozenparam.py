@@ -41,3 +41,16 @@ class FrozenParameterGate(Gate):
     @property
     def name(self):
         return f'{self.__class__.__name__}({self.gate.name})'
+
+
+def with_frozen_params(self, frozen_params: dict[int, float]) -> FrozenParameterGate:
+    return FrozenParameterGate(self, frozen_params)
+
+def with_all_frozen_params(self, params: list[float]) -> FrozenParameterGate:
+    if self.get_num_params() != len(params):
+        raise ValueError("Invalid parameter list.")
+    return FrozenParameterGate(self, {i: x for i, x in enumerate(params)})
+
+Gate.with_frozen_params = with_frozen_params
+Gate.with_all_frozen_params = with_all_frozen_params
+

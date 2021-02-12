@@ -1,7 +1,7 @@
 """
-This module implements the Unitary base class.
+This module implements the Unitary abstract base class.
 
-Represents a unitary matrix that can be retrieved from get_unitary.
+Represents a UnitaryMatrix that can be retrieved from get_unitary.
 """
 from __future__ import annotations
 
@@ -19,9 +19,12 @@ class Unitary (abc.ABC):
     @abc.abstractmethod
     def get_unitary(self, params: Optional[Sequence[float]] = None) -> UnitaryMatrix:
         """
-        Abstract method that should return this unitary
-        as a numpy matrix.
+        Abstract method that should return this unitary as a UnitaryMatrix.
+
+        Args:
+            params (Optional[Sequence[float]]): Unconstrained real number
+                parameters for parameterized unitaries.
 
         Returns:
-            (np.ndarray): The unitary matrix.
+            (UnitaryMatrix): The unitary matrix.
         """

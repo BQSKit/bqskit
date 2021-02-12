@@ -14,10 +14,8 @@ class ZGate(ConstantGate, QubitGate):
     size = 1
     qasm_name = "z"
     utry = UnitaryMatrix(
-        np.array(
-            [
-                [1, 0],
-                [0, -1],
-            ], dtype=np.complex128,
-        ),
+        [
+            [1, 0],
+            [0, -1],
+        ]
     )

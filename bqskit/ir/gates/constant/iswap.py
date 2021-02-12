@@ -14,14 +14,12 @@ class ISwapGate(ConstantGate, QubitGate):
     size = 2
     qasm_name = "iswap"
     utry = UnitaryMatrix(
-        np.array(
-            [
-                [1,0,0,0],
-                [0,0,1j,0],
-                [0,1j,0,0],
-                [0,0,0,1],
-            ], dtype=np.complex128,
-        ),
+        [
+            [1,0,0,0],
+            [0,0,1j,0],
+            [0,1j,0,0],
+            [0,0,0,1],
+        ]
     )
 
     def get_qasm_gate_def(self) -> str:

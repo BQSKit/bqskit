@@ -4,8 +4,10 @@ This module implements the Gate base class.
 A gate is a potentially-parameterized, immutable, unitary operation
 that can be applied to a circuit.
 """
+
 from __future__ import annotations
 import abc
+from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from typing import Optional, Sequence
 
 import numpy as np
@@ -95,7 +97,7 @@ class Gate(Unitary, CachedClass):
         """
     
     @abc.abstractmethod
-    def optimize(self, env_matrix) -> list[float]:
+    def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
     
     def is_qubit_gate(self) -> bool:
@@ -105,6 +107,14 @@ class Gate(Unitary, CachedClass):
     def is_qutrit_gate(self) -> bool:
         """Returns true if this gate only acts on qutrits."""
         return all( [ radix == 3 for radix in self.get_radixes() ] )
+    
+    def is_parameterized(self) -> bool:
+        """Returns true if this gate is a parameterized gate."""
+        return self.get_num_params() != 0
+    
+    def is_constant(self) -> bool:
+        """Returns true if this gate doesn't change during optimization."""
+        return not self.is_parameterized()
 
     def __repr__(self) -> str:
         return self.name

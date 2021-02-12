@@ -14,12 +14,10 @@ class CHGate(ConstantGate, QubitGate):
     size = 2
     qasm_name = "ch"
     utry = UnitaryMatrix(
-        np.array(
-            [
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, np.sqrt(2)/2, np.sqrt(2)/2],
-                [0, 0, np.sqrt(2)/2, -np.sqrt(2)/2],
-            ], dtype=np.complex128,
-        ),
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, np.sqrt(2)/2, np.sqrt(2)/2],
+            [0, 0, np.sqrt(2)/2, -np.sqrt(2)/2],
+        ]
     )

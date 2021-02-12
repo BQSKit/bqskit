@@ -6,6 +6,8 @@ from collections.abc import Iterable
 from collections.abc import Sequence
 from typing import Any
 
+import numpy as np
+
 
 _logger = logging.getLogger(__name__)
 
@@ -101,4 +103,91 @@ def is_valid_radixes(radixes: Sequence[int], num_qudits: int | None = None) -> b
         _logger.debug('Invalid number of radixes.')
         return False
 
+    return True
+
+
+def is_matrix ( M: np.ndarray ) -> bool:
+    """Checks if M is a matrix."""
+
+    if not isinstance( M, np.ndarray ): 
+        _logger.debug( "M is not an numpy array." )
+        return False
+
+    if len( M.shape ) != 2:
+        _logger.debug( "M is not an 2-dimensional array." )
+        return False
+    
+    if M.dtype.kind not in "biufc":
+        _logger.debug( "M is not a numeric array." )
+        return False
+        
+    return True
+
+
+def is_square_matrix ( M: np.ndarray ) -> bool:
+    """Checks if M is a square matrix."""
+
+    if not is_matrix( M ):
+        return False
+
+    if M.shape[0] != M.shape[1]:
+        return False
+
+    return True
+
+
+def is_unitary ( U: np.ndarray, tol: float = 1e-8 ) -> bool:
+    """Checks if U is a unitary matrix."""
+
+    if not is_square_matrix( U ):
+        return False
+
+    X = U @ U.conj().T
+    Y = U.conj().T @ U
+    I = np.identity( X.shape[0] )
+
+    if not np.allclose( X, I, rtol = 0, atol = tol ):
+        if _logger.isEnabledFor( logging.DEBUG ):
+            norm = np.linalg.norm( X - I )
+            _logger.debug( "Failed unitary condition, ||UU^d - I|| = %e" % norm )
+        return False
+    
+    if not np.allclose( Y, I, rtol = 0, atol = tol ):
+        if _logger.isEnabledFor( logging.DEBUG ):
+            norm = np.linalg.norm( Y - I )
+            _logger.debug( "Failed unitary condition, ||U^dU - I|| = %e" % norm )
+        return False
+    
+    return True
+
+
+def is_hermitian ( H: np.ndarray, tol: float = 1e-8 ) -> bool:
+    """Checks if H is a hermitian matrix."""
+
+    if not is_square_matrix( H ):
+        return False
+
+    if not np.allclose( H, H.conj().T, rtol = 0, atol = tol ):
+        if _logger.isEnabledFor( logging.DEBUG ):
+            norm = np.linalg.norm( H - H.conj().T )
+            _logger.debug( "Failed hermitian condition, ||H - H^d|| = %e"
+                          % norm )
+        return False
+    
+    return True
+
+
+def is_skew_hermitian ( H: np.ndarray, tol: float = 1e-8 ) -> bool:
+    """Checks if H is a skew hermitian matrix."""
+
+    if not is_square_matrix( H ):
+        return False
+
+    if not np.allclose( -H, H.conj().T, rtol = 0, atol = tol ):
+        if _logger.isEnabledFor( logging.DEBUG ):
+            norm = np.linalg.norm( -H - H.conj().T )
+            _logger.debug( "Failed skew hermitian condition, ||H - H^d|| = %e"
+                          % norm )
+        return False
+    
     return True

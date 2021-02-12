@@ -4,19 +4,23 @@ This module implements the UnitaryMatrix class.
 This is a concrete unitary matrix that can be operated on.
 """
 from __future__ import annotations
+from bqskit.utils.typing import is_square_matrix, is_unitary
 from typing import Union
 
 import numpy as np
+import scipy as sp
 
 
 class UnitaryMatrix():
     """The UnitaryMatrix Class."""
 
-    def __init__(self, utry: np.ndarray): # TODO: Make utry take ndarraylike
-        """
-        Unitary Matrix Constructor
-        """
-        # TODO: Check is_unitary
+    def __init__(self, utry: np.typing.ArrayLike) -> None:
+        """Constructs a UnitaryMatrix with the supplied unitary matrix."""
+        utry = np.array(utry, dtype=np.complex128)
+
+        if not is_unitary(utry):
+            raise TypeError( "Expected unitary matrix." )
+
         self.utry = utry
     
     def is_qubit_unitary(self) -> bool:
@@ -35,8 +39,33 @@ class UnitaryMatrix():
     
     @staticmethod
     def identity(dim: int) -> UnitaryMatrix:
+        """Returns an identity UnitaryMatrix."""
         if dim <= 0:
             raise ValueError("Invalid dimension for identity matrix.")
         return UnitaryMatrix( np.identity(dim))
+    
+    @staticmethod
+    def closest_to(M: np.ndarray) -> UnitaryMatrix:
+        """
+        Calculate and return the closest unitary to a given matrix.
+
+        Calculate the unitary matrix U that is closest with respect to the
+        operator norm distance to the general matrix M.
+
+        D.M.Reich. “Characterisation and Identification of Unitary Dynamics
+        Maps in Terms of Their Action on Density Matrices”
+
+        Args:
+            M (np.ndarray): The matrix input.
+        Returns:
+            (np.ndarray): The unitary matrix closest to M.
+        """
+
+        if not is_square_matrix(M):
+            raise TypeError("Expected square matrix.")
+
+        V, _, Wh = sp.linalg.svd(M)
+        return V @ Wh
+
 
 UnitaryLike: TypeAlias = Union[UnitaryMatrix, np.ndarray]

@@ -14,10 +14,8 @@ class HGate(ConstantGate, QubitGate):
     size = 1
     qasm_name = "h"
     utry = UnitaryMatrix(
-        np.array(
-            [
-                [np.sqrt(2)/2, np.sqrt(2)/2],
-                [np.sqrt(2)/2, -np.sqrt(2)/2],
-            ], dtype=np.complex128,
-        ),
+        [
+            [np.sqrt(2)/2, np.sqrt(2)/2],
+            [np.sqrt(2)/2, -np.sqrt(2)/2],
+        ]
     )
