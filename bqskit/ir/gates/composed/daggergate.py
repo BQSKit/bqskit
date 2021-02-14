@@ -32,10 +32,10 @@ class DaggerGate(Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))
 
         self.gate = gate
-        self.name = 'Dagger(%s)' % gate.name
-        self.num_params = gate.num_params
-        self.size = gate.size
-        self.radixes = gate.radixes
+        self.name = 'Dagger(%s)' % gate.get_name()
+        self.num_params = gate.get_num_params()
+        self.size = gate.get_size()
+        self.radixes = gate.get_radixes()
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0:

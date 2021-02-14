@@ -169,4 +169,4 @@ class Gate(Unitary, CachedClass):
     with_all_frozen_params: Callable[[Gate, list[float]], FrozenParameterGate]
 
     def __repr__(self) -> str:
-        return self.name
+        return self.get_name()
