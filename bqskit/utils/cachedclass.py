@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import Hashable
 
 
 _logger = logging.getLogger(__name__)
@@ -29,11 +30,23 @@ class CachedClass:
     _instances: dict[Any, CachedClass] = {}
 
     def __new__(cls, *args: Any, **kwargs: Any) -> CachedClass:
-        if cls._instances.get((cls, args, tuple(kwargs.items())), None) is None:
+        hash_a = all(isinstance(arg, Hashable) for arg in args)
+        hash_kw = all(isinstance(arg, Hashable) for arg in kwargs.values())
+
+        if not hash_a or not hash_kw:
+            return super().__new__(cls)
+
+        if cls._instances.get(
+                (cls, args, tuple(kwargs.items())), None,
+        ) is None:
             _logger.debug(
-                ( 'Creating cached instance for class: %s,'
-                  ' with args %s, and kwargs %s' )
-                % (cls.__name__, args, kwargs)
+                (
+                    'Creating cached instance for class: %s,'
+                    ' with args %s, and kwargs %s'
+                )
+                % (cls.__name__, args, kwargs),
             )
-            cls._instances[(cls, args, tuple(kwargs.items()))] = super().__new__(cls)
+            cls._instances[
+                (cls, args, tuple(kwargs.items()))
+            ] = super().__new__(cls)
         return cls._instances[(cls, args, tuple(kwargs.items()))]

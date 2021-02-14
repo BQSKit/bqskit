@@ -1,6 +1,7 @@
 """This module implements the U3Gate."""
 from __future__ import annotations
-from typing import Optional, Sequence
+
+from typing import Sequence
 
 import numpy as np
 
@@ -11,21 +12,52 @@ from bqskit.qis.unitarymatrix import UnitaryMatrix
 class U3Gate(QubitGate):
     """The U3 single qubit gate."""
 
-    num_params = 3
     size = 1
-    qasm_name = "u3"
+    num_params = 3
+    qasm_name = 'u3'
 
-    def get_unitary(self, params: Optional[Sequence[float]] = None) -> UnitaryMatrix:
-        if params is None or len(params) != self.num_params:
-            raise ValueError(f"{self.name} takes {self.num_params} parameters.")
+    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        """Returns the unitary for this gate, see Unitary for more info."""
+        self.check_parameters(params)
 
-        theta = params[0]
-        phi = params[1]
-        lamda = params[2]
+        cos = np.cos(params[0] / 2)
+        sin = np.sin(params[0] / 2)
+        eip = np.exp(1j * params[1])
+        eil = np.exp(1j * params[2])
 
-        return UnitaryMatrix(np.array(
+        return UnitaryMatrix(
             [
-                [np.cos(theta/2), -np.exp(1j*lamda)*np.sin(theta)],
-                [np.exp(1j*phi)*np.sin(theta/2), np.exp(1j*(lamda + phi))*np.cos(theta)]
+                [cos, -eil * sin],
+                [eip * sin, eip * eil * cos],
             ],
-        dtype=np.complex128))
+        )
+
+    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        """Returns the gradient for this gate, see Gate for more info."""
+        self.check_parameters(params)
+
+        cos = np.cos(params[0] / 2)
+        sin = np.sin(params[0] / 2)
+        eip = np.exp(1j * params[0])
+        eil = np.exp(1j * params[1])
+        deip = 1j * np.exp(1j * params[0])
+        deil = 1j * np.exp(1j * params[1])
+
+        return np.array(
+            [
+                [  # wrt params[0]
+                    [-sin, -eil * cos],
+                    [eip * cos, -eip * eil * cos],
+                ],
+
+                [  # wrt params[1]
+                    [0, 0],
+                    [deip * sin, deip * eil * cos],
+                ],
+
+                [  # wrt params[2]
+                    [0, -deil * sin],
+                    [0, eip * deil * cos],
+                ],
+            ], dtype=np.complex128,
+        )

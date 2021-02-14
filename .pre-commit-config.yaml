@@ -22,15 +22,21 @@ repos:
     # TODO: enable once we make a release
     #-   id: no-commit-to-branch
     #    args: [--branch, master]
+-   repo: https://github.com/myint/docformatter
+    rev: v1.3.1
+    hooks:
+    -   id: docformatter
+        args: [--in-place, --pre-summary-newline]
 -   repo: https://github.com/pre-commit/mirrors-autopep8
     rev: v1.5.4
     hooks:
     -   id: autopep8
+        args: [--in-place, -a]
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.9.0
     hooks:
     -   id: pyupgrade
-        args: [--py36-plus, --keep-runtime-typing]
+        args: [--py36-plus, --keep-runtime-typing, --keep-percent-format]
 -   repo: https://github.com/asottile/reorder_python_imports
     rev: v2.3.6
     hooks:
@@ -56,8 +62,10 @@ repos:
     hooks:
     -   id: mypy
         additional_dependencies: [numpy>=1.20]
+        exclude: ".*test.*"
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
     -   id: flake8
+        args: ["--ignore=E741,E241,E226,F405,F403,W503"]
         additional_dependencies: [flake8-typing-imports==1.7.0]

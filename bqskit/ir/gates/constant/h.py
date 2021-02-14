@@ -12,10 +12,10 @@ class HGate(ConstantGate, QubitGate):
     """The Hadamard gate."""
 
     size = 1
-    qasm_name = "h"
+    qasm_name = 'h'
     utry = UnitaryMatrix(
         [
-            [np.sqrt(2)/2, np.sqrt(2)/2],
-            [np.sqrt(2)/2, -np.sqrt(2)/2],
-        ]
+            [np.sqrt(2) / 2, np.sqrt(2) / 2],
+            [np.sqrt(2) / 2, -np.sqrt(2) / 2],
+        ],
     )

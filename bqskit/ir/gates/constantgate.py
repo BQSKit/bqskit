@@ -3,10 +3,9 @@ This module implements the ConstantGate base class.
 
 A ConstantGate is one that does not change during circuit optimization.
 """
-
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 import numpy as np
 
@@ -20,9 +19,9 @@ class ConstantGate(Gate):
     num_params = 0
     utry: UnitaryMatrix
 
-    def get_unitary(self, params: Sequence[float] | None = None) -> UnitaryMatrix:
-        if params is not None:
-            raise ValueError('Constant gates do not take parameters.')
+    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        """Returns the unitary for this gate, see Unitary for more info."""
+        self.check_parameters(params)
 
         if hasattr(self, 'utry'):
             return self.utry
@@ -32,13 +31,11 @@ class ConstantGate(Gate):
             % self.__class__.__name__,
         )
 
-    def get_grad(self, params: Optional[Sequence[float]] = None) -> np.ndarray:
-        """Returns the gradient for the gate, See Gate for more info."""
-        if params is not None:
-            raise ValueError('Constant gates do not take parameters.')
+    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        """Returns the gradient for this gate, See Gate for more info."""
+        self.check_parameters(params)
+        return np.array([])
 
-        return []
-
-    def optimize(self, env_matrix) -> list[float]:
+    def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
         return []

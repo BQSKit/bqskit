@@ -12,12 +12,12 @@ class XXGate(ConstantGate, QubitGate):
     """The Ising XX coupling gate."""
 
     size = 1
-    qasm_name = "rxx(pi/2)"
+    qasm_name = 'rxx(pi/2)'
     utry = UnitaryMatrix(
         [
-            [1,0,0,-1j],
-            [0,1,-1j,0],
-            [0,-1j,1,0],
-            [-1j,0,0,1],
-        ]
+            [np.sqrt(2) / 2, 0, 0, -1j * np.sqrt(2) / 2],
+            [0, np.sqrt(2) / 2, -1j * np.sqrt(2) / 2, 0],
+            [0, -1j * np.sqrt(2) / 2, np.sqrt(2) / 2, 0],
+            [-1j * np.sqrt(2) / 2, 0, 0, np.sqrt(2) / 2],
+        ],
     )

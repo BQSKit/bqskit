@@ -2,10 +2,20 @@ from __future__ import annotations
 
 import logging
 
-from bqskit.compiler import CompilationTask
-from bqskit.compiler import Compiler
-from bqskit.compiler import TaskStatus
-from bqskit.ir import Circuit
+from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.task import TaskResult
+from bqskit.compiler.task import TaskStatus
+from bqskit.ir.circuit import Circuit
+
+__all__ = [
+    'CompilationTask',
+    'Compiler',
+    'TaskStatus',
+    'TaskResult',
+    'Circuit',
+]
+
 # Initialize Logging
 _logger = logging.getLogger('bqskit')
 _logger.setLevel(logging.CRITICAL)

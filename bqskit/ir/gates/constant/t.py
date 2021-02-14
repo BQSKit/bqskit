@@ -12,10 +12,10 @@ class TGate(ConstantGate, QubitGate):
     """The T gate."""
 
     size = 1
-    qasm_name = "t"
+    qasm_name = 't'
     utry = UnitaryMatrix(
         [
             [1, 0],
             [0, np.exp(1j * np.pi / 4)],
-        ]
+        ],
     )

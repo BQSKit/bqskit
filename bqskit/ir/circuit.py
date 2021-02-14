@@ -6,7 +6,6 @@ A circuit represents a quantum program composed of gate objects.
 from __future__ import annotations
 
 import logging
-from typing import Iterable
 from typing import Iterator
 from typing import Sequence
 
@@ -33,9 +32,9 @@ class Circuit(Unitary):
         qudit_radixes: Sequence[int] | None = None,
     ) -> None:
         """
-        Circuit constructor. Builds an empty circuit with
-        the specified number of qudits. By default, all qudits
-        are qubits, but this can be changed with qudit_radixes.
+        Circuit constructor. Builds an empty circuit with the specified number
+        of qudits. By default, all qudits are qubits, but this can be changed
+        with qudit_radixes.
 
         Args:
             num_qudits (int): The number of qudits in this circuit.
@@ -101,9 +100,9 @@ class Circuit(Unitary):
 
     def get_gate(self, time_step: int, qudit_index: int) -> Gate | None:
         """
-        Retrieves the gate at the specified position from the circuit.
-        If a gate exists at the position, this reduces to:
-            self[time_step, qudit_index].gate
+        Retrieves the gate at the specified position from the circuit. If a
+        gate exists at the position, this reduces to: self[time_step,
+        qudit_index].gate.
 
         Args:
             time_step (int): The time_step coordinate.
@@ -138,18 +137,23 @@ class Circuit(Unitary):
 
         return cell.gate
 
-    def append_gate(self, gate: Gate, location: Iterable[int], params: Sequence[float] | None = None) -> None:
+    def append_gate(
+        self,
+        gate: Gate,
+        location: Sequence[int],
+        params: Sequence[float] = [],
+    ) -> None:
         """
-        Append the gate object to the circuit on the qudits described
-        by location. Optionally, you can specify parameters for the gate.
-        By default, the params are zeroed.
+        Append the gate object to the circuit on the qudits described by
+        location. Optionally, you can specify parameters for the gate. By
+        default, the params are zeroed.
 
         Args:
             gate (Gate): The gate to append.
 
-            location (Iterable[int]): Apply the gate to this set of qudits.
+            location (Sequence[int]): Apply the gate to this set of qudits.
 
-            params (Optional[Sequence[float]]): The gate's parameters.
+            params (Sequence[float]): The gate's parameters.
 
         Examples:
             >>> circ = Circuit(1)
@@ -190,23 +194,25 @@ class Circuit(Unitary):
         for qudit_index in location:
             self._circuit[time_step][qudit_index] = cell
 
-    def insert_gate(self, gate: Gate, time_step: int, location: Iterable[int], params: Sequence[float] | None = None) -> None:
+    def insert_gate(
+        self, gate: Gate, time_step: int,
+        location: Sequence[int], params: Sequence[float] = [],
+    ) -> None:
         """
-        Insert the gate object in the circuit on the qudits described
-        by location at the time_step specified. Optionally, you can
-        specify parameters for the gate. By default, the params are zeroed.
-        After this, you can expect:
-            all( [ self.get_gate(time_step, idx) == gate
-                   for idx in location ] )
+        Insert the gate object in the circuit on the qudits described by
+        location at the time_step specified. Optionally, you can specify
+        parameters for the gate. By default, the params are zeroed. After this,
+        you can expect: all( [ self.get_gate(time_step, idx) == gate for idx in
+        location ] )
 
         Args:
             gate (Gate): The gate to insert.
 
             time_step (int): The time_step to insert the gate.
 
-            location (Iterable[int]): Apply the gate to this set of qudits.
+            location (Sequence[int]): Apply the gate to this set of qudits.
 
-            params (Optional[Sequence[float]]): The gate's parameters.
+            params (Sequence[float]): The gate's parameters.
 
         Raises:
             IndexError: If the specified time_step doesn't exist.
@@ -266,8 +272,8 @@ class Circuit(Unitary):
     # TODO: Remove Empty Timesteps
     def remove_gate(self, time_step: int, qudit_index: int) -> None:
         """
-        Removes the gate at the specified position if it is occupied,
-            otherwise does nothing.
+        Removes the gate at the specified position if it is occupied, otherwise
+        does nothing.
 
         Args:
             time_step (int): The time_step coordinate.
@@ -292,20 +298,21 @@ class Circuit(Unitary):
             return
 
         for gate_qudit_index in cell.location:
-            self._circuit[time_step, gate_qudit_index] = None
+            self._circuit[time_step][gate_qudit_index] = None
 
         del cell
 
-    def get_unitary(self, params: list[float] | None = None) -> UnitaryMatrix:
+    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         assert(params is None or len(params) == self.num_params)
+        return UnitaryMatrix.identity(2)  # TODO
 
-    def find_available_time_step(self, location: Iterable[int]) -> int:
+    def find_available_time_step(self, location: Sequence[int]) -> int:
         """
-        Finds the first available time step where all qudits described
-        in location are free. Returns -1 if no suitable time_step found.
+        Finds the first available time step where all qudits described in
+        location are free. Returns -1 if no suitable time_step found.
 
         Args:
-            localtion (Iterable[int]): Find a time_step for this location.
+            localtion (Sequence[int]): Find a time_step for this location.
 
         Examples:
             >>> circ = Circuit(2)
@@ -330,7 +337,11 @@ class Circuit(Unitary):
 
         return -1
 
-    def is_time_step_available(self, time_step: int, location: Iterable[int]) -> bool:
+    def is_time_step_available(
+        self,
+        time_step: int,
+        location: Sequence[int],
+    ) -> bool:
         """Checks if the time_step has all qudits in location available."""
         if not is_valid_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
@@ -366,30 +377,37 @@ class Circuit(Unitary):
             self.circuit = circuit
             self.time_step = 0
             self.qudit_index = 0
-            self.max_time_step = len( circuit )
-            self.max_qudit_index = 0 if self.max_time_step == 0 else len( circuit[0] )
-            self.qudits_to_skip = []
-        
+            self.max_time_step = len(circuit)
+            self.max_qudit_index = 0 if self.max_time_step == 0 else len(
+                circuit[0],
+            )
+            self.qudits_to_skip: list[int] = []
+
         def increment_iter(self) -> None:
             self.qudit_index += 1
+            while self.qudit_index in self.qudits_to_skip:
+                self.qudit_index += 1
             if self.qudit_index >= self.max_qudit_index:
                 self.qudit_index = 0
                 self.time_step += 1
+                self.qudits_to_skip = []
             if self.time_step >= self.max_time_step:
                 raise StopIteration
-        
+
         def dereference(self) -> CircuitCell | None:
             return self.circuit[self.time_step][self.qudit_index]
-        
+
         def __iter__(self) -> Iterator[CircuitCell]:
             return self
-        
+
         def __next__(self) -> CircuitCell:
             while self.dereference() is None:
                 self.increment_iter()
-            return self.dereference()
-            
-    def __iter__(self) -> self.CircuitIterator:
+            cell: CircuitCell = self.dereference()  # type: ignore
+            self.qudits_to_skip += cell.location
+            return cell
+
+    def __iter__(self) -> Circuit.CircuitIterator:
         return self.CircuitIterator(self._circuit)
 
     def __str__(self) -> str:

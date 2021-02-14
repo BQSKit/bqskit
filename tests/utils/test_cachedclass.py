@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 from bqskit.utils.cachedclass import CachedClass
+
 
 class Arg(CachedClass):
     def __init__(self, arg) -> None:
         self.arg = arg
-    
+
+
 class Kwarg(CachedClass):
-    def __init__(self, default = 4) -> None:
+    def __init__(self, default=4) -> None:
         self.arg = default
+
 
 def test_cachedclass_arg():
     a = Arg(2)
@@ -15,6 +20,7 @@ def test_cachedclass_arg():
     c = Arg(3)
     assert a is b
     assert a is not c
+
 
 def test_cachedclass_kwarg():
     a = Kwarg(default=1)

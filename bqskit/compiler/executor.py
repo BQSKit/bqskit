@@ -22,7 +22,7 @@ class Executor:
         Creates a executor ready to execute the specified task.
         """
         self.task_id = task.task_id
-        self.circuit = copy.deepcopy( task.input_circuit )
+        self.circuit = copy.deepcopy(task.input_circuit)
         self.passes = task.passes
         self.data: dict[str, Any] = {}
         self.done = False

@@ -1,23 +1,58 @@
 """This module implements the U1Gate."""
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Sequence
 
 import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
-from bqskit.utils.rotation import rot_z
+
 
 class U1Gate(QubitGate):
     """The U1 single qubit gate."""
 
-    num_params = 1
     size = 1
-    qasm_name = "u1"
+    num_params = 1
+    qasm_name = 'u1'
 
-    def get_unitary(self, params: Optional[Sequence[float]] = None) -> UnitaryMatrix:
-        if params is None or len(params) != self.num_params:
-            raise ValueError(f"{self.name} takes {self.num_params} parameters.")
+    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        """Returns the unitary for this gate, see Unitary for more info."""
+        self.check_parameters(params)
 
-        return UnitaryMatrix(np.exp(1j*params[0]/2) * rot_z(params[0]))
+        exp = np.exp(1j * params[0])
+
+        return UnitaryMatrix(
+            [
+                [1, 0],
+                [0, exp],
+            ],
+        )
+
+    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        """Returns the gradient for this gate, see Gate for more info."""
+        self.check_parameters(params)
+
+        dexp = 1j * np.exp(1j * params[0])
+
+        return np.array(
+            [
+                [
+                    [0, 0],
+                    [0, dexp],
+                ],
+            ], dtype=np.complex128,
+        )
+
+    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+        """Returns optimal parameters with respect to an environment matrix."""
+        a = np.real(env_matrix[1, 1])
+        b = np.imag(env_matrix[1, 1])
+        arctan = np.arctan(b / a)
+
+        if a < 0 and b > 0:
+            arctan += np.pi
+        elif a < 0 and b < 0:
+            arctan -= np.pi
+
+        return [-arctan]

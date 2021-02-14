@@ -28,10 +28,10 @@ class WorkQueue:
 
     def __init__(self) -> None:
         """
-        WorkQueue Constructor.
-        Creates an empty queue and starts a worker thread. CompilationTasks
-        can be enqueued as work in the queue. The worker thread gets the
-        tasks from the queue in FIFO order and executes them.
+        WorkQueue Constructor. Creates an empty queue and starts a worker
+        thread. CompilationTasks can be enqueued as work in the queue. The
+        worker thread gets the tasks from the queue in FIFO order and executes
+        them.
 
         Examples:
             >>> wq = WorkQueue()
@@ -48,7 +48,7 @@ class WorkQueue:
         self.tasks: dict[uuid.UUID, dict[str, Any]] = {}
 
     def do_work(self) -> None:
-        """Worker thread loop: gets work from queue and executes it"""
+        """Worker thread loop: gets work from queue and executes it."""
         _logger.info('Worker thread started.')
         while self.is_running:
 

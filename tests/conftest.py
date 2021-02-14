@@ -1,47 +1,165 @@
 """
-BQSKit Tests Root conftest.py
+BQSKit Tests Root conftest.py.
 
-This module defines several fixtures for use in this test suite.
+This module defines several fixtures for use in this test suite. There
+are three main types of fixtures defined here, unitaries, gates, and
+circuits.
 """
+from __future__ import annotations
 
-from bqskit.qis.unitarymatrix import UnitaryMatrix
-import pytest
 import numpy as np
+import pytest
+from scipy.stats import unitary_group
 
-from bqskit.ir.gates import *
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates import *
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gates.qutritgate import QutritGate
+from bqskit.qis.unitarymatrix import UnitaryMatrix
 
-from inspect import signature
+# Unitaries
+# Random and invalid unitaries dynamically generated in hooks below
+TOFFOLI = np.asarray(
+    [
+        [
+            1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+        ],
+        [
+            0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+        ],
+        [
+            0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+        ],
+        [
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+        ],
+        [
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+        ],
+        [
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j,
+        ],
+        [
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j,
+        ],
+        [
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j,
+        ],
+    ],
+)
 
-BQSKIT_GATES = [ CNOTGate(),
-                 CZGate(),
-                 ISWAPGate(),
-                 RXGate(),
-                 RYGate(),
-                 RZGate(),
-                 SQRTCNOTGate(),
-                 U1Gate(),
-                 U2Gate(),
-                 U3Gate(),
-                 XGate(),
-                 XXGate(),
-                 YGate(),
-                 ZGate(),
-                 IdentityGate(1),
-                 IdentityGate(2),
-                 IdentityGate(3),
-                 IdentityGate(4),
-                 VariableUnitaryGate(),
-                 SemiFixedParameterGate(),
-                 FixedUnitaryGate(), ]
 
-@pytest.fixture(params=BQSKIT_GATES, ids = lambda gate: repr(gate))
+@pytest.fixture
+def toffoli_unitary() -> UnitaryMatrix:
+    return UnitaryMatrix(TOFFOLI)
+
+
+@pytest.fixture
+def toffoli_unitary_np() -> UnitaryMatrix:
+    return TOFFOLI
+
+
+# Gates
+BQSKIT_GATES = [
+    CHGate(),
+    CPIGate(),
+    CSUMGate(),
+    CXGate(),
+    CNOTGate(),
+    CYGate(),
+    CZGate(),
+    HGate(),
+    IdentityGate(1),
+    IdentityGate(2),
+    IdentityGate(3),
+    IdentityGate(4),
+    ISwapGate(),
+    # PermutationGate(),  # TODO
+    SGate(),
+    SdgGate(),
+    SqrtCNOTGate(),
+    SwapGate(),
+    SXGate(),
+    SqrtXGate(),
+    TGate(),
+    TdgGate(),
+    ConstantUnitaryGate(TOFFOLI),  # TODO
+    XGate(),
+    XXGate(),
+    YGate(),
+    ZGate(),
+    # PauliGate(),  # TODO
+    RXGate(),
+    RYGate(),
+    RZGate(),
+    U1Gate(),
+    U2Gate(),
+    U3Gate(),
+    U8Gate(),
+    DaggerGate(TGate()),
+    DaggerGate(CZGate()),
+    DaggerGate(U1Gate()),
+    DaggerGate(U8Gate()),
+    FrozenParameterGate(U1Gate(), {0: np.pi}),
+    FrozenParameterGate(U3Gate(), {0: np.pi}),
+    FrozenParameterGate(U3Gate(), {0: np.pi / 2, 1: np.pi / 2, 2: np.pi / 2}),
+    FrozenParameterGate(U8Gate(), {0: np.pi}),
+    FrozenParameterGate(U8Gate(), {0: np.pi / 2, 1: np.pi / 2, 2: np.pi / 2}),
+    # VariableUnitaryGate(TOFFOLI), # TODO
+    # CircuitGate(),  # TODO
+    # ControlledGate(),  # TODO
+]
+
+CONSTANT_GATES = [g for g in BQSKIT_GATES if isinstance(g, ConstantGate)]
+QUBIT_GATES = [g for g in BQSKIT_GATES if isinstance(g, QubitGate)]
+QUTRIT_GATES = [g for g in BQSKIT_GATES if isinstance(g, QutritGate)]
+PARAMETERIZED_GATES = [
+    g for g in BQSKIT_GATES
+    if not isinstance(g, ConstantGate)
+]
+
+
+@pytest.fixture(params=BQSKIT_GATES, ids=lambda gate: repr(gate))
 def gate(request) -> Gate:
     """Provides all of BQSKIT_GATES as a gate fixture."""
     return request.param
 
 
+@pytest.fixture(params=CONSTANT_GATES, ids=lambda gate: repr(gate))
+def constant_gate(request) -> Gate:
+    """Provides all of CONSTANT_GATES as a gate fixture."""
+    return request.param
+
+
+@pytest.fixture(params=QUBIT_GATES, ids=lambda gate: repr(gate))
+def qubit_gate(request) -> Gate:
+    """Provides all of QUBIT_GATES as a gate fixture."""
+    return request.param
+
+
+@pytest.fixture(params=QUTRIT_GATES, ids=lambda gate: repr(gate))
+def qutrit_gate(request) -> Gate:
+    """Provides all of QUTRIT_GATES as a gate fixture."""
+    return request.param
+
+
+@pytest.fixture(params=PARAMETERIZED_GATES, ids=lambda gate: repr(gate))
+def parameterized_gate(request) -> Gate:
+    """Provides all of PARAMETERIZED_GATES as a gate fixture."""
+    return request.param
+
+
+# Circuits
 @pytest.fixture
 def simple_circuit() -> Circuit:
     """Provides a simple circuit fixture."""
@@ -52,6 +170,7 @@ def simple_circuit() -> Circuit:
     circuit.append_gate(CNOTGate(), [1, 0])
     return circuit
 
+
 @pytest.fixture
 def swap_circuit() -> Circuit:
     """Provides a swap implemented with 3 cnots as a circuit fixture."""
@@ -61,17 +180,59 @@ def swap_circuit() -> Circuit:
     circuit.append_gate(CNOTGate(), [0, 1])
     return circuit
 
-TOFFOLI = np.asarray(
-            [[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
-             [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
-             [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
-             [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
-             [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
-             [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
-             [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
-             [0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]] )
+# Dynamically generated fixtures
 
-@pytest.fixture
-def toffoli_unitary() -> UnitaryMatrix:
-    return UnitaryMatrix( TOFFOLI )
 
+def pytest_generate_tests(metafunc) -> None:
+    """
+    Pytest Hook called when collecting test functions. Inject parameterized
+    fixtures programmatically here.
+
+    Used to generate random_unitary fixtures dynamically.
+    If random_unitary is in the fixture name, this will parameterize
+    that fixture automatically. Optional numbers seperated by underscores
+    will provide dimension choices; additionally if 'np' (seperated by
+    underscores) is in the fixture name, then the fixture will be provide
+    ndarrays instead of UnitaryMatrix objects.
+
+    Also used to generate invalid_unitary fixtures dynamically.
+    If invalid_unitary is in the fixture name, this will parameterize
+    that fixture automatically. Optional numbers seperated by underscores
+    will provide dimension choices. This fixture will always return
+    a numpy ndarray.
+
+    Examples:
+        def test_something(random_unitary_2):
+            ... # random_unitary_2 = 2x2 UnitaryMatrix
+        def test_something(random_unitary_np_2_3_4)
+            ... # random_unitary_np_2_3_4 = 2x2, 3x3, or 4x4 unitary ndarray
+        def test_something(random_unitary):
+            ... # random_unitary = NxN UnitaryMatrix, where N in range(2,10)
+
+        def test_something(invalid_unitary_2):
+            ... # invalid_unitary_2 = 2x2 ndarray that is not a unitary
+    """
+    for fixturename in metafunc.fixturenames:
+        if 'random_unitary' in fixturename:
+            np.random.seed(21211411)  # Set random seed for reproducibility
+            tokens = fixturename.split['_']
+            numpy_flag = 'np' in tokens
+            dimensions = [int(token) for token in tokens if token.isdigit()]
+            if len(dimensions) == 0:
+                dimensions = list(range(2, 10))
+            dimensions = np.random.choice(dimensions, 20)
+            fixture = [unitary_group.rvs(dimensions[i]) for i in range(20)]
+            if not numpy_flag:
+                fixture = [UnitaryMatrix(m) for m in fixture]
+            metafunc.parameterize(fixturename, fixture)
+
+        if 'invalid_unitary' in fixturename:
+            np.random.seed(21211411)  # Set random seed for reproducibility
+            tokens = fixturename.split['_']
+            dimensions = [int(token) for token in tokens if token.isdigit()]
+            if len(dimensions) == 0:
+                dimensions = list(range(2, 10))
+            dimensions = np.random.choice(dimensions, 20)
+            fixture = [unitary_group.rvs(dimensions[i]) for i in range(20)]
+            fixture = [m + np.identity(len(m)) for m in fixture]
+            metafunc.parameterize(fixturename, fixture)

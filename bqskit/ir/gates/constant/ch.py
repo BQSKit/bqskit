@@ -12,12 +12,12 @@ class CHGate(ConstantGate, QubitGate):
     """The controlled-H gate."""
 
     size = 2
-    qasm_name = "ch"
+    qasm_name = 'ch'
     utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 1, 0, 0],
-            [0, 0, np.sqrt(2)/2, np.sqrt(2)/2],
-            [0, 0, np.sqrt(2)/2, -np.sqrt(2)/2],
-        ]
+            [0, 0, np.sqrt(2) / 2, np.sqrt(2) / 2],
+            [0, 0, np.sqrt(2) / 2, -np.sqrt(2) / 2],
+        ],
     )

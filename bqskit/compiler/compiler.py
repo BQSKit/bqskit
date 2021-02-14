@@ -1,10 +1,10 @@
 """
 This module implements the Compiler class.
 
-The Compiler class is a handle on a backend compiler.
-The backend compiler is responsible for executing compilation tasks.
-When creating a Compiler class, by default, a new process
-is started where compilation tasks can be submitted to be run.
+The Compiler class is a handle on a backend compiler. The backend
+compiler is responsible for executing compilation tasks. When creating a
+Compiler class, by default, a new process is started where compilation
+tasks can be submitted to be run.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from multiprocessing import Pipe
 from multiprocessing import Process
 
 from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.task import TaskResult
 from bqskit.compiler.task import TaskStatus
 from bqskit.compiler.workqueue import WorkQueue
 from bqskit.ir.circuit import Circuit
@@ -25,9 +26,9 @@ class Compiler:
 
     def __init__(self) -> None:
         """
-        Compiler Constructor.
-        Starts a new backend compiler on the local machine with an empty
-        WorkQueue, establishes a connection, and then starts running.
+        Compiler Constructor. Starts a new backend compiler on the local
+        machine with an empty WorkQueue, establishes a connection, and then
+        starts running.
 
         Examples:
             >>> compiler = Compiler()
@@ -54,8 +55,8 @@ class Compiler:
         self.conn.send('SUBMIT')
         self.conn.send(task)
         okay_msg = self.conn.recv()  # Block until response
-        # if (okay_msg != "OKAY"):
-        #     raise Exception
+        if (okay_msg != 'OKAY'):
+            raise Exception('Failed to submit job.')
         _logger.info('Submitted task: %s' % task.task_id)
 
     def status(self, task: CompilationTask) -> TaskStatus:
@@ -64,7 +65,7 @@ class Compiler:
         self.conn.send(task.task_id)
         return self.conn.recv()  # Block until response
 
-    def result(self, task: CompilationTask) -> Circuit:
+    def result(self, task: CompilationTask) -> TaskResult:
         """Block until the CompilationTask is finished, return its result."""
         self.conn.send('RESULT')
         self.conn.send(task.task_id)
@@ -82,7 +83,6 @@ class Compiler:
         _logger.info('Compiling task: %s' % task.task_id)
         self.submit(task)
         result = self.result(task)
-        result.reraise()
-        return result._circuit
+        return result.get_circuit()
 
     # def get_supported_passes(...): TODO
