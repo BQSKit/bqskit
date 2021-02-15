@@ -7,6 +7,8 @@ circuits.
 """
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 from scipy.stats import unitary_group
@@ -115,46 +117,44 @@ BQSKIT_GATES = [
     FrozenParameterGate(U3Gate(), {0: np.pi / 2, 1: np.pi / 2, 2: np.pi / 2}),
     FrozenParameterGate(U8Gate(), {0: np.pi}),
     FrozenParameterGate(U8Gate(), {0: np.pi / 2, 1: np.pi / 2, 2: np.pi / 2}),
+    FrozenParameterGate(DaggerGate(U8Gate()), {0: np.pi / 2, 2: np.pi / 2}),
     # VariableUnitaryGate(TOFFOLI), # TODO
     # CircuitGate(),  # TODO
     # ControlledGate(),  # TODO
 ]
 
-CONSTANT_GATES = [g for g in BQSKIT_GATES if isinstance(g, ConstantGate)]
-QUBIT_GATES = [g for g in BQSKIT_GATES if isinstance(g, QubitGate)]
-QUTRIT_GATES = [g for g in BQSKIT_GATES if isinstance(g, QutritGate)]
-PARAMETERIZED_GATES = [
-    g for g in BQSKIT_GATES
-    if not isinstance(g, ConstantGate)
-]
+CONSTANT_GATES = [g for g in BQSKIT_GATES if g.is_constant()]
+QUBIT_GATES = [g for g in BQSKIT_GATES if g.is_qubit_gate()]
+QUTRIT_GATES = [g for g in BQSKIT_GATES if g.is_qutrit_gate()]
+PARAMETERIZED_GATES = [g for g in BQSKIT_GATES if g.is_parameterized()]
 
 
 @pytest.fixture(params=BQSKIT_GATES, ids=lambda gate: repr(gate))
-def gate(request) -> Gate:
+def gate(request: Any) -> Gate:
     """Provides all of BQSKIT_GATES as a gate fixture."""
     return request.param
 
 
 @pytest.fixture(params=CONSTANT_GATES, ids=lambda gate: repr(gate))
-def constant_gate(request) -> Gate:
+def constant_gate(request: Any) -> Gate:
     """Provides all of CONSTANT_GATES as a gate fixture."""
     return request.param
 
 
 @pytest.fixture(params=QUBIT_GATES, ids=lambda gate: repr(gate))
-def qubit_gate(request) -> Gate:
+def qubit_gate(request: Any) -> Gate:
     """Provides all of QUBIT_GATES as a gate fixture."""
     return request.param
 
 
 @pytest.fixture(params=QUTRIT_GATES, ids=lambda gate: repr(gate))
-def qutrit_gate(request) -> Gate:
+def qutrit_gate(request: Any) -> Gate:
     """Provides all of QUTRIT_GATES as a gate fixture."""
     return request.param
 
 
 @pytest.fixture(params=PARAMETERIZED_GATES, ids=lambda gate: repr(gate))
-def parameterized_gate(request) -> Gate:
+def param_gate(request: Any) -> Gate:
     """Provides all of PARAMETERIZED_GATES as a gate fixture."""
     return request.param
 
@@ -183,7 +183,7 @@ def swap_circuit() -> Circuit:
 # Dynamically generated fixtures
 
 
-def pytest_generate_tests(metafunc) -> None:
+def pytest_generate_tests(metafunc: Any) -> None:
     """
     Pytest Hook called when collecting test functions. Inject parameterized
     fixtures programmatically here.
