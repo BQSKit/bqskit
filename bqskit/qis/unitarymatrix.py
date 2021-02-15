@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -28,6 +29,14 @@ class UnitaryMatrix(Unitary):
             raise TypeError('Expected unitary matrix.')
 
         self.utry = np_utry
+
+    @property
+    def numpy(self) -> np.ndarray:
+        return self.utry
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.utry.shape
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         return self

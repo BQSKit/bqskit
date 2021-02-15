@@ -98,11 +98,11 @@ class FrozenParameterGate(Gate):
             self.gate.get_name(),
             str(self.frozen_params),
         )
-    
+
     def get_qasm_name(self) -> str:
         """Returns the qasm command for this gate, see Gate for more info."""
         return self.gate.get_qasm_name()
-    
+
     def get_qasm_gate_def(self) -> str:
         """Returns the qasm gate def for this gate, see Gate for more info."""
         return self.gate.get_qasm_gate_def()

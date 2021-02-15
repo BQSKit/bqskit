@@ -11,7 +11,7 @@ from bqskit.qis.unitarymatrix import UnitaryMatrix
 class XXGate(ConstantGate, QubitGate):
     """The Ising XX coupling gate."""
 
-    size = 1
+    size = 2
     qasm_name = 'rxx(pi/2)'
     utry = UnitaryMatrix(
         [

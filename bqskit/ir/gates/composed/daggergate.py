@@ -44,7 +44,7 @@ class DaggerGate(Gate):
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
         self.check_parameters(params)
-        if hasattr(self, "utry"):
+        if hasattr(self, 'utry'):
             return self.utry
 
         return self.gate.get_unitary(params).dagger()
@@ -58,14 +58,14 @@ class DaggerGate(Gate):
             to the conjugate transpose of the derivative.
         """
         self.check_parameters(params)
-        if hasattr(self, "utry"):
+        if hasattr(self, 'utry'):
             return np.array([])
 
         return np.transpose(self.gate.get_grad(params).conj(), (0, 2, 1))
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
-        if hasattr(self, "utry"):
+        if hasattr(self, 'utry'):
             return []
         self.check_env_matrix(env_matrix)
         return self.gate.optimize(env_matrix.conj().T)

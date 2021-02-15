@@ -16,9 +16,6 @@ from scipy.stats import unitary_group
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import *
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 # Unitaries
