@@ -262,3 +262,23 @@ def is_skew_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
         return False
 
     return True
+
+
+def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
+    """Checks if P is a permutation matrix."""
+
+    if not is_unitary(P, tol):
+        return False
+
+    if not all(s == 1 for s in P.sum(0)):  # type: ignore
+        _logger.debug('Not all rows sum to 1.')
+        return False
+
+    if not all(s == 1 for s in P.sum(1)):  # type: ignore
+        _logger.debug('Not all columns sum to 1.')
+        return False
+
+    if not all(e == 1 or e == 0 for row in P for e in row):
+        _logger.debug('Not all elements are 0 or 1.')
+
+    return True
