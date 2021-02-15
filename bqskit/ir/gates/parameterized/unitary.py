@@ -56,5 +56,6 @@ class VariableUnitaryGate(Gate):
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
+        self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
         return list(np.reshape(Vh.conj().T @ U.conj().T, (self.num_params,)))

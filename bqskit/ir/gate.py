@@ -15,7 +15,7 @@ import numpy as np
 
 from bqskit.qis.unitary import Unitary
 from bqskit.utils.cachedclass import CachedClass
-from bqskit.utils.typing import is_sequence
+from bqskit.utils.typing import is_sequence, is_square_matrix
 
 if TYPE_CHECKING:
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
@@ -66,6 +66,10 @@ class Gate(Unitary, CachedClass):
             'Expected size field for gate %s.'
             % self.get_name(),
         )
+    
+    def get_dim(self) -> int:
+        """Returns the matrix dimension for this gate's unitary."""
+        return int(np.prod(self.get_radixes()))
 
     def get_qasm_name(self) -> str:
         """Returns the qasm name for this gate."""
@@ -152,18 +156,27 @@ class Gate(Unitary, CachedClass):
                 % type(params),
             )
 
+        if not all(isinstance(p, (float, int)) for p in params):
+            typechecks = [isinstance(p, (float, int)) for p in params]
+            fail_idx = typechecks.index(False)
+            raise TypeError(
+                'Expected params to be floats, got %s.'
+                % type(params[fail_idx]),
+            )
+
         if len(params) != self.get_num_params():
             raise ValueError(
                 'Expected %d params, got %d.'
                 % (self.get_num_params(), len(params)),
             )
+    
+    def check_env_matrix(self, env_matrix: np.ndarray) -> None:
+        """Checks to ensure the env_matrix is valid and matches the gate."""
+        if not is_square_matrix(env_matrix):
+            raise TypeError("Expected a sqaure matrix.")
 
-        if not all(isinstance(p, float) for p in params):
-            fail_idx = [isinstance(p, float) for p in params].index(False)
-            raise TypeError(
-                'Expected params to be floats, got %s.'
-                % type(params[fail_idx]),
-            )
+        if env_matrix.shape != (self.get_dim(), self.get_dim()):
+            raise TypeError("Enviromental matrix shape mismatch.")
 
     with_frozen_params: Callable[[Gate, dict[int, float]], FrozenParameterGate]
     with_all_frozen_params: Callable[[Gate, list[float]], FrozenParameterGate]

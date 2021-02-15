@@ -24,7 +24,7 @@ def is_iterable(test_variable: Any) -> bool:
 
 def is_sequence(test_variable: Any) -> bool:
     """Returns true if test_variable is a sequence."""
-    if isinstance(test_variable, Sequence):
+    if isinstance(test_variable, (Sequence, np.ndarray)):
         return True
     else:
         _logger.debug('Invalid sequence.')

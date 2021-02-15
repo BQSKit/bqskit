@@ -167,17 +167,17 @@ class Circuit(Unitary):
         if not is_valid_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        if len(location) != gate.size:
+        if len(location) != gate.get_size():
             raise ValueError('Gate and location size mismatch.')
 
-        for gate_radix, circ_radix_idx in zip(gate.radixes, location):
+        for gate_radix, circ_radix_idx in zip(gate.get_radixes(), location):
             if gate_radix != self.qudit_radixes[circ_radix_idx]:
                 raise ValueError('Gate and location radix mismatch.')
 
         if params is None:
-            params = [0.0] * gate.num_params  # TODO: Re-evaluate later
+            params = [0.0] * gate.get_num_params()
 
-        if len(params) != gate.num_params:
+        if len(params) != gate.get_num_params():
             raise ValueError('Gate and parameter mismatch.')
 
         if gate not in self.gate_set:
@@ -241,17 +241,17 @@ class Circuit(Unitary):
         if not is_valid_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        if len(location) != gate.size:
+        if len(location) != gate.get_size():
             raise ValueError('Gate and location size mismatch.')
 
-        for gate_radix, circ_radix_idx in zip(gate.radixes, location):
+        for gate_radix, circ_radix_idx in zip(gate.get_radixes(), location):
             if gate_radix != self.qudit_radixes[circ_radix_idx]:
                 raise ValueError('Gate and location radix mismatch.')
 
         if params is None:
-            params = [0.0] * gate.num_params  # TODO: Re-evaluate later
+            params = [0.0] * gate.get_num_params()
 
-        if len(params) != gate.num_params:
+        if len(params) != gate.get_num_params():
             raise ValueError('Gate and parameter mismatch.')
 
         if time_step < 0:

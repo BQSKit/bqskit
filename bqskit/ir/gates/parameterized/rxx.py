@@ -52,6 +52,7 @@ class RXXGate(QubitGate):
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
+        self.check_env_matrix(env_matrix)
         a = np.real(
             env_matrix[0, 0] + env_matrix[1, 1]
             + env_matrix[2, 2] + env_matrix[3, 3],

@@ -46,6 +46,7 @@ class U1Gate(QubitGate):
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
+        self.check_env_matrix(env_matrix)
         a = np.real(env_matrix[1, 1])
         b = np.imag(env_matrix[1, 1])
         arctan = np.arctan(b / a)

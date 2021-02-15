@@ -5,6 +5,7 @@ A Circuit is composed of a grid of CircuitCells. A cell groups together
 a gate and its parameters.
 """
 from __future__ import annotations
+from bqskit.ir.gates import FrozenParameterGate
 
 from typing import Iterable
 from typing import Sequence
@@ -37,9 +38,15 @@ s
 
     def get_qasm(self) -> str:
         """Returns the qasm string for this operation."""
+
+        if isinstance(self.gate, FrozenParameterGate):
+            full_params = self.gate.get_full_params(self.params)
+        else:
+            full_params = self.params
+            
         return '{}({}) q[{}];'.format(
             self.gate.get_qasm_name(),
-            ', '.join([str(p) for p in self.params]),
+            ', '.join([str(p) for p in full_params]),
             '], q['.join([str(q) for q in self.location]),
         )
 
