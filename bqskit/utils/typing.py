@@ -111,6 +111,68 @@ def is_valid_radixes(
     return True
 
 
+def is_valid_coupling_graph(
+    coupling_graph: Sequence[tuple[int, int]],
+    num_qudits: Optional[int] = None,
+) -> bool:
+    """
+    Checks if the coupling graph is valid.
+
+    Args:
+        coupling_graph (Sequence[tuple[int, int]]): The coupling graph
+            to check.
+
+        num_qudits (Optional[int]): The total number of qudits. All qudits
+            should be less than this. If None, don't check.
+
+    Returns:
+        (bool): Valid or not
+    """
+
+    if not is_sequence(coupling_graph):
+        _logger.debug('Coupling graph is not a Sequence.')
+        return False
+
+    if len(coupling_graph) == 0:
+        return True
+
+    if not all(isinstance(pair, tuple) for pair in coupling_graph):
+        _logger.debug('Coupling graph is not a sequence of tuples.')
+        return False
+
+    if not all([len(pair) == 2 for pair in coupling_graph]):
+        _logger.debug('Coupling graph is not a sequence of pairs.')
+        return False
+
+    if num_qudits is not None:
+        if not (isinstance(num_qudits, int) and num_qudits > 0):
+            _logger.debug('Invalid num_qudits in coupling graph check.')
+            return False
+
+        if not all(
+            qubit < num_qudits
+            for pair in coupling_graph
+            for qubit in pair
+        ):
+            _logger.debug('Coupling graph has invalid qudits.')
+            return False
+
+    # TODO: Reevaluate if this should be an error
+    if len(coupling_graph) != len(set(coupling_graph)):
+        _logger.debug('Coupling graph has duplicates.')
+        return False
+
+    # TODO: Reevaluate if this should be an error
+    if not all([
+        len(pair) == len(set(pair))
+        for pair in coupling_graph
+    ]):
+        _logger.debug('Coupling graph has an invalid pair.')
+        return False
+
+    return True
+
+
 def is_matrix(M: np.ndarray) -> bool:
     """Checks if M is a matrix."""
 
