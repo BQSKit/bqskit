@@ -69,7 +69,3 @@ class DaggerGate(Gate):
             return []
         self.check_env_matrix(env_matrix)
         return self.gate.optimize(env_matrix.conj().T)
-
-    def get_name(self) -> str:
-        """Returns the name of the gate, see Gate for more info."""
-        return '%s(%s)' % (self.__class__.__name__, self.gate.get_name())

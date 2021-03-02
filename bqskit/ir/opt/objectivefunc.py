@@ -5,6 +5,7 @@ from typing import Sequence
 
 import numpy as np
 
+from bqskit.ir.circuit import Circuit
 from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
@@ -13,10 +14,9 @@ class ObjectiveFunction(abc.ABC):
     unitary matrices to real numbers."""
 
     @abc.abstractmethod
-    def cost(self, U: UnitaryMatrix) -> float:
-        """Returns the cost given a circuit's unitary."""
+    def cost(self, circuit: Circuit) -> float:
+        """Returns the cost given a circuit."""
 
     @abc.abstractmethod
-    def cost_grad(self, dU: Sequence[np.ndarray]) -> list[float]:
-        """Returns the gradient of the cost function, given the circuit's
-        gradient."""
+    def cost_grad(self, circuit: Circuit) -> list[float]:
+        """Returns the gradient of the cost function."""

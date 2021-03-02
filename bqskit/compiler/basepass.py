@@ -29,12 +29,12 @@ class BasePass (abc.ABC):
 
             data (Dict[str, Any]): Associated data for the pass.
                 Can be used to provide auxillary information from
-                previous runs. This function should never fail based on
-                what is in this dictionary.
+                previous passes. This function should never error based
+                on what is in this dictionary.
         """
 
-    def __getstate__(self) -> Any:
-        raise NotImplementedError()  # TODO
+    # def __getstate__(self) -> Any:
+    #     raise NotImplementedError()  # TODO
 
-    def __setstate__(self, state: Any) -> None:
-        raise NotImplementedError()  # TODO
+    # def __setstate__(self, state: Any) -> None:
+    #     raise NotImplementedError()  # TODO

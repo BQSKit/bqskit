@@ -28,9 +28,6 @@ class Gate(Unitary, CachedClass):
     """Gate Base Class."""
 
     name: str
-    num_params: int
-    radixes: list[int]
-    size: int
     qasm_name: str
 
     def get_name(self) -> str:
@@ -39,40 +36,6 @@ class Gate(Unitary, CachedClass):
             return self.name
 
         return self.__class__.__name__
-
-    def get_num_params(self) -> int:
-        """Returns the number of parameters for this gate."""
-        if hasattr(self, 'num_params'):
-            return self.num_params
-
-        raise AttributeError(
-            'Expected num_params field for gate %s.'
-            % self.get_name(),
-        )
-
-    def get_radixes(self) -> list[int]:
-        """Returns the number of orthogonal states for each qudit."""
-        if hasattr(self, 'radixes'):
-            return self.radixes
-
-        raise AttributeError(
-            'Expected radixes field for gate %s.'
-            % self.get_name(),
-        )
-
-    def get_size(self) -> int:
-        """Returns the number of qudits this gate acts on."""
-        if hasattr(self, 'size'):
-            return self.size
-
-        raise AttributeError(
-            'Expected size field for gate %s.'
-            % self.get_name(),
-        )
-
-    def get_dim(self) -> int:
-        """Returns the matrix dimension for this gate's unitary."""
-        return int(np.prod(self.get_radixes()))
 
     def get_qasm_name(self) -> str:
         """Returns the qasm name for this gate."""
@@ -147,44 +110,6 @@ class Gate(Unitary, CachedClass):
             'Individual optimization not implemented'
             'for %s.' % self.get_name(),
         )
-
-    def is_qubit_gate(self) -> bool:
-        """Returns true if this gate only acts on qubits."""
-        return all([radix == 2 for radix in self.get_radixes()])
-
-    def is_qutrit_gate(self) -> bool:
-        """Returns true if this gate only acts on qutrits."""
-        return all([radix == 3 for radix in self.get_radixes()])
-
-    def is_parameterized(self) -> bool:
-        """Returns true if this gate is a parameterized gate."""
-        return self.get_num_params() != 0
-
-    def is_constant(self) -> bool:
-        """Returns true if this gate doesn't change during optimization."""
-        return not self.is_parameterized()
-
-    def check_parameters(self, params: Sequence[float]) -> None:
-        """Checks to ensure parameters are valid and match the gate."""
-        if not is_sequence(params):
-            raise TypeError(
-                'Expected a sequence type for params, got %s.'
-                % type(params),
-            )
-
-        if not all(isinstance(p, (float, int)) for p in params):
-            typechecks = [isinstance(p, (float, int)) for p in params]
-            fail_idx = typechecks.index(False)
-            raise TypeError(
-                'Expected params to be floats, got %s.'
-                % type(params[fail_idx]),
-            )
-
-        if len(params) != self.get_num_params():
-            raise ValueError(
-                'Expected %d params, got %d.'
-                % (self.get_num_params(), len(params)),
-            )
 
     def check_env_matrix(self, env_matrix: np.ndarray) -> None:
         """Checks to ensure the env_matrix is valid and matches the gate."""

@@ -34,7 +34,7 @@ class CachedClass:
         hash_kw = all(isinstance(arg, Hashable) for arg in kwargs.values())
 
         if not hash_a or not hash_kw:
-            return super().__new__(cls)
+            return super().__new__(cls)  # TODO Reevaluate for numpy
 
         if cls._instances.get(
                 (cls, args, tuple(kwargs.items())), None,

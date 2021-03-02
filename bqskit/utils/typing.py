@@ -86,7 +86,7 @@ def is_valid_radixes(
         radixes (Sequence[int]): The radixes to check.
 
         num_qudits (Optional[int]): The total number of qudits.
-            All qudit indices should be less than this. If None,
+            Length of `radixes` should be equal to this. If None,
             don't check.
 
     Returns:

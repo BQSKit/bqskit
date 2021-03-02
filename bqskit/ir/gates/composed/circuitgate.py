@@ -1,0 +1,2 @@
+class CircuitGate(Gate):
+    pass
