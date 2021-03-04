@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence
-
-import numpy as np
 
 from bqskit.ir.circuit import Circuit
-from bqskit.qis.unitarymatrix import UnitaryMatrix
 
 
 class ObjectiveFunction(abc.ABC):

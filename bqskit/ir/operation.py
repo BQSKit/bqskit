@@ -1,17 +1,17 @@
 """This module implements the Operation class."""
-
 from __future__ import annotations
 
-import numpy as np
-from bqskit.utils.cachedclass import CachedClass
-from bqskit.qis.unitarymatrix import UnitaryMatrix
-from bqskit.qis.unitary import Unitary
-from bqskit.utils.typing import is_valid_location
+from typing import Any
+from typing import Sequence
 
-from typing import Any, Sequence
+import numpy as np
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import FrozenParameterGate
+from bqskit.qis.unitary import Unitary
+from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
+from bqskit.utils.typing import is_valid_location
 
 
 class Operation(Unitary, CachedClass):
@@ -35,7 +35,7 @@ s
             location (Sequence[int]):  The set of qudits this gate affects.
 
             params (Sequence[float]): The parameters for the gate.
-        
+
         Raises:
             ValueError: If `gate`'s size doesn't match `location`'s length.
 
@@ -56,21 +56,21 @@ s
         self.size = gate.get_size()
 
         self.check_parameters(params)
-        
+
         self._gate = gate
         self._location = location
         self._params = list(params)
-    
+
     @property
     def gate(self) -> Gate:
         return self._gate
-    
+
     @property
-    def location(self) -> Sequence[int]:
+    def location(self) -> list[int]:
         return self._location
-    
+
     @property
-    def params(self) -> Sequence[float]:
+    def params(self) -> list[float]:
         return self._params
 
     def get_qasm(self) -> str:
@@ -86,7 +86,7 @@ s
             ', '.join([str(p) for p in full_params]),
             '], q['.join([str(q) for q in self.location]),
         )
-    
+
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Return the op's unitary, see Unitary for more info."""
         if params:
@@ -101,21 +101,24 @@ s
             return self.gate.get_grad(params)
         return self.gate.get_grad(self.params)
 
-    def get_unitary_and_grad(self, params: Sequence[float] = []) -> tuple[UnitaryMatrix, np.ndarray]:
+    def get_unitary_and_grad(
+        self, params: Sequence[float] = [
+        ],
+    ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the op's unitary and gradient, see Unitary for more info."""
         if params:
             self.check_parameters(params)
             return self.gate.get_unitary_and_grad(params)
         return self.gate.get_unitary_and_grad(self.params)
-    
+
     def __eq__(self, rhs: Any) -> bool:
         """Check for equality."""
         if self is rhs:
             return True
-        
+
         if not isinstance(rhs, Operation):
             return NotImplemented
-        
+
         return (
             self.gate == rhs.gate
             and all(x == y for x, y in zip(self.params, rhs.params))

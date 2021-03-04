@@ -125,6 +125,9 @@ class UnitaryMatrix(Unitary):
 
         V, _, Wh = sp.linalg.svd(M)
         return UnitaryMatrix(V @ Wh, radixes)
+    
+    def __matmul__(self, rhs: object) -> UnitaryMatrix:
+        return UnitaryMatrix(self.numpy @ rhs, self.get_radixes())
 
     def save(self, filename: str) -> None:
         """Saves the unitary to a file."""

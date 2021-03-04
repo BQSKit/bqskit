@@ -1,10 +1,12 @@
 """This module implements the VariableLocationGate."""
+from __future__ import annotations
 
-from bqskit.qis.unitarymatrix import UnitaryMatrix
-import numpy as np
-from bqskit.utils.typing import is_valid_location
 from typing import Sequence
+
 from bqskit.ir.gate import Gate
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_valid_location
+
 
 class VariableLocationGate(Gate):
     """
@@ -23,7 +25,6 @@ class VariableLocationGate(Gate):
 
             locations (Sequence[Sequence[int]]): A sequence of locations.
                 Each location represents a valid placement for gate.
-
         """
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))
@@ -46,16 +47,20 @@ class VariableLocationGate(Gate):
         # How do we handle size and radixes
 
         self.extension_size = self.size - self.gate.get_size()
-    
-    def split_params(self, params: Sequence[float]) -> tuple[Sequence[float], Sequence[float]]:
+
+    def split_params(
+            self, params: Sequence[float],
+    ) -> tuple[Sequence[float], Sequence[float]]:
         """Split params into subgate params and location params."""
-        return params[:self.gate.get_num_params()], params[self.gate.get_num_params()+1:]
-    
+        return params[
+            :self.gate.get_num_params(
+            )
+        ], params[self.gate.get_num_params() + 1:]
+
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
         self.check_parameters(params)
         a, l = self.split_params(params)
-        
 
     # def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
     #     """

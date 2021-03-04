@@ -1,7 +1,6 @@
 """This module implements the ConstantUnitaryGate."""
 from __future__ import annotations
 
-from typing import Optional
 from typing import Sequence
 
 from bqskit.ir.gates.constantgate import ConstantGate
@@ -15,7 +14,7 @@ class ConstantUnitaryGate(ConstantGate):
 
     def __init__(
         self, utry: UnitaryLike,
-        radixes: Optional[Sequence[int]] = None,
+        radixes: Sequence[int] | None = None,
     ) -> None:
         self.utry = UnitaryMatrix(utry)
         if radixes is not None and not is_valid_radixes(radixes):

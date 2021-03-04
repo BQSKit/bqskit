@@ -1,6 +1,6 @@
 """This module implements the UnitaryBuilder class."""
 
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_location, is_valid_radixes
 import logging
 from typing import Optional, Sequence

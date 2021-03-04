@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from collections.abc import Sequence
 from typing import Any
-from typing import Optional
 
 import numpy as np
 
@@ -33,7 +32,7 @@ def is_sequence(test_variable: Any) -> bool:
 
 def is_valid_location(
     location: Sequence[int],
-    num_qudits: Optional[int] = None,
+    num_qudits: int | None = None,
 ) -> bool:
     """
     Determines if the sequence of qudits form a valid location. A valid
@@ -75,7 +74,7 @@ def is_valid_location(
 
 def is_valid_radixes(
     radixes: Sequence[int],
-    num_qudits: Optional[int] = None,
+    num_qudits: int | None = None,
 ) -> bool:
     """
     Determines if the sequence of radixes are valid. Radixes must be integers
@@ -113,7 +112,7 @@ def is_valid_radixes(
 
 def is_valid_coupling_graph(
     coupling_graph: Sequence[tuple[int, int]],
-    num_qudits: Optional[int] = None,
+    num_qudits: int | None = None,
 ) -> bool:
     """
     Checks if the coupling graph is valid.

@@ -2,18 +2,23 @@
 from __future__ import annotations
 
 import abc
-from bqskit.utils.typing import is_sequence
+from bqskit.utils.typing import is_sequence, is_square_matrix
 from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from bqskit.qis.unitarymatrix import UnitaryMatrix
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class Unitary (abc.ABC):
-    """Unitary Base Class."""
+    """
+    The Unitary base class.
+
+    A Unitary is map from zero or more real numbers to a unitary matrix.
+    This is captured in the main `get_unitary` abstract method.
+    """
 
     num_params: int
     radixes: list[int]
@@ -88,14 +93,6 @@ class Unitary (abc.ABC):
             raise TypeError(
                 'Expected a sequence type for params, got %s.'
                 % type(params),
-            )
-
-        if not all(isinstance(p, (float, int)) for p in params):
-            typechecks = [isinstance(p, (float, int)) for p in params]
-            fail_idx = typechecks.index(False)
-            raise TypeError(
-                'Expected params to be floats, got %s.'
-                % type(params[fail_idx]),
             )
 
         if len(params) != self.get_num_params():

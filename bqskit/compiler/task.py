@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import uuid
 from enum import Enum
-from typing import Optional
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
@@ -40,7 +39,7 @@ class TaskResult():
         self,
         message: str,
         status: TaskStatus,
-        circuit: Optional[Circuit] = None,
+        circuit: Circuit | None = None,
     ) -> None:
         """TaskResult Constructor."""
         self.message = message
