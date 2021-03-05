@@ -20,7 +20,7 @@ class IdentityGate(ConstantGate):
         Args:
             size (int) The number of qudits this gate acts on.
 
-            radixes (Optional[Sequence[int]]): The number of orthogonal
+            radixes (Sequence[int]): The number of orthogonal
                 states for each qudit. Defaults to qubits.
         """
         if size <= 0:

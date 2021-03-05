@@ -6,17 +6,21 @@ from typing import Any
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
-from typing import NamedTuple
+from typing import overload
 from typing import Sequence
 from typing import Union
 
 import numpy as np
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.operation import Operation
-from bqskit.qis.state import StateVector
-from bqskit.qis.state import StateVectorMap
-from bqskit.qis.unitary import Unitary
+from bqskit.ir.point import CircuitPoint
+from bqskit.ir.point import CircuitPointLike
+from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.statemap import StateVectorMap
+from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
@@ -27,26 +31,14 @@ from bqskit.utils.typing import is_valid_radixes
 _logger = logging.getLogger(__name__)
 
 
-class CircuitPoint(NamedTuple):
-    """
-    The CircuitPoint NamedTuple class.
-
-    A CircuitPoint is a 2d-index into the Circuit data structure.
-    """
-    cycle: int
-    qudit: int
-
-
-CircuitPointLike = Union[tuple[int, int], CircuitPoint]
-
-
 class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     """
     Circuit class.
 
     A Circuit is a quantum program composed of operation objects.
 
-    The operations are organized in 2-dimensions.
+    The operations are organized in 2-dimensions, and are indexed by
+    a CircuitPoint.
 
     Invariants:
         1. A circuit method will never complete with an idle cycle.
@@ -56,8 +48,6 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             one cycle. The Operation object is a CachedClass, so it may appear
             multiple times throughout the circuit, but never as one logical
             operation across multiple cycles.
-
-        3. Gate Set Stuff
     """
 
     def __init__(self, size: int, radixes: Sequence[int] = []) -> None:
@@ -108,7 +98,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     def get_num_operations(self) -> int:
         """Return the total number of gates/operations in the circuit."""
         num_gates_acm = 0
-        for gate, count in self._gate_set.items():
+        for _, count in self._gate_set.items():
             num_gates_acm += count
         return num_gates_acm
 
@@ -118,7 +108,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
     def get_params(self) -> list[float]:
         """Returns the stored parameters for the circuit."""
-        return np.sum([op.params for op in self])
+        return sum([op.params for op in self])  # type: ignore
 
     def get_depth(self) -> int:
         """Return the length of the critical path in the circuit."""
@@ -132,9 +122,13 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         """Calculate the amount of parallelism in the circuit."""
         return self.get_num_operations() / self.get_depth()
 
-    def get_coupling_graph(self) -> list[tuple[int, int]]:
+    def get_coupling_graph(self) -> set[tuple[int, int]]:
         """
         The qudit connectivity in the circuit.
+
+        Returns:
+            (set[tuple[int, int]]): The coupling graph required by
+                the circuit. The graph is returned as a edge list.
 
         Notes:
             Multi-qudit gates require participating qudits to have
@@ -153,12 +147,12 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
     # region Qudit Methods
 
-    def append_qudit(self, radix: int) -> None:
+    def append_qudit(self, radix: int = 2) -> None:
         """
         Append a qudit to the circuit.
 
         Args:
-            radix (int): The radix of the qudit.
+            radix (int): The radix of the qudit. (Default: qubit)
 
         Raises:
             ValueError: If `radix` is < 2
@@ -173,7 +167,6 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         for cycle in self._circuit:
             cycle.append(None)
 
-    # TODO default to qubits
     def extend_qudits(self, radixes: Sequence[int]) -> None:
         """
         Append many qudits to the circuit.
@@ -188,14 +181,14 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         for radix in radixes:
             self.append_qudit(radix)
 
-    def insert_qudit(self, index: int, radix: int) -> None:
+    def insert_qudit(self, qudit_index: int, radix: int = 2) -> None:
         """
         Insert a qudit in to the circuit.
 
         Args:
-            radix (int): The radix of the qudit.
+            qudit_index (int): The index where to insert the qudit.
 
-            index (int): The index where to insert the qudit.
+            radix (int): The radix of the qudit. (Default: qubit)
 
         Raises:
             ValueError: If `radix` is < 2.
@@ -205,10 +198,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Expected radix to be > 2, got %d' % radix)
 
         self.size += 1
-        self.radixes.insert(index, radix)
+        self.radixes.insert(qudit_index, radix)
 
         for cycle in self._circuit:
-            cycle.insert(index, None)
+            cycle.insert(qudit_index, None)
 
     def pop_qudit(self, qudit_index: int) -> None:
         """Pop a qudit from the circuit and all gates attached to it."""
@@ -217,13 +210,16 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                 self.pop((cycle_index, qudit_index))
             cycle.pop(qudit_index)
 
-    def is_qudit_in_range(self, index: int) -> bool:
+    def is_qudit_in_range(self, qudit_index: int) -> bool:
         """Return true if qudit index is in-range for the circuit."""
-        return index < self.get_size() and index >= -self.get_size()
+        return (
+            qudit_index < self.get_size()
+            and qudit_index >= -self.get_size()
+        )
 
-    def is_qudit_idle(self, index: int) -> bool:
+    def is_qudit_idle(self, qudit_index: int) -> bool:
         """Return true if the qudit is idle."""
-        return all(cycle[index] is None for cycle in self._circuit)
+        return all(cycle[qudit_index] is None for cycle in self._circuit)
 
     # endregion
 
@@ -233,39 +229,44 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         """Appends an idle cycle to the end of the circuit."""
         self._circuit.append([None] * self.get_size())
 
-    def _insert_cycle(self, cycle: int) -> None:
+    def _insert_cycle(self, cycle_index: int) -> None:
         """Inserts an idle cycle in the circuit."""
-        self._circuit.insert(cycle, [None] * self.get_size())
+        self._circuit.insert(cycle_index, [None] * self.get_size())
 
-    def pop_cycle(self, cycle: int) -> None:
+    def pop_cycle(self, cycle_index: int) -> None:
         """Pop a cycle from the circuit and all operations in it."""
-        for op in self._circuit[cycle]:
+        for op in self._circuit[cycle_index]:
             if op is not None:
-                self.pop((cycle, op))
-        self._circuit.pop(cycle)
+                self._gate_set[op.gate] -= 1
+                if self._gate_set[op.gate] <= 0:
+                    del self._gate_set[op.gate]
+        self._circuit.pop(cycle_index)
 
-    def _is_cycle_idle(self, cycle: int) -> bool:
+    def _is_cycle_idle(self, cycle_index: int) -> bool:
         """Return true if the cycle is idle, that is it contains no gates."""
-        return all(op is None for op in self._circuit[cycle])
+        return all(op is None for op in self._circuit[cycle_index])
 
-    def is_cycle_in_range(self, cycle: int) -> bool:
+    def is_cycle_in_range(self, cycle_index: int) -> bool:
         """Return true if cycle is a valid in-range index in the circuit."""
         return (
-            cycle < self.get_num_cycles()
-            and cycle >= -self.get_num_cycles()
+            cycle_index < self.get_num_cycles()
+            and cycle_index >= -self.get_num_cycles()
         )
 
-    def is_cycle_unoccupied(self, cycle: int, location: Sequence[int]) -> bool:
+    def is_cycle_unoccupied(
+        self, cycle_index: int,
+        location: Sequence[int],
+    ) -> bool:
         """
-        Check if `cycle` is unoccupied for all qudits in `location`.
+        Check if a cycle is unoccupied for all qudits in `location`.
 
         Args:
-            cycle (int): The cycle to check.
+            cycle_index (int): The cycle to check.
 
             location (Sequence[int]): The set of qudits to check.
 
         Raises:
-            IndexError: If `cycle` is out of range.
+            IndexError: If `cycle_index` is out of range.
 
         Examples:
             >>> circ = Circuit(2)
@@ -280,11 +281,11 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         if not is_valid_location(location, self.get_size()):
             raise TypeError('Invalid location.')
 
-        if not self.is_cycle_in_range(cycle):
-            raise IndexError('Out-of-range cycle index: %d.' % cycle)
+        if not self.is_cycle_in_range(cycle_index):
+            raise IndexError('Out-of-range cycle index: %d.' % cycle_index)
 
         for qudit_index in location:
-            if self._circuit[cycle][qudit_index] is not None:
+            if self._circuit[cycle_index][qudit_index] is not None:
                 return False
 
         return True
@@ -313,7 +314,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             1
         """
 
-        if not is_valid_location(location, self.num_qudits):
+        if not is_valid_location(location, self.get_size()):
             raise TypeError('Invalid location.')
 
         if self.get_num_cycles() == 0:
@@ -344,7 +345,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
     # region Operation/Gate/Circuit Methods
 
-    def is_point_in_range(self, point: CircuitPoint) -> bool:
+    def is_point_in_range(self, point: CircuitPointLike) -> bool:
         """Return true if point is a valid in-range index in the circuit."""
         return (
             self.is_cycle_in_range(point[0])
@@ -360,15 +361,16 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Operation location mismatch with Circuit.')
 
         for op_radix, circ_radix_idx in zip(op.get_radixes(), op.location):
-            if op_radix != self.radixes[circ_radix_idx]:
+            if op_radix != self.get_radixes()[circ_radix_idx]:
                 raise ValueError('Operation radix mismatch with Circuit.')
 
-    def get_operation(self, point: CircuitPoint) -> Operation:
+    def get_operation(self, point: CircuitPointLike) -> Operation:
         """
         Retrieve the operation at the `point`.
 
         Args:
-            point (CircuitPoint): The circuit point position of the operation.
+            point (CircuitPointLike): The circuit point position of the
+                operation.
 
         Raises:
             IndexError: If no operation exists at the point specified.
@@ -396,8 +398,8 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     def point(
         self,
         op: Operation | Gate,
-        start: CircuitPoint = (0, 0),
-        end: CircuitPoint | None = None,
+        start: CircuitPointLike = (0, 0),
+        end: CircuitPointLike | None = None,
     ) -> CircuitPoint:
         """
         Return point of the first occurrence of `op`.
@@ -405,10 +407,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         Args:
             op (Operation | Gate): The operation or gate to find.
 
-            start (CircuitPoint): Circuit point to start searching
+            start (CircuitPointLike): Circuit point to start searching
                 from. Inclusive. (Default: Beginning of the circuit.)
 
-            end (CircuitPoint | None): Cycle index to stop searching at.
+            end (CircuitPointLike | None): Cycle index to stop searching at.
                 Exclusive. (Default: End of the circuit.)
 
         Returns:
@@ -425,10 +427,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> opH = Operation(H(), [0])
             >>> circ.append(opH)
             >>> circ.point(opH)
-            (0, 0)
+            CircuitPoint(cycle=0, qudit=0)
             >>> opX = Operation(X(), [0])
             >>> circ.point(opX)
-            (1, 0)
+            CircuitPoint(cycle=1, qudit=0)
         """
         if isinstance(op, Operation):
             self.check_valid_operation(op)
@@ -450,9 +452,14 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         if isinstance(op, Operation):
             qudit_index = op.location[0]
-            for _p, _op in self.operations_on_qudit_with_points(qudit_index):
-                if _op == op:
-                    return _p
+            for i, cycle in enumerate(self._circuit[start[0]:end[0]]):
+                if cycle[qudit_index] is not None and cycle[qudit_index] == op:
+                    return CircuitPoint(start[0] + i, qudit_index)
+        else:
+            for i, cycle in enumerate(self._circuit[start[0]:end[0]]):
+                for q, _op in enumerate(cycle[start[1]:end[1]]):
+                    if _op is not None and _op.gate == op:
+                        return CircuitPoint(start[0] + i, start[1] + q)
 
         raise ValueError('No such operation exists in the circuit.')
 
@@ -471,7 +478,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             Due to the circuit being represented as a matrix,
             `circuit.append(op)` does not imply `circuit[-1] == op`,
             but it implies op is in the last cycle of circuit:
-            `circuit.cycle(op, -1) == -1`
+            `circuit.point(op, -1) == -1`
 
         Examples:
             >>> circ = Circuit(1)
@@ -484,10 +491,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             self._gate_set[op.gate] = 0
         self._gate_set[op.gate] += 1
 
-        cycle = self._find_available_or_append_cycle(op.location)
+        cycle_index = self._find_available_or_append_cycle(op.location)
 
         for qudit_index in op.location:
-            self._circuit[cycle][qudit_index] = op
+            self._circuit[cycle_index][qudit_index] = op
 
     def append_gate(
         self,
@@ -511,46 +518,21 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> # Append a Hadamard gate to qudit 0.
             >>> circ.append_gate(H(), [0])
         """
-
-        if not isinstance(gate, Gate):
-            raise TypeError('Invalid gate.')
-
-        if not is_valid_location(location, self.num_qudits):
-            raise TypeError('Invalid location.')
-
-        if len(location) != gate.get_size():
-            raise ValueError('Gate and location size mismatch.')
-
-        for gate_radix, circ_radix_idx in zip(gate.get_radixes(), location):
-            if gate_radix != self.qudit_radixes[circ_radix_idx]:
-                raise ValueError('Gate and location radix mismatch.')
-
-        if params is None:
-            params = [0.0] * gate.get_num_params()
-
-        if len(params) != gate.get_num_params():
-            raise ValueError('Gate and parameter mismatch.')
-
-        if gate not in self._gate_set:
-            self._gate_set[gate] = 0
-        self._gate_set[gate] += 1
-
-        op = Operation(gate, location, params)
-
-        cycle = self.find_available_cycle(location)
-
-        if cycle == -1:
-            self._append_cycle()
-
-        for qudit_index in location:
-            self._circuit[cycle][qudit_index] = op
+        params = params or [0.0] * gate.get_num_params()
+        self.append(Operation(gate, location, params))
 
     def append_circuit(
         self,
         circuit: Circuit,
         location: Sequence[int],
     ) -> None:
-        pass  # TODO
+        """Append `circuit` at the qudit location specified."""
+        if circuit.get_size() != len(location):
+            raise ValueError('Circuit and location size mismatch.')
+
+        for op in circuit:
+            mapped_location = [location[q] for q in op.location]
+            self.append(Operation(op.gate, mapped_location, op.params))
 
     def extend(self, ops: Iterable[Operation]) -> None:
         """
@@ -575,17 +557,21 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         for op in ops:
             self.append(op)
 
-    def insert(self, cycle: int, op: Operation) -> None:
+    def insert(self, cycle_index: int, op: Operation) -> None:
         """
         Insert `op` in the circuit at the specified cycle.
 
         After this, if cycle was in range, you can expect:
-        `all([self[cycle, idx] == op for idx in op.location])`
+        `all([self[cycle_index, idx] == op for idx in op.location])`
 
         Args:
-            cycle (int): The cycle to insert the operation.
+            cycle_index (int): The cycle to insert the operation.
 
             op (Operation): The operation to insert.
+
+        Raises:
+            ValueError: If `op` cannot be placed on the circuit due to
+                either an invalid location or gate radix mismatch.
 
         Examples:
             >>> circ = Circuit(1)
@@ -601,9 +587,9 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         """
         self.check_valid_operation(op)
 
-        if self.is_cycle_in_range(cycle):
-            if cycle < 0:
-                cycle = 0
+        if self.is_cycle_in_range(cycle_index):
+            if cycle_index < -self.get_num_cycles():
+                cycle_index = 0
             else:
                 self.append(op)
                 return
@@ -612,17 +598,15 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             self._gate_set[op.gate] = 0
         self._gate_set[op.gate] += 1
 
-        cycle = self.get_num_cycles() + cycle if cycle < 0 else cycle
-
-        if not self.is_cycle_unoccupied(cycle, op.location):
-            self._insert_cycle(cycle)
+        if not self.is_cycle_unoccupied(cycle_index, op.location):
+            self._insert_cycle(cycle_index)
 
         for qudit_index in op.location:
-            self._circuit[cycle][qudit_index] = op
+            self._circuit[cycle_index][qudit_index] = op
 
     def insert_gate(
         self,
-        cycle: int,
+        cycle_index: int,
         gate: Gate,
         location: Sequence[int],
         params: Sequence[float] = [],
@@ -631,12 +615,12 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         Insert the gate object in the circuit on the qudits in location.
 
         After this, if cycle was in range, you can expect:
-        `all([self[cycle, idx].gate == gate for idx in location])`
+        `all([self[cycle_index, idx].gate == gate for idx in location])`
 
         Args:
-            gate (Gate): The gate to insert.
+            cycle_index (int): The cycle to insert the gate.
 
-            cycle (int): The cycle to insert the gate.
+            gate (Gate): The gate to insert.
 
             location (Sequence[int]): Apply the gate to this set of qudits.
 
@@ -644,52 +628,34 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If the specified cycle doesn't exist.
+
+            ValueError: If `gate` cannot be placed on the circuit due to
+                either an invalid location or gate radix mismatch.
         """
 
-        if not isinstance(gate, Gate):
-            raise TypeError('Invalid gate.')
-
-        if cycle < -self.get_num_cycles() or cycle >= self.get_num_cycles():
-            raise IndexError('Invalid cycle.')
-
-        if not is_valid_location(location, self.get_size()):
-            raise TypeError('Invalid location.')
-
-        if len(location) != gate.get_size():
-            raise ValueError('Gate and location size mismatch.')
-
-        for gate_radix, circ_radix_idx in zip(gate.get_radixes(), location):
-            if gate_radix != self.get_radixes()[circ_radix_idx]:
-                raise ValueError('Gate and location radix mismatch.')
-
-        if params is None:
-            params = [0.0] * gate.get_num_params()
-
-        if len(params) != gate.get_num_params():
-            raise ValueError('Gate and parameter mismatch.')
-
-        if cycle < 0:
-            cycle = self.get_num_cycles() - cycle
-
-        if gate not in self._gate_set:
-            self._gate_set[gate] = 0
-        self._gate_set[gate] += 1
-
-        op = Operation(gate, location, params)
-
-        if not self.is_cycle_unoccupied(cycle, location):
-            self._insert_cycle(cycle)
-
-        for qudit_index in location:
-            self._circuit[cycle][qudit_index] = op
+        params = params or [0.0] * gate.get_num_params()
+        self.insert(cycle_index, Operation(gate, location, params))
 
     def insert_circuit(
         self,
-        cycle: int,
+        cycle_index: int,
         circuit: Circuit,
         location: Sequence[int],
     ) -> None:
-        pass  # TODO
+        """Insert `circuit` at the qudit location specified."""
+        if circuit.get_size() != len(location):
+            raise ValueError('Circuit and location size mismatch.')
+
+        for op in reversed(circuit):
+            mapped_location = [location[q] for q in op.location]
+            self.insert(
+                cycle_index,
+                Operation(
+                    op.gate,
+                    mapped_location,
+                    op.params,
+                ),
+            )
 
     def remove(self, op: Operation | Gate) -> None:
         """
@@ -714,16 +680,14 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.num_gates
             0
         """
-        self.check_valid_operation(op)
-        cycle = self.point(op)
-        self.pop((cycle, op.location[0]))
+        self.pop(self.point(op))
 
     def count(self, op: Operation | Gate) -> int:
         """
-        Count the number of times `op` in the circuit.
+        Count the number of times `op` occurs in the circuit.
 
         Args:
-            op (Operation): The operation to count.
+            op (Operation): The operation or gate to count.
 
         Raises:
             ValueError: If `op` could not have been placed on the circuit
@@ -739,19 +703,27 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.count(op)
             2
         """
-        self.check_valid_operation(op)
-
-        if op.gate not in self._gate_set:
-            return 0
 
         count = 0
-        qudit_index = op.location[0]
-        for _op in self.operations_on_qudit(qudit_index):
-            if _op == op:
-                count += 1
-        return count  # TODO
+        if isinstance(op, Operation):
+            self.check_valid_operation(op)
+            if op.gate not in self._gate_set:
+                return 0
 
-    def pop(self, point: CircuitPoint | None = None) -> Operation:
+            qudit_index = op.location[0]
+            for _op in self.operations_on_qudit(qudit_index):
+                if _op == op:
+                    count += 1
+        elif isinstance(op, Gate):
+            if op not in self._gate_set:
+                return 0
+            return self._gate_set[op]
+        else:
+            raise TypeError('Expected gate or operation, got %s.' % type(op))
+
+        return count
+
+    def pop(self, point: CircuitPointLike | None = None) -> Operation:
         """
         Pop the operation at `point`, defaults to last operation.
 
@@ -772,62 +744,177 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.get_num_gates()
             0
         """
-        cycle = None
-        qudit = None
 
         # Use given point
         if point is not None:
             if not self.is_point_in_range(point):
                 raise IndexError('Out-of-range point: %s.' % str(point))
-            cycle = point[0]
-            qudit = point[1]
 
         # Or find last gate in simulation order
         else:
-            cycle = self.get_num_cycles() - 1
-            for i, op in enumerate(reversed(self._circuit[cycle])):
+            cycle_index = self.get_num_cycles() - 1
+            for i, op in enumerate(reversed(self._circuit[cycle_index])):
                 if op is not None:
-                    qudit = self.get_size() - 1 - i
+                    point = (cycle_index, self.get_size() - 1 - i)
+                    break
 
-        if cycle is None or qudit is None:
-            raise IndexError('Out-of-range point: %s.' % str(point))
+        if point is None:
+            raise IndexError('Pop from empty circuit.')
 
-        op = self._circuit[cycle][qudit]
+        op = self[point]
 
-        if op is None:
-            raise IndexError('No operation exists at point: %s.' % str(point))
-
-        for qudit in op.location:
-            self._circuit[cycle][qudit] = None
+        for qudit_index in op.location:
+            self._circuit[point[0]][qudit_index] = None
 
         self._gate_set[op.gate] -= 1
         if self._gate_set[op.gate] <= 0:
             del self._gate_set[op.gate]
 
-        if self._is_cycle_idle(cycle):
-            self.pop_cycle(cycle)
+        if self._is_cycle_idle(point[0]):
+            self.pop_cycle(point[0])
 
-    def replace(self, cycle: int, op: Operation) -> None:
-        pass  # TODO
+        return op
+
+    def batch_pop(self, points: Sequence[CircuitPointLike]) -> Circuit:
+        """
+        Pop all operatons at `points` at once.
+
+        Args:
+            points (Sequence[CircuitPointLike]): Remove operations
+                at these points all at the same time.
+
+        Returns:
+            (Circuit): The circuit formed from all the popped operations.
+
+        Raises:
+            IndexError: If any of `points` are invalid or out-of-range.
+        """
+        for point in points:
+            if not self.is_point_in_range(point):
+                raise IndexError('Out-of-range point.')
+            if self._circuit[point[0]][point[1]] is None:
+                raise IndexError('Invalid point.')
+
+        # Sort points and collect operations and qudits
+        points = sorted(points)
+        ops = list({self[point] for point in points})
+        qudits = sorted(list({point[1] for point in points}))
+
+        # Pop gates, tracking if the circuit popped a cycle
+        num_cycles = self.get_num_cycles()
+        for i, point in enumerate(points):
+
+            try:
+                self.pop(point)
+            except IndexError:  # Silently discard multi-points-one-op errors
+                pass
+
+            if num_cycles != self.get_num_cycles():
+                num_cycles = self.get_num_cycles()
+                points[i + 1:] = [(point[0] - 1, point[1])
+                                  for point in points[i + 1:]]
+
+        # Form new circuit and return
+        radixes = [self.get_radixes()[q] for q in qudits]
+        circuit = Circuit(len(radixes), radixes)
+        for op in ops:
+            location = [qudits.index(q) for q in op.location]
+            circuit.append(Operation(op.gate, location, op.params))
+        return circuit
+
+    def replace(self, point: CircuitPointLike, op: Operation) -> None:
+        """
+        Replace the operation at `point` with `op`.
+
+        Args:
+            point (CircuitPointLike): The index of the operation to
+                replace.
+
+            op (Operation): The to-be-inserted operation.
+
+        Raises:
+            IndexError: If there is no operation at `point`.
+
+            ValueError: If `op` cannot be placed on the circuit due to
+                either an invalid location or gate radix mismatch.
+        """
+        self.pop(point)
+        self.insert(point[0], op)
 
     def replace_gate(
         self,
-        cycle: int,
+        point: CircuitPointLike,
         gate: Gate,
         location: Sequence[int],
         params: Sequence[float] = [],
     ) -> None:
-        pass  # TODO
+        """Replace the operation at 'point' with `gate`."""
+        self.replace(point, Operation(gate, location, params))
 
     def replace_with_circuit(
         self,
-        cycle: int,
-        cirucit: Circuit,
+        point: CircuitPointLike,
+        circuit: Circuit,
         location: Sequence[int],
     ) -> None:
-        pass  # TODO
+        """Replace the operation at 'point' with `circuit`."""
+        self.pop(point)
+        self.insert_circuit(point[0], circuit, location)
 
-    # TODO:  replace_circuit
+    def fold(self, points: Sequence[CircuitPointLike]) -> None:
+        """
+        Fold the operations at the specified `points` into a CircuitGate.
+
+        Args:
+            points (Sequence[CircuitPointLike]): The positions of operations
+                to group together.
+
+        Raises:
+            ValueError: If folding the specified points into a CircuitGate
+                would change the result of `get_unitary`. This happens when
+                their exists an operation within the bounds of `points`.
+
+            IndexError: If any of `points` are invalid or out-of-range.
+        """
+        # Collect Bounds
+        qudit_set = set()
+        min_cycle_index = self.get_num_cycles()
+        max_cycle_index = -1
+
+        for point in points:
+            if not self.is_point_in_range(point):
+                raise IndexError('Out-of-range point.')
+
+            qudit_set.add(point[1])
+            cycle_index = point[0] if point[0] > 0 else self.get_num_cycles(
+            ) + point[0]
+            if cycle_index < min_cycle_index:
+                min_cycle_index = point[0]
+            if cycle_index > max_cycle_index:
+                max_cycle_index = cycle_index
+
+        # Collect Operations
+        ops = list({self[point] for point in points})
+
+        # Count Operations in bounds
+        counting_ops = set()
+        for cycle in self._circuit[min_cycle_index:max_cycle_index + 1]:
+            for qudit_index in qudit_set:
+                if cycle[qudit_index] is not None:
+                    counting_ops.add(cycle[qudit_index])
+        count = len(counting_ops)
+
+        if len(ops) != count:
+            raise ValueError(
+                'Operations cannot be folded due to'
+                ' another operation in the middle.',
+            )
+
+        # Pop, form CircuitGate, and insert in circuit
+        circuit = self.batch_pop(points)
+        circuit_gate = CircuitGate(circuit, True)
+        qudits = sorted(list({point[1] for point in points}))
+        self.insert_gate(min_cycle_index, circuit_gate, qudits)
 
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
@@ -836,9 +923,9 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         circuit._gate_set = self._gate_set.copy()
         return circuit
 
-    def get_slice(self, points: Sequence[CircuitPoint]) -> Circuit:
+    def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
-        qudits = sorted({point.qudit for point in points})
+        qudits = sorted({point[1] for point in points})
         slice_size = len(qudits)
         slice_radixes = [self.get_radixes()[q] for q in qudits]
         slice = Circuit(slice_size, slice_radixes)
@@ -852,23 +939,33 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         self._gate_set = {}
 
     def operations(self, reversed: bool = False) -> Iterator[Operation]:
-        return self.CircuitIterator(self._circuit, reversed)
+        return self.CircuitIterator(self._circuit, reversed)  # type: ignore
 
     def operations_with_points(
             self,
+            reversed: bool = False,
     ) -> Iterator[tuple[CircuitPoint, Operation]]:
-        pass  # TODO
+        return self.CircuitIterator(
+            self._circuit, reversed, True,
+        )  # type: ignore
 
     def operations_on_qudit(
-        self, qudit_index: int,
+        self,
+        qudit_index: int,
         reversed: bool = False,
     ) -> Iterator[Operation]:
-        return self.QuditIterator(qudit_index, self._circuit, reversed)
+        return self.QuditIterator(
+            qudit_index, self._circuit, reversed,
+        )  # type: ignore
 
     def operations_on_qudit_with_points(
             self,
+            qudit_index: int,
+            reversed: bool = False,
     ) -> Iterator[tuple[CircuitPoint, Operation]]:
-        pass  # TODO
+        return self.QuditIterator(
+            qudit_index, self._circuit, reversed, True,
+        )  # type: ignore
 
     # endregion
 
@@ -891,7 +988,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         gate = op.gate.with_frozen_params({param: op.params[param]})
         params = op.params.copy()
         params.pop(param)
-        self.replace_gate(cycle, gate, op.location, params)
+        self.replace_gate((cycle, qudit), gate, op.location, params)
 
     def get_param_location(self, param_index: int) -> tuple[int, int, int]:
         """
@@ -907,6 +1004,9 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                 This parameter in that operation is indexed by
                 the operation-param index.
 
+        Raises:
+            IndexError: If the param_index is invalid.
+
         Examples:
             >>> circ = Circuit(1)
             >>> circ.append_gate(U3(), [0])
@@ -916,19 +1016,35 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.get_param_location(4)
             (1, 0, 1)
         """
+        if param_index < 0:
+            raise IndexError('Negative parameter index is not supported.')
+
         count = 0
-        for cycle, op in self.operations_with_cycles():
+        for point, op in self.operations_with_points():
             count += len(op.params)
             if count > param_index:
                 param = param_index - (count - len(op.params))
-                return (cycle, op.location[0], param)
+                return (*point, param)
+
+        raise IndexError('Out-of-range parameter index.')
 
     # endregion
 
     # region Circuit Logic Methods
 
     def get_inverse(self) -> Circuit:
-        pass  # TODO
+        circuit = Circuit(self.get_size(), self.get_radixes())
+        for op in reversed(self):
+            circuit.append(
+                Operation(
+                    DaggerGate(
+                        op.gate,
+                    ),
+                    op.location,
+                    op.params,
+                ),
+            )
+        return circuit
 
     def get_dagger(self) -> Circuit:
         return self.get_inverse()
@@ -961,7 +1077,8 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         qudit_permutation = [int(q) for q in qudit_permutation]
 
-        pass  # TODO
+        for op in self:
+            op._location = [qudit_permutation[q] for q in op.location]
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """
@@ -1090,10 +1207,15 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
     # region Operation Collection Methods
 
-    def __getitem__(
-        self,
-        points: CircuitPointLike | Sequence[CircuitPoint] | slice,
-    ) -> Operation | Circuit:
+    @overload
+    def __getitem__(self, point: CircuitPointLike) -> Operation:
+        ...
+
+    @overload
+    def __getitem__(self, points: Sequence[CircuitPoint] | slice) -> Circuit:
+        ...
+
+    def __getitem__(self, points):
         """
         Retrieve an operation from a point or a circuit from a point sequence.
 
@@ -1130,14 +1252,18 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             ', got %s' % type(points),
         )
 
-    class CircuitIterator(Iterator[Operation]):
+    class CircuitIterator(
+        Iterator[Union[Operation, tuple[CircuitPoint, Operation]]],
+    ):
         def __init__(
                 self,
                 circuit: list[list[Operation | None]],
                 reversed: bool = False,
+                and_points: bool = False,
         ) -> None:
             self.circuit = circuit
             self.reversed = reversed
+            self.and_points = and_points
             self.max_cycle = len(circuit)
             self.max_qudit = 0 if self.max_cycle == 0 else len(circuit[0])
             self.cycle = 0 if not reversed else self.max_cycle - 1
@@ -1169,10 +1295,13 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         def dereference(self) -> Operation | None:
             return self.circuit[self.cycle][self.qudit]
 
-        def __iter__(self) -> Iterator[Operation]:
+        def __iter__(self) -> Iterator[
+            Operation
+            | tuple[CircuitPoint, Operation]
+        ]:
             return self
 
-        def __next__(self) -> Operation:
+        def __next__(self) -> Operation | tuple[CircuitPoint, Operation]:
             while self.dereference() is None:
                 if not self.reversed:
                     self.increment_iter()
@@ -1180,17 +1309,24 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                     self.decrement_iter()
             op: Operation = self.dereference()  # type: ignore
             self.qudits_to_skip.update(op.location)
-            return op
+            if self.and_points:
+                return CircuitPoint(self.cycle, self.qudit), op
+            else:
+                return op
 
-    class QuditIterator(Iterator[Operation]):
+    class QuditIterator(
+            Iterator[Union[Operation, tuple[CircuitPoint, Operation]]],
+    ):
         def __init__(
                 self,
                 qudit: int,
                 circuit: list[list[Operation | None]],
                 reversed: bool = False,
+                and_points: bool = False,
         ) -> None:
             self.circuit = circuit
             self.reversed = reversed
+            self.and_points = and_points
             self.qudit = qudit
             self.max_cycle = len(circuit)
             self.cycle = 0 if not reversed else self.max_cycle - 1
@@ -1212,23 +1348,29 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         def dereference(self) -> Operation | None:
             return self.circuit[self.cycle][self.qudit]
 
-        def __iter__(self) -> Iterator[Operation]:
+        def __iter__(self) -> Iterator[
+            Operation
+            | tuple[CircuitPoint, Operation]
+        ]:
             return self
 
-        def __next__(self) -> Operation:
+        def __next__(self) -> Operation | tuple[CircuitPoint, Operation]:
             while self.dereference() is None:
                 if not self.reversed:
                     self.increment_iter()
                 else:
                     self.decrement_iter()
             op: Operation = self.dereference()  # type: ignore
-            return op
+            if self.and_points:
+                return CircuitPoint(self.cycle, self.qudit), op
+            else:
+                return op
 
     def __iter__(self) -> Iterator[Operation]:
-        return self.CircuitIterator(self._circuit)
+        return self.CircuitIterator(self._circuit)  # type: ignore
 
     def __reversed__(self) -> Iterator[Operation]:
-        return self.CircuitIterator(self._circuit, reversed=True)
+        return self.CircuitIterator(self._circuit, True)  # type: ignore
 
     def __contains__(self, op: object) -> bool:
         """Return true if `op` is in the circuit."""
@@ -1293,22 +1435,35 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         return not self == rhs
 
     def __add__(self, rhs: Circuit) -> Circuit:
-        pass
+        """Return a concatenated circuit copy."""
+        circuit = Circuit(self.get_size(), self.get_radixes())
+        circuit.append_circuit(self, list(range(self.get_size())))
+        circuit.append_circuit(rhs, list(range(self.get_size())))
+        return circuit
 
     def __mul__(self, rhs: int) -> Circuit:
-        pass
+        """Return a repeated circuit copy."""
+        circuit = Circuit(self.get_size(), self.get_radixes())
+        for x in range(rhs):
+            circuit.append_circuit(self, list(range(self.get_size())))
+        return circuit
 
     def __radd__(self, lhs: Circuit) -> Circuit:
-        pass
-
-    def __rmul__(self, lhs: int) -> Circuit:
-        pass
+        """Return a concatenated circuit copy."""
+        circuit = Circuit(self.get_size(), self.get_radixes())
+        circuit.append_circuit(lhs, list(range(self.get_size())))
+        circuit.append_circuit(self, list(range(self.get_size())))
+        return circuit
 
     def __iadd__(self, rhs: Circuit) -> None:
-        pass
+        """Return a concatenated circuit copy."""
+        self.append_circuit(rhs, list(range(self.get_size())))
 
     def __imul__(self, rhs: int) -> None:
-        pass
+        """Return a repeated circuit copy."""
+        circuit = self.copy()
+        for x in range(rhs - 1):
+            self.append_circuit(circuit, list(range(self.get_size())))
 
     # endregion
 
@@ -1323,15 +1478,15 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     def save(self, filename: str) -> None:
         pass
 
-    @staticmethod
+    @ staticmethod
     def from_file(filename: str) -> Circuit:
         pass
 
-    @staticmethod
+    @ staticmethod
     def from_str(str: str) -> Circuit:
         pass
 
-    @staticmethod
+    @ staticmethod
     def from_unitary(utry: np.ndarray) -> Circuit:
         pass
 

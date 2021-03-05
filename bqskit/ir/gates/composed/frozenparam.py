@@ -6,7 +6,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class FrozenParameterGate(Gate):

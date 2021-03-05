@@ -42,7 +42,7 @@ def is_valid_location(
     Args:
         location (Sequence[int]): The location to check.
 
-        num_qudits (Optional[int]): The total number of qudits.
+        num_qudits (int | None): The total number of qudits.
             All qudit indices should be less than this. If None,
             don't check.
 
@@ -84,7 +84,7 @@ def is_valid_radixes(
     Args:
         radixes (Sequence[int]): The radixes to check.
 
-        num_qudits (Optional[int]): The total number of qudits.
+        num_qudits (int | None): The total number of qudits.
             Length of `radixes` should be equal to this. If None,
             don't check.
 
@@ -121,7 +121,7 @@ def is_valid_coupling_graph(
         coupling_graph (Sequence[tuple[int, int]]): The coupling graph
             to check.
 
-        num_qudits (Optional[int]): The total number of qudits. All qudits
+        num_qudits (int | None): The total number of qudits. All qudits
             should be less than this. If None, don't check.
 
     Returns:

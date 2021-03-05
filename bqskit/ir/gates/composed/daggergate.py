@@ -15,7 +15,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class DaggerGate(Gate):
@@ -39,7 +39,7 @@ class DaggerGate(Gate):
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0:
-            self.utry = gate.get_unitary().dagger()
+            self.utry = gate.get_unitary().get_dagger()
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
@@ -47,7 +47,7 @@ class DaggerGate(Gate):
         if hasattr(self, 'utry'):
             return self.utry
 
-        return self.gate.get_unitary(params).dagger()
+        return self.gate.get_unitary(params).get_dagger()
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """

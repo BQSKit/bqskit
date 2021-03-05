@@ -1,9 +1,12 @@
 """This module implements the LocallyOptimizableUnitary base class."""
+from __future__ import annotations
 
 import abc
+
+import numpy as np
+
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.utils.typing import is_square_matrix
-import numpy as np
 
 
 class LocallyOptimizableUnitary(Unitary):

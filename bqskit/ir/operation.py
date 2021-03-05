@@ -8,13 +8,12 @@ import numpy as np
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import FrozenParameterGate
-from bqskit.qis.unitary import Unitary
-from bqskit.qis.unitarymatrix import UnitaryMatrix
-from bqskit.utils.cachedclass import CachedClass
+from bqskit.qis.unitary.unitary import Unitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_location
 
 
-class Operation(Unitary, CachedClass):
+class Operation(Unitary):
     """
     The Operation class.
 
@@ -58,7 +57,7 @@ s
         self.check_parameters(params)
 
         self._gate = gate
-        self._location = location
+        self._location = list(location)
         self._params = list(params)
 
     @property

@@ -7,15 +7,15 @@ from __future__ import annotations
 
 from typing import Any
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 import numpy as np
 import scipy as sp
 
-from bqskit.qis.unitary import Unitary
-from bqskit.utils.typing import is_square_matrix, is_valid_radixes
+from bqskit.qis.unitary.unitary import Unitary
+from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_unitary
+from bqskit.utils.typing import is_valid_radixes
 
 
 class UnitaryMatrix(Unitary):
@@ -24,7 +24,7 @@ class UnitaryMatrix(Unitary):
     def __init__(self, utry: UnitaryLike, radixes: Sequence[int] = []) -> None:
         """
         Constructs a UnitaryMatrix with the supplied unitary matrix.
-        
+
         Args:
             utry (UnitaryLike): The unitary matrix.
 
@@ -33,11 +33,11 @@ class UnitaryMatrix(Unitary):
                 element specifies the base, number of orthogonal states,
                 for the corresponding qudit. By default, the constructor
                 will attempt to calculate `radixes` from `utry`.
-            
+
         Raises:
             TypeError: If `radixes` is not specified and the constructor
                 cannot determine `radixes`.
-        
+
         Examples:
             >>> UnitaryMatrix(
             ...     [
@@ -57,34 +57,32 @@ class UnitaryMatrix(Unitary):
         self.num_params = 0
 
         if radixes:
-            self.radixes = radixes
+            self.radixes = list(radixes)
 
         # Check if unitary dimension is a power of two
         elif self.dim & (self.dim - 1) == 0:
             self.radixes = [2] * int(np.round(np.log2(self.dim)))
-        
+
         # Check if unitary dimension is a power of three
         elif 3 ** int(np.round(np.log(self.dim) / np.log(3))) == self.dim:
             self.radixes = [3] * int(np.round(np.log(self.dim) / np.log(3)))
-        
+
         else:
             raise TypeError(
-                "Unable to determine radixes"
-                " for UnitaryMatrix with dim %d." % self.dim
+                'Unable to determine radixes'
+                ' for UnitaryMatrix with dim %d.' % self.dim,
             )
-        
+
         if not is_valid_radixes(self.radixes):
-            raise TypeError("Invalid qudit radixes.")
+            raise TypeError('Invalid qudit radixes.')
 
         self.size = len(self.radixes)
 
-    @property
-    def numpy(self) -> np.ndarray:
+    def get_numpy(self) -> np.ndarray:
         return self.utry
 
-    @property
-    def shape(self) -> tuple[int, int]:
-        return self.utry.shape
+    def get_shape(self) -> tuple[int, int]:
+        return self.utry.shape  # type: ignore
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         return self
@@ -101,7 +99,10 @@ class UnitaryMatrix(Unitary):
         return UnitaryMatrix(np.identity(dim), radixes)
 
     @staticmethod
-    def closest_to(M: np.ndarray, radixes: Sequence[int] = []) -> UnitaryMatrix:
+    def closest_to(
+        M: np.ndarray,
+        radixes: Sequence[int] = [],
+    ) -> UnitaryMatrix:
         """
         Calculate and return the closest unitary to a given matrix.
 
@@ -125,9 +126,9 @@ class UnitaryMatrix(Unitary):
 
         V, _, Wh = sp.linalg.svd(M)
         return UnitaryMatrix(V @ Wh, radixes)
-    
+
     def __matmul__(self, rhs: object) -> UnitaryMatrix:
-        return UnitaryMatrix(self.numpy @ rhs, self.get_radixes())
+        return UnitaryMatrix(self.get_numpy() @ rhs, self.get_radixes())
 
     def save(self, filename: str) -> None:
         """Saves the unitary to a file."""

@@ -56,4 +56,4 @@ class SynthesisPass(BasePass):
             # Skip circuits that were synthesized to be longer
             # TODO: different criteria? like depth or 2q gate or cost?
             # continue
-            circuit.replace_with_circuit(point.cycle, syn_circuit, op.location)
+            circuit.replace_with_circuit(point, syn_circuit, op.location)

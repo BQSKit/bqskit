@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Callable
 from typing import TYPE_CHECKING
 
-from bqskit.qis.unitary import Unitary
+from bqskit.qis.unitary.unitary import Unitary
 from bqskit.utils.cachedclass import CachedClass
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class Gate(Unitary, CachedClass):
 
     def get_qasm_name(self) -> str:
         """Returns the qasm name for this gate."""
-        if not self.is_qubit_gate():
+        if not self.is_qubit_only():
             raise AttributeError('QASM only supports qubit gates.')
 
         if hasattr(self, 'qasm_name'):
@@ -44,7 +44,7 @@ class Gate(Unitary, CachedClass):
 
     def get_qasm_gate_def(self) -> str:
         """Returns a qasm gate definition block for this gate."""
-        if not self.is_qubit_gate():
+        if not self.is_qubit_only():
             raise AttributeError('QASM only supports qubit gates.')
 
         return ''

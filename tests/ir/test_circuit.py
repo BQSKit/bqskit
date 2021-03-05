@@ -6,11 +6,11 @@ from bqskit.ir.gates import XGate
 
 
 def test_simple_circuit(simple_circuit: Circuit) -> None:
-    assert simple_circuit.get_gate(0, 0) is XGate()
-    assert simple_circuit.get_gate(0, 1) is None
-    assert simple_circuit.get_gate(1, 0) is CNOTGate()
-    assert simple_circuit.get_gate(1, 1) is CNOTGate()
-    assert simple_circuit.get_gate(2, 0) is None
-    assert simple_circuit.get_gate(2, 1) is XGate()
-    assert simple_circuit.get_gate(3, 0) is CNOTGate()
-    assert simple_circuit.get_gate(3, 1) is CNOTGate()
+    assert simple_circuit[0, 0].gate is XGate()
+    assert simple_circuit[0, 1].gate is None
+    assert simple_circuit[1, 0].gate is CNOTGate()
+    assert simple_circuit[1, 1].gate is CNOTGate()
+    assert simple_circuit[2, 0].gate is None
+    assert simple_circuit[2, 1].gate is XGate()
+    assert simple_circuit[3, 0].gate is CNOTGate()
+    assert simple_circuit[3, 1].gate is CNOTGate()

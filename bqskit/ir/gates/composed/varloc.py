@@ -52,15 +52,16 @@ class VariableLocationGate(Gate):
             self, params: Sequence[float],
     ) -> tuple[Sequence[float], Sequence[float]]:
         """Split params into subgate params and location params."""
-        return params[
-            :self.gate.get_num_params(
-            )
-        ], params[self.gate.get_num_params() + 1:]
+        return (
+            params[:self.gate.get_num_params()],
+            params[self.gate.get_num_params() + 1:],
+        )
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
         self.check_parameters(params)
         a, l = self.split_params(params)
+        return UnitaryMatrix.identity(2)  # TODO
 
     # def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
     #     """

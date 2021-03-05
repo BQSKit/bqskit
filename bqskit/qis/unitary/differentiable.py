@@ -1,11 +1,14 @@
 """This module implements the DifferentialableUnitary base class."""
+from __future__ import annotations
 
 import abc
 from typing import Sequence
 
 import numpy as np
+
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
 
 class DifferentialableUnitary(Unitary):
     """
@@ -36,7 +39,7 @@ class DifferentialableUnitary(Unitary):
             i-th element is the matrix derivative of the unitary
             with respect to the i-th parameter.
         """
-        
+
     def get_unitary_and_grad(
         self,
         params: Sequence[float] = [],
@@ -51,7 +54,7 @@ class DifferentialableUnitary(Unitary):
         Returns:
             (UnitaryMatrix): The unitary matrix, see `Unitary.get_unitary`
                 for more info.
-            
+
             (np.ndarray): The unitary's gradient, see `get_grad`.
 
         Notes:

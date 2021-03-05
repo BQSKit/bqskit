@@ -73,7 +73,7 @@ class TestBasicGate:
     def test_unitary_dim_match(self, gate: Gate) -> None:
         params = np.random.rand(gate.get_num_params())
         utry = gate.get_unitary(params)
-        assert utry.shape == (gate.get_dim(), gate.get_dim())
+        assert utry.get_shape() == (gate.get_dim(), gate.get_dim())
 
     def test_get_grad(self, gate: Gate) -> None:
         grads = gate.get_grad([0] * gate.get_num_params())
@@ -91,7 +91,7 @@ class TestBasicGate:
         utry1 = gate.get_unitary(params)
         utry2, grad2 = gate.get_unitary_and_grad(params)
         assert np.allclose(grad1, grad2)
-        assert np.allclose(utry1.numpy, utry2.numpy)
+        assert np.allclose(utry1.get_numpy(), utry2.get_numpy())
 
     def test_optimize_valid(self, gate: Gate) -> None:
         try:

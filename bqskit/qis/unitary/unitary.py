@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import abc
-from bqskit.utils.typing import is_sequence, is_square_matrix
 from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
+
+from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -30,8 +31,8 @@ class Unitary (abc.ABC):
             return self.num_params
 
         raise AttributeError(
-            'Expected num_params field for unitary %s.'
-            % self.__class__.__name__(),
+            'Expected num_params field for unitary'
+            ': %s.' % self.__class__.__name__(),
         )
 
     def get_radixes(self) -> list[int]:
@@ -40,8 +41,8 @@ class Unitary (abc.ABC):
             return self.radixes
 
         raise AttributeError(
-            'Expected radixes field for unitary %s.'
-            % self.__class__.__name__(),
+            'Expected radixes field for unitary'
+            ': %s.' % self.__class__.__name__(),
         )
 
     def get_size(self) -> int:
@@ -50,8 +51,8 @@ class Unitary (abc.ABC):
             return self.size
 
         raise AttributeError(
-            'Expected size field for unitary %s.'
-            % self.__class__.__name__(),
+            'Expected size field for unitary'
+            ': %s.' % self.__class__.__name__(),
         )
 
     def get_dim(self) -> int:

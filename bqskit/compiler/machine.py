@@ -6,7 +6,6 @@ A MachineModel models a quantum processing unit's connectivity.
 from __future__ import annotations
 
 import itertools as it
-from typing import Optional
 from typing import Sequence
 
 from bqskit.utils.typing import is_valid_coupling_graph
@@ -19,7 +18,7 @@ class MachineModel:
     def __init__(
         self,
         num_qudits: int,
-        coupling_graph: Optional[Sequence[tuple[int, int]]] = None,
+        coupling_graph: Sequence[tuple[int, int]] | None = None,
     ) -> None:
         """
         MachineModel Constructor.
@@ -30,7 +29,7 @@ class MachineModel:
         Args:
             num_qudits (int): The total number of qudits in the machine.
 
-            coupling_graph (Optional[Sequence[tuple[int, int]]]): List of
+            coupling_graph (Sequence[tuple[int, int]] | None): List of
                 connected qudit pairs. If None, then a fully-connected
                 coupling_graph is used as a default.
         """
