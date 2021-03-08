@@ -6,10 +6,15 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.composedgate import ComposedGate
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class FrozenParameterGate(Gate):
+class FrozenParameterGate(
+        ComposedGate, LocallyOptimizableUnitary, DifferentiableUnitary,
+):
     """A composed gate which fixes some parameters of another gate."""
 
     def __init__(self, gate: Gate, frozen_params: dict[int, float]) -> None:
@@ -80,12 +85,14 @@ class FrozenParameterGate(Gate):
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Returns the gradient for this gate, see Gate for more info."""
-        grads = self.gate.get_grad(self.get_full_params(params))
+        grads = self.gate.get_grad(  # type: ignore
+            self.get_full_params(params),
+        )
         return grads[self.unfixed_param_idxs, :, :]
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
-        params = self.gate.optimize(env_matrix)
+        params = self.gate.optimize(env_matrix)  # type: ignore
         return [
             p for i, p in enumerate(params)
             if i in self.unfixed_param_idxs

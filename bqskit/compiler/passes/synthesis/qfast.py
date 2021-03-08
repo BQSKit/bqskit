@@ -5,7 +5,7 @@ from typing import Any
 
 from bqskit.compiler.passes.synthesis import SynthesisPass
 from bqskit.ir.circuit import Circuit
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class QFASTPass(SynthesisPass):

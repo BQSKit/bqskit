@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import numbers
 from collections.abc import Sequence
 from typing import Any
 
@@ -28,6 +29,11 @@ def is_sequence(test_variable: Any) -> bool:
     else:
         _logger.debug('Invalid sequence.')
         return False
+
+
+def is_numeric(test_variable: Any) -> bool:
+    """Return true if test_variable is numeric."""
+    return isinstance(test_variable, numbers.Number)
 
 
 def is_valid_location(

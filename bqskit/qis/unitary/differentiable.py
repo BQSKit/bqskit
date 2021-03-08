@@ -1,4 +1,4 @@
-"""This module implements the DifferentialableUnitary base class."""
+"""This module implements the DifferentiableUnitary base class."""
 from __future__ import annotations
 
 import abc
@@ -10,7 +10,7 @@ from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class DifferentialableUnitary(Unitary):
+class DifferentiableUnitary(Unitary):
     """
     The DifferentiableUnitary base class.
 

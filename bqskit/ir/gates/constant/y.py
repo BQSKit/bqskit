@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class YGate(ConstantGate, QubitGate):

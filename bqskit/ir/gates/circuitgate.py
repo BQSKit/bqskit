@@ -1,5 +1,4 @@
 """This module implements the CircuitGate class."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -14,9 +13,10 @@ class CircuitGate(ConstantGate):
     """
     The CircuitGate class.
 
-    A CircuitGate is a circuit copy that is immutable represented as a gate.
+    A CircuitGate is a circuit copy that is immutable represented as a
+    gate.
     """
-    
+
     def __init__(self, circuit: Circuit, move: bool = False) -> None:
         """
         CircuitGate Constructor.

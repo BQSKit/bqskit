@@ -15,12 +15,13 @@ import numpy as np
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
+from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
-from bqskit.qis.unitary.unitary import Unitary
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
@@ -31,7 +32,7 @@ from bqskit.utils.typing import is_valid_radixes
 _logger = logging.getLogger(__name__)
 
 
-class Circuit(Unitary, StateVectorMap, Collection[Operation]):
+class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     """
     Circuit class.
 
@@ -1037,9 +1038,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         for op in reversed(self):
             circuit.append(
                 Operation(
-                    DaggerGate(
-                        op.gate,
-                    ),
+                    DaggerGate(op.gate),
                     op.location,
                     op.params,
                 ),
@@ -1215,7 +1214,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     def __getitem__(self, points: Sequence[CircuitPoint] | slice) -> Circuit:
         ...
 
-    def __getitem__(self, points):
+    def __getitem__(
+        self,
+        points: CircuitPointLike | Sequence[CircuitPoint] | slice,
+    ) -> Operation | Circuit:
         """
         Retrieve an operation from a point or a circuit from a point sequence.
 
@@ -1487,7 +1489,15 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         pass
 
     @ staticmethod
-    def from_unitary(utry: np.ndarray) -> Circuit:
-        pass
+    def from_unitary(utry: UnitaryMatrix) -> Circuit:
+        circuit = Circuit(utry.get_size(), utry.get_radixes())
+        circuit.append_gate(
+            ConstantUnitaryGate(utry), list(
+                range(
+                    utry.get_size(),
+                ),
+            ),
+        )
+        return circuit
 
     # endregion

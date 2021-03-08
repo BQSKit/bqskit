@@ -7,13 +7,15 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bqskit.qis.unitary.meta import UnitaryMeta
+from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class Unitary (abc.ABC):
+class Unitary (metaclass=UnitaryMeta):
     """
     The Unitary base class.
 
@@ -32,7 +34,7 @@ class Unitary (abc.ABC):
 
         raise AttributeError(
             'Expected num_params field for unitary'
-            ': %s.' % self.__class__.__name__(),
+            ': %s.' % self.__class__.__name__,
         )
 
     def get_radixes(self) -> list[int]:
@@ -42,7 +44,7 @@ class Unitary (abc.ABC):
 
         raise AttributeError(
             'Expected radixes field for unitary'
-            ': %s.' % self.__class__.__name__(),
+            ': %s.' % self.__class__.__name__,
         )
 
     def get_size(self) -> int:
@@ -52,7 +54,7 @@ class Unitary (abc.ABC):
 
         raise AttributeError(
             'Expected size field for unitary'
-            ': %s.' % self.__class__.__name__(),
+            ': %s.' % self.__class__.__name__,
         )
 
     def get_dim(self) -> int:
@@ -94,6 +96,14 @@ class Unitary (abc.ABC):
             raise TypeError(
                 'Expected a sequence type for params, got %s.'
                 % type(params),
+            )
+
+        if not all(is_numeric(p) for p in params):
+            typechecks = [is_numeric(p) for p in params]
+            fail_idx = typechecks.index(False)
+            raise TypeError(
+                'Expected params to be floats, got %s.'
+                % type(params[fail_idx]),
             )
 
         if len(params) != self.get_num_params():

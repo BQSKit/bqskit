@@ -6,10 +6,11 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class RZGate(QubitGate):
+class RZGate(QubitGate, DifferentiableUnitary):
     """A gate representing an arbitrary rotation around the Z axis."""
 
     size = 1

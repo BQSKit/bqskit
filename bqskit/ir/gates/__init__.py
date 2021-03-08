@@ -9,4 +9,3 @@ from bqskit.ir.gates.parameterized import *  # noqa
 from bqskit.ir.gates.parameterized import __all__ as parameterized_all
 
 __all__ = composed_all + constant_all + parameterized_all + ['CircuitGate']
-print(__all__)

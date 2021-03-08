@@ -15,10 +15,17 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.composedgate import ComposedGate
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class DaggerGate(Gate):
+class DaggerGate(
+    ComposedGate,
+    LocallyOptimizableUnitary,
+    DifferentiableUnitary,
+):
     """The DaggerGate Class."""
 
     def __init__(self, gate: Gate) -> None:
@@ -61,11 +68,12 @@ class DaggerGate(Gate):
         if hasattr(self, 'utry'):
             return np.array([])
 
-        return np.transpose(self.gate.get_grad(params).conj(), (0, 2, 1))
+        grads = self.gate.get_grad(params)  # type: ignore
+        return np.transpose(grads.conj(), (0, 2, 1))
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""
         if hasattr(self, 'utry'):
             return []
         self.check_env_matrix(env_matrix)
-        return self.gate.optimize(env_matrix.conj().T)
+        return self.gate.optimize(env_matrix.conj().T)  # type: ignore

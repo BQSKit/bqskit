@@ -10,10 +10,12 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class ConstantGate(Gate):
+class ConstantGate(Gate, DifferentiableUnitary, LocallyOptimizableUnitary):
     """The ConstantGate Class."""
 
     num_params = 0

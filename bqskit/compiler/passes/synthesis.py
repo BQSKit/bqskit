@@ -10,7 +10,7 @@ from bqskit.ir.circuit import CircuitPoint
 from bqskit.ir.gates.composed.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class SynthesisPass(BasePass):

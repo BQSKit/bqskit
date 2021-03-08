@@ -6,7 +6,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
 

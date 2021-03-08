@@ -8,12 +8,13 @@ import numpy as np
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import FrozenParameterGate
-from bqskit.qis.unitary.unitary import Unitary
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_location
 
 
-class Operation(Unitary):
+class Operation(DifferentiableUnitary):
     """
     The Operation class.
 
@@ -97,18 +98,17 @@ s
         """Return the op's gradient, see Unitary for more info."""
         if params:
             self.check_parameters(params)
-            return self.gate.get_grad(params)
-        return self.gate.get_grad(self.params)
+            return self.gate.get_grad(params)  # type: ignore
+        return self.gate.get_grad(self.params)  # type: ignore
 
     def get_unitary_and_grad(
-        self, params: Sequence[float] = [
-        ],
+        self, params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the op's unitary and gradient, see Unitary for more info."""
         if params:
             self.check_parameters(params)
-            return self.gate.get_unitary_and_grad(params)
-        return self.gate.get_unitary_and_grad(self.params)
+            return self.gate.get_unitary_and_grad(params)  # type: ignore
+        return self.gate.get_unitary_and_grad(self.params)  # type: ignore
 
     def __eq__(self, rhs: Any) -> bool:
         """Check for equality."""
@@ -129,3 +129,11 @@ s
 
     def __repr__(self) -> str:
         pass  # TODO
+
+    def is_differentiable(self) -> bool:
+        """Check if operation is differentiable."""
+        return isinstance(self._gate, DifferentiableUnitary)
+
+    def is_locally_optimizable(self) -> bool:
+        """Check if operation is locally optimizable."""
+        return isinstance(self._gate, LocallyOptimizableUnitary)

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qutritgate import QutritGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class CSUMGate(ConstantGate, QutritGate):

@@ -7,11 +7,16 @@ import numpy as np
 import scipy as sp
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
 
-class VariableUnitaryGate(Gate):
+class VariableUnitaryGate(
+    Gate, DifferentiableUnitary,
+    LocallyOptimizableUnitary,
+):
     """A Variable n-qudit unitary operator."""
 
     def __init__(self, size: int, radixes: Sequence[int] = []) -> None:

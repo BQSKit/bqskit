@@ -16,7 +16,7 @@ from scipy.stats import unitary_group
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import *
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 # Unitaries
 # Random and invalid unitaries dynamically generated in hooks below
@@ -121,8 +121,8 @@ BQSKIT_GATES = [
 ]
 
 CONSTANT_GATES = [g for g in BQSKIT_GATES if g.is_constant()]
-QUBIT_GATES = [g for g in BQSKIT_GATES if g.is_qubit_gate()]
-QUTRIT_GATES = [g for g in BQSKIT_GATES if g.is_qutrit_gate()]
+QUBIT_GATES = [g for g in BQSKIT_GATES if g.is_qubit_only()]
+QUTRIT_GATES = [g for g in BQSKIT_GATES if g.is_qutrit_only()]
 PARAMETERIZED_GATES = [g for g in BQSKIT_GATES if g.is_parameterized()]
 
 

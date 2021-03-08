@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from bqskit.ir.machine import MachineModel
+from bqskit.compiler.machine import MachineModel
 
 
 class TestMachineConstructor:

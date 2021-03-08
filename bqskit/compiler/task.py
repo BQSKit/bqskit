@@ -16,8 +16,7 @@ from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TaskException(Exception):
@@ -79,13 +78,10 @@ class CompilationTask():
     @staticmethod
     def synthesis(utry: UnitaryMatrix, method: str) -> CompilationTask:
         """Produces a standard synthesis task for the given unitary."""
-        if not utry.is_qubit_unitary():
-            raise ValueError('Unable to determine radixes of the unitary.')
-        num_qubits = utry.get_num_qubits()
-        circ = Circuit(num_qubits)
-        circ.append_gate(ConstantUnitaryGate(utry), list(range(num_qubits)))
-        return CompilationTask(circ, [])  # TODO
+        circuit = Circuit.from_unitary(utry)
+        return CompilationTask(circuit, [])  # TODO
 
     @staticmethod
-    def optimize(circ: Circuit, method: str) -> CompilationTask:
-        pass  # TODO
+    def optimize(circuit: Circuit, method: str) -> CompilationTask:
+        """Produces a standard optimization task for the given circuit."""
+        return CompilationTask(circuit, [])  # TODO

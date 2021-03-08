@@ -6,10 +6,11 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gates.qutritgate import QutritGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class U8Gate(QutritGate):
+class U8Gate(QutritGate, DifferentiableUnitary):
     """The U8 single qutrit gate."""
 
     size = 1

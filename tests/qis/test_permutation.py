@@ -88,13 +88,13 @@ class TestFromQubitLocation:
         ])
 
         perm = PermutationMatrix.from_qubit_location(2, (1, 0))
-        assert np.allclose(perm.numpy, swap_012)
+        assert np.allclose(perm.get_numpy(), swap_012)
 
         perm = PermutationMatrix.from_qubit_location(2, (1,))
-        assert np.allclose(perm.numpy, swap_012)
+        assert np.allclose(perm.get_numpy(), swap_012)
 
         perm = PermutationMatrix.from_qubit_location(2, (0, 1))
-        assert np.allclose(perm.numpy, np.identity(4))
+        assert np.allclose(perm.get_numpy(), np.identity(4))
 
     def test_calc_permutation_matrix_big(self) -> None:
         I = np.identity(2, dtype=np.complex128)
@@ -113,17 +113,17 @@ class TestFromQubitLocation:
         U0 = sp.linalg.expm(-1j * IXX)
         U1 = sp.linalg.expm(-1j * XXI)
         P = PermutationMatrix.from_qubit_location(3, (1, 2))
-        assert np.allclose(U0, P.numpy @ U1 @ P.numpy.T)
+        assert np.allclose(U0, P.get_numpy() @ U1 @ P.get_numpy().T)
 
         U0 = sp.linalg.expm(-1j * IIXX)
         U1 = sp.linalg.expm(-1j * IXIX)
         P = PermutationMatrix.from_qubit_location(4, (0, 2))
-        assert np.allclose(U0, P.numpy @ U1 @ P.numpy.T)
+        assert np.allclose(U0, P.get_numpy() @ U1 @ P.get_numpy().T)
 
         U0 = sp.linalg.expm(-1j * IXIXIXIX)
         U1 = sp.linalg.expm(-1j * np.kron(XXXX, IIII))
         P = PermutationMatrix.from_qubit_location(8, (1, 3, 5, 7))
-        assert np.allclose(U0, P.numpy @ U1 @ P.numpy.T)
+        assert np.allclose(U0, P.get_numpy() @ U1 @ P.get_numpy().T)
 
     def test_calc_permutation_matrix_invalid(self) -> None:
         with pytest.raises(TypeError):

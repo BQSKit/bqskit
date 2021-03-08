@@ -6,10 +6,11 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class U2Gate(QubitGate):
+class U2Gate(QubitGate, DifferentiableUnitary):
     """The U2 single qubit gate."""
 
     size = 1

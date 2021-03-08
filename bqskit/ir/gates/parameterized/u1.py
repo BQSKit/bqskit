@@ -6,10 +6,12 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class U1Gate(QubitGate):
+class U1Gate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
     """The U1 single qubit gate."""
 
     size = 1

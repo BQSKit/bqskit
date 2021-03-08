@@ -128,7 +128,8 @@ class UnitaryMatrix(Unitary):
         return UnitaryMatrix(V @ Wh, radixes)
 
     def __matmul__(self, rhs: object) -> UnitaryMatrix:
-        return UnitaryMatrix(self.get_numpy() @ rhs, self.get_radixes())
+        res: np.ndarray = self.get_numpy() @ rhs  # type: ignore
+        return UnitaryMatrix(res, self.get_radixes())
 
     def save(self, filename: str) -> None:
         """Saves the unitary to a file."""

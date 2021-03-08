@@ -11,8 +11,8 @@ from typing import Sequence
 import numpy as np
 import sympy.combinatorics as cb
 
-from bqskit.qis.unitarymatrix import UnitaryLike
-from bqskit.qis.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_permutation
 from bqskit.utils.typing import is_valid_location
 
