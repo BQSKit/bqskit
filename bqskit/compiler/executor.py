@@ -25,7 +25,6 @@ class Executor:
         self.circuit = copy.deepcopy(task.input_circuit)
         self.passes = task.passes
         self.data: dict[str, Any] = {}
-        self.done = False
 
     def run(self) -> None:
         """Executes the task."""
@@ -35,7 +34,4 @@ class Executor:
 
     def get_result(self) -> Circuit:
         """Retrieve result."""
-        if not self.done:
-            raise Exception  # TODO: Re-evaluate
-
         return self.circuit

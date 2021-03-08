@@ -16,8 +16,8 @@ from typing import Any
 
 from bqskit.compiler.executor import Executor
 from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.task import TaskResult
 from bqskit.compiler.task import TaskStatus
-from bqskit.ir.circuit import Circuit
 
 
 _logger = logging.getLogger(__name__)
@@ -74,7 +74,10 @@ class WorkQueue:
             except Exception as e:
                 _logger.debug('Error executing task: %s' % task.task_id)
                 _logger.debug(e)
-                self.tasks[task.task_id] = {'status': TaskStatus.ERROR}
+                self.tasks[task.task_id] = {
+                    'status': TaskStatus.ERROR,
+                    'message': str(e),
+                }
 
     def stop(self) -> None:
         """Stops the worker thread from starting another task."""
@@ -91,10 +94,10 @@ class WorkQueue:
             return self.tasks[task_id]['status']
         return TaskStatus.ERROR
 
-    def result(self, task_id: uuid.UUID) -> Circuit:
+    def result(self, task_id: uuid.UUID) -> TaskResult:
         """Block until the CompilationTask is finished, return its result."""
         if task_id not in self.tasks:
-            return Circuit.from_str('')  # TODO: Better invalid circuit
+            return TaskResult.does_not_exist()
 
         # wait for it to finish
         status = self.tasks[task_id]['status']
@@ -104,9 +107,9 @@ class WorkQueue:
 
         # Handle errors
         if 'result' not in self.tasks[task_id]:
-            return Circuit.from_str('')  # TODO: Better invalid circuit
+            return TaskResult(self.tasks[task_id]['message'], TaskStatus.ERROR)
 
-        return self.tasks[task_id]['result']
+        return TaskResult.from_circuit(self.tasks[task_id]['result'])
 
     def remove(self, task_id: uuid.UUID) -> None:
         if task_id in self.tasks:

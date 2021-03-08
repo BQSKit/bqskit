@@ -23,6 +23,7 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_valid_location
@@ -1472,10 +1473,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     # region IO Methods
 
     def __str__(self) -> str:
-        pass
+        return 'Circuit(%d)' % self.get_size()  # TODO
 
     def __repr__(self) -> str:
-        pass
+        return 'Circuit(%d)' % self.get_size()  # TODO
 
     def save(self, filename: str) -> None:
         pass
@@ -1489,7 +1490,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         pass
 
     @ staticmethod
-    def from_unitary(utry: UnitaryMatrix) -> Circuit:
+    def from_unitary(utry: UnitaryLike) -> Circuit:
+        utry = UnitaryMatrix(utry)
         circuit = Circuit(utry.get_size(), utry.get_radixes())
         circuit.append_gate(
             ConstantUnitaryGate(utry), list(

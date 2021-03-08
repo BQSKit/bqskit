@@ -47,6 +47,15 @@ class UnitaryMatrix(Unitary):
             ... )  # Creates a single-qubit Pauli X unitary matrix.
         """
 
+        # Copy Constructor
+        if isinstance(utry, UnitaryMatrix):
+            self.utry = utry.get_numpy()
+            self.dim = utry.get_dim()
+            self.num_params = utry.get_num_params()
+            self.radixes = utry.get_radixes()
+            self.size = utry.get_size()
+            return
+
         np_utry = np.array(utry, dtype=np.complex128)
 
         if not is_unitary(np_utry):

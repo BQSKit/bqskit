@@ -20,5 +20,6 @@ print(compiler.result(task1))
 
 task2 = CompilationTask(Circuit(2), [])
 print(compiler.compile(task2))
+del compiler
 
 # Compiler().compile(task.qfast_synthesis(utry)).circuit.to_file("qasm")

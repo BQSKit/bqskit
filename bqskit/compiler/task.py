@@ -53,6 +53,16 @@ class TaskResult():
             raise TaskException('No circuit produced.')
         return self.circuit
 
+    @staticmethod
+    def does_not_exist() -> TaskResult:
+        """Return a TaskResult with an error message."""
+        return TaskResult('Task does not exist.', TaskStatus.ERROR)
+
+    @staticmethod
+    def from_circuit(circuit: Circuit) -> TaskResult:
+        """Build a simple success result from a circuit."""
+        return TaskResult('Success.', TaskStatus.DONE, circuit)
+
 
 class CompilationTask():
     """The CompilationTask class."""
