@@ -10,9 +10,9 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-import pytest
 from scipy.stats import unitary_group
 
+import pytest
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import *
