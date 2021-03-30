@@ -18,7 +18,7 @@ class MachineModel:
     def __init__(
         self,
         num_qudits: int,
-        coupling_graph: Sequence[tuple[int, int]] | None = None,
+        coupling_graph: set[tuple[int, int]] | None = None,
     ) -> None:
         """
         MachineModel Constructor.
@@ -29,7 +29,7 @@ class MachineModel:
         Args:
             num_qudits (int): The total number of qudits in the machine.
 
-            coupling_graph (Sequence[tuple[int, int]] | None): List of
+            coupling_graph (set[tuple[int, int]] | None): List of
                 connected qudit pairs. If None, then a fully-connected
                 coupling_graph is used as a default.
         """
@@ -47,12 +47,12 @@ class MachineModel:
             )
 
         if coupling_graph is None:
-            coupling_graph = list(it.combinations(range(num_qudits), 2))
+            coupling_graph = set(it.combinations(range(num_qudits), 2))
 
         if not is_valid_coupling_graph(coupling_graph, num_qudits):
             raise TypeError('Invalid coupling graph.')
 
-        self.coupling_graph = list(coupling_graph)
+        self.coupling_graph = set(coupling_graph)
         self.num_qudits = num_qudits
         self._cache: dict[int, list[tuple[int, ...]]] = {}
 

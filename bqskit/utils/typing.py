@@ -117,14 +117,14 @@ def is_valid_radixes(
 
 
 def is_valid_coupling_graph(
-    coupling_graph: Sequence[tuple[int, int]],
+    coupling_graph: set[tuple[int, int]],
     num_qudits: int | None = None,
 ) -> bool:
     """
     Checks if the coupling graph is valid.
 
     Args:
-        coupling_graph (Sequence[tuple[int, int]]): The coupling graph
+        coupling_graph (set[tuple[int, int]]): The coupling graph
             to check.
 
         num_qudits (int | None): The total number of qudits. All qudits
@@ -134,8 +134,8 @@ def is_valid_coupling_graph(
         (bool): Valid or not
     """
 
-    if not is_sequence(coupling_graph):
-        _logger.debug('Coupling graph is not a Sequence.')
+    if not isinstance(coupling_graph, set):
+        _logger.debug('Coupling graph is not a set.')
         return False
 
     if len(coupling_graph) == 0:
@@ -155,19 +155,13 @@ def is_valid_coupling_graph(
             return False
 
         if not all(
-            qubit < num_qudits
+            qudit < num_qudits
             for pair in coupling_graph
-            for qubit in pair
+            for qudit in pair
         ):
             _logger.debug('Coupling graph has invalid qudits.')
             return False
 
-    # TODO: Reevaluate if this should be an error
-    if len(coupling_graph) != len(set(coupling_graph)):
-        _logger.debug('Coupling graph has duplicates.')
-        return False
-
-    # TODO: Reevaluate if this should be an error
     if not all([
         len(pair) == len(set(pair))
         for pair in coupling_graph
