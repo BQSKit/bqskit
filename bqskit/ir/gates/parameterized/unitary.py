@@ -35,7 +35,7 @@ class VariableUnitaryGate(
             raise TypeError('Invalid radixes.')
 
         self.size = size
-        self.radixes = list(radixes or [2] * size)
+        self.radixes = tuple(radixes or [2] * size)
         self.dim = int(np.prod(self.radixes))
         self.shape = (self.dim, self.dim)
         self.num_params = self.dim**2

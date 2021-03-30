@@ -29,7 +29,7 @@ class IdentityGate(ConstantGate):
             raise TypeError('Invalid radixes.')
 
         self.size = size
-        self.radixes = list(radixes or [2] * size)
+        self.radixes = tuple(radixes or [2] * size)
         self.utry = UnitaryMatrix.identity(int(np.prod(self.radixes)))
         self.qasm_name = 'identity%d' % self.size
 

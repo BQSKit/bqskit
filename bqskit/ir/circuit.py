@@ -80,7 +80,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
 
         self.size = int(size)
-        self.radixes = list(radixes or [2] * self.size)
+        self.radixes = tuple(radixes or [2] * self.size)
 
         if not is_valid_radixes(self.radixes, self.size):
             raise TypeError('Invalid qudit radixes.')
@@ -164,7 +164,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Expected radix to be > 2, got %d' % radix)
 
         self.size += 1
-        self.radixes.append(radix)
+        self.radixes = self.radixes + (radix,)
 
         for cycle in self._circuit:
             cycle.append(None)
@@ -200,7 +200,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Expected radix to be > 2, got %d' % radix)
 
         self.size += 1
-        self.radixes.insert(qudit_index, radix)
+        radix_list = list(self.radixes)
+        radix_list.insert(qudit_index, radix)
+        self.radixes = tuple(radix_list)
 
         for cycle in self._circuit:
             cycle.insert(qudit_index, None)

@@ -24,7 +24,7 @@ class Unitary (metaclass=UnitaryMeta):
     """
 
     num_params: int
-    radixes: list[int]
+    radixes: tuple[int, ...]
     size: int
 
     def get_num_params(self) -> int:
@@ -37,7 +37,7 @@ class Unitary (metaclass=UnitaryMeta):
             ': %s.' % self.__class__.__name__,
         )
 
-    def get_radixes(self) -> list[int]:
+    def get_radixes(self) -> tuple[int, ...]:
         """Returns the number of orthogonal states for each qudit."""
         if hasattr(self, 'radixes'):
             return self.radixes

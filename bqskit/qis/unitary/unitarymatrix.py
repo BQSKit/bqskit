@@ -66,15 +66,16 @@ class UnitaryMatrix(Unitary):
         self.num_params = 0
 
         if radixes:
-            self.radixes = list(radixes)
+            self.radixes = tuple(radixes)
 
         # Check if unitary dimension is a power of two
         elif self.dim & (self.dim - 1) == 0:
-            self.radixes = [2] * int(np.round(np.log2(self.dim)))
+            self.radixes = tuple([2] * int(np.round(np.log2(self.dim))))
 
         # Check if unitary dimension is a power of three
         elif 3 ** int(np.round(np.log(self.dim) / np.log(3))) == self.dim:
-            self.radixes = [3] * int(np.round(np.log(self.dim) / np.log(3)))
+            radixes = [3] * int(np.round(np.log(self.dim) / np.log(3)))
+            self.radixes = tuple(radixes)
 
         else:
             raise TypeError(

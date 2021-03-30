@@ -53,7 +53,7 @@ class UnitaryBuilder(Unitary):
 
         self.size = num_qudits
         self.num_params = 0
-        self.radixes = list(radixes or [2] * num_qudits)
+        self.radixes = tuple(radixes or [2] * num_qudits)
 
         if not is_valid_radixes(self.radixes, self.get_size()):
             raise TypeError('Invalid qudit radixes.')
@@ -122,7 +122,7 @@ class UnitaryBuilder(Unitary):
         self.tensor = self.tensor.reshape((left_dim, -1))
         self.tensor = utry_np @ self.tensor
 
-        shape = self.get_radixes() * 2
+        shape = list(self.get_radixes()) * 2
         shape = [shape[p] for p in perm]
         self.tensor = self.tensor.reshape(shape)
         inv_perm = list(np.argsort(perm))
@@ -187,7 +187,7 @@ class UnitaryBuilder(Unitary):
         self.tensor = self.tensor.reshape((-1, right_dim))
         self.tensor = self.tensor @ utry_np
 
-        shape = self.get_radixes() * 2
+        shape = list(self.get_radixes()) * 2
         shape = [shape[p] for p in perm]
         self.tensor = self.tensor.reshape(shape)
         inv_perm = list(np.argsort(perm))
