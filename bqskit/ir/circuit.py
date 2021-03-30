@@ -110,7 +110,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def get_params(self) -> list[float]:
         """Returns the stored parameters for the circuit."""
-        return sum([op.params for op in self])  # type: ignore
+        return sum([op.params for op in self], [])
 
     def get_depth(self) -> int:
         """Return the length of the critical path in the circuit."""
