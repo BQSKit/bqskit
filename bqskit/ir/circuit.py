@@ -135,6 +135,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Notes:
             Multi-qudit gates require participating qudits to have
                 all-to-all connectivity.
+
+            The graph is undirected.
         """
         coupling_graph = set()
         for op in self:
@@ -142,7 +144,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 for q2 in op.location:
                     if q1 == q2:
                         continue
-                    coupling_graph.add((q1, q2))
+                    if q1 < q2:
+                        coupling_graph.add((q1, q2))
+                    else:
+                        coupling_graph.add((q2, q1))
         return coupling_graph
 
     # endregion
