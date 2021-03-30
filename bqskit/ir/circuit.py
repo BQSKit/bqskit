@@ -150,6 +150,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                         coupling_graph.add((q2, q1))
         return coupling_graph
 
+    def get_gate_set(self) -> set[Gate]:
+        """Return the set of gates in the circuit."""
+        return set(self._gate_set.keys())
+
     # endregion
 
     # region Qudit Methods
