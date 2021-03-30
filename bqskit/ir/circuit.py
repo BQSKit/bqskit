@@ -1291,9 +1291,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             if self.qudit >= self.max_qudit:
                 self.qudit = 0
                 self.cycle += 1
-                self.qudits_to_skip = set()
-            if self.cycle >= self.max_cycle:
-                raise StopIteration
+                self.qudits_to_skip.clear()
 
         def decrement_iter(self) -> None:
             self.qudit -= 1
@@ -1302,11 +1300,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             if self.qudit < 0:
                 self.qudit = self.max_qudit - 1
                 self.cycle -= 1
-                self.qudits_to_skip = set()
-            if self.cycle < 0:
-                raise StopIteration
+                self.qudits_to_skip.clear()
+
+        def step(self) -> None:
+            if not self.reversed:
+                self.increment_iter()
+            else:
+                self.decrement_iter()
 
         def dereference(self) -> Operation | None:
+            if self.cycle < 0 or self.cycle >= self.max_cycle:
+                raise StopIteration
             return self.circuit[self.cycle][self.qudit]
 
         def __iter__(self) -> Iterator[
@@ -1317,15 +1321,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         def __next__(self) -> Operation | tuple[CircuitPoint, Operation]:
             while self.dereference() is None:
-                if not self.reversed:
-                    self.increment_iter()
-                else:
-                    self.decrement_iter()
+                self.step()
             op: Operation = self.dereference()  # type: ignore
             self.qudits_to_skip.update(op.location)
             if self.and_points:
-                return CircuitPoint(self.cycle, self.qudit), op
+                cycle, qudit = self.cycle, self.qudit
+                self.step()
+                return CircuitPoint(cycle, qudit), op
             else:
+                self.step()
                 return op
 
     class QuditIterator(
@@ -1351,15 +1355,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         def increment_iter(self) -> None:
             self.cycle += 1
-            if self.cycle >= self.max_cycle:
-                raise StopIteration
 
         def decrement_iter(self) -> None:
             self.cycle -= 1
-            if self.cycle < 0:
-                raise StopIteration
+
+        def step(self) -> None:
+            if not self.reversed:
+                self.increment_iter()
+            else:
+                self.decrement_iter()
 
         def dereference(self) -> Operation | None:
+            if self.cycle < 0 or self.cycle >= self.max_cycle:
+                raise StopIteration
             return self.circuit[self.cycle][self.qudit]
 
         def __iter__(self) -> Iterator[
@@ -1370,14 +1378,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         def __next__(self) -> Operation | tuple[CircuitPoint, Operation]:
             while self.dereference() is None:
-                if not self.reversed:
-                    self.increment_iter()
-                else:
-                    self.decrement_iter()
+                self.step()
             op: Operation = self.dereference()  # type: ignore
+
             if self.and_points:
-                return CircuitPoint(self.cycle, self.qudit), op
+                cycle, qudit = self.cycle, self.qudit
+                self.step()
+                return CircuitPoint(cycle, qudit), op
             else:
+                self.step()
                 return op
 
     def __iter__(self) -> Iterator[Operation]:
