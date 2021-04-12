@@ -62,7 +62,6 @@ repos:
     hooks:
     -   id: mypy
         additional_dependencies: [numpy>=1.20]
-        exclude: "conftest.py"
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:

@@ -58,7 +58,7 @@ s
         self.check_parameters(params)
 
         self._gate = gate
-        self._location = list(location)
+        self._location = tuple(location)
         self._params = list(params)
 
     @property
@@ -66,7 +66,7 @@ s
         return self._gate
 
     @property
-    def location(self) -> list[int]:
+    def location(self) -> tuple[int, ...]:
         return self._location
 
     @property

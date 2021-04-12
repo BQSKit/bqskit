@@ -25,6 +25,7 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
@@ -80,10 +81,16 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
 
         self.size = int(size)
-        self.radixes = tuple(radixes or [2] * self.size)
+        self.radixes = tuple(radixes if len(radixes) > 0 else [2] * self.size)
 
-        if not is_valid_radixes(self.radixes, self.size):
+        if not is_valid_radixes(self.radixes):
             raise TypeError('Invalid qudit radixes.')
+
+        if len(self.radixes) != self.size:
+            raise ValueError(
+                'Expected length of radixes to be equal to size:'
+                ' %d != %d' % (len(self.radixes), self.size),
+            )
 
         self._circuit: list[list[Operation | None]] = []
         self._gate_set: dict[Gate, int] = {}
@@ -98,7 +105,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return num_params_acm
 
     def get_num_operations(self) -> int:
-        """Return the total number of gates/operations in the circuit."""
+        """Return the total number of operations in the circuit."""
         num_gates_acm = 0
         for _, count in self._gate_set.items():
             num_gates_acm += count
@@ -108,21 +115,22 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Return the number of cycles in the circuit."""
         return len(self._circuit)
 
-    def get_params(self) -> list[float]:
-        """Returns the stored parameters for the circuit."""
-        return sum([op.params for op in self], [])
+    def get_params(self) -> np.ndarray:
+        """Return the stored parameters for the circuit."""
+        return np.array(sum([op.params for op in self], []))
 
     def get_depth(self) -> int:
         """Return the length of the critical path in the circuit."""
-        qudit_depths = np.zeros(self.get_size())
+        qudit_depths = np.zeros(self.get_size(), dtype=int)
         for op in self:
-            new_depth = max(qudit_depths[op.location]) + 1
-            qudit_depths[op.location] = new_depth
-        return max(qudit_depths)
+            new_depth = max(qudit_depths[list(op.location)]) + 1
+            qudit_depths[list(op.location)] = new_depth
+        return int(max(qudit_depths))
 
     def get_parallelism(self) -> float:
         """Calculate the amount of parallelism in the circuit."""
-        return self.get_num_operations() / self.get_depth()
+        depth = self.get_depth()
+        return self.get_num_operations() / depth if depth != 0 else 0
 
     def get_coupling_graph(self) -> set[tuple[int, int]]:
         """
@@ -130,7 +138,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Returns:
             (set[tuple[int, int]]): The coupling graph required by
-                the circuit. The graph is returned as a edge list.
+                the circuit. The graph is returned as an edge list.
 
         Notes:
             Multi-qudit gates require participating qudits to have
@@ -169,8 +177,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             ValueError: If `radix` is < 2
         """
 
+        if not is_integer(radix):
+            raise TypeError('Expected integer for radix, got: %s', type(radix))
+
         if radix < 2:
-            raise ValueError('Expected radix to be > 2, got %d' % radix)
+            raise ValueError('Expected radix to be >= 2, got %d' % radix)
 
         self.size += 1
         self.radixes = self.radixes + (radix,)
@@ -205,6 +216,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             ValueError: If `radix` is < 2.
         """
 
+        if not is_integer(qudit_index):
+            raise TypeError(
+                'Expected integer for qudit_index, got: %s', type(qudit_index),
+            )
+
+        if not is_integer(radix):
+            raise TypeError('Expected integer for radix, got: %s', type(radix))
+
         if radix < 2:
             raise ValueError('Expected radix to be > 2, got %d' % radix)
 
@@ -215,6 +234,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         for cycle in self._circuit:
             cycle.insert(qudit_index, None)
+        # TODO: big bug: have to go through operations and renumber location
 
     def pop_qudit(self, qudit_index: int) -> None:
         """Pop a qudit from the circuit and all gates attached to it."""
@@ -424,7 +444,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 from. Inclusive. (Default: Beginning of the circuit.)
 
             end (CircuitPointLike | None): Cycle index to stop searching at.
-                Exclusive. (Default: End of the circuit.)
+                Inclusive. (Default: End of the circuit.)
 
         Returns:
             The first point that contains `op`.
@@ -455,7 +475,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         else:
             raise TypeError('Expected gate or operation, got %s.' % type(op))
 
-        end = end or (self.get_num_cycles(), 0)
+        end = end or (self.get_num_cycles() - 1, self.get_size() - 1)
 
         if not self.is_point_in_range(start):
             raise IndexError('Out-of-range or invalid start point.')
@@ -465,12 +485,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if isinstance(op, Operation):
             qudit_index = op.location[0]
-            for i, cycle in enumerate(self._circuit[start[0]:end[0]]):
+            for i, cycle in enumerate(self._circuit[start[0]:end[0] + 1]):
                 if cycle[qudit_index] is not None and cycle[qudit_index] == op:
                     return CircuitPoint(start[0] + i, qudit_index)
         else:
-            for i, cycle in enumerate(self._circuit[start[0]:end[0]]):
-                for q, _op in enumerate(cycle[start[1]:end[1]]):
+            for i, cycle in enumerate(self._circuit[start[0]:end[0] + 1]):
+                for q, _op in enumerate(cycle[start[1]:end[1] + 1]):
                     if _op is not None and _op.gate == op:
                         return CircuitPoint(start[0] + i, start[1] + q)
 
@@ -531,8 +551,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> # Append a Hadamard gate to qudit 0.
             >>> circ.append_gate(H(), [0])
         """
-        params = params or [0.0] * gate.get_num_params()
-        self.append(Operation(gate, location, params))
+        _params = params if len(params) > 0 else [0.0] * gate.get_num_params()
+        self.append(Operation(gate, location, _params))
 
     def append_circuit(
         self,
@@ -600,7 +620,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         self.check_valid_operation(op)
 
-        if self.is_cycle_in_range(cycle_index):
+        if not self.is_cycle_in_range(cycle_index):
             if cycle_index < -self.get_num_cycles():
                 cycle_index = 0
             else:
@@ -646,8 +666,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 either an invalid location or gate radix mismatch.
         """
 
-        params = params or [0.0] * gate.get_num_params()
-        self.insert(cycle_index, Operation(gate, location, params))
+        _params = params if len(params) > 0 else [0.0] * gate.get_num_params()
+        self.insert(cycle_index, Operation(gate, location, _params))
 
     def insert_circuit(
         self,
@@ -1089,7 +1109,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         qudit_permutation = [int(q) for q in qudit_permutation]
 
         for op in self:
-            op._location = [qudit_permutation[q] for q in op.location]
+            op._location = tuple([qudit_permutation[q] for q in op.location])
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """

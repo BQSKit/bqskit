@@ -33,7 +33,26 @@ def is_sequence(test_variable: Any) -> bool:
 
 def is_numeric(test_variable: Any) -> bool:
     """Return true if test_variable is numeric."""
-    return isinstance(test_variable, numbers.Number)
+    return (
+        isinstance(test_variable, numbers.Number)
+        and not isinstance(test_variable, bool)
+    )
+
+
+def is_complex(test_variable: Any) -> bool:
+    """Return true if test_variable is complex."""
+    return (
+        isinstance(test_variable, (complex, np.complex64, np.complex128))
+        or np.iscomplex(test_variable)
+    )
+
+
+def is_integer(test_variable: Any) -> bool:
+    """Return true if test_variable is an integer."""
+    return (
+        isinstance(test_variable, (int, np.integer))
+        and not isinstance(test_variable, bool)
+    )
 
 
 def is_valid_location(
@@ -58,7 +77,7 @@ def is_valid_location(
     if not is_iterable(location):
         return False
 
-    if not all([isinstance(qudit, int) for qudit in location]):
+    if not all([is_integer(qudit) for qudit in location]):
         _logger.debug('Location is not an iterable of ints.')
         return False
 
@@ -101,8 +120,13 @@ def is_valid_radixes(
     if not is_sequence(radixes):
         return False
 
-    if not all([isinstance(qudit, int) for qudit in radixes]):
-        _logger.debug('Radixes is not a tuple of ints.')
+    if not all([is_integer(qudit) for qudit in radixes]):
+        fail_idx = [is_integer(qudit) for qudit in radixes].index(False)
+        _logger.debug(
+            'Radixes is not a tuple of ints, got: %s.' % type(
+                radixes[fail_idx],
+            ),
+        )
         return False
 
     if not all([radix >= 2 for radix in radixes]):
@@ -150,7 +174,7 @@ def is_valid_coupling_graph(
         return False
 
     if num_qudits is not None:
-        if not (isinstance(num_qudits, int) and num_qudits > 0):
+        if not (is_integer(num_qudits) and num_qudits > 0):
             _logger.debug('Invalid num_qudits in coupling graph check.')
             return False
 
