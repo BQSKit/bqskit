@@ -347,6 +347,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     # region Operation/Gate/Circuit Methods
 
+    @property
+    def gate_set(self) -> dict[Gate, int]:
+        """Return a copy of the _gate_set dictionary."""
+        return self._gate_set
+
     def is_point_in_range(self, point: CircuitPointLike) -> bool:
         """Return true if point is a valid in-range index in the circuit."""
         return (
