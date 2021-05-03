@@ -890,7 +890,7 @@ def random_6_qudit_circuits() -> list[tuple[int, Circuit]]:
 @pytest.fixture(params=random_6_qudit_circuits(), ids=lambda circ: circ[0])
 def r6_qudit_circuit(request: Any) -> Circuit:
     """Provide random 6-qudit random-radix circuits as a fixture."""
-    return request.param[1]
+    return request.param[1].copy()
 
 
 # endregion

@@ -176,8 +176,8 @@ class UnitaryBuilder(Unitary):
             for x in left_perm if x not in location
         ]
         right_perm = [x + self.get_size() for x in location]
-
-        right_dim = int(np.prod([self.get_radixes()[x] for x in right_perm]))
+        
+        right_dim = int(np.prod([self.get_radixes()[x - self.get_size()] for x in right_perm]))
 
         utry = utry.get_dagger() if inverse else utry
         utry_np = utry.get_numpy()

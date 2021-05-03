@@ -86,6 +86,9 @@ class UnitaryMatrix(Unitary):
         if not is_valid_radixes(self.radixes):
             raise TypeError('Invalid qudit radixes.')
 
+        if np.prod(self.radixes) != self.dim:
+            raise ValueError('Qudit radixes mismatch with dimension.')
+
         self.size = len(self.radixes)
 
     def get_numpy(self) -> np.ndarray:
@@ -100,6 +103,13 @@ class UnitaryMatrix(Unitary):
     def get_dagger(self) -> UnitaryMatrix:
         """Returns the conjugate transpose of the unitary matrix."""
         return UnitaryMatrix(self.utry.conj().T)
+
+    def get_distance_from(self, other: UnitaryMatrix) -> float:
+        """Returns the distance to `other`."""
+        num = np.abs(np.trace(other.get_numpy().conj().T @ self.get_numpy()))
+        dem = self.get_dim()
+        dist = 1 - (num / dem)
+        return dist if dist > 0.0 else 0.0
 
     @staticmethod
     def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
@@ -138,6 +148,8 @@ class UnitaryMatrix(Unitary):
         return UnitaryMatrix(V @ Wh, radixes)
 
     def __matmul__(self, rhs: object) -> UnitaryMatrix:
+        if isinstance(rhs, UnitaryMatrix):
+            rhs = rhs.get_numpy()
         res: np.ndarray = self.get_numpy() @ rhs  # type: ignore
         return UnitaryMatrix(res, self.get_radixes())
 

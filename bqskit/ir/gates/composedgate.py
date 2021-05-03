@@ -13,7 +13,7 @@ class ComposedGate(Gate):
     A ComposedGate provides methods for determining if the gate is
     differentiable or locally optimizable.
 
-    A ComposedGate that is differentiable/locally optimizable if
+    A ComposedGate is differentiable/locally optimizable if
     it inherits from the appropriate base class and all of its subgates
     (in either self.gate or self.gates) inherit from the base class.
 

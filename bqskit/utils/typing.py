@@ -47,6 +47,11 @@ def is_complex(test_variable: Any) -> bool:
     )
 
 
+def is_real_number(test_variable: Any) -> bool:
+    """Return true if `test_variable` is a real number."""
+    return is_numeric(test_variable) and not is_complex(test_variable)
+
+
 def is_integer(test_variable: Any) -> bool:
     """Return true if test_variable is an integer."""
     return (
@@ -196,6 +201,24 @@ def is_valid_coupling_graph(
     return True
 
 
+def is_vector(V: np.ndarray) -> bool:
+    """Return true if V is a vector."""
+
+    if not isinstance(V, np.ndarray):
+        _logger.debug('V is not an numpy array.')
+        return False
+
+    if len(V.shape) != 1:
+        _logger.debug('V is not an 1-dimensional array.')
+        return False
+
+    if V.dtype.kind not in 'biufc':
+        _logger.debug('V is not a numeric array.')
+        return False
+
+    return True
+
+
 def is_matrix(M: np.ndarray) -> bool:
     """Checks if M is a matrix."""
 
@@ -303,5 +326,21 @@ def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
 
     if not all(e == 1 or e == 0 for row in P for e in row):
         _logger.debug('Not all elements are 0 or 1.')
+        return False
+
+    return True
+
+
+def is_pure_state(V: np.ndarray, tol: float = 1e-8) -> bool:
+    """Return true if V is a pure state vector."""
+    if not is_vector(V):
+        return False
+
+    if not np.allclose(
+        np.sum(np.abs([elem for elem in V])),
+        1, rtol=0, atol=tol,
+    ):
+        _logger.debug('Failed pure state criteria.')
+        return False
 
     return True

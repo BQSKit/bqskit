@@ -14,8 +14,13 @@ from __future__ import annotations
 from typing import Any
 from typing import Sequence
 
+import numpy as np
+import pytest
+
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import ConstantUnitaryGate
+from bqskit.ir.gates import HGate
 
 
 class TestAppendQubit:
@@ -459,7 +464,7 @@ class TestInsertQubit:
         assert circuit.get_radixes()[1] == 3
         assert circuit.get_radixes()[2] == 2
 
-    def test_insert_qudit_append_gate(self) -> None:
+    def test_insert_qudit_append_gate1(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -467,6 +472,8 @@ class TestInsertQubit:
         circuit.insert_qudit(0)
         circuit.append_gate(CNOTGate(), [0, 3])
         assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 1].gate == CNOTGate()
@@ -475,3 +482,573 @@ class TestInsertQubit:
         assert circuit[1, 2].location == (2, 3)
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (3, 4)
+
+    def test_insert_qudit_append_gate2(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(1)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[3, 0].gate == CNOTGate()
+        assert circuit[3, 0].location == (0, 3)
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 2)
+        assert circuit[1, 2].gate == CNOTGate()
+        assert circuit[1, 2].location == (2, 3)
+        assert circuit[2, 3].gate == CNOTGate()
+        assert circuit[2, 3].location == (3, 4)
+
+    def test_insert_qudit_append_gate3(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(2)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[3, 0].gate == CNOTGate()
+        assert circuit[3, 0].location == (0, 3)
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 1)
+        assert circuit[1, 1].gate == CNOTGate()
+        assert circuit[1, 1].location == (1, 3)
+        assert circuit[2, 3].gate == CNOTGate()
+        assert circuit[2, 3].location == (3, 4)
+
+    def test_insert_qudit_append_gate4(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(3)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[1, 0].gate == CNOTGate()
+        assert circuit[1, 0].location == (0, 3)
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 1)
+        assert circuit[1, 1].gate == CNOTGate()
+        assert circuit[1, 1].location == (1, 2)
+        assert circuit[2, 2].gate == CNOTGate()
+        assert circuit[2, 2].location == (2, 4)
+
+    def test_insert_qudit_append_gate5(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(4)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[3, 0].gate == CNOTGate()
+        assert circuit[3, 0].location == (0, 3)
+        assert circuit[0, 1].gate == CNOTGate()
+        assert circuit[0, 1].location == (0, 1)
+        assert circuit[1, 2].gate == CNOTGate()
+        assert circuit[1, 2].location == (1, 2)
+        assert circuit[2, 3].gate == CNOTGate()
+        assert circuit[2, 3].location == (2, 3)
+        assert circuit[3, 3].gate == CNOTGate()
+        assert circuit[3, 3].location == (0, 3)
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 1)
+        assert circuit[1, 1].gate == CNOTGate()
+        assert circuit[1, 1].location == (1, 2)
+        assert circuit[2, 2].gate == CNOTGate()
+        assert circuit[2, 2].location == (2, 3)
+
+    def test_insert_qudit_append_gate6(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(-3)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[3, 0].gate == CNOTGate()
+        assert circuit[3, 0].location == (0, 3)
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 2)
+        assert circuit[1, 2].gate == CNOTGate()
+        assert circuit[1, 2].location == (2, 3)
+        assert circuit[2, 3].gate == CNOTGate()
+        assert circuit[2, 3].location == (3, 4)
+
+    def test_insert_qudit_append_gate7(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(-6)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[3, 0].gate == CNOTGate()
+        assert circuit[3, 0].location == (0, 3)
+        assert circuit[0, 1].gate == CNOTGate()
+        assert circuit[0, 1].location == (1, 2)
+        assert circuit[1, 2].gate == CNOTGate()
+        assert circuit[1, 2].location == (2, 3)
+        assert circuit[2, 3].gate == CNOTGate()
+        assert circuit[2, 3].location == (3, 4)
+
+    def test_insert_qudit_append_gate8(self) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.insert_qudit(25)
+        circuit.append_gate(CNOTGate(), [0, 3])
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[3, 0].gate == CNOTGate()
+        assert circuit[3, 0].location == (0, 3)
+        assert circuit[0, 1].gate == CNOTGate()
+        assert circuit[0, 1].location == (0, 1)
+        assert circuit[1, 2].gate == CNOTGate()
+        assert circuit[1, 2].location == (1, 2)
+        assert circuit[2, 3].gate == CNOTGate()
+        assert circuit[2, 3].location == (2, 3)
+
+    def test_insert_qudit_multi_gate1(self, gen_random_utry_np: Any) -> None:
+        circuit = Circuit(4)
+        three_qubit_gate = ConstantUnitaryGate(gen_random_utry_np(8))
+        circuit.append_gate(three_qubit_gate, [1, 2, 3])
+        circuit.append_gate(three_qubit_gate, [0, 2, 3])
+        circuit.append_gate(three_qubit_gate, [0, 1, 3])
+        circuit.append_gate(three_qubit_gate, [0, 1, 2])
+        circuit.insert_qudit(0)
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes().count(2) == 5
+        assert circuit[0, 2].gate == three_qubit_gate
+        assert circuit[0, 2].location == (2, 3, 4)
+        assert circuit[1, 1].gate == three_qubit_gate
+        assert circuit[1, 1].location == (1, 3, 4)
+        assert circuit[2, 1].gate == three_qubit_gate
+        assert circuit[2, 1].location == (1, 2, 4)
+        assert circuit[3, 1].gate == three_qubit_gate
+        assert circuit[3, 1].location == (1, 2, 3)
+
+    def test_insert_qudit_multi_gate2(self, gen_random_utry_np: Any) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        three_qubit_gate = ConstantUnitaryGate(
+            gen_random_utry_np(12), [2, 2, 3],
+        )
+        circuit.append_gate(three_qubit_gate, [0, 1, 3])
+        circuit.append_gate(three_qubit_gate, [0, 1, 2])
+        circuit.insert_qudit(2)
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes()[0] == 2
+        assert circuit.get_radixes()[1] == 2
+        assert circuit.get_radixes()[2] == 2
+        assert circuit.get_radixes()[3] == 3
+        assert circuit.get_radixes()[4] == 3
+        assert circuit[0, 1].gate == three_qubit_gate
+        assert circuit[0, 1].location == (0, 1, 4)
+        assert circuit[1, 1].gate == three_qubit_gate
+        assert circuit[1, 1].location == (0, 1, 3)
+
+    def test_insert_qudit_multi_gate3(self, gen_random_utry_np: Any) -> None:
+        circuit = Circuit(4)
+        three_qubit_gate = ConstantUnitaryGate(
+            gen_random_utry_np(12), [2, 2, 3],
+        )
+        circuit.insert_qudit(2, 3)
+        assert circuit.get_size() == 5
+        assert len(circuit.get_radixes()) == 5
+        assert circuit.get_radixes()[0] == 2
+        assert circuit.get_radixes()[1] == 2
+        assert circuit.get_radixes()[2] == 3
+        assert circuit.get_radixes()[3] == 2
+        assert circuit.get_radixes()[4] == 2
+        circuit.append_gate(three_qubit_gate, [0, 1, 2])
+        assert circuit[0, 0].gate == three_qubit_gate
+        assert circuit[0, 0].location == (0, 1, 2)
+
+
+class TestPopQudit:
+    """This tests circuit.pop_qudit."""
+
+    def test_pop_qudit_type_valid_1(self, an_int: int) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.pop_qudit(an_int)
+        except TypeError:
+            assert False, 'Unexpected TypeError.'
+        except BaseException:
+            return
+
+    def test_pop_qudit_type_valid_2(self, an_int: int) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.pop_qudit(an_int)
+        except TypeError:
+            assert False, 'Unexpected TypeError.'
+        except BaseException:
+            return
+
+    def test_pop_qudit_type_invalid_1(self, not_an_int: Any) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.pop_qudit(not_an_int)
+        except TypeError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_pop_qudit_type_invalid_2(self, not_an_int: Any) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.pop_qudit(not_an_int)
+        except TypeError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_pop_qudit_index_invalid1(self) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.pop_qudit(-5)
+        except IndexError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_pop_qudit_index_invalid2(self) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.pop_qudit(5)
+        except IndexError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_pop_qudit_index_invalid3(self) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.pop_qudit(5)
+        except IndexError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_pop_qudit_index_invalid_empty(self) -> None:
+        circuit = Circuit(1)
+        assert circuit.get_size() == 1
+        try:
+            circuit.pop_qudit(0)
+        except ValueError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    @pytest.mark.parametrize('qudit_index', [-4, -1, 0, 3])
+    def test_pop_qudit_append_gate_1(self, qudit_index: int) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.pop_qudit(qudit_index)
+        assert circuit.get_size() == 3
+        assert len(circuit.get_radixes()) == 3
+        assert circuit.get_radixes().count(2) == 3
+        assert circuit.get_num_operations() == 2
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 1)
+        assert circuit[1, 1].gate == CNOTGate()
+        assert circuit[1, 1].location == (1, 2)
+        assert circuit[0, 1].gate == CNOTGate()
+        assert circuit[0, 1].location == (0, 1)
+        assert circuit[1, 2].gate == CNOTGate()
+        assert circuit[1, 2].location == (1, 2)
+
+    @pytest.mark.parametrize('qudit_index', [-3, 1])
+    def test_pop_qudit_append_gate_2(self, qudit_index: int) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.pop_qudit(qudit_index)
+        assert circuit.get_size() == 3
+        assert len(circuit.get_radixes()) == 3
+        assert circuit.get_radixes().count(2) == 3
+        assert circuit.get_num_operations() == 1
+        assert circuit[0, 1].gate == CNOTGate()
+        assert circuit[0, 1].location == (1, 2)
+        assert circuit[0, 2].gate == CNOTGate()
+        assert circuit[0, 2].location == (1, 2)
+
+    @pytest.mark.parametrize('qudit_index', [-2, 2])
+    def test_pop_qudit_append_gate_3(self, qudit_index: int) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.pop_qudit(qudit_index)
+        assert circuit.get_size() == 3
+        assert len(circuit.get_radixes()) == 3
+        assert circuit.get_radixes().count(2) == 3
+        assert circuit.get_num_operations() == 1
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 1)
+        assert circuit[0, 1].gate == CNOTGate()
+        assert circuit[0, 1].location == (0, 1)
+
+    @pytest.mark.parametrize('qudit_index', [-4, -1, 0, 3])
+    def test_pop_qudit_append_gate_4(self, qudit_index: int) -> None:
+        circuit = Circuit(4)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.pop_qudit(qudit_index)
+        assert circuit.get_size() == 3
+        assert len(circuit.get_radixes()) == 3
+        assert circuit.get_radixes().count(2) == 3
+        assert circuit.get_num_operations() == 6
+        assert circuit[0, 0].gate == CNOTGate()
+        assert circuit[0, 0].location == (0, 1)
+        assert circuit[1, 1].gate == CNOTGate()
+        assert circuit[1, 1].location == (1, 2)
+        assert circuit[2, 0].gate == CNOTGate()
+        assert circuit[2, 0].location == (0, 1)
+        assert circuit[3, 1].gate == CNOTGate()
+        assert circuit[3, 1].location == (1, 2)
+        assert circuit[4, 0].gate == CNOTGate()
+        assert circuit[4, 0].location == (0, 1)
+        assert circuit[5, 1].gate == CNOTGate()
+        assert circuit[5, 1].location == (1, 2)
+
+    @pytest.mark.parametrize('qudit_index', [-4, -3, -2, -1, 0, 1, 2, 3])
+    def test_pop_qudit_multi_gate_1(
+            self, qudit_index: int, gen_random_utry_np: Any,
+    ) -> None:
+        circuit = Circuit(4)
+        three_qubit_gate = ConstantUnitaryGate(gen_random_utry_np(8))
+        circuit.append_gate(three_qubit_gate, [1, 2, 3])
+        circuit.append_gate(three_qubit_gate, [0, 2, 3])
+        circuit.append_gate(three_qubit_gate, [0, 1, 3])
+        circuit.append_gate(three_qubit_gate, [0, 1, 2])
+        circuit.pop_qudit(qudit_index)
+        assert circuit.get_size() == 3
+        assert len(circuit.get_radixes()) == 3
+        assert circuit.get_radixes().count(2) == 3
+        assert circuit.get_num_operations() == 1
+        assert circuit.get_num_cycles() == 1
+        assert circuit[0, 0].gate == three_qubit_gate
+        assert circuit[0, 0].location == (0, 1, 2)
+        assert circuit[0, 1].gate == three_qubit_gate
+        assert circuit[0, 1].location == (0, 1, 2)
+        assert circuit[0, 2].gate == three_qubit_gate
+        assert circuit[0, 2].location == (0, 1, 2)
+
+    @pytest.mark.parametrize('qudit_index', [-2, -1, 2, 3])
+    def test_pop_qudit_multi_gate_2(
+            self, qudit_index: int, gen_random_utry_np: Any,
+    ) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        three_qubit_gate = ConstantUnitaryGate(
+            gen_random_utry_np(12), [2, 2, 3],
+        )
+        circuit.append_gate(three_qubit_gate, [0, 1, 3])
+        circuit.append_gate(three_qubit_gate, [0, 1, 2])
+        circuit.pop_qudit(qudit_index)
+        assert circuit.get_size() == 3
+        assert len(circuit.get_radixes()) == 3
+        assert circuit.get_num_operations() == 1
+        assert circuit.get_num_cycles() == 1
+        assert circuit.get_radixes()[0] == 2
+        assert circuit.get_radixes()[1] == 2
+        assert circuit.get_radixes()[2] == 3
+        assert circuit[0, 0].gate == three_qubit_gate
+        assert circuit[0, 0].location == (0, 1, 2)
+        assert circuit[0, 1].gate == three_qubit_gate
+        assert circuit[0, 1].location == (0, 1, 2)
+        assert circuit[0, 2].gate == three_qubit_gate
+        assert circuit[0, 2].location == (0, 1, 2)
+
+
+class TestIsQuditInRange:
+    """This tests circuit.is_qudit_in_range."""
+
+    def test_is_qudit_in_range_type_valid_1(self, an_int: int) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.is_qudit_in_range(an_int)
+        except TypeError:
+            assert False, 'Unexpected TypeError.'
+        except BaseException:
+            return
+
+    def test_is_qudit_in_range_type_valid_2(self, an_int: int) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.is_qudit_in_range(an_int)
+        except TypeError:
+            assert False, 'Unexpected TypeError.'
+        except BaseException:
+            return
+
+    def test_is_qudit_in_range_type_invalid_1(self, not_an_int: Any) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.is_qudit_in_range(not_an_int)
+        except TypeError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_is_qudit_in_range_type_invalid_2(self, not_an_int: Any) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.is_qudit_in_range(not_an_int)
+        except TypeError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_is_qudit_in_range_return_type(self, an_int: int) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        assert isinstance(circuit.is_qudit_in_range(an_int), (bool, np.bool_))
+
+    @pytest.mark.parametrize('test_value', [-5, -4, -3, -2, -1])
+    def test_is_qudit_in_range_true_neg(self, test_value: int) -> None:
+        circuit = Circuit(5)
+        assert circuit.is_qudit_in_range(test_value)
+
+    @pytest.mark.parametrize('test_value', [0, 1, 2, 3, 4])
+    def test_is_qudit_in_range_true_pos(self, test_value: int) -> None:
+        circuit = Circuit(5)
+        assert circuit.is_qudit_in_range(test_value)
+
+    @pytest.mark.parametrize('test_value', [-1000, -100, -8, -6])
+    def test_is_qudit_in_range_false_neg(self, test_value: int) -> None:
+        circuit = Circuit(5)
+        assert not circuit.is_qudit_in_range(test_value)
+
+    @pytest.mark.parametrize('test_value', [5, 6, 8, 100, 1000])
+    def test_is_qudit_in_range_false_pos(self, test_value: int) -> None:
+        circuit = Circuit(5)
+        assert not circuit.is_qudit_in_range(test_value)
+
+
+class TestIsQuditIdle:
+    """This tests circuit.is_qudit_idle."""
+
+    def test_is_qudit_idle_type_valid_1(self, an_int: int) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.is_qudit_idle(an_int)
+        except TypeError:
+            assert False, 'Unexpected TypeError.'
+        except BaseException:
+            return
+
+    def test_is_qudit_idle_type_valid_2(self, an_int: int) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.is_qudit_idle(an_int)
+        except TypeError:
+            assert False, 'Unexpected TypeError.'
+        except BaseException:
+            return
+
+    def test_is_qudit_idle_type_invalid_1(self, not_an_int: Any) -> None:
+        circuit = Circuit(1)
+        try:
+            circuit.is_qudit_idle(not_an_int)
+        except TypeError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_is_qudit_idle_type_invalid_2(self, not_an_int: Any) -> None:
+        circuit = Circuit(4, [2, 2, 3, 3])
+        try:
+            circuit.is_qudit_idle(not_an_int)
+        except TypeError:
+            return
+        except BaseException:
+            assert False, 'Unexpected Exception.'
+
+    def test_is_qudit_idle_return_type(
+            self, r6_qudit_circuit: Circuit,
+    ) -> None:
+        for i in range(6):
+            assert isinstance(r6_qudit_circuit.is_qudit_idle(i), bool)
+
+    def test_is_qudit_idle_single(self) -> None:
+        circuit = Circuit(4, [2, 2, 2, 2])
+        assert circuit.is_qudit_idle(0)
+        assert circuit.is_qudit_idle(1)
+        assert circuit.is_qudit_idle(2)
+        assert circuit.is_qudit_idle(3)
+
+        circuit.append_gate(HGate(), [0])
+        assert not circuit.is_qudit_idle(0)
+        assert circuit.is_qudit_idle(1)
+        assert circuit.is_qudit_idle(2)
+        assert circuit.is_qudit_idle(3)
+
+        circuit.append_gate(HGate(), [1])
+        assert not circuit.is_qudit_idle(0)
+        assert not circuit.is_qudit_idle(1)
+        assert circuit.is_qudit_idle(2)
+        assert circuit.is_qudit_idle(3)
+
+        circuit.append_gate(HGate(), [2])
+        assert not circuit.is_qudit_idle(0)
+        assert not circuit.is_qudit_idle(1)
+        assert not circuit.is_qudit_idle(2)
+        assert circuit.is_qudit_idle(3)
+
+        circuit.append_gate(HGate(), [3])
+        assert not circuit.is_qudit_idle(0)
+        assert not circuit.is_qudit_idle(1)
+        assert not circuit.is_qudit_idle(2)
+        assert not circuit.is_qudit_idle(3)
+
+        circuit.pop((0, 0))
+        assert circuit.is_qudit_idle(0)
+        assert not circuit.is_qudit_idle(1)
+        assert not circuit.is_qudit_idle(2)
+        assert not circuit.is_qudit_idle(3)
+
+        circuit.pop((0, 1))
+        assert circuit.is_qudit_idle(0)
+        assert circuit.is_qudit_idle(1)
+        assert not circuit.is_qudit_idle(2)
+        assert not circuit.is_qudit_idle(3)
+
+        circuit.pop((0, 2))
+        assert circuit.is_qudit_idle(0)
+        assert circuit.is_qudit_idle(1)
+        assert circuit.is_qudit_idle(2)
+        assert not circuit.is_qudit_idle(3)
+
+        circuit.pop((0, 3))
+        assert circuit.is_qudit_idle(0)
+        assert circuit.is_qudit_idle(1)
+        assert circuit.is_qudit_idle(2)
+        assert circuit.is_qudit_idle(3)
