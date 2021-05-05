@@ -1,26 +1,37 @@
-"""This module implements the HSDistance CostFunction."""
+"""This module implements the HilbertSchmidtCost and HilbertSchmidtGenerator."""
 from __future__ import annotations
-from bqskit.ir.opt.costgenerator import CostFunctionGenerator
 
 from typing import Sequence, TYPE_CHECKING
 
 import numpy as np
 
 from bqskit.qis.state.state import StateVector
-from bqskit.ir.opt.costfunction import CostFunction
+from bqskit.ir.opt.cost.differentiable import DifferentiableCostFunction
+from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+    from bqskit.ir.opt.cost.function import CostFunction
 
 
-class HSDistanceFunction(CostFunction):
+class HilbertSchmidtCost(DifferentiableCostFunction):
+    """
+    The HilbertSchmidtCost CostFunction implementation.
+
+    The Hilbert-Schmidt CostFuction is a differentiable map from
+    circuit parameters to a cost value that is based on the Hilbert-Schmidt
+    inner product. This function is global-phase-aware, meaning that the
+    cost is zero if the target and circuit unitary differ only by a global
+    phase.
+    """
 
     def __init__(
         self, 
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
     ) -> None:
+        """Construct a HilbertSchmidtCost function."""
         self.target = target
         self.circuit = circuit
         self.target_h = target.get_dagger().get_numpy()
@@ -29,21 +40,12 @@ class HSDistanceFunction(CostFunction):
     def get_cost(self, params: Sequence[float]) -> float:
         """Return the cost value given the input parameters."""
         utry = self.circuit.get_unitary(params).get_numpy()
-        num = np.abs(np.trace(self.target_h @ utry))
+        num = np.abs(np.sum(self.target_h * utry))
         return 1 - (num / self.dem)
 
     def get_grad(self, params: Sequence[float]) -> np.ndarray:
         """Return the cost gradient given the input parameters."""
-        M, dM = self.circuit.get_unitary_and_grad(params)
-        trace_prod = np.trace(self.target_h @ M)
-        num = np.abs(trace_prod)
-        d_trace_prod = np.array([np.trace(self.target_h @ pM) for pM in dM])
-        jacs = -(
-            np.real(trace_prod) * np.real(d_trace_prod)
-            + np.imag(trace_prod) * np.imag(d_trace_prod)
-        )
-        jacs *= self.dem / num
-        return jacs
+        return self.get_cost_and_grad(params)[1]
 
     def get_cost_and_grad(
         self,
@@ -51,22 +53,22 @@ class HSDistanceFunction(CostFunction):
     ) -> tuple[float, np.ndarray]:
         """Return the cost and gradient given the input parameters."""
         M, dM = self.circuit.get_unitary_and_grad(params)
-        trace_prod = np.trace(self.target_h @ M.get_numpy())
+        trace_prod = np.sum(self.target_h * M.get_numpy())
         num = np.abs(trace_prod)
-        obj = 1 - (num / self.dem)
-        d_trace_prod = np.array([np.trace(self.target_h @ pM) for pM in dM])
-        jacs = -(
+        cost = 1 - (num / self.dem)
+        d_trace_prod = np.array([np.sum(self.target_h * pM) for pM in dM])
+        grad = -(
             np.real(trace_prod) * np.real(d_trace_prod)
             + np.imag(trace_prod) * np.imag(d_trace_prod)
         )
-        jacs *= self.dem / num
-        return obj, jacs
+        grad *= self.dem / num
+        return cost, grad
 
-class HSDistance(CostFunctionGenerator):
+class HilbertSchmidtGenerator(CostFunctionGenerator):
     """
-    The HSDistance class.
+    The HilbertSchmidtGenerator class.
 
-    This is an CostFunction based on the hilbert-schmidt inner-product.
+    This generator produces configured HilbertSchmidtCost functions.
     """
 
     def gen_cost(
@@ -74,5 +76,5 @@ class HSDistance(CostFunctionGenerator):
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
     ) -> CostFunction:
-        """Generate the CostFunction, see CostFunctionGenerator for more info."""
-        return HSDistanceFunction(circuit, target)
+        """Generate a CostFunction, see CostFunctionGenerator for more info."""
+        return HilbertSchmidtCost(circuit, target)
