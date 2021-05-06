@@ -1,4 +1,5 @@
 """This module implements the CircuitGate class."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,15 +7,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 
-from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gate import Gate
 
 
-class CircuitGate(ConstantGate):
+class CircuitGate(Gate):
     """
     The CircuitGate class.
 
-    A CircuitGate is a circuit copy that is immutable represented as a
-    gate.
+    A CircuitGate is a immutable circuit represented as a gate.
     """
 
     def __init__(self, circuit: Circuit, move: bool = False) -> None:
@@ -34,3 +34,7 @@ class CircuitGate(ConstantGate):
         self.size = self._circuit.get_size()
         self.radixes = self._circuit.get_radixes()
         self.utry = self._circuit.get_unitary()
+
+    def is_differentiable(self) -> bool:
+        """Return true if the circuit is differentiable."""
+        return self._circuit.is_differentiable()

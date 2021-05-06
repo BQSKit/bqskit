@@ -22,16 +22,19 @@ Circuit class properties:
     get_parallelism(self) -> float
     get_coupling_graph(self) -> set[tuple[int, int]]
     get_gate_set(self) -> set[Gate]
+    is_differentiable(self) -> bool
 
 This test is broken down into multiple parts. First, a few simple known
 circuits have their properties tested. Then, each property is tested
 in depth individually.
 """
 from __future__ import annotations
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 
 from typing import Any
 
 import numpy as np
+import pytest
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
@@ -51,8 +54,10 @@ from bqskit.utils.typing import is_valid_radixes
 
 
 class TestSimpleCircuit:
-    """This set of tests will ensure that all circuit properties are correct
-    for a simple circuit."""
+    """
+    This set of tests will ensure that all circuit properties are correct
+    for a simple circuit.
+    """
 
     def test_get_num_params(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.get_num_params() == 0
@@ -94,7 +99,7 @@ class TestSimpleCircuit:
         assert simple_circuit.get_depth() == 4
 
     def test_get_parallelism(self, simple_circuit: Circuit) -> None:
-        assert simple_circuit.get_parallelism() == 1
+        assert simple_circuit.get_parallelism() == 1.5
 
     def test_get_coupling_graph(self, simple_circuit: Circuit) -> None:
         cgraph = simple_circuit.get_coupling_graph()
@@ -112,8 +117,10 @@ class TestSimpleCircuit:
 
 
 class TestSwapCircuit:
-    """This set of tests will ensure that all circuit properties are correct
-    for a swap circuit."""
+    """
+    This set of tests will ensure that all circuit properties are correct
+    for a swap circuit.
+    """
 
     def test_get_num_params(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.get_num_params() == 0
@@ -155,7 +162,7 @@ class TestSwapCircuit:
         assert swap_circuit.get_depth() == 3
 
     def test_get_parallelism(self, swap_circuit: Circuit) -> None:
-        assert swap_circuit.get_parallelism() == 1
+        assert swap_circuit.get_parallelism() == 2
 
     def test_get_coupling_graph(self, swap_circuit: Circuit) -> None:
         cgraph = swap_circuit.get_coupling_graph()
@@ -172,8 +179,10 @@ class TestSwapCircuit:
 
 
 class TestToffoliCircuit:
-    """This set of tests will ensure that all circuit properties are correct
-    for a toffoli circuit."""
+    """
+    This set of tests will ensure that all circuit properties are correct
+    for a toffoli circuit.
+    """
 
     def test_get_num_params(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.get_num_params() == 0
@@ -215,7 +224,7 @@ class TestToffoliCircuit:
         assert toffoli_circuit.get_depth() == 11
 
     def test_get_parallelism(self, toffoli_circuit: Circuit) -> None:
-        assert toffoli_circuit.get_parallelism() == 15 / 11
+        assert toffoli_circuit.get_parallelism() == 21 / 11
 
     def test_get_coupling_graph(self, toffoli_circuit: Circuit) -> None:
         cgraph = toffoli_circuit.get_coupling_graph()
@@ -237,15 +246,15 @@ class TestToffoliCircuit:
 
 
 class TestGetNumParams:
-    """This tests circuit.get_num_params."""
+    """This tests `circuit.get_num_params`."""
 
-    def test_get_num_params_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_num_params(), int)
 
-    def test_get_num_params_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_num_params() >= 0
 
-    def test_get_num_params_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_params() == 0
         circuit = Circuit(4)
@@ -253,7 +262,7 @@ class TestGetNumParams:
         circuit = Circuit(4, [2, 3, 4, 5])
         assert circuit.get_num_params() == 0
 
-    def test_get_num_params_adding_gate(self) -> None:
+    def test_adding_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_params() == 0
         circuit.append_gate(U3Gate(), [0])
@@ -263,7 +272,7 @@ class TestGetNumParams:
         circuit.append_gate(U3Gate(), [0])
         assert circuit.get_num_params() == 9
 
-    def test_get_num_params_inserting_gate(self) -> None:
+    def test_inserting_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_params() == 0
         circuit.insert_gate(0, U3Gate(), [0])
@@ -273,7 +282,7 @@ class TestGetNumParams:
         circuit.insert_gate(0, U3Gate(), [0])
         assert circuit.get_num_params() == 9
 
-    def test_get_num_params_removing_gate(self) -> None:
+    def test_removing_gate(self) -> None:
         circuit = Circuit(1)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(U3Gate(), [0])
@@ -286,7 +295,7 @@ class TestGetNumParams:
         circuit.remove(U3Gate())
         assert circuit.get_num_params() == 0
 
-    def test_get_num_params_freezing_param(self) -> None:
+    def test_freezing_param(self) -> None:
         circuit = Circuit(1)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(U3Gate(), [0])
@@ -300,7 +309,7 @@ class TestGetNumParams:
         assert circuit.get_num_params() == 6
         circuit.freeze_param(0)
 
-    def test_get_num_params_r1(self, r3_qubit_circuit: Circuit) -> None:
+    def test_r1(self, r3_qubit_circuit: Circuit) -> None:
         start = r3_qubit_circuit.get_num_params()
         r3_qubit_circuit.append_gate(U3Gate(), [0])
         assert r3_qubit_circuit.get_num_params() == start + 3
@@ -313,16 +322,16 @@ class TestGetNumParams:
 
 
 class TestGetRadixes:
-    """This tests circuit.get_radixes."""
+    """This tests `circuit.get_radixes`."""
 
-    def test_get_radixes_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_radixes(), tuple)
         assert all(is_integer(r) for r in r6_qudit_circuit.get_radixes())
 
-    def test_get_radixes_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert is_valid_radixes(r6_qudit_circuit.get_radixes(), 6)
 
-    def test_get_radixes_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert len(circuit.get_radixes()) == 1
         assert circuit.get_radixes()[0] == 2
@@ -341,15 +350,15 @@ class TestGetRadixes:
 
 
 class TestGetSize:
-    """This tests circuit.get_size."""
+    """This tests `circuit.get_size`."""
 
-    def test_get_size_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_size(), int)
 
-    def test_get_size_value(self, r6_qudit_circuit: Circuit) -> None:
-        assert r6_qudit_circuit.get_size() > 0
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
+        assert r6_qudit_circuit.get_size() == 6
 
-    def test_get_size_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         circuit = Circuit(4)
@@ -359,15 +368,15 @@ class TestGetSize:
 
 
 class TestGetDim:
-    """This tests circuit.get_dim."""
+    """This tests `circuit.get_dim`."""
 
-    def test_get_dim_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_dim(), int)
 
-    def test_get_dim_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_dim() >= 64
 
-    def test_get_dim_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_dim() == 2
         circuit = Circuit(4)
@@ -377,18 +386,18 @@ class TestGetDim:
 
 
 class TestIsQubitOnly:
-    """This tests circuit.is_qubit_only."""
+    """This tests `circuit.is_qubit_only`."""
 
-    def test_is_qubit_only_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.is_qubit_only(), bool)
 
-    def test_is_qubit_only_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         if r6_qudit_circuit.get_radixes().count(2) == 6:
             assert r6_qudit_circuit.is_qubit_only()
         else:
             assert not r6_qudit_circuit.is_qubit_only()
 
-    def test_is_qubit_only_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.is_qubit_only()
         circuit = Circuit(4)
@@ -398,18 +407,18 @@ class TestIsQubitOnly:
 
 
 class TestIsQutritOnly:
-    """This tests circuit.is_qutrit_only."""
+    """This tests `circuit.is_qutrit_only`."""
 
-    def test_is_qutrit_only_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.is_qutrit_only(), bool)
 
-    def test_is_qutrit_only_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         if r6_qudit_circuit.get_radixes().count(3) == 6:
             assert r6_qudit_circuit.is_qutrit_only()
         else:
             assert not r6_qudit_circuit.is_qutrit_only()
 
-    def test_is_qutrit_only_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert not circuit.is_qutrit_only()
         circuit = Circuit(4)
@@ -421,12 +430,12 @@ class TestIsQutritOnly:
 
 
 class TestIsParameterized:
-    """This tests circuit.is_parameterized."""
+    """This tests `circuit.is_parameterized`."""
 
-    def test_is_parameterized_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.is_parameterized(), bool)
 
-    def test_is_parameterized_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert (
             r6_qudit_circuit.is_parameterized()
             != r6_qudit_circuit.is_constant()
@@ -436,7 +445,7 @@ class TestIsParameterized:
         else:
             assert not r6_qudit_circuit.is_parameterized()
 
-    def test_is_parameterized_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert not circuit.is_parameterized()
         circuit = Circuit(4)
@@ -446,12 +455,12 @@ class TestIsParameterized:
 
 
 class TestIsConstant:
-    """This tests circuit.is_constant."""
+    """This tests `circuit.is_constant`."""
 
-    def test_is_constant_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.is_constant(), bool)
 
-    def test_is_constant_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert (
             r6_qudit_circuit.is_parameterized()
             != r6_qudit_circuit.is_constant()
@@ -461,7 +470,7 @@ class TestIsConstant:
         else:
             assert not r6_qudit_circuit.is_constant()
 
-    def test_is_constant_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.is_constant()
         circuit = Circuit(4)
@@ -471,15 +480,15 @@ class TestIsConstant:
 
 
 class TestGetNumOperations:
-    """This tests circuit.get_num_operations."""
+    """This tests `circuit.get_num_operations`."""
 
-    def test_get_num_operations_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_num_operations(), int)
 
-    def test_get_num_operations_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_num_operations() >= 0
 
-    def test_get_num_operations_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_operations() == 0
         circuit = Circuit(4)
@@ -487,7 +496,7 @@ class TestGetNumOperations:
         circuit = Circuit(4, [2, 3, 4, 5])
         assert circuit.get_num_operations() == 0
 
-    def test_get_num_operations_adding_gate(self) -> None:
+    def test_adding_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_operations() == 0
         circuit.append_gate(U3Gate(), [0])
@@ -497,7 +506,7 @@ class TestGetNumOperations:
         circuit.append_gate(U3Gate(), [0])
         assert circuit.get_num_operations() == 3
 
-    def test_get_num_operations_inserting_gate(self) -> None:
+    def test_inserting_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_operations() == 0
         circuit.insert_gate(0, U3Gate(), [0])
@@ -507,7 +516,7 @@ class TestGetNumOperations:
         circuit.insert_gate(0, U3Gate(), [0])
         assert circuit.get_num_operations() == 3
 
-    def test_get_num_operations_removing_gate(self) -> None:
+    def test_removing_gate(self) -> None:
         circuit = Circuit(1)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(U3Gate(), [0])
@@ -520,7 +529,7 @@ class TestGetNumOperations:
         circuit.remove(U3Gate())
         assert circuit.get_num_operations() == 0
 
-    def test_get_num_operations_r1(self, r3_qubit_circuit: Circuit) -> None:
+    def test_r1(self, r3_qubit_circuit: Circuit) -> None:
         assert r3_qubit_circuit.get_num_operations() == 10
         r3_qubit_circuit.append_gate(U3Gate(), [0])
         assert r3_qubit_circuit.get_num_operations() == 11
@@ -535,15 +544,15 @@ class TestGetNumOperations:
 
 
 class TestGetNumCycles:
-    """This tests circuit.get_num_cycles."""
+    """This tests `circuit.get_num_cycles`."""
 
-    def test_get_num_cycles_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_num_cycles(), int)
 
-    def test_get_num_cycles_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_num_cycles() >= 0
 
-    def test_get_num_cycles_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_cycles() == 0
         circuit = Circuit(4)
@@ -551,7 +560,7 @@ class TestGetNumCycles:
         circuit = Circuit(4, [2, 3, 4, 5])
         assert circuit.get_num_cycles() == 0
 
-    def test_get_num_cycles_adding_gate(self) -> None:
+    def test_adding_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_cycles() == 0
         circuit.append_gate(U3Gate(), [0])
@@ -561,7 +570,7 @@ class TestGetNumCycles:
         circuit.append_gate(U3Gate(), [0])
         assert circuit.get_num_cycles() == 3
 
-    def test_get_num_cycles_inserting_gate(self) -> None:
+    def test_inserting_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_num_cycles() == 0
         circuit.insert_gate(0, U3Gate(), [0])
@@ -571,7 +580,7 @@ class TestGetNumCycles:
         circuit.insert_gate(0, U3Gate(), [0])
         assert circuit.get_num_cycles() == 3
 
-    def test_get_num_cycles_removing_gate1(self) -> None:
+    def test_removing_gate1(self) -> None:
         circuit = Circuit(1)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(U3Gate(), [0])
@@ -584,7 +593,7 @@ class TestGetNumCycles:
         circuit.remove(U3Gate())
         assert circuit.get_num_cycles() == 0
 
-    def test_get_num_cycles_removing_gate2(self) -> None:
+    def test_removing_gate2(self) -> None:
         circuit = Circuit(2)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(CNOTGate(), [0, 1])
@@ -602,26 +611,26 @@ class TestGetNumCycles:
 
 
 class TestGetParams:
-    """This tests circuit.get_params."""
+    """This tests `circuit.get_params`."""
 
-    def test_get_params_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         params = r6_qudit_circuit.get_params()
         assert isinstance(params, np.ndarray)
         assert all(is_numeric(param) for param in params)
 
-    def test_get_params_count(self, r6_qudit_circuit: Circuit) -> None:
+    def test_count(self, r6_qudit_circuit: Circuit) -> None:
         num_params = r6_qudit_circuit.get_num_params()
         params = r6_qudit_circuit.get_params()
         assert len(params) == num_params
 
-    def test_get_params_no_modify(self, r6_qudit_circuit: Circuit) -> None:
+    def test_no_modify(self, r6_qudit_circuit: Circuit) -> None:
         params = r6_qudit_circuit.get_params()
         if len(params) == 0:
             return
         params[0] = -params[0] + 1
         assert params[0] != r6_qudit_circuit.get_params()[0]
 
-    def test_get_depth_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert len(circuit.get_params()) == 0
         circuit = Circuit(4)
@@ -631,15 +640,15 @@ class TestGetParams:
 
 
 class TestGetDepth:
-    """This tests circuit.get_depth."""
+    """This tests `circuit.get_depth`."""
 
-    def test_get_depth_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_depth(), int)
 
-    def test_get_depth_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_depth() >= 0
 
-    def test_get_depth_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_depth() == 0
         circuit = Circuit(4)
@@ -647,7 +656,7 @@ class TestGetDepth:
         circuit = Circuit(4, [2, 3, 4, 5])
         assert circuit.get_depth() == 0
 
-    def test_get_depth_adding_gate(self) -> None:
+    def test_adding_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_depth() == 0
         circuit.append_gate(U3Gate(), [0])
@@ -657,7 +666,7 @@ class TestGetDepth:
         circuit.append_gate(U3Gate(), [0])
         assert circuit.get_depth() == 3
 
-    def test_get_depth_inserting_gate(self) -> None:
+    def test_inserting_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_depth() == 0
         circuit.insert_gate(0, U3Gate(), [0])
@@ -667,7 +676,7 @@ class TestGetDepth:
         circuit.insert_gate(0, U3Gate(), [0])
         assert circuit.get_depth() == 3
 
-    def test_get_depth_removing_gate1(self) -> None:
+    def test_removing_gate1(self) -> None:
         circuit = Circuit(1)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(U3Gate(), [0])
@@ -680,7 +689,7 @@ class TestGetDepth:
         circuit.remove(U3Gate())
         assert circuit.get_depth() == 0
 
-    def test_get_depth_removing_gate2(self) -> None:
+    def test_removing_gate2(self) -> None:
         circuit = Circuit(2)
         circuit.append_gate(U3Gate(), [0])
         circuit.append_gate(CNOTGate(), [0, 1])
@@ -696,7 +705,7 @@ class TestGetDepth:
         circuit.remove(U3Gate())
         assert circuit.get_depth() == 0
 
-    def test_get_depth_vs_cycles(self, r6_qudit_circuit: Circuit) -> None:
+    def test_vs_cycles(self, r6_qudit_circuit: Circuit) -> None:
         assert (
             r6_qudit_circuit.get_depth()
             <= r6_qudit_circuit.get_num_cycles()
@@ -704,16 +713,15 @@ class TestGetDepth:
 
 
 class TestGetParallelism:
-    """This tests circuit.get_parallelism."""
-    # TODO: Come back to after parallelism debate.
+    """This tests `circuit.get_parallelism`."""
 
-    def test_get_parallelism_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_parallelism(), float)
 
-    def test_get_parallelism_value(self, r6_qudit_circuit: Circuit) -> None:
+    def test_value(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_parallelism() > 0
 
-    def test_get_parallelism_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_parallelism() == 0
         circuit = Circuit(4)
@@ -721,7 +729,7 @@ class TestGetParallelism:
         circuit = Circuit(4, [2, 3, 4, 5])
         assert circuit.get_parallelism() == 0
 
-    def test_get_parallelism_adding_gate(self) -> None:
+    def test_adding_gate(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_parallelism() == 0
         circuit.append_gate(U3Gate(), [0])
@@ -731,47 +739,47 @@ class TestGetParallelism:
         circuit.append_gate(U3Gate(), [0])
         assert circuit.get_parallelism() == 1
 
-    # def test_get_parallelism_adding_gate2(self) -> None:
-    #     circuit = Circuit(2)
-    #     assert circuit.get_parallelism() == 0
-    #     circuit.append_gate(U3Gate(), [0])
-    #     assert circuit.get_parallelism() == 1
-    #     circuit.append_gate(U3Gate(), [1])
-    #     assert circuit.get_parallelism() == 1
-    #     circuit.append_gate(U3Gate(), [0])
-    #     assert circuit.get_parallelism() == 1.5
-    #     circuit.append_gate(U3Gate(), [1])
-    #     assert circuit.get_parallelism() == 2
-    #     circuit.append_gate(U3Gate(), [0])
-    #     assert circuit.get_parallelism() == 2.5
-    #     circuit.append_gate(U3Gate(), [1])
-    #     assert circuit.get_parallelism() == 3
+    def test_adding_gate_2(self) -> None:
+        circuit = Circuit(2)
+        assert circuit.get_parallelism() == 0
+        circuit.append_gate(U3Gate(), [0])
+        assert circuit.get_parallelism() == 1
+        circuit.append_gate(U3Gate(), [1])
+        assert circuit.get_parallelism() == 2
+        circuit.append_gate(U3Gate(), [0])
+        assert circuit.get_parallelism() == 1.5
+        circuit.append_gate(U3Gate(), [1])
+        assert circuit.get_parallelism() == 2
+        circuit.append_gate(U3Gate(), [0])
+        assert circuit.get_parallelism() - 5/3 < 1e-12
+        circuit.append_gate(U3Gate(), [1])
+        assert circuit.get_parallelism() == 2
 
-    # def test_get_parallelism_adding_gate3(self) -> None:
-    #     circuit = Circuit(2)
-    #     assert circuit.get_parallelism() == 0
-    #     circuit.append_gate(U3Gate(), [0])
-    #     assert circuit.get_parallelism() == 0.5
-    #     circuit.append_gate(U3Gate(), [1])
-    #     assert circuit.get_parallelism() == 1
-    #     circuit.append_gate(CNOTGate(), [0, 1])
-    #     assert circuit.get_parallelism() == 2
+    def test_adding_gate_3(self) -> None:
+        circuit = Circuit(2)
+        assert circuit.get_parallelism() == 0
+        circuit.append_gate(U3Gate(), [0])
+        assert circuit.get_parallelism() == 1
+        circuit.append_gate(U3Gate(), [1])
+        assert circuit.get_parallelism() == 2
+        circuit.append_gate(CNOTGate(), [0, 1])
+        assert circuit.get_parallelism() == 2
 
 
 class TestGetCouplingGraph:
-    """This tests circuit.get_coupling_graph."""
+    """This tests `circuit.get_coupling_graph`."""
 
-    def test_get_coupling_graph_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert is_valid_coupling_graph(
             r6_qudit_circuit.get_coupling_graph(), 6,
         )
 
-    def test_get_coupling_graph_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(4)
         assert len(circuit.get_coupling_graph()) == 0
         assert isinstance(circuit.get_coupling_graph(), set)
 
-    def test_get_coupling_graph_single_qubit1(self) -> None:
+    def test_single_qubit_1(self) -> None:
         circuit = Circuit(1)
         assert len(circuit.get_coupling_graph()) == 0
         circuit.append_gate(U3Gate(), [0])
@@ -781,7 +789,7 @@ class TestGetCouplingGraph:
         circuit.append_gate(U3Gate(), [0])
         assert len(circuit.get_coupling_graph()) == 0
 
-    def test_get_coupling_graph_single_qubit2(self) -> None:
+    def test_single_qubit_2(self) -> None:
         circuit = Circuit(4)
         assert len(circuit.get_coupling_graph()) == 0
         for i in range(4):
@@ -792,7 +800,7 @@ class TestGetCouplingGraph:
                 circuit.append_gate(U3Gate(), [i])
         assert len(circuit.get_coupling_graph()) == 0
 
-    def test_get_coupling_graph_two_qubit1(self) -> None:
+    def test_two_qubit_1(self) -> None:
         circuit = Circuit(2)
         assert len(circuit.get_coupling_graph()) == 0
 
@@ -810,7 +818,7 @@ class TestGetCouplingGraph:
         circuit.remove(CNOTGate())
         assert len(circuit.get_coupling_graph()) == 0
 
-    def test_get_coupling_graph_two_qubit2(self) -> None:
+    def test_two_qubit_2(self) -> None:
         circuit = Circuit(4)
         assert len(circuit.get_coupling_graph()) == 0
 
@@ -842,9 +850,7 @@ class TestGetCouplingGraph:
         assert (0, 2) in cgraph
         assert (0, 3) in cgraph
 
-    def test_get_coupling_graph_multi_qubit(
-            self, gen_random_utry_np: Any,
-    ) -> None:
+    def test_multi_qubit_1(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(6)
         assert len(circuit.get_coupling_graph()) == 0
 
@@ -884,9 +890,7 @@ class TestGetCouplingGraph:
         assert (3, 5) in cgraph
         assert (4, 5) in cgraph
 
-    def test_get_coupling_graph_multi_qudit(
-            self, gen_random_utry_np: Any,
-    ) -> None:
+    def test_multi_qudit_2(self, gen_random_utry_np: Any,) -> None:
         circuit = Circuit(6, [2, 2, 2, 3, 3, 3])
         assert len(circuit.get_coupling_graph()) == 0
 
@@ -919,21 +923,21 @@ class TestGetCouplingGraph:
 
 
 class TestGetGateSet:
-    """This tests circuit.get_gate_set."""
+    """This tests `circuit.get_gate_set`."""
 
-    def test_get_gate_set_type(self, r6_qudit_circuit: Circuit) -> None:
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.get_gate_set(), set)
         assert all(
             isinstance(gate, Gate)
             for gate in r6_qudit_circuit.get_gate_set()
         )
 
-    def test_get_gate_set_empty(self) -> None:
+    def test_empty(self) -> None:
         circuit = Circuit(4)
         assert len(circuit.get_gate_set()) == 0
         assert isinstance(circuit.get_gate_set(), set)
 
-    def test_get_gate_set_adding_gate(self) -> None:
+    def test_adding_gate(self) -> None:
         circuit = Circuit(1)
         assert len(circuit.get_gate_set()) == 0
         circuit.append_gate(U3Gate(), [0])
@@ -955,7 +959,7 @@ class TestGetGateSet:
         assert ZGate() in circuit.get_gate_set()
         assert TGate() in circuit.get_gate_set()
 
-    def test_get_gate_set_removing_gate(self) -> None:
+    def test_removing_gate(self) -> None:
         circuit = Circuit(1)
         assert len(circuit.get_gate_set()) == 0
         circuit.append_gate(U3Gate(), [0])
@@ -982,7 +986,7 @@ class TestGetGateSet:
         circuit.remove(U3Gate())
         assert len(circuit.get_gate_set()) == 0
 
-    def test_get_gate_set_qudit(self) -> None:
+    def test_qudit(self) -> None:
         circuit = Circuit(3, [2, 3, 3])
         assert len(circuit.get_gate_set()) == 0
         circuit.append_gate(U3Gate(), [0])
@@ -1010,3 +1014,28 @@ class TestGetGateSet:
         assert ZGate() in circuit.get_gate_set()
         assert TGate() in circuit.get_gate_set()
         assert CSUMGate() in circuit.get_gate_set()
+
+
+class TestIsDifferentiable:
+    """This tests `circuit.is_differentiable`."""
+
+    def test_type(self, r6_qudit_circuit: Circuit) -> None:
+        assert isinstance(r6_qudit_circuit.is_differentiable(), bool)
+
+    def test_value(self, gate: Gate) -> None:
+        circuit = Circuit(gate.get_size(), gate.get_radixes())
+        assert circuit.is_differentiable()
+
+        circuit.append_gate(gate, list(range(gate.get_size())))
+        if isinstance(gate, DifferentiableUnitary):
+            assert circuit.is_differentiable()
+        else:
+            assert not circuit.is_differentiable()
+
+    @pytest.mark.parametrize('circuit', [
+        Circuit(1),
+        Circuit(4),
+        Circuit(4, [2, 3, 4, 5])
+    ])
+    def test_empty(self, circuit: Circuit) -> None:
+        assert circuit.is_differentiable()

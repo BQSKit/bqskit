@@ -21,7 +21,7 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.functions.hsd import HSDistance
+from bqskit.ir.opt.cost import HilbertSchmidtGenerator
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.qis.state.state import StateLike
@@ -37,7 +37,7 @@ from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
 
 if TYPE_CHECKING:
-    from bqskit.ir.opt.costfunction import CostFunction
+    from bqskit.ir.opt.cost.function import CostFunction
 
 _logger = logging.getLogger(__name__)
 
@@ -138,7 +138,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def get_parallelism(self) -> float:
         """Calculate the amount of parallelism in the circuit."""
         depth = self.get_depth()
-        return self.get_num_operations() / depth if depth != 0 else 0
+
+        if depth == 0:
+            return 0
+
+        weighted_num_operations = np.sum([
+            gate.get_size() * count for gate, count in self._gate_set.items()
+        ])
+
+        return weighted_num_operations / depth
 
     def get_coupling_graph(self) -> set[tuple[int, int]]:
         """
@@ -169,6 +177,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def get_gate_set(self) -> set[Gate]:
         """Return the set of gates in the circuit."""
         return set(self._gate_set.keys())
+
+    def is_differentiable(self) -> bool:
+        """Check is all gates are differentiable."""
+        return all(
+            isinstance(gate, DifferentiableUnitary)
+            for gate in self.get_gate_set()
+        )
 
     # endregion
 
@@ -1291,160 +1306,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def get_statevector(self, in_state: StateVector) -> StateVector:
         pass  # TODO
 
-    def instantiate(
-        self,
-        target: StateLike | UnitaryLike,
-        method: str | None = None,
-        multistarts: int = 1,
-        **kwargs: dict[str, Any],
-    ) -> None:
-        """
-        Instantiate the circuit with respect to a target state or unitary.
-
-        Attempts to change the parameters of the circuit such that the circuit
-        either implements the target unitary or maps the zero state to
-        the target state.
-
-        Args:
-            target (StateLike | UnitaryLike): The target unitary or state.
-                If a unitary is specified, the method changes the circuit's
-                parameters in an effort to get closer to implementing the
-                target. If a state is specified, the method changes the
-                circuit's parameters in an effort to get closer to producing
-                the target state when starting from the zero state.
-
-            method (str | None): The method with which to instantiate
-                the circuit. Currently, `"qfactor"` and `"minimization"`
-                are supported. If left None, attempts to pick best method.
-
-            multistarts (int): The number of parallel instantiation jobs
-                to spawn and manage. (Default: 1)
-
-            kwargs (dict[str, Any]): Method specific options, passed
-                directly to method subroutines. For more info, see
-                `circuit.minimize` or `bqskit.ir.opt.qfactor`.
-        """
-        # Check or assign method
-        if method is None:
-            # if QFactor.is_capable(self) and isinstance(target, UnitaryLike):
-            #     method = 'qfactor'
-            # else:  # TODO
-            method = 'minimization'
-    
-        elif method == 'qfactor' and not QFactor.is_capable(self):
-            raise ValueError(
-                'Cannot instantiate circuit with qfactor'
-                'because the following gates are not locally optimizable: '
-                ', '.join(
-                    str(g)
-                    for g in QFactor.get_invalid_gates(self)
-                ) + '.',
-            )
-
-        elif method != 'qfactor' and method != 'minimization':
-            raise ValueError('Unrecognized method: %s.' % method)
-
-        # Check target
-        try:
-            typed_target = StateVector(target)
-        except Exception:
-            try:
-                typed_target = UnitaryMatrix(target)
-            except Exception as ex:
-                raise TypeError(
-                    'Expected either StateVector or UnitaryMatrix for target'
-                    ', got %s.' % type(target),
-                ) from ex
-        target = typed_target
-
-        if isinstance(target, StateVector) and method == 'qfactor':
-            raise NotImplementedError(
-                'QFactor-based state-preparation is not supported.',
-            )
-
-        if target.get_dim() != self.get_dim():
-            raise ValueError('Target dimension mismatch with circuit.')
-
-        # Check multistarts
-        if not is_integer(multistarts):
-            raise TypeError(
-                'Expected int for multistarts, got %s.' % type(multistarts),
-            )
-
-        if multistarts <= 0:
-            raise ValueError(
-                'Expected positive integer for multistarts'
-                ', got %d' % multistarts,
-            )
-
-        # Instantiate the circuit
-        if method == 'minimization':
-            cost = HSDistance()
-            if 'cost' in kwargs:
-                cost = kwargs['cost']
-                del kwargs['cost']
-            self.minimize(cost.gen_cost(self, target), **kwargs)
-
-        elif method == 'qfactor':
-            pass
-
-    def minimize(self, cost: CostFunction, **kwargs: Any) -> float:
-        """
-        Minimize the circuit's cost with respect to some CostFunction.
-
-        Args:
-            cost (CostFunction): The cost function to use when evaluting
-                the circuit's cost.
-
-            method (str): The minimization method to use. If unspecified,
-                attempts to assign best method. (kwarg)
-        """
-        self.set_params(LBFGSMinimizer().minimize(self, cost))
-        # if 'method' in kwargs:
-        #     method = kwargs['method']
-        # else:
-        #     # Find default # TODO: When others are implemented
-        #     method = 'lbfgs'
-        #     # if all(
-        #     #     isinstance(gate, LocallyOptimizableUnitary)
-        #     #     for gate in self._gate_set
-        #     # ):
-        #     #     method = "qfactor"
-
-        #     # elif all(
-        #     #     isinstance(gate, DifferentiableUnitary)
-        #     #     for gate in self._gate_set
-        #     # ):
-        #     #     if isinstance(obj, ResidualFunction):
-        #     #         method = "ceres"
-        #     #     else:
-        #     #         method = "lbfgs"
-
-        #     # else:
-        #     #     method = "cobyla"
-
-        # if method == 'qfactor':
-        #     if cost is not None:
-        #         raise RuntimeWarning(
-        #             'QFactor minimization method selected'
-        #             ', ignoring specified cost function.',
-        #         )
-        #     minimizer = QFactorMinimizer()
-
-        # elif method == 'ceres':
-        #     pass
-
-        # elif method == 'lbfgs':
-        #     if cost is None:
-        #         cost = HSDistance()
-
-        # elif method == 'cobyla':
-        #     pass
-
-        # # figured out all arguments
-
-        # # Optimizer(...).optimize(self)
-
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Return the gradient of the circuit."""
         if len(params) != 0:
@@ -1547,6 +1408,160 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 left.apply_right(op.get_unitary(), op.location)
 
         return left.get_unitary(), np.array(grads)
+
+    def instantiate(
+        self,
+        target: StateLike | UnitaryLike,
+        method: str | None = None,
+        multistarts: int = 1,
+        **kwargs: dict[str, Any],
+    ) -> None:
+        """
+        Instantiate the circuit with respect to a target state or unitary.
+
+        Attempts to change the parameters of the circuit such that the circuit
+        either implements the target unitary or maps the zero state to
+        the target state.
+
+        Args:
+            target (StateLike | UnitaryLike): The target unitary or state.
+                If a unitary is specified, the method changes the circuit's
+                parameters in an effort to get closer to implementing the
+                target. If a state is specified, the method changes the
+                circuit's parameters in an effort to get closer to producing
+                the target state when starting from the zero state.
+
+            method (str | None): The method with which to instantiate
+                the circuit. Currently, `"qfactor"` and `"minimization"`
+                are supported. If left None, attempts to pick best method.
+
+            multistarts (int): The number of parallel instantiation jobs
+                to spawn and manage. (Default: 1)
+
+            kwargs (dict[str, Any]): Method specific options, passed
+                directly to method subroutines. For more info, see
+                `circuit.minimize` or `bqskit.ir.opt.qfactor`.
+        """
+        # Check or assign method
+        if method is None:
+            # if QFactor.is_capable(self) and isinstance(target, UnitaryLike):
+            #     method = 'qfactor'
+            # else:  # TODO
+            method = 'minimization'
+    
+        elif method == 'qfactor' and not QFactor.is_capable(self):
+            raise ValueError(
+                'Cannot instantiate circuit with qfactor'
+                'because the following gates are not locally optimizable: '
+                ', '.join(
+                    str(g)
+                    for g in QFactor.get_invalid_gates(self)
+                ) + '.',
+            )
+
+        elif method != 'qfactor' and method != 'minimization':
+            raise ValueError('Unrecognized method: %s.' % method)
+
+        # Check target
+        try:
+            typed_target = StateVector(target)
+        except Exception:
+            try:
+                typed_target = UnitaryMatrix(target)
+            except Exception as ex:
+                raise TypeError(
+                    'Expected either StateVector or UnitaryMatrix for target'
+                    ', got %s.' % type(target),
+                ) from ex
+        target = typed_target
+
+        if isinstance(target, StateVector) and method == 'qfactor':
+            raise NotImplementedError(
+                'QFactor-based state-preparation is not supported.',
+            )
+
+        if target.get_dim() != self.get_dim():
+            raise ValueError('Target dimension mismatch with circuit.')
+
+        # Check multistarts
+        if not is_integer(multistarts):
+            raise TypeError(
+                'Expected int for multistarts, got %s.' % type(multistarts),
+            )
+
+        if multistarts <= 0:
+            raise ValueError(
+                'Expected positive integer for multistarts'
+                ', got %d' % multistarts,
+            )
+
+        # Instantiate the circuit
+        if method == 'minimization':
+            cost = HilbertSchmidtGenerator()
+            if 'cost' in kwargs:
+                cost = kwargs['cost']
+                del kwargs['cost']
+            self.minimize(cost.gen_cost(self, target), **kwargs)
+
+        elif method == 'qfactor':
+            pass
+
+    def minimize(self, cost: CostFunction, **kwargs: Any) -> float:
+        """
+        Minimize the circuit's cost with respect to some CostFunction.
+
+        Args:
+            cost (CostFunction): The cost function to use when evaluting
+                the circuit's cost.
+
+            method (str): The minimization method to use. If unspecified,
+                attempts to assign best method. (kwarg)
+        """
+        self.set_params(LBFGSMinimizer().minimize(self, cost))
+        # if 'method' in kwargs:
+        #     method = kwargs['method']
+        # else:
+        #     # Find default # TODO: When others are implemented
+        #     method = 'lbfgs'
+        #     # if all(
+        #     #     isinstance(gate, LocallyOptimizableUnitary)
+        #     #     for gate in self._gate_set
+        #     # ):
+        #     #     method = "qfactor"
+
+        #     # elif all(
+        #     #     isinstance(gate, DifferentiableUnitary)
+        #     #     for gate in self._gate_set
+        #     # ):
+        #     #     if isinstance(obj, ResidualFunction):
+        #     #         method = "ceres"
+        #     #     else:
+        #     #         method = "lbfgs"
+
+        #     # else:
+        #     #     method = "cobyla"
+
+        # if method == 'qfactor':
+        #     if cost is not None:
+        #         raise RuntimeWarning(
+        #             'QFactor minimization method selected'
+        #             ', ignoring specified cost function.',
+        #         )
+        #     minimizer = QFactorMinimizer()
+
+        # elif method == 'ceres':
+        #     pass
+
+        # elif method == 'lbfgs':
+        #     if cost is None:
+        #         cost = HSDistance()
+
+        # elif method == 'cobyla':
+        #     pass
+
+        # # figured out all arguments
+
+        # # Optimizer(...).optimize(self)
 
     # endregion
 
