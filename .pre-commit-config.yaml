@@ -26,27 +26,40 @@ repos:
     rev: v1.3.1
     hooks:
     -   id: docformatter
-        args: [--in-place, --pre-summary-newline]
+        args:
+            - --in-place
+            - --pre-summary-newline
+            - '--wrap-summaries 80'
+            - '--wrap-descriptions 80'
+            - '--blank'
 -   repo: https://github.com/pre-commit/mirrors-autopep8
     rev: v1.5.4
     hooks:
     -   id: autopep8
-        args: [--in-place, -a]
+        args:
+            - --in-place
+            - -a
+            - '--max-line-length 80'
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.9.0
     hooks:
     -   id: pyupgrade
-        args: [--py36-plus, --keep-percent-format]
+        args:
+            - --py36-plus
+            - --keep-percent-format
 -   repo: https://github.com/asottile/reorder_python_imports
     rev: v2.3.6
     hooks:
     -   id: reorder-python-imports
-        args: [--py3-plus, --add-import, 'from __future__ import annotations']
+        args:
+            - --py3-plus
+            - '--add-import from __future__ import annotations'
 -   repo: https://github.com/asottile/add-trailing-comma
     rev: v2.1.0
     hooks:
     -   id: add-trailing-comma
-        args: [--py36-plus]
+        args:
+            - --py36-plus
 -   repo: https://github.com/asottile/setup-cfg-fmt
     rev: v1.16.0
     hooks:
@@ -66,5 +79,7 @@ repos:
     rev: 3.8.4
     hooks:
     -   id: flake8
-        args: ["--ignore=E741,E241,E226,F405,F403,W503,F901"]
+        args: 
+            - '--ignore=E741,E241,E226,F405,F403,W503,F901'
+            - '--max-line-length 80'
         additional_dependencies: [flake8-typing-imports==1.7.0]
