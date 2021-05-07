@@ -1,7 +1,6 @@
 """This module implements the QFASTDecompositionPass class."""
+
 from __future__ import annotations
-from bqskit.ir.opt.costgenerator import CostFunctionGenerator
-from bqskit.compiler.machine import MachineModel
 
 import logging
 import copy
@@ -9,13 +8,14 @@ from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
 from bqskit.ir.gates.composed.varloc import VariableLocationGate
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.costfunction import CostFunction
-from bqskit.ir.opt.functions.hsd import HSDistance
+from bqskit.ir.opt.cost import CostFunctionGenerator
+from bqskit.ir.opt.cost import HilbertSchmidtGenerator
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -27,7 +27,7 @@ class QFASTDecompositionPass(SynthesisPass):
     """
     The QFASTDecompositionPass class.
 
-    Performs one QFAST decomposition step breaking down a large unitary
+    Performs one QFAST decomposition step breaking down a unitary
     into a sequence of smaller operations.
     """
 
@@ -36,38 +36,38 @@ class QFASTDecompositionPass(SynthesisPass):
         gate: Gate = PauliGate(2),
         success_threshold: float = 1e-6,
         progress_threshold: float = 5e-3,
-        cost: CostFunctionGenerator = HSDistance(),
+        cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         max_depth: int | None = None,
         **kwargs: dict[str, Any],
     ) -> None:
         """
-        QFASTPass Constructor.
+        QFASTDecompositionPass Constructor.
 
         Args:
             gate (Gate): The gate to decompose unitaries into. Ensure
                 that the gate specified is expressive over the unitaries
-                being synthesized.
+                being synthesized. (Default: PauliGate(2))
 
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
-                described by the cost function.
+                described by the cost function. (Default: 1e-6)
 
             progress_threshold (float): The distance necessary to improve
                 for the synthesis algorithm to complete a layer and move
                 on. Lowering this will led to synthesis going deeper quicker,
                 and raising it will force to algorithm to spend more time
                 on each layer. Caution, changing this too much might break
-                the synthesis algorithm.
+                the synthesis algorithm. (Default: 5e-3)
 
             cost (CostFunction | None): The cost function that determines
                 distance during synthesis. The goal of this synthesis pass
                 is to implement circuits for the given unitaries that have
-                a cost less than the `success_threshold`. Defaults to
-                HSDistance.
+                a cost less than the `success_threshold`.
+                (Default: HSDistance())
 
             max_depth (int): The maximum number of gates to append without
                 success before termination. If left as None it will default
-                 to unlimited.
+                 to unlimited. (Default: None)
 
             kwargs (dict[str, Any]): Keyword arguments that are passed
                 directly to SynthesisPass's constructor. See SynthesisPass
@@ -118,8 +118,12 @@ class QFASTDecompositionPass(SynthesisPass):
         super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
-        """Synthesize `utry` into a circuit, see SynthesisPass for more
-        info."""
+        """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
+
+        # 0. Skip any unitaries too small for the configured gate.
+        if self.gate.get_size() > utry.get_size():
+            _logger.warning("Skipping unitary synthesis since gate is larger.")
+            return Circuit.from_unitary(utry)
 
         # 1. Create empty circuit with same size and radixes as `utry`.
         circuit = Circuit(utry.get_size(), utry.get_radixes())
@@ -128,11 +132,10 @@ class QFASTDecompositionPass(SynthesisPass):
         # TODO: Look for topology info in `data`, use all-to-all otherwise.
         model = MachineModel(utry.get_size())
         locations = model.get_valid_locations(self.gate.get_size())
-        head = Operation(
+        circuit.append_gate(
             VariableLocationGate(self.gate, locations),
             list(range(utry.get_size())),
         )
-        circuit.append(head)
 
         # 3. Bottom-up synthesis: build circuit up one gate at a time
         depth = 1
