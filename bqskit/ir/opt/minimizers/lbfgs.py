@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
-from bqskit.ir.opt.costfunction import CostFunction
+from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.minimizer import Minimizer
 import scipy.optimize as opt
 

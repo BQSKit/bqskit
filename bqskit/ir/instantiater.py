@@ -4,6 +4,8 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateLike
@@ -23,7 +25,7 @@ class Instantiater(abc.ABC):
         self,
         circuit: Circuit,
         target: UnitaryLike | StateLike,
-    ) -> list[float]:
+    ) -> np.ndarray:
         """
         Instantiate `circuit` to best implement `target`.
 

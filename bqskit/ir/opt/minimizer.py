@@ -4,7 +4,7 @@ from __future__ import annotations
 import abc
 
 import numpy as np
-from bqskit.ir.opt.costfunction import CostFunction
+from bqskit.ir.opt.cost.function import CostFunction
 
 from typing import TYPE_CHECKING
 
