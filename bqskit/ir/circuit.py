@@ -1053,7 +1053,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             ValueError: If folding the specified points into a CircuitGate
                 would change the result of `get_unitary`. This happens when
-                their exists an operation within the bounds of `points`, but
+                there exists an operation within the bounds of `points`, but
                 not contained in it.
 
             IndexError: If any of `points` are invalid or out-of-range.
