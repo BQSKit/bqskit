@@ -2,6 +2,7 @@
 This module implements the QubitGate base class.
 
 A QubitGate is one that only acts on qubits.
+
 """
 from __future__ import annotations
 

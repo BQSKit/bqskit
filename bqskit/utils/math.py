@@ -82,8 +82,9 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
 
     Returns:
         (np.ndarray): Output vector of softmax.
+
     """
-    
+
     shiftx = beta * (x - np.max(x))
     exps = np.exp(shiftx)
     return exps / np.sum(exps)
@@ -104,6 +105,7 @@ def dot_product(self, alpha: Sequence[float], sigma: np.ndarray) -> np.ndarray:
 
     Raises:
         ValueError: If `alpha` and `sigma` are incompatible.
+
     """
 
     if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):

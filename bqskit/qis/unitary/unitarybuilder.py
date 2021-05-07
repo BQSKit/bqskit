@@ -18,10 +18,10 @@ class UnitaryBuilder(Unitary):
     """
     The UnitaryBuilder Class.
 
-    A UnitaryBuilder is similar to a StringBuilder in the sense that it
-    is an efficient way to string together or accumulate Unitary's. This
-    class uses concepts from tensor networks to efficiently multiply
-    unitary matrices.
+    A UnitaryBuilder is similar to a StringBuilder in the sense that it is an
+    efficient way to string together or accumulate Unitary's. This class uses
+    concepts from tensor networks to efficiently multiply unitary matrices.
+
     """
 
     def __init__(self, num_qudits: int, radixes: Sequence[int] = []) -> None:
@@ -40,6 +40,7 @@ class UnitaryBuilder(Unitary):
 
         Examples:
             >>> builder = UnitaryBuilder(4)  # Creates a 4-qubit builder.
+
         """
 
         if not isinstance(num_qudits, int):
@@ -93,6 +94,7 @@ class UnitaryBuilder(Unitary):
             Applying the unitary on the right is equivalent to multiplying
             the unitary on the left of the tensor. This operation is
             performed using tensor contraction.
+
         """
 
         if not isinstance(utry, UnitaryMatrix):
@@ -155,6 +157,7 @@ class UnitaryBuilder(Unitary):
             Applying the unitary on the left is equivalent to multiplying
             the unitary on the right of the tensor. This operation is
             performed using tensor contraction.
+
         """
 
         if not isinstance(utry, UnitaryMatrix):
@@ -176,8 +179,13 @@ class UnitaryBuilder(Unitary):
             for x in left_perm if x not in location
         ]
         right_perm = [x + self.get_size() for x in location]
-        
-        right_dim = int(np.prod([self.get_radixes()[x - self.get_size()] for x in right_perm]))
+
+        right_dim = int(
+            np.prod([
+                self.get_radixes()[x - self.get_size()]
+                for x in right_perm
+            ]),
+        )
 
         utry = utry.get_dagger() if inverse else utry
         utry_np = utry.get_numpy()
@@ -203,6 +211,7 @@ class UnitaryBuilder(Unitary):
 
         Returns:
             (np.ndarray): The environmental matrix.
+
         """
 
         left_perm = list(range(self.get_size()))

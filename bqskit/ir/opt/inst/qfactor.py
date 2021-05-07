@@ -1,6 +1,8 @@
 """This module implements the QFactor class."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from bqskit.ir.instantiater import Instantiater
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.unitary import LocallyOptimizableUnitary
@@ -8,11 +10,10 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from bqskit.ir.gate import Gate
     from bqskit.ir.circuit import Circuit
+
 
 class QFactor(Instantiater):
     """The QFactor circuit instantiater."""
@@ -53,6 +54,7 @@ class QFactor(Instantiater):
                 Increasing this may increase runtime and reduce chance
                 of getting stuck in local minima.
                 (Default: 0.0)
+
         """
 
         if not is_real_number(diff_tol_a):

@@ -19,6 +19,7 @@ class Operation(DifferentiableUnitary):
     The Operation class.
 
     A Operation groups together a gate, its parameters and location.
+
     """
 
     def __init__(
@@ -131,7 +132,7 @@ s
             and all(x == y for x, y in zip(self.params, rhs.params))
             and all(x == y for x, y in zip(self.location, rhs.location))
         )
-    
+
     def __hash__(self) -> int:
         return hash(self.__repr__())
 

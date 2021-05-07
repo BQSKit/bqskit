@@ -1,9 +1,13 @@
 """This module implements DifferentiableCostFunction base classes."""
+from __future__ import annotations
 
 import abc
-from bqskit.ir.opt.cost.function import CostFunction
 from typing import Sequence
+
 import numpy as np
+
+from bqskit.ir.opt.cost.function import CostFunction
+
 
 class DifferentiableCostFunction(CostFunction):
     """
@@ -16,6 +20,7 @@ class DifferentiableCostFunction(CostFunction):
     and the `get_cost_and_grad` method. When subclassing, you only need to
     implement the `gen_cost` and `gen_grad` function factories. You can
     overwrite gen_cost_and_grad for optimization in some cases.
+
     """
 
     @abc.abstractmethod
@@ -24,8 +29,7 @@ class DifferentiableCostFunction(CostFunction):
 
     def get_cost_and_grad(
         self,
-        params: Sequence[float]
+        params: Sequence[float],
     ) -> tuple[float, np.ndarray]:
         """Return the cost and gradient given the input parameters."""
         return self.get_cost(params), self.get_grad(params)
-        

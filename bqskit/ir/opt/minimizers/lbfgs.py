@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -19,6 +19,7 @@ class LBFGSMinimizer(Minimizer):
 
     The LBFGSMinimizer attempts to instantiate the circuit such that the
     circuit's cost, given by a CostFunction, is minimized.
+
     """
 
     def __init__(self, **kwargs: dict[str, Any]) -> None:

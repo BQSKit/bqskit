@@ -19,6 +19,7 @@ class ComposedGate(Gate):
 
     For more complex behaviors, one can override is_differentiable
     or is_locally_optimizable.
+
     """
 
     def is_differentiable(self) -> bool:

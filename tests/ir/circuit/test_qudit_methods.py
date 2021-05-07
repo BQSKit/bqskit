@@ -8,6 +8,7 @@ Circuit qudit methods:
     def pop_qudit(self, qudit_index: int) -> None
     def is_qudit_in_range(self, qudit_index: int) -> bool
     def is_qudit_idle(self, qudit_index: int) -> bool
+
 """
 from __future__ import annotations
 

@@ -1,10 +1,8 @@
 """This module implements the CostFunctionGenerator base classes."""
-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import abc
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost import CostFunction
@@ -26,6 +24,7 @@ class CostFunctionGenerator(abc.ABC):
     which in turn, will generate configured CostFunctions. This is useful
     since passes might be working with changing circuits and will need to
     regenerate CostFunctions from time to time.
+
     """
 
     @abc.abstractmethod
@@ -46,8 +45,9 @@ class CostFunctionGenerator(abc.ABC):
             (CostFunction): The primitive cost function
                 that can be directly passed to a minimizer. This maps
                 parameters or circuit inputs to a cost.
+
         """
-    
+
     def calc_cost(
         self,
         circuit: Circuit,
@@ -55,7 +55,7 @@ class CostFunctionGenerator(abc.ABC):
     ) -> float:
         """Generate and calculate the cost from the CostFunction."""
         self.gen_cost(circuit, target)(circuit.get_params())
-    
+
     def __call__(
         self,
         circuit: Circuit,
@@ -65,7 +65,7 @@ class CostFunctionGenerator(abc.ABC):
 
         if not isinstance(circuit, Circuit):
             raise TypeError(
-                "Expected circuit, got %s." % type(circuit)
+                'Expected circuit, got %s.' % type(circuit),
             )
 
         if (
@@ -73,8 +73,8 @@ class CostFunctionGenerator(abc.ABC):
             and not isinstance(target, StateVector)
         ):
             raise TypeError(
-                "Expected UnitaryMatrix or StateVector for target"
-                ", got %s." % type(target)
+                'Expected UnitaryMatrix or StateVector for target'
+                ', got %s.' % type(target),
             )
-        
+
         return self.calc_cost(circuit, target)

@@ -27,9 +27,9 @@ Circuit class properties:
 This test is broken down into multiple parts. First, a few simple known
 circuits have their properties tested. Then, each property is tested
 in depth individually.
+
 """
 from __future__ import annotations
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 
 from typing import Any
 
@@ -47,6 +47,7 @@ from bqskit.ir.gates import TGate
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import XGate
 from bqskit.ir.gates import ZGate
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_valid_coupling_graph
@@ -54,10 +55,8 @@ from bqskit.utils.typing import is_valid_radixes
 
 
 class TestSimpleCircuit:
-    """
-    This set of tests will ensure that all circuit properties are correct
-    for a simple circuit.
-    """
+    """This set of tests will ensure that all circuit properties are correct for
+    a simple circuit."""
 
     def test_get_num_params(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.get_num_params() == 0
@@ -117,10 +116,8 @@ class TestSimpleCircuit:
 
 
 class TestSwapCircuit:
-    """
-    This set of tests will ensure that all circuit properties are correct
-    for a swap circuit.
-    """
+    """This set of tests will ensure that all circuit properties are correct for
+    a swap circuit."""
 
     def test_get_num_params(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.get_num_params() == 0
@@ -179,10 +176,8 @@ class TestSwapCircuit:
 
 
 class TestToffoliCircuit:
-    """
-    This set of tests will ensure that all circuit properties are correct
-    for a toffoli circuit.
-    """
+    """This set of tests will ensure that all circuit properties are correct for
+    a toffoli circuit."""
 
     def test_get_num_params(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.get_num_params() == 0
@@ -751,7 +746,7 @@ class TestGetParallelism:
         circuit.append_gate(U3Gate(), [1])
         assert circuit.get_parallelism() == 2
         circuit.append_gate(U3Gate(), [0])
-        assert circuit.get_parallelism() - 5/3 < 1e-12
+        assert circuit.get_parallelism() - 5 / 3 < 1e-12
         circuit.append_gate(U3Gate(), [1])
         assert circuit.get_parallelism() == 2
 
@@ -890,7 +885,7 @@ class TestGetCouplingGraph:
         assert (3, 5) in cgraph
         assert (4, 5) in cgraph
 
-    def test_multi_qudit_2(self, gen_random_utry_np: Any,) -> None:
+    def test_multi_qudit_2(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(6, [2, 2, 2, 3, 3, 3])
         assert len(circuit.get_coupling_graph()) == 0
 
@@ -1032,10 +1027,12 @@ class TestIsDifferentiable:
         else:
             assert not circuit.is_differentiable()
 
-    @pytest.mark.parametrize('circuit', [
-        Circuit(1),
-        Circuit(4),
-        Circuit(4, [2, 3, 4, 5])
-    ])
+    @pytest.mark.parametrize(
+        'circuit', [
+            Circuit(1),
+            Circuit(4),
+            Circuit(4, [2, 3, 4, 5]),
+        ],
+    )
     def test_empty(self, circuit: Circuit) -> None:
         assert circuit.is_differentiable()

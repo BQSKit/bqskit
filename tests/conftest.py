@@ -1,9 +1,9 @@
 """
 BQSKit Tests Root conftest.py.
 
-This module defines several fixtures for use in this test suite. There
-are three main types of fixtures defined here, unitaries, gates, and
-circuits.
+This module defines several fixtures for use in this test suite. There are three
+main types of fixtures defined here, unitaries, gates, and circuits.
+
 """
 from __future__ import annotations
 
@@ -456,6 +456,7 @@ def random_utry_gen(dims: int | Sequence[int]) -> np.ndarray:
 
     Returns:
         (np.ndarray): The randomly generated unitary matrix.
+
     """
     if isinstance(dims, int):
         return unitary_group.rvs(dims)
@@ -488,6 +489,7 @@ def invalid_utry_gen(dims: int | Sequence[int]) -> np.ndarray:
 
     Returns:
         (np.ndarray): The randomly generated invalid unitary matrix.
+
     """
     if isinstance(dims, int):
         return unitary_group.rvs(dims) + np.identity(dims)
@@ -732,6 +734,7 @@ def circuit_gen(
 
     Returns:
         (Circuit): The randomly generated circuit.
+
     """
     if not isinstance(depth, int):
         raise TypeError('Expected int for depth, got: %s.' % type(depth))

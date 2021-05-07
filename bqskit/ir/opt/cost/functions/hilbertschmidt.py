@@ -1,13 +1,14 @@
 """This module implements the HilbertSchmidtCost and HilbertSchmidtGenerator."""
 from __future__ import annotations
 
-from typing import Sequence, TYPE_CHECKING
+from typing import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.qis.state.state import StateVector
 from bqskit.ir.opt.cost.differentiable import DifferentiableCostFunction
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
+from bqskit.qis.state.state import StateVector
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -19,15 +20,15 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
     """
     The HilbertSchmidtCost CostFunction implementation.
 
-    The Hilbert-Schmidt CostFuction is a differentiable map from
-    circuit parameters to a cost value that is based on the Hilbert-Schmidt
-    inner product. This function is global-phase-aware, meaning that the
-    cost is zero if the target and circuit unitary differ only by a global
-    phase.
+    The Hilbert-Schmidt CostFuction is a differentiable map from circuit
+    parameters to a cost value that is based on the Hilbert-Schmidt inner
+    product. This function is global-phase-aware, meaning that the cost is zero
+    if the target and circuit unitary differ only by a global phase.
+
     """
 
     def __init__(
-        self, 
+        self,
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
     ) -> None:
@@ -36,7 +37,7 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
         self.circuit = circuit
         self.target_h = target.get_dagger().get_numpy()
         self.dem = target.get_dim()
-        
+
     def get_cost(self, params: Sequence[float]) -> float:
         """Return the cost value given the input parameters."""
         utry = self.circuit.get_unitary(params).get_numpy()
@@ -49,7 +50,7 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
 
     def get_cost_and_grad(
         self,
-        params: Sequence[float]
+        params: Sequence[float],
     ) -> tuple[float, np.ndarray]:
         """Return the cost and gradient given the input parameters."""
         M, dM = self.circuit.get_unitary_and_grad(params)
@@ -64,11 +65,13 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
         grad *= self.dem / num
         return cost, grad
 
+
 class HilbertSchmidtGenerator(CostFunctionGenerator):
     """
     The HilbertSchmidtGenerator class.
 
     This generator produces configured HilbertSchmidtCost functions.
+
     """
 
     def gen_cost(

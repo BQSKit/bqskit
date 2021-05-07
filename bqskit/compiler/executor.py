@@ -2,6 +2,7 @@
 This module implements the Executor class.
 
 The Executor class is responsible for executing a compilation task.
+
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ class Executor:
         Executor Constructor.
 
         Creates a executor ready to execute the specified task.
+
         """
         self.task_id = task.task_id
         self.circuit = copy.deepcopy(task.input_circuit)

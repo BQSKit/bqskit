@@ -1,11 +1,12 @@
 """This module implements the CircuitGate class."""
-
 from __future__ import annotations
 
-import numpy as np
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from typing import Sequence
+from typing import TYPE_CHECKING
 
-from typing import Sequence, TYPE_CHECKING
+import numpy as np
+
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -18,6 +19,7 @@ class CircuitGate(Gate):
     The CircuitGate class.
 
     A CircuitGate is a immutable circuit represented as a gate.
+
     """
 
     def __init__(self, circuit: Circuit, move: bool = False) -> None:
@@ -31,6 +33,7 @@ class CircuitGate(Gate):
                 This should only be used when you are sure `circuit` will no
                 longer be used on caller side. If unsure use the default.
                 (Default: False)
+
         """
 
         self._circuit = circuit if move else circuit.copy()
@@ -38,11 +41,11 @@ class CircuitGate(Gate):
         self.radixes = self._circuit.get_radixes()
         self.utry = self._circuit.get_unitary()
         self.num_params = self._circuit.get_num_params()
-        self.name = "CircuitGate(%s)" % str(self._circuit)
-    
+        self.name = 'CircuitGate(%s)' % str(self._circuit)
+
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         return self._circuit.get_unitary(params)
-    
+
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         return self._circuit.get_grad(params)
 

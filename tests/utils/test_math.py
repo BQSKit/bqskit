@@ -18,6 +18,7 @@ def dexpm_exact(
     Exact matrix exponential derivative calculation.
 
     Rossmann 2002 Theorem 5 Section 1.2
+
     """
     adjMp = dM
     total = np.zeros(M.shape, dtype=np.complex128)

@@ -1,8 +1,5 @@
 """This module implements the Circuit class."""
 from __future__ import annotations
-from bqskit.qis.permutation import PermutationMatrix
-from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
-from bqskit.ir.opt.inst.qfactor import QFactor
 
 import logging
 from typing import Any
@@ -11,8 +8,8 @@ from typing import Iterable
 from typing import Iterator
 from typing import overload
 from typing import Sequence
-from typing import Union
 from typing import TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 
@@ -22,8 +19,11 @@ from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import HilbertSchmidtGenerator
+from bqskit.ir.opt.inst.qfactor import QFactor
+from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
+from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
@@ -31,7 +31,8 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_integer, is_point
+from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_point
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
@@ -59,6 +60,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             one cycle. The Operation object is a CachedClass, so it may appear
             multiple times throughout the circuit, but never as one logical
             operation across multiple cycles.
+
     """
 
     def __init__(self, size: int, radixes: Sequence[int] = []) -> None:
@@ -81,6 +83,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Examples:
             >>> circ = Circuit(4)  # Creates four-qubit empty circuit.
             >>> circ = Circuit(2, [2, 3])  # Creates one qubit and one qutrit.
+
         """
         if size <= 0:
             raise ValueError(
@@ -161,6 +164,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 all-to-all connectivity.
 
             The graph is undirected.
+
         """
         coupling_graph = set()
         for op in self:
@@ -198,6 +202,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             ValueError: If `radix` is < 2
+
         """
 
         if not is_integer(radix):
@@ -221,6 +226,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             ValueError: If any radix in `radixes` is < 2.
+
         """
 
         for radix in radixes:
@@ -237,6 +243,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             ValueError: If `radix` is < 2.
+
         """
 
         if not is_integer(qudit_index):
@@ -290,6 +297,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             IndexError: If `qudit_index` is out of range.
 
             ValueError: If circuit only has one qudit.
+
         """
 
         if not is_integer(qudit_index):
@@ -373,6 +381,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If `cycle_index` is out of range.
+
         """
 
         if not is_integer(cycle_index):
@@ -434,6 +443,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             False
             >>> circuit.is_cycle_unoccupied(1, [1])
             True
+
         """
         if not is_integer(cycle_index):
             raise TypeError(
@@ -474,6 +484,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circuit.append_gate(ZGate(), [1])
             >>> circuit.find_available_cycle([1])
             1
+
         """
 
         if not is_valid_location(location, self.get_size()):
@@ -546,6 +557,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circuit.append_gate(CNOTGate(), [0, 1])
             >>> circuit.get_operation((1, 0))
             CNOTGate()@(0, 1)
+
         """
         if not self.is_point_in_range(point):
             raise IndexError('Out-of-range or invalid point.')
@@ -554,7 +566,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if op is None:
             raise IndexError(
-                'No operation exists at the specified point: %s.' % str(point)
+                'No operation exists at the specified point: %s.' % str(point),
             )
 
         return op
@@ -595,6 +607,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> opX = Operation(XGate(), [0])
             >>> circuit.point(opX)
             CircuitPoint(cycle=1, qudit=0)
+
         """
         if isinstance(op, Operation):
             self.check_valid_operation(op)
@@ -648,6 +661,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ = Circuit(1)
             >>> op = Operation(H(), [0])
             >>> circ.append(op) # Appends a Hadamard gate to qudit 0.
+
         """
         self.check_valid_operation(op)
 
@@ -681,9 +695,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ = Circuit(1)
             >>> # Append a Hadamard gate to qudit 0.
             >>> circ.append_gate(H(), [0])
+
         """
         if not isinstance(gate, Gate):
-            raise TypeError("Expected gate, got %s." % type(gate))
+            raise TypeError('Expected gate, got %s.' % type(gate))
 
         _params = params if len(params) > 0 else [0.0] * gate.get_num_params()
         self.append(Operation(gate, location, _params))
@@ -695,7 +710,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     ) -> None:
         """Append `circuit` at the qudit location specified."""
         if not isinstance(circuit, Circuit):
-            raise TypeError("Expected circuit, got %s." % type(circuit))
+            raise TypeError('Expected circuit, got %s.' % type(circuit))
 
         if circuit.get_size() != len(location):
             raise ValueError('Circuit and location size mismatch.')
@@ -723,6 +738,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Notes:
             See `append` for more info.
+
         """
         for op in ops:
             self.append(op)
@@ -754,6 +770,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Notes:
             Clamps cycle to be in range.
+
         """
         self.check_valid_operation(op)
 
@@ -802,6 +819,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `gate` cannot be placed on the circuit due to
                 either an invalid location or gate radix mismatch.
+
         """
 
         _params = params if len(params) > 0 else [0.0] * gate.get_num_params()
@@ -850,6 +868,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.remove(op)
             >>> circ.num_gates
             0
+
         """
         self.pop(self.point(op))
 
@@ -873,6 +892,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.append(op)
             >>> circ.count(op)
             2
+
         """
 
         count = 0
@@ -914,6 +934,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.pop(0, 0)
             >>> circ.get_num_gates()
             0
+
         """
 
         # Use given point
@@ -959,6 +980,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If any of `points` are invalid or out-of-range.
+
         """
         for point in points:
             if not self.is_point_in_range(point):
@@ -1018,6 +1040,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `op` cannot be placed on the circuit due to
                 either an invalid location or gate radix mismatch.
+
         """
         self.pop(point)
         self.insert(point[0], op)
@@ -1057,20 +1080,21 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 not contained in it.
 
             IndexError: If any of `points` are invalid or out-of-range.
+
         """
 
         if not is_sequence(points):
             raise TypeError(
-                "Expected sequence of points, got %s." % type(points)
+                'Expected sequence of points, got %s.' % type(points),
             )
-        
+
         if not all(is_point(point) for point in points):
             checks = [is_point(point) for point in points]
             raise TypeError(
-                "Expected sequence of points, got %s for at least one point."
-                % points[checks.index(False)]
+                'Expected sequence of points, got %s for at least one point.'
+                % points[checks.index(False)],
             )
-        
+
         if len(points) == 0:
             return
 
@@ -1086,17 +1110,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             cycle_index = point[0]
             if cycle_index < 0:
                 cycle_index = self.get_num_cycles() + cycle_index
-            
+
             for qudit_index in self[point].location:
                 if qudit_index not in region:
                     region[qudit_index] = [self.get_num_cycles(), -1]
-                
+
                 if cycle_index < region[qudit_index][0]:
                     region[qudit_index][0] = cycle_index
 
                 if cycle_index > region[qudit_index][1]:
                     region[qudit_index][1] = cycle_index
-        
+
         # Count operations within region
         ops_in_region = set()
         for qudit_index, bounds in region.items():
@@ -1125,7 +1149,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             for i, cycle in enumerate(self._circuit[bounds[1] + 1:]):
                 if cycle[qudit_index] is not None:
                     boundary[qudit_index][1] = bounds[1] + 1 + i
-        
+
         # Push outside gates to side if necessary
         region_back_min = min(bound[0] for bound in region.values())
         boundary_back_max = max(bound[0] for bound in boundary.values())
@@ -1140,7 +1164,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for bounds in region.values():
             bounds[0] += amount_to_shift
             bounds[1] += amount_to_shift
-        
+
         for cycle_index in range(region_back_min, boundary_back_max + 1):
             # for qudit_index, op in enumerate(self._circuit[cycle_index]):
             for qudit_index in region:
@@ -1150,7 +1174,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                         shifted_cycle_index = cycle_index - amount_to_shift
                         self._circuit[shifted_cycle_index][qudit_index] = op
                         self._circuit[cycle_index][qudit_index] = None
-
 
         # Pop operations, form CircuitGate, insert gate
         circuit_gate = CircuitGate(self.batch_pop(points), True)
@@ -1264,6 +1287,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             6
             >>> circ.get_param_location(4)
             (1, 0, 1)
+
         """
         if param_index < 0:
             raise IndexError('Negative parameter index is not supported.')
@@ -1306,6 +1330,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If any of the indices are out of range.
+
         """
         if not is_sequence(qudit_permutation):
             raise TypeError(
@@ -1348,6 +1373,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.append(op)
             >>> circ.get_unitary() == H().get_unitary()
             True
+
         """
         if len(params) != 0:
             self.check_parameters(params)
@@ -1396,24 +1422,44 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 )
                 param_index += op.get_num_params()
                 for grad in op.get_grad(gparams):
-                    # TODO: Avoid permutations and extensions with tensor contractins
+                    # TODO: use tensor contractions here instead of mm
                     # Should work fine with non unitary gradients
                     # TODO: Fix for non qubits
-                    full_grad = np.kron(grad, np.identity(2 ** (self.get_size() - op.get_size())))
-                    perm = PermutationMatrix.from_qubit_location(self.get_size(), op.location)
-                    full_grad = perm.get_numpy() @ full_grad @ perm.get_numpy().T
-                    grads.append(left.get_unitary().get_numpy() @ full_grad @ right.get_unitary().get_numpy())
+                    full_grad = np.kron(
+                        grad, np.identity(
+                            2 ** (self.get_size() - op.get_size()),
+                        ),
+                    )
+                    perm = PermutationMatrix.from_qubit_location(
+                        self.get_size(), op.location,
+                    )
+                    full_grad = perm.get_numpy() @ full_grad
+                    full_grad = full_grad @ perm.get_numpy().T
+                    grads.append(
+                        left.get_unitary().get_numpy() @
+                        full_grad @ right.get_unitary().get_numpy(),
+                    )
                 left.apply_right(op.get_unitary(gparams), op.location)
             else:
                 right.apply_left(op.get_unitary(), op.location, inverse=True)
                 for grad in op.get_grad():
-                    # TODO: Avoid permutations and extensions with tensor contractins
+                    # TODO: use tensor contractions here instead of mm
                     # Should work fine with non unitary gradients
                     # TODO: Fix for non qubits
-                    full_grad = np.kron(grad, np.identity(2 ** (self.get_size() - op.get_size())))
-                    perm = PermutationMatrix.from_qubit_location(self.get_size(), op.location)
-                    full_grad = perm.get_numpy() @ full_grad @ perm.get_numpy().T
-                    grads.append(left.get_unitary().get_numpy() @ full_grad @ right.get_unitary().get_numpy())
+                    full_grad = np.kron(
+                        grad, np.identity(
+                            2 ** (self.get_size() - op.get_size()),
+                        ),
+                    )
+                    perm = PermutationMatrix.from_qubit_location(
+                        self.get_size(), op.location,
+                    )
+                    full_grad = perm.get_numpy() @ full_grad
+                    full_grad = full_grad @ perm.get_numpy().T
+                    grads.append(
+                        left.get_unitary().get_numpy() @
+                        full_grad @ right.get_unitary().get_numpy(),
+                    )
                 left.apply_right(op.get_unitary(gparams), op.location)
 
         return np.array(grads)
@@ -1449,24 +1495,44 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 )
                 param_index += op.get_num_params()
                 for grad in op.get_grad(gparams):
-                    # TODO: Avoid permutations and extensions with tensor contractins
+                    # TODO: use tensor contractions here instead of mm
                     # Should work fine with non unitary gradients
                     # TODO: Fix for non qubits
-                    full_grad = np.kron(grad, np.identity(2 ** (self.get_size() - op.get_size())))
-                    perm = PermutationMatrix.from_qubit_location(self.get_size(), op.location)
-                    full_grad = perm.get_numpy() @ full_grad @ perm.get_numpy().T
-                    grads.append(right.get_unitary().get_numpy() @ full_grad @ left.get_unitary().get_numpy())
+                    full_grad = np.kron(
+                        grad, np.identity(
+                            2 ** (self.get_size() - op.get_size()),
+                        ),
+                    )
+                    perm = PermutationMatrix.from_qubit_location(
+                        self.get_size(), op.location,
+                    )
+                    full_grad = perm.get_numpy() @ full_grad
+                    full_grad = full_grad @ perm.get_numpy().T
+                    grads.append(
+                        right.get_unitary().get_numpy() @
+                        full_grad @ left.get_unitary().get_numpy(),
+                    )
                 left.apply_right(op.get_unitary(gparams), op.location)
             else:
                 right.apply_left(op.get_unitary(), op.location, inverse=True)
                 for grad in op.get_grad():
-                    # TODO: Avoid permutations and extensions with tensor contractins
+                    # TODO: use tensor contractions here instead of mm
                     # Should work fine with non unitary gradients
                     # TODO: Fix for non qubits
-                    full_grad = np.kron(grad, np.identity(2 ** (self.get_size() - op.get_size())))
-                    perm = PermutationMatrix.from_qubit_location(self.get_size(), op.location)
-                    full_grad = perm.get_numpy().T @ full_grad @ perm.get_numpy().T
-                    grads.append(right.get_unitary().get_numpy() @ full_grad @ left.get_unitary().get_numpy())
+                    full_grad = np.kron(
+                        grad, np.identity(
+                            2 ** (self.get_size() - op.get_size()),
+                        ),
+                    )
+                    perm = PermutationMatrix.from_qubit_location(
+                        self.get_size(), op.location,
+                    )
+                    full_grad = perm.get_numpy() @ full_grad
+                    full_grad = full_grad @ perm.get_numpy().T
+                    grads.append(
+                        right.get_unitary().get_numpy() @
+                        full_grad @ left.get_unitary().get_numpy(),
+                    )
                 left.apply_right(op.get_unitary(), op.location)
 
         return left.get_unitary(), np.array(grads)
@@ -1503,6 +1569,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method subroutines. For more info, see
                 `circuit.minimize` or `bqskit.ir.opt.qfactor`.
+
         """
         # Check or assign method
         if method is None:
@@ -1510,7 +1577,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             #     method = 'qfactor'
             # else:  # TODO
             method = 'minimization'
-    
+
         elif method == 'qfactor' and not QFactor.is_capable(self):
             raise ValueError(
                 'Cannot instantiate circuit with qfactor'
@@ -1578,6 +1645,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             method (str): The minimization method to use. If unspecified,
                 attempts to assign best method. (kwarg)
+
         """
         self.set_params(LBFGSMinimizer().minimize(self, cost))
         # if 'method' in kwargs:
@@ -1662,6 +1730,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Notes:
             If a circuit is returned, it is not a view but rather a copy.
+
         """
 
         if is_point(points):
@@ -1844,9 +1913,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         Check for circuit equality.
 
-        Two circuits are equal if: 1) They have the same number of
-        operations. 2) All qudit radixes are equal. 3) All operations in
-        simulation order are equal.
+        Two circuits are equal if: 1) They have the same number of operations.
+        2) All qudit radixes are equal. 3) All operations in simulation order
+        are equal.
+
         """
         if not isinstance(rhs, Circuit):
             raise NotImplemented

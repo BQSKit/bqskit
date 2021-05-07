@@ -16,8 +16,9 @@ class Instantiater(abc.ABC):
     """
     The Instantiater class.
 
-    An Instantiater is responsible for instantiating circuit templates
-    such that the resulting circuit bests implements the desired target.
+    An Instantiater is responsible for instantiating circuit templates such that
+    the resulting circuit bests implements the desired target.
+
     """
 
     @abc.abstractmethod
@@ -43,6 +44,7 @@ class Instantiater(abc.ABC):
             This method should be side-effect free. This is necessary since
             many instantiate calls to the same circuit using the same
             Instantiater object may happen in parallel.
+
         """
 
     @staticmethod

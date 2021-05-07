@@ -75,23 +75,25 @@ Circuit operation, gate, and circuit methods:
             qudit_index: int,
             reversed: bool = False,
     ) -> Iterator[tuple[CircuitPoint, Operation]]:
+
 """
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any
+from typing import Sequence
 
 import numpy as np
 import pytest
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import ConstantUnitaryGate
 from bqskit.ir.gates import CPIGate
 from bqskit.ir.gates import HGate
-from bqskit.ir.gates import XGate
 from bqskit.ir.gates import IdentityGate
-from bqskit.ir.gates import ConstantUnitaryGate
-from bqskit.ir.gates import CircuitGate
+from bqskit.ir.gates import XGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
@@ -653,11 +655,13 @@ class TestPoint:
 
         opH = Operation(HGate(), [0])
         circuit.append(opH)
-        assert circuit.point(opH).__repr__() == 'CircuitPoint(cycle=0, qudit=0)'
+        assert circuit.point(opH).__repr__(
+        ) == 'CircuitPoint(cycle=0, qudit=0)'
 
         opX = Operation(XGate(), [0])
         circuit.append(opX)
-        assert circuit.point(opX).__repr__() == 'CircuitPoint(cycle=1, qudit=0)'
+        assert circuit.point(opX).__repr__(
+        ) == 'CircuitPoint(cycle=1, qudit=0)'
 
 
 class TestAppend:
@@ -868,14 +872,14 @@ class TestFold:
     """This tests `circuit.fold`."""
 
     @pytest.mark.parametrize(
-        "points",
+        'points',
         [
             [(0, 0)],
             [(0, 0), (1, 2)],
             [CircuitPoint(0, 0), (1, 2)],
             [(0, 0), CircuitPoint(1, 2)],
             [CircuitPoint(0, 0), CircuitPoint(1, 2)],
-        ]
+        ],
     )
     def test_type_valid(self, points: Sequence[CircuitPointLike]) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
@@ -887,34 +891,33 @@ class TestFold:
             return
 
     @pytest.mark.parametrize(
-        "not_points",
+        'not_points',
         [
             5,
             [1, 2],
-            [1, "a"],
-            "abc",
-        ]
+            [1, 'a'],
+            'abc',
+        ],
     )
     def test_type_invalid(self, not_points: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         with pytest.raises(TypeError):
             circuit.fold(not_points)
-    
+
     @pytest.mark.parametrize(
-        "points",
+        'points',
         [
             [(0, 0)],
             [(0, 0), (1, 2)],
             [CircuitPoint(0, 0), (1, 2)],
             [(0, 0), CircuitPoint(1, 2)],
             [CircuitPoint(0, 0), CircuitPoint(1, 2)],
-        ]
+        ],
     )
     def test_invalid_points(self, points: Sequence[CircuitPointLike]) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         with pytest.raises(IndexError):
             circuit.fold(points)
-    
 
     def test_empty(self, r6_qudit_circuit: Circuit) -> None:
         num_ops = r6_qudit_circuit.get_num_operations()
@@ -922,15 +925,15 @@ class TestFold:
         r6_qudit_circuit.fold([])
         assert num_ops == r6_qudit_circuit.get_num_operations()
         assert gate_set == r6_qudit_circuit.get_gate_set()
-    
+
     @pytest.mark.parametrize(
-        "points",
+        'points',
         [
             [(0, 0), (3, 0)],
             [(3, 0), (0, 0)],
             [(0, 0), (2, 0)],
             [(2, 0), (0, 0)],
-        ]
+        ],
     )
     def test_invalid_fold(self, points: Sequence[CircuitPointLike]) -> None:
         circuit = Circuit(4)
@@ -966,8 +969,12 @@ class TestFold:
         assert circuit[0, 0].gate._circuit.get_num_operations() == 2
         assert circuit[0, 0].gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(circuit[0, 0].gate._circuit[0, q].gate, IdentityGate)
-            assert isinstance(circuit[0, 0].gate._circuit[1, q].gate, IdentityGate)
+            assert isinstance(
+                circuit[0, 0].gate._circuit[0, q].gate, IdentityGate,
+            )
+            assert isinstance(
+                circuit[0, 0].gate._circuit[1, q].gate, IdentityGate,
+            )
 
         circuit.fold([(1, 0), (2, 0)])
         assert circuit.get_num_operations() == 2
@@ -979,13 +986,21 @@ class TestFold:
         assert circuit[0, 0].gate._circuit.get_num_operations() == 2
         assert circuit[0, 0].gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(circuit[0, 0].gate._circuit[0, q].gate, IdentityGate)
-            assert isinstance(circuit[0, 0].gate._circuit[1, q].gate, IdentityGate)
+            assert isinstance(
+                circuit[0, 0].gate._circuit[0, q].gate, IdentityGate,
+            )
+            assert isinstance(
+                circuit[0, 0].gate._circuit[1, q].gate, IdentityGate,
+            )
         assert circuit[1, 0].gate._circuit.get_num_operations() == 2
         assert circuit[1, 0].gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(circuit[1, 0].gate._circuit[0, q].gate, IdentityGate)
-            assert isinstance(circuit[1, 0].gate._circuit[1, q].gate, IdentityGate)
+            assert isinstance(
+                circuit[1, 0].gate._circuit[0, q].gate, IdentityGate,
+            )
+            assert isinstance(
+                circuit[1, 0].gate._circuit[1, q].gate, IdentityGate,
+            )
 
         circuit.fold([(0, 0), (1, 0)])
         assert circuit.get_num_operations() == 1
@@ -996,19 +1011,49 @@ class TestFold:
         assert circuit[0, 0].gate._circuit.get_num_operations() == 2
         assert circuit[0, 0].gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(circuit[0, 0].gate._circuit[0, q].gate, CircuitGate)
-            assert isinstance(circuit[0, 0].gate._circuit[1, q].gate, CircuitGate)
-        assert circuit[0, 0].gate._circuit[0, 0].gate._circuit.get_num_operations() == 2
-        assert circuit[0, 0].gate._circuit[0, 0].gate._circuit.get_num_cycles() == 2
+            assert isinstance(
+                circuit[0, 0].gate._circuit[0, q].gate, CircuitGate,
+            )
+            assert isinstance(
+                circuit[0, 0].gate._circuit[1, q].gate, CircuitGate,
+            )
+        assert circuit[0, 0].gate._circuit[
+            0,
+            0,
+        ].gate._circuit.get_num_operations() == 2
+        assert circuit[0, 0].gate._circuit[
+            0,
+            0,
+        ].gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(circuit[0, 0].gate._circuit[0, 0].gate._circuit[0, q].gate, IdentityGate)
-            assert isinstance(circuit[0, 0].gate._circuit[0, 0].gate._circuit[1, q].gate, IdentityGate)
-            assert isinstance(circuit[0, 0].gate._circuit[1, 0].gate._circuit[0, q].gate, IdentityGate)
-            assert isinstance(circuit[0, 0].gate._circuit[1, 0].gate._circuit[1, q].gate, IdentityGate)
-            
+            assert isinstance(
+                circuit[0, 0].gate._circuit[
+                    0,
+                    0,
+                ].gate._circuit[0, q].gate, IdentityGate,
+            )
+            assert isinstance(
+                circuit[0, 0].gate._circuit[
+                    0,
+                    0,
+                ].gate._circuit[1, q].gate, IdentityGate,
+            )
+            assert isinstance(
+                circuit[0, 0].gate._circuit[
+                    1,
+                    0,
+                ].gate._circuit[0, q].gate, IdentityGate,
+            )
+            assert isinstance(
+                circuit[0, 0].gate._circuit[
+                    1,
+                    0,
+                ].gate._circuit[1, q].gate, IdentityGate,
+            )
+
         check_no_idle_cycles(circuit)
         assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
-    
+
     def test_correctness_2(self) -> None:
         circuit = Circuit(3)
         wide_gate = IdentityGate(3)

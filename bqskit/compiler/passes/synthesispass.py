@@ -24,6 +24,7 @@ class SynthesisPass(BasePass):
 
     SynthesisPass will iterate through the circuit and call
     the synthesize function on gates that pass the collection filter.
+
     """
 
     def __init__(
@@ -48,6 +49,7 @@ class SynthesisPass(BasePass):
                 output from synthesis and the original operation. If this
                 returns true, the operation will be replaced with the
                 synthesized circuit. Defaults to always replace.
+
         """
 
         self.collection_filter = collection_filter or default_collection_filter
@@ -83,6 +85,7 @@ class SynthesisPass(BasePass):
             This function should be self-contained and have no side effects.
             This is because it potentially will be called multiple times in
             parallel from one SynthesisPass instance.
+
         """
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
@@ -95,7 +98,9 @@ class SynthesisPass(BasePass):
                 ops_to_syn.append((point, op))
 
         # Synthesize operations
-        for point, op in ops_to_syn:  # TODO: Bug point is not invalid on second successful iteration
+        for point, op in ops_to_syn:
+            # BUG: point is invalid on second successful iteration
+            # TODO: Gather synthesized circuits and batch replace
             syn_circuit = self.synthesize(op.get_unitary(), data)
             if self.replace_filter(syn_circuit, op):
                 circuit.replace_with_circuit(point, syn_circuit, op.location)
@@ -103,6 +108,7 @@ class SynthesisPass(BasePass):
 
 def default_collection_filter(op: Operation) -> bool:
     return isinstance(op.gate, (CircuitGate, ConstantUnitaryGate))
+
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True

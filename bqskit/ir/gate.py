@@ -1,8 +1,9 @@
 """
 This module implements the Gate base class.
 
-A gate is a potentially-parameterized, immutable, unitary operation that
-can be applied to a circuit.
+A gate is a potentially-parameterized, immutable, unitary operation that can be
+applied to a circuit.
+
 """
 from __future__ import annotations
 

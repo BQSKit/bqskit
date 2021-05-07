@@ -1,8 +1,9 @@
 """
 This module implements the WorkQueue class.
 
-The WorkQueue Class starts a new work thread that executes and tracks
-the tasks enqueued in it.
+The WorkQueue Class starts a new work thread that executes and tracks the tasks
+enqueued in it.
+
 """
 from __future__ import annotations
 
@@ -39,6 +40,7 @@ class WorkQueue:
             >>> wq.enqueue(task)
             >>> print(wq.status(task))
             TaskStatus.RUNNING
+
         """
 
         self.work_thread = Thread(target=self.do_work)
@@ -132,6 +134,7 @@ class WorkQueue:
             conn (Connection): The connection object used to communicate
                 to the frontend. Reads commands from the connection,
                 processes them, and responds in a loop.
+
         """
 
         wq = WorkQueue()

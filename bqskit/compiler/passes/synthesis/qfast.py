@@ -1,14 +1,13 @@
 """This module implements the QFASTDecompositionPass class."""
-
 from __future__ import annotations
 
-import logging
 import copy
+import logging
 from typing import Any
 from typing import Sequence
 
-from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
@@ -27,8 +26,9 @@ class QFASTDecompositionPass(SynthesisPass):
     """
     The QFASTDecompositionPass class.
 
-    Performs one QFAST decomposition step breaking down a unitary
-    into a sequence of smaller operations.
+    Performs one QFAST decomposition step breaking down a unitary into a
+    sequence of smaller operations.
+
     """
 
     def __init__(
@@ -75,6 +75,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
         Raises:
             ValueError: If max_depth is nonpositive.
+
         """
 
         if not isinstance(gate, Gate):
@@ -122,7 +123,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
         # 0. Skip any unitaries too small for the configured gate.
         if self.gate.get_size() > utry.get_size():
-            _logger.warning("Skipping unitary synthesis since gate is larger.")
+            _logger.warning('Skipping unitary synthesis since gate is larger.')
             return Circuit.from_unitary(utry)
 
         # 1. Create empty circuit with same size and radixes as `utry`.
@@ -145,7 +146,11 @@ class QFASTDecompositionPass(SynthesisPass):
         while True:
             circuit.instantiate(utry, cost=self.cost)
 
-            dist = self.cost.gen_cost(circuit, utry).get_cost(circuit.get_params())
+            dist = self.cost.gen_cost(
+                circuit, utry,
+            ).get_cost(
+                circuit.get_params(),
+            )
 
             _logger.info(
                 'Finished optimizing depth %d at %e cost.' % (depth, dist),
@@ -232,6 +237,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
             location (Sequence[int]): The location to remove from the
                 VLG head.
+
         """
 
         _logger.debug(
@@ -243,7 +249,8 @@ class QFASTDecompositionPass(SynthesisPass):
         locations.remove(location)
         new_head = Operation(
             VariableLocationGate(self.gate, locations),
-            list(range(circuit.get_size())),  # TODO: Fix bug when qubits missing from VLG
+            list(range(circuit.get_size())),
+            # TODO: Fix bug when qubits missing from VLG
         )
         circuit.pop()
         circuit.append(new_head)

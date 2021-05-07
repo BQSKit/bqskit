@@ -26,6 +26,7 @@ class CachedClass:
         True
         >>> x is z
         False
+
     """
     _instances: dict[Any, CachedClass] = {}
 

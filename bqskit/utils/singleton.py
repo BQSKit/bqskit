@@ -20,6 +20,7 @@ class Singleton():
         >>> y = Singleton()
         >>> x is y
         True
+
     """
     _instance = None
 

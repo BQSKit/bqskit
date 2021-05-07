@@ -22,6 +22,7 @@ class IdentityGate(ConstantGate):
 
             radixes (Sequence[int]): The number of orthogonal
                 states for each qudit. Defaults to qubits.
+
         """
         if size <= 0:
             raise ValueError('Expected positive integer, got %d' % size)

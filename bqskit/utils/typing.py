@@ -1,6 +1,5 @@
 """This module implements many helper functions to check types."""
 from __future__ import annotations
-from bqskit.ir.point import CircuitPoint
 
 import logging
 import numbers
@@ -8,6 +7,8 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+
+from bqskit.ir.point import CircuitPoint
 
 
 _logger = logging.getLogger(__name__)
@@ -66,9 +67,9 @@ def is_valid_location(
     num_qudits: int | None = None,
 ) -> bool:
     """
-    Determines if the sequence of qudits form a valid location. A valid
-    location is a set of qubit indices (integers) that are greater than or
-    equal to zero, and if num_qudits is specified, less than num_qudits.
+    Determines if the sequence of qudits form a valid location. A valid location
+    is a set of qubit indices (integers) that are greater than or equal to zero,
+    and if num_qudits is specified, less than num_qudits.
 
     Args:
         location (Sequence[int]): The location to check.
@@ -79,6 +80,7 @@ def is_valid_location(
 
     Returns:
         (bool): True if the location is valid.
+
     """
     if not is_iterable(location):
         return False
@@ -121,6 +123,7 @@ def is_valid_radixes(
 
     Returns:
         (bool): True if the radixes are valid.
+
     """
 
     if not is_sequence(radixes):
@@ -162,6 +165,7 @@ def is_valid_coupling_graph(
 
     Returns:
         (bool): Valid or not
+
     """
 
     if not isinstance(coupling_graph, set):
@@ -353,25 +357,25 @@ def is_point(point: Any) -> bool:
         return True
 
     if not isinstance(point, tuple):
-        _logger.debug("Point is not a tuple.")
+        _logger.debug('Point is not a tuple.')
         return False
-    
+
     if len(point) != 2:
         _logger.debug(
-            "Expected point to contain two values, got %d." % len(point)
+            'Expected point to contain two values, got %d.' % len(point),
         )
         return False
 
     if not is_integer(point[0]):
         _logger.debug(
-            "Expected integer values in point, got %s." % type(point[0])
+            'Expected integer values in point, got %s.' % type(point[0]),
         )
         return False
 
     if not is_integer(point[1]):
         _logger.debug(
-            "Expected integer values in point, got %s." % type(point[1])
+            'Expected integer values in point, got %s.' % type(point[1]),
         )
         return False
-    
+
     return True

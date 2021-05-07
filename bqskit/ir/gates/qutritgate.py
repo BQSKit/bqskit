@@ -2,6 +2,7 @@
 This module implements the QutritGate base class.
 
 A QutritGate is one that only acts on qutrits.
+
 """
 from __future__ import annotations
 
