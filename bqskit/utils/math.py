@@ -90,7 +90,7 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
     return exps / np.sum(exps)
 
 
-def dot_product(self, alpha: Sequence[float], sigma: np.ndarray) -> np.ndarray:
+def dot_product(alpha: Sequence[float], sigma: np.ndarray) -> np.ndarray:
     """
     Computes the standard dot product of `alpha` with `sigma`.
 
@@ -110,13 +110,13 @@ def dot_product(self, alpha: Sequence[float], sigma: np.ndarray) -> np.ndarray:
 
     if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
         raise TypeError(
-            'Expected a sequence of numbers, got %d.' % type(alpha),
+            'Expected a sequence of numbers, got %s.' % type(alpha),
         )
 
-    if len(alpha) != len(self):
+    if len(alpha) != len(sigma):
         raise ValueError(
             'Incorrect number of alpha values, expected %d, got %d.'
-            % (len(self), len(alpha)),
+            % (len(sigma), len(alpha)),
         )
 
-    return np.sum([a * s for a, s in zip(alpha, sigma)], 0)
+    return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))

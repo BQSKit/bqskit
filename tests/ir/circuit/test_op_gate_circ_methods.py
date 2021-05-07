@@ -966,15 +966,12 @@ class TestFold:
             for q in range(4):
                 assert isinstance(circuit[c, q].gate, IdentityGate)
                 assert isinstance(circuit[c, q].gate, IdentityGate)
-        assert circuit[0, 0].gate._circuit.get_num_operations() == 2
-        assert circuit[0, 0].gate._circuit.get_num_cycles() == 2
+        test_gate: CircuitGate = circuit[0, 0].gate  # type: ignore
+        assert test_gate._circuit.get_num_operations() == 2
+        assert test_gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(
-                circuit[0, 0].gate._circuit[0, q].gate, IdentityGate,
-            )
-            assert isinstance(
-                circuit[0, 0].gate._circuit[1, q].gate, IdentityGate,
-            )
+            assert isinstance(test_gate._circuit[0, q].gate, IdentityGate)
+            assert isinstance(test_gate._circuit[1, q].gate, IdentityGate)
 
         circuit.fold([(1, 0), (2, 0)])
         assert circuit.get_num_operations() == 2
@@ -983,24 +980,18 @@ class TestFold:
         for c in range(2):
             for q in range(4):
                 assert isinstance(circuit[c, q].gate, CircuitGate)
-        assert circuit[0, 0].gate._circuit.get_num_operations() == 2
-        assert circuit[0, 0].gate._circuit.get_num_cycles() == 2
+        test_gate: CircuitGate = circuit[0, 0].gate  # type: ignore
+        assert test_gate._circuit.get_num_operations() == 2
+        assert test_gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(
-                circuit[0, 0].gate._circuit[0, q].gate, IdentityGate,
-            )
-            assert isinstance(
-                circuit[0, 0].gate._circuit[1, q].gate, IdentityGate,
-            )
-        assert circuit[1, 0].gate._circuit.get_num_operations() == 2
-        assert circuit[1, 0].gate._circuit.get_num_cycles() == 2
+            assert isinstance(test_gate._circuit[0, q].gate, IdentityGate)
+            assert isinstance(test_gate._circuit[1, q].gate, IdentityGate)
+        test_gate: CircuitGate = circuit[1, 0].gate  # type: ignore
+        assert test_gate._circuit.get_num_operations() == 2
+        assert test_gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(
-                circuit[1, 0].gate._circuit[0, q].gate, IdentityGate,
-            )
-            assert isinstance(
-                circuit[1, 0].gate._circuit[1, q].gate, IdentityGate,
-            )
+            assert isinstance(test_gate._circuit[0, q].gate, IdentityGate)
+            assert isinstance(test_gate._circuit[1, q].gate, IdentityGate)
 
         circuit.fold([(0, 0), (1, 0)])
         assert circuit.get_num_operations() == 1
@@ -1008,48 +999,21 @@ class TestFold:
         check_no_idle_cycles(circuit)
         for q in range(4):
             assert isinstance(circuit[0, q].gate, CircuitGate)
-        assert circuit[0, 0].gate._circuit.get_num_operations() == 2
-        assert circuit[0, 0].gate._circuit.get_num_cycles() == 2
+        test_gate: CircuitGate = circuit[0, 0].gate  # type: ignore
+        assert test_gate._circuit.get_num_operations() == 2
+        assert test_gate._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(
-                circuit[0, 0].gate._circuit[0, q].gate, CircuitGate,
-            )
-            assert isinstance(
-                circuit[0, 0].gate._circuit[1, q].gate, CircuitGate,
-            )
-        assert circuit[0, 0].gate._circuit[
-            0,
-            0,
-        ].gate._circuit.get_num_operations() == 2
-        assert circuit[0, 0].gate._circuit[
-            0,
-            0,
-        ].gate._circuit.get_num_cycles() == 2
+            assert isinstance(test_gate._circuit[0, q].gate, CircuitGate)
+            assert isinstance(test_gate._circuit[1, q].gate, CircuitGate)
+        inner_gate1: CircuitGate = test_gate._circuit[0, 0].gate  # type: ignore
+        inner_gate2: CircuitGate = test_gate._circuit[1, 0].gate  # type: ignore
+        assert inner_gate1._circuit.get_num_operations() == 2
+        assert inner_gate1._circuit.get_num_cycles() == 2
         for q in range(4):
-            assert isinstance(
-                circuit[0, 0].gate._circuit[
-                    0,
-                    0,
-                ].gate._circuit[0, q].gate, IdentityGate,
-            )
-            assert isinstance(
-                circuit[0, 0].gate._circuit[
-                    0,
-                    0,
-                ].gate._circuit[1, q].gate, IdentityGate,
-            )
-            assert isinstance(
-                circuit[0, 0].gate._circuit[
-                    1,
-                    0,
-                ].gate._circuit[0, q].gate, IdentityGate,
-            )
-            assert isinstance(
-                circuit[0, 0].gate._circuit[
-                    1,
-                    0,
-                ].gate._circuit[1, q].gate, IdentityGate,
-            )
+            assert isinstance(inner_gate1._circuit[0, q].gate, IdentityGate)
+            assert isinstance(inner_gate1._circuit[1, q].gate, IdentityGate)
+            assert isinstance(inner_gate2._circuit[0, q].gate, IdentityGate)
+            assert isinstance(inner_gate2._circuit[1, q].gate, IdentityGate)
 
         check_no_idle_cycles(circuit)
         assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
@@ -1067,11 +1031,12 @@ class TestFold:
         assert circuit.get_depth() == 2
         assert circuit[0, 0].gate is HGate()
         assert isinstance(circuit[1, 0].gate, CircuitGate)
-        assert circuit[1, 0].gate._circuit[0, 1].gate is CNOTGate()
-        assert circuit[1, 0].gate._circuit[0, 2].gate is CNOTGate()
-        assert circuit[1, 0].gate._circuit[1, 0].gate is wide_gate
-        assert circuit[1, 0].gate._circuit[1, 1].gate is wide_gate
-        assert circuit[1, 0].gate._circuit[1, 2].gate is wide_gate
+        test_gate: CircuitGate = circuit[1, 0].gate  # type: ignore
+        assert test_gate._circuit[0, 1].gate is CNOTGate()
+        assert test_gate._circuit[0, 2].gate is CNOTGate()
+        assert test_gate._circuit[1, 0].gate is wide_gate
+        assert test_gate._circuit[1, 1].gate is wide_gate
+        assert test_gate._circuit[1, 2].gate is wide_gate
         check_no_idle_cycles(circuit)
         assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
 
@@ -1097,11 +1062,12 @@ class TestFold:
         assert circuit.count(HGate()) == 2
         assert circuit.count(XGate()) == 6
         assert isinstance(circuit[1, 1].gate, CircuitGate)
-        assert circuit[1, 1].gate._circuit[0, 1].gate is CNOTGate()
-        assert circuit[1, 1].gate._circuit[0, 2].gate is CNOTGate()
-        assert circuit[1, 1].gate._circuit[1, 0].gate is wide_gate
-        assert circuit[1, 1].gate._circuit[1, 1].gate is wide_gate
-        assert circuit[1, 1].gate._circuit[1, 2].gate is wide_gate
+        test_gate: CircuitGate = circuit[1, 1].gate  # type: ignore
+        assert test_gate._circuit[0, 1].gate is CNOTGate()
+        assert test_gate._circuit[0, 2].gate is CNOTGate()
+        assert test_gate._circuit[1, 0].gate is wide_gate
+        assert test_gate._circuit[1, 1].gate is wide_gate
+        assert test_gate._circuit[1, 2].gate is wide_gate
         check_no_idle_cycles(circuit)
         assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
 

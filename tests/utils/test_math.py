@@ -70,27 +70,27 @@ class TestDexpmv:
 
     def test_dexpmv_invalid(self):
         with pytest.raises(Exception):
-            dexpmv(0, 0)
+            dexpmv(0, 0)  # type: ignore
 
         with pytest.raises(Exception):
-            dexpmv(0, [1, 0])
+            dexpmv(0, [1, 0])  # type: ignore
 
         with pytest.raises(Exception):
-            dexpmv([1, 0], 0)
+            dexpmv([1, 0], 0)  # type: ignore
 
         with pytest.raises(Exception):
-            dexpmv([1, 0], [1, 0])
+            dexpmv([1, 0], [1, 0])  # type: ignore
 
         I = np.identity(2)
 
         with pytest.raises(Exception):
-            dexpmv(I, 0)
+            dexpmv(I, 0)  # type: ignore
 
         with pytest.raises(Exception):
-            dexpmv(0, I)
+            dexpmv(0, I)  # type: ignore
 
         with pytest.raises(Exception):
-            dexpmv(I, [1, 0])
+            dexpmv(I, [1, 0])  # type: ignore
 
         with pytest.raises(Exception):
-            dexpmv([1, 0], I)
+            dexpmv([1, 0], I)  # type: ignore

@@ -74,5 +74,17 @@ class StateVector:
 
         self.size = len(self.radixes)
 
+    def get_numpy(self) -> np.ndarray:
+        return self.vec
+
+    def get_size(self) -> int:
+        return self.size
+
+    def get_dim(self) -> int:
+        return self.dim
+
+    def get_radixes(self) -> tuple[int, ...]:
+        return self.radixes
+
 
 StateLike = Union[StateVector, np.ndarray, Sequence[Any]]

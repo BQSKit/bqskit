@@ -44,7 +44,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float],
+        params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Returns the unitary and gradient, see Gate for more info."""
         self.check_parameters(params)
@@ -58,3 +58,4 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
         # return pauli_expansion(unitary_log_no_i(Vh.conj().T @ U.conj().T))
+        raise NotImplementedError('TODO')  # TODO

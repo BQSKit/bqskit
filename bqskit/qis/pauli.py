@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import itertools as it
 from typing import Iterator
+from typing import overload
 from typing import Sequence
 
 import numpy as np
@@ -92,7 +93,15 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
     def __iter__(self) -> Iterator[np.ndarray]:
         return self.paulis.__iter__()
 
-    def __getitem__(self, index: int | slice) -> np.ndarray:
+    @overload
+    def __getitem__(self, index: int) -> np.ndarray:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> list[np.ndarray]:
+        ...
+
+    def __getitem__(self, index: int | slice) -> np.ndarray | list[np.ndarray]:
         return self.paulis[index]
 
     def __len__(self) -> int:
@@ -164,7 +173,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
 
         if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
             raise TypeError(
-                'Expected a sequence of numbers, got %d.' % type(alpha),
+                'Expected a sequence of numbers, got %s.' % type(alpha),
             )
 
         if len(alpha) != len(self):
@@ -173,10 +182,10 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
                 % (len(self), len(alpha)),
             )
 
-        return np.sum([a * s for a, s in zip(alpha, self.paulis)], 0)
+        return np.array(np.sum([a * s for a, s in zip(alpha, self.paulis)], 0))
 
     @staticmethod
-    def from_string(pauli_string: str) -> np.ndarray | list(np.ndarray):
+    def from_string(pauli_string: str) -> np.ndarray | list[np.ndarray]:
         """
         Construct pauli matrices from a string description.
 
@@ -240,7 +249,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         return pauli_matrices
 
 
-def unitary_log_no_i(U, tol=1e-15):
+def unitary_log_no_i(U: np.ndarray, tol: float = 1e-15) -> np.ndarray:
     """
     Solves for H in U = e^{iH}
     Args:
@@ -260,7 +269,7 @@ def unitary_log_no_i(U, tol=1e-15):
     return 0.5 * H0 + 0.5 * H0.conj().T
 
 
-def pauli_expansion(H, tol=1e-15):
+def pauli_expansion(H: np.ndarray, tol: float = 1e-15) -> np.ndarray:
     """
     Computes a Pauli expansion of the hermitian matrix H.
 

@@ -75,7 +75,7 @@ class WorkQueue:
             # Handle Errors
             except Exception as e:
                 _logger.debug('Error executing task: %s' % task.task_id)
-                _logger.debug(e.with_traceback())
+                _logger.debug(e)
                 self.tasks[task.task_id] = {
                     'status': TaskStatus.ERROR,
                     'message': str(e),
