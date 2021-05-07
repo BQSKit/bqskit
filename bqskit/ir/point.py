@@ -1,4 +1,5 @@
 """This module implements the CircuitPoint class."""
+
 from __future__ import annotations
 
 from typing import NamedTuple

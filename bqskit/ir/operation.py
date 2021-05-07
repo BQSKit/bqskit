@@ -131,6 +131,9 @@ s
             and all(x == y for x, y in zip(self.params, rhs.params))
             and all(x == y for x, y in zip(self.location, rhs.location))
         )
+    
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
 
     def __str__(self) -> str:
         return str(self.gate) + '@' + str(self.location) + str(self.params)

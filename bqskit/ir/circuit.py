@@ -31,7 +31,7 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_integer, is_point
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
@@ -553,7 +553,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         op = self._circuit[point[0]][point[1]]
 
         if op is None:
-            raise IndexError('No operation exists at the specified point.')
+            raise IndexError(
+                'No operation exists at the specified point: %s.' % str(point)
+            )
 
         return op
 
@@ -1051,49 +1053,109 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             ValueError: If folding the specified points into a CircuitGate
                 would change the result of `get_unitary`. This happens when
-                their exists an operation within the bounds of `points`.
+                their exists an operation within the bounds of `points`, but
+                not contained in it.
 
             IndexError: If any of `points` are invalid or out-of-range.
         """
-        # Collect Bounds
-        qudit_set = set()
-        min_cycle_index = self.get_num_cycles()
-        max_cycle_index = -1
+
+        if not is_sequence(points):
+            raise TypeError(
+                "Expected sequence of points, got %s." % type(points)
+            )
+        
+        if not all(is_point(point) for point in points):
+            checks = [is_point(point) for point in points]
+            raise TypeError(
+                "Expected sequence of points, got %s for at least one point."
+                % points[checks.index(False)]
+            )
+        
+        if len(points) == 0:
+            return
+
+        # Collect operations to be folded
+        ops_and_cycles = list({(point[0], self[point]) for point in points})
+
+        # Calculate the bounding region to be folded
+        # The region is represented by the max and min cycle for each qudit.
+        region: dict[int, tuple[int, int]] = {}
 
         for point in points:
-            if not self.is_point_in_range(point):
-                raise IndexError('Out-of-range point.')
+            # Flip negative indices
+            cycle_index = point[0]
+            if cycle_index < 0:
+                cycle_index = self.get_num_cycles() + cycle_index
+            
+            for qudit_index in self[point].location:
+                if qudit_index not in region:
+                    region[qudit_index] = [self.get_num_cycles(), -1]
+                
+                if cycle_index < region[qudit_index][0]:
+                    region[qudit_index][0] = cycle_index
 
-            qudit_set.add(point[1])
-            cycle_index = point[0] if point[0] > 0 else self.get_num_cycles(
-            ) + point[0]
-            if cycle_index < min_cycle_index:
-                min_cycle_index = point[0]
-            if cycle_index > max_cycle_index:
-                max_cycle_index = cycle_index
+                if cycle_index > region[qudit_index][1]:
+                    region[qudit_index][1] = cycle_index
+        
+        # Count operations within region
+        ops_in_region = set()
+        for qudit_index, bounds in region.items():
+            for i, cycle in enumerate(self._circuit[bounds[0]:bounds[1] + 1]):
+                op = cycle[qudit_index]
+                if op is not None:
+                    ops_in_region.add((bounds[0] + i, op))
 
-        # Collect Operations
-        ops = list({self[point] for point in points})
-
-        # Count Operations in bounds
-        counting_ops = set()
-        for cycle in self._circuit[min_cycle_index:max_cycle_index + 1]:
-            for qudit_index in qudit_set:
-                if cycle[qudit_index] is not None:
-                    counting_ops.add(cycle[qudit_index])
-        count = len(counting_ops)
-
-        if len(ops) != count:
+        # All operations in the region must be getting folded
+        if len(ops_and_cycles) != len(ops_in_region):
             raise ValueError(
                 'Operations cannot be folded due to'
                 ' another operation in the middle.',
             )
 
-        # Pop, form CircuitGate, and insert in circuit
-        circuit = self.batch_pop(points)
-        circuit_gate = CircuitGate(circuit, True)
-        qudits = sorted(list({point[1] for point in points}))
-        self.insert_gate(min_cycle_index, circuit_gate, qudits)
+        # Calculate forward and backward boundaries
+        boundary: dict[int, tuple[int, int]] = {
+            q: [-1, self.get_num_cycles()]
+            for q in region
+        }
+        for qudit_index, bounds in region.items():
+            for i, cycle in enumerate(reversed(self._circuit[:bounds[0]])):
+                if cycle[qudit_index] is not None:
+                    boundary[qudit_index][0] = bounds[0] - 1 - i
+
+            for i, cycle in enumerate(self._circuit[bounds[1] + 1:]):
+                if cycle[qudit_index] is not None:
+                    boundary[qudit_index][1] = bounds[1] + 1 + i
+        
+        # Push outside gates to side if necessary
+        region_back_min = min(bound[0] for bound in region.values())
+        boundary_back_max = max(bound[0] for bound in boundary.values())
+        amount_to_shift = max(boundary_back_max - region_back_min + 1, 0)
+
+        for i in range(amount_to_shift):  # Add idle cycle for circuit gate
+            self._insert_cycle(region_back_min)
+
+        region_back_min += amount_to_shift
+        boundary_back_max += amount_to_shift
+        points = [(p[0] + amount_to_shift, p[1]) for p in points]
+        for bounds in region.values():
+            bounds[0] += amount_to_shift
+            bounds[1] += amount_to_shift
+        
+        for cycle_index in range(region_back_min, boundary_back_max + 1):
+            # for qudit_index, op in enumerate(self._circuit[cycle_index]):
+            for qudit_index in region:
+                if cycle_index < region[qudit_index][0]:
+                    op = self._circuit[cycle_index][qudit_index]
+                    if op is not None:
+                        shifted_cycle_index = cycle_index - amount_to_shift
+                        self._circuit[shifted_cycle_index][qudit_index] = op
+                        self._circuit[cycle_index][qudit_index] = None
+
+
+        # Pop operations, form CircuitGate, insert gate
+        circuit_gate = CircuitGate(self.batch_pop(points), True)
+        qudits = sorted(list(region.keys()))
+        self.insert_gate(region_back_min, circuit_gate, qudits)
 
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
@@ -1596,23 +1658,22 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 or a Circuit if multiple points are specified.
 
         Raises:
-            IndexError: If a specified point does not contain an operation.
+            IndexError: If `points` is invalid or out-of-range.
 
         Notes:
             If a circuit is returned, it is not a view but rather a copy.
         """
 
-        if isinstance(points, tuple):
-            if all(isinstance(q, int) for q in points) and len(points) == 2:
-                return self.get_operation(points)  # type: ignore
+        if is_point(points):
+            return self.get_operation(points)
 
         elif isinstance(points, slice) or is_sequence(points):
-            return self.get_slice(points)  # type: ignore
+            return self.get_slice(points)
 
         raise TypeError(
             'Invalid index type. Expected point'
             ', sequence of points, or slice'
-            ', got %s' % type(points),
+            ', got %s.' % type(points),
         )
 
     class CircuitIterator(

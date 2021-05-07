@@ -1,5 +1,6 @@
 """This module implements many helper functions to check types."""
 from __future__ import annotations
+from bqskit.ir.point import CircuitPoint
 
 import logging
 import numbers
@@ -343,4 +344,34 @@ def is_pure_state(V: np.ndarray, tol: float = 1e-8) -> bool:
         _logger.debug('Failed pure state criteria.')
         return False
 
+    return True
+
+
+def is_point(point: Any) -> bool:
+    """Return true is point is a CircuitPointLike."""
+    if isinstance(point, CircuitPoint):
+        return True
+
+    if not isinstance(point, tuple):
+        _logger.debug("Point is not a tuple.")
+        return False
+    
+    if len(point) != 2:
+        _logger.debug(
+            "Expected point to contain two values, got %d." % len(point)
+        )
+        return False
+
+    if not is_integer(point[0]):
+        _logger.debug(
+            "Expected integer values in point, got %s." % type(point[0])
+        )
+        return False
+
+    if not is_integer(point[1]):
+        _logger.debug(
+            "Expected integer values in point, got %s." % type(point[1])
+        )
+        return False
+    
     return True
