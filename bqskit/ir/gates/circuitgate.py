@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import numpy as np
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+from typing import Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -34,6 +37,17 @@ class CircuitGate(Gate):
         self.size = self._circuit.get_size()
         self.radixes = self._circuit.get_radixes()
         self.utry = self._circuit.get_unitary()
+        self.num_params = self._circuit.get_num_params()
+        self.name = "CircuitGate(%s)" % str(self._circuit)
+    
+    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        return self._circuit.get_unitary(params)
+    
+    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        return self._circuit.get_grad(params)
+
+    def get_unitary_and_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        return self._circuit.get_unitary_and_grad(params)
 
     def is_differentiable(self) -> bool:
         """Return true if the circuit is differentiable."""
