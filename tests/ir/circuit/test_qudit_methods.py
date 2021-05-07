@@ -23,10 +23,10 @@ from bqskit.ir.gates import ConstantUnitaryGate
 from bqskit.ir.gates import HGate
 
 
-class TestAppendQubit:
-    """This tests circuit.append_qudit."""
+class TestAppendQudit:
+    """This tests `circuit.append_qudit`."""
 
-    def test_append_qudit_type_valid_1(self, an_int: int) -> None:
+    def test_type_valid_1(self, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.append_qudit(an_int)
@@ -35,7 +35,7 @@ class TestAppendQubit:
         except BaseException:
             return
 
-    def test_append_qudit_type_valid_2(self, an_int: int) -> None:
+    def test_type_valid_2(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.append_qudit(an_int)
@@ -44,7 +44,7 @@ class TestAppendQubit:
         except BaseException:
             return
 
-    def test_append_qudit_type_invalid_1(self, not_an_int: Any) -> None:
+    def test_type_invalid_1(self, not_an_int: Any) -> None:
         circuit = Circuit(1)
         try:
             circuit.append_qudit(not_an_int)
@@ -53,7 +53,7 @@ class TestAppendQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_append_qudit_type_invalid_2(self, not_an_int: Any) -> None:
+    def test_type_invalid_2(self, not_an_int: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.append_qudit(not_an_int)
@@ -62,7 +62,7 @@ class TestAppendQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_append_qudit_value_invalid1(self) -> None:
+    def test_value_invalid1(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.append_qudit(-1)
@@ -71,7 +71,7 @@ class TestAppendQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_append_qudit_value_invalid2(self) -> None:
+    def test_value_invalid2(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.append_qudit(0)
@@ -80,7 +80,7 @@ class TestAppendQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_append_qudit_value_invalid3(self) -> None:
+    def test_value_invalid3(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.append_qudit(1)
@@ -89,7 +89,7 @@ class TestAppendQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_append_qudit_default(self) -> None:
+    def test_default(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 2
@@ -103,7 +103,7 @@ class TestAppendQubit:
         assert circuit.get_dim() == 8
         assert len(circuit.get_radixes()) == 3
 
-    def test_append_qudit_qutrit(self) -> None:
+    def test_qutrit(self) -> None:
         circuit = Circuit(1, [3])
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 3
@@ -117,7 +117,7 @@ class TestAppendQubit:
         assert circuit.get_dim() == 27
         assert len(circuit.get_radixes()) == 3
 
-    def test_append_qudit_hybrid(self) -> None:
+    def test_hybrid(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 2
@@ -136,7 +136,7 @@ class TestAppendQubit:
         assert circuit.get_radixes()[1] == 4
         assert circuit.get_radixes()[2] == 3
 
-    def test_append_qudit_append_gate(self) -> None:
+    def test_append_gate(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -147,12 +147,10 @@ class TestAppendQubit:
         assert circuit[3, 4].gate == CNOTGate()
 
 
-class TestExtendQubits:
-    """This tests circuit.extend_qudits."""
+class TestExtendQudits:
+    """This tests `circuit.extend_qudits`."""
 
-    def test_extend_qudits_type_valid_1(
-            self, a_seq_int: Sequence[int],
-    ) -> None:
+    def test_type_valid_1(self, a_seq_int: Sequence[int]) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits(a_seq_int)
@@ -161,9 +159,7 @@ class TestExtendQubits:
         except BaseException:
             return
 
-    def test_extend_qudits_type_valid_2(
-            self, a_seq_int: Sequence[int],
-    ) -> None:
+    def test_type_valid_2(self, a_seq_int: Sequence[int]) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.extend_qudits(a_seq_int)
@@ -172,7 +168,7 @@ class TestExtendQubits:
         except BaseException:
             return
 
-    def test_extend_qudits_type_invalid_1(self, not_a_seq_int: Any) -> None:
+    def test_type_invalid_1(self, not_a_seq_int: Any) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits(not_a_seq_int)
@@ -181,7 +177,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_type_invalid_2(self, not_a_seq_int: Any) -> None:
+    def test_type_invalid_2(self, not_a_seq_int: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.extend_qudits(not_a_seq_int)
@@ -190,7 +186,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_value_invalid1(self) -> None:
+    def test_value_invalid1(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits([-1])
@@ -199,7 +195,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_value_invalid2(self) -> None:
+    def test_value_invalid2(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits([0])
@@ -208,7 +204,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_value_invalid3(self) -> None:
+    def test_value_invalid3(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits([1])
@@ -217,7 +213,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_value_invalid4(self) -> None:
+    def test_value_invalid4(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits([2, 2, -1])
@@ -226,7 +222,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_value_invalid5(self) -> None:
+    def test_value_invalid5(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits([2, 0, 2])
@@ -235,7 +231,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_value_invalid6(self) -> None:
+    def test_value_invalid6(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.extend_qudits([2, 2, 3, 1])
@@ -244,7 +240,7 @@ class TestExtendQubits:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_extend_qudits_qubits(self) -> None:
+    def test_qubits(self) -> None:
         circuit = Circuit(1, [2])
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 2
@@ -258,7 +254,7 @@ class TestExtendQubits:
         assert circuit.get_dim() == 32
         assert len(circuit.get_radixes()) == 5
 
-    def test_extend_qudits_qutrits(self) -> None:
+    def test_qutrits(self) -> None:
         circuit = Circuit(1, [3])
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 3
@@ -272,7 +268,7 @@ class TestExtendQubits:
         assert circuit.get_dim() == 243
         assert len(circuit.get_radixes()) == 5
 
-    def test_extend_qudits_hybrid(self) -> None:
+    def test_hybrid(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 2
@@ -294,7 +290,7 @@ class TestExtendQubits:
         assert circuit.get_radixes()[3] == 3
         assert circuit.get_radixes()[4] == 2
 
-    def test_extend_qudits_append_gate(self) -> None:
+    def test_append_gate(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -307,10 +303,10 @@ class TestExtendQubits:
         assert circuit[4, 5].gate == CNOTGate()
 
 
-class TestInsertQubit:
-    """This tests circuit.insert_qudit."""
+class TestInsertQudit:
+    """This tests `circuit.insert_qudit`."""
 
-    def test_insert_qudit_type_valid_1(self, an_int: int) -> None:
+    def test_type_valid_1(self, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(an_int, an_int)
@@ -319,7 +315,7 @@ class TestInsertQubit:
         except BaseException:
             return
 
-    def test_insert_qudit_type_valid_2(self, an_int: int) -> None:
+    def test_type_valid_2(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.insert_qudit(an_int, an_int)
@@ -328,9 +324,7 @@ class TestInsertQubit:
         except BaseException:
             return
 
-    def test_insert_qudit_type_invalid_1(
-            self, not_an_int: Any, an_int: int,
-    ) -> None:
+    def test_type_invalid_1(self, not_an_int: Any, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(not_an_int, an_int)
@@ -339,9 +333,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_type_invalid_2(
-            self, not_an_int: Any, an_int: int,
-    ) -> None:
+    def test_type_invalid_2(self, not_an_int: Any, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.insert_qudit(not_an_int, an_int)
@@ -350,9 +342,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_type_invalid_3(
-            self, not_an_int: Any, an_int: int,
-    ) -> None:
+    def test_type_invalid_3(self, not_an_int: Any, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(an_int, not_an_int)
@@ -361,9 +351,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_type_invalid_4(
-            self, not_an_int: Any, an_int: int,
-    ) -> None:
+    def test_type_invalid_4(self, not_an_int: Any, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.insert_qudit(an_int, not_an_int)
@@ -372,7 +360,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_type_invalid_5(self, not_an_int: Any) -> None:
+    def test_type_invalid_5(self, not_an_int: Any) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(not_an_int, not_an_int)
@@ -381,7 +369,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_type_invalid_6(self, not_an_int: Any) -> None:
+    def test_type_invalid_6(self, not_an_int: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.insert_qudit(not_an_int, not_an_int)
@@ -390,7 +378,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_value_invalid1(self) -> None:
+    def test_value_invalid_1(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(0, -1)
@@ -399,7 +387,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_value_invalid2(self) -> None:
+    def test_value_invalid_2(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(0, 0)
@@ -408,7 +396,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_value_invalid3(self) -> None:
+    def test_value_invalid_3(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.insert_qudit(0, 1)
@@ -417,7 +405,7 @@ class TestInsertQubit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_insert_qudit_default(self) -> None:
+    def test_default(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 2
@@ -431,7 +419,7 @@ class TestInsertQubit:
         assert circuit.get_dim() == 8
         assert len(circuit.get_radixes()) == 3
 
-    def test_insert_qudit_qutrit(self) -> None:
+    def test_qutrit(self) -> None:
         circuit = Circuit(1, [3])
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 3
@@ -445,7 +433,7 @@ class TestInsertQubit:
         assert circuit.get_dim() == 27
         assert len(circuit.get_radixes()) == 3
 
-    def test_insert_qudit_hybrid(self) -> None:
+    def test_hybrid(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         assert circuit.get_dim() == 2
@@ -464,7 +452,7 @@ class TestInsertQubit:
         assert circuit.get_radixes()[1] == 3
         assert circuit.get_radixes()[2] == 2
 
-    def test_insert_qudit_append_gate1(self) -> None:
+    def test_append_gate_1(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -483,7 +471,7 @@ class TestInsertQubit:
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (3, 4)
 
-    def test_insert_qudit_append_gate2(self) -> None:
+    def test_append_gate_2(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -502,7 +490,7 @@ class TestInsertQubit:
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (3, 4)
 
-    def test_insert_qudit_append_gate3(self) -> None:
+    def test_append_gate_3(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -521,7 +509,7 @@ class TestInsertQubit:
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (3, 4)
 
-    def test_insert_qudit_append_gate4(self) -> None:
+    def test_append_gate_4(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -540,7 +528,7 @@ class TestInsertQubit:
         assert circuit[2, 2].gate == CNOTGate()
         assert circuit[2, 2].location == (2, 4)
 
-    def test_insert_qudit_append_gate5(self) -> None:
+    def test_append_gate_5(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -567,7 +555,7 @@ class TestInsertQubit:
         assert circuit[2, 2].gate == CNOTGate()
         assert circuit[2, 2].location == (2, 3)
 
-    def test_insert_qudit_append_gate6(self) -> None:
+    def test_append_gate_6(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -586,7 +574,7 @@ class TestInsertQubit:
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (3, 4)
 
-    def test_insert_qudit_append_gate7(self) -> None:
+    def test_append_gate_7(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -605,7 +593,7 @@ class TestInsertQubit:
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (3, 4)
 
-    def test_insert_qudit_append_gate8(self) -> None:
+    def test_append_gate_8(self) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -624,7 +612,7 @@ class TestInsertQubit:
         assert circuit[2, 3].gate == CNOTGate()
         assert circuit[2, 3].location == (2, 3)
 
-    def test_insert_qudit_multi_gate1(self, gen_random_utry_np: Any) -> None:
+    def test_multi_gate_1(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(4)
         three_qubit_gate = ConstantUnitaryGate(gen_random_utry_np(8))
         circuit.append_gate(three_qubit_gate, [1, 2, 3])
@@ -644,7 +632,7 @@ class TestInsertQubit:
         assert circuit[3, 1].gate == three_qubit_gate
         assert circuit[3, 1].location == (1, 2, 3)
 
-    def test_insert_qudit_multi_gate2(self, gen_random_utry_np: Any) -> None:
+    def test_multi_gate_2(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         three_qubit_gate = ConstantUnitaryGate(
             gen_random_utry_np(12), [2, 2, 3],
@@ -664,7 +652,7 @@ class TestInsertQubit:
         assert circuit[1, 1].gate == three_qubit_gate
         assert circuit[1, 1].location == (0, 1, 3)
 
-    def test_insert_qudit_multi_gate3(self, gen_random_utry_np: Any) -> None:
+    def test_multi_gate_3(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(4)
         three_qubit_gate = ConstantUnitaryGate(
             gen_random_utry_np(12), [2, 2, 3],
@@ -683,9 +671,9 @@ class TestInsertQubit:
 
 
 class TestPopQudit:
-    """This tests circuit.pop_qudit."""
+    """This tests `circuit.pop_qudit`."""
 
-    def test_pop_qudit_type_valid_1(self, an_int: int) -> None:
+    def test_type_valid_1(self, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.pop_qudit(an_int)
@@ -694,7 +682,7 @@ class TestPopQudit:
         except BaseException:
             return
 
-    def test_pop_qudit_type_valid_2(self, an_int: int) -> None:
+    def test_type_valid_2(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.pop_qudit(an_int)
@@ -703,7 +691,7 @@ class TestPopQudit:
         except BaseException:
             return
 
-    def test_pop_qudit_type_invalid_1(self, not_an_int: Any) -> None:
+    def test_type_invalid_1(self, not_an_int: Any) -> None:
         circuit = Circuit(1)
         try:
             circuit.pop_qudit(not_an_int)
@@ -712,7 +700,7 @@ class TestPopQudit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_pop_qudit_type_invalid_2(self, not_an_int: Any) -> None:
+    def test_type_invalid_2(self, not_an_int: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.pop_qudit(not_an_int)
@@ -721,7 +709,7 @@ class TestPopQudit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_pop_qudit_index_invalid1(self) -> None:
+    def test_index_invalid1(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.pop_qudit(-5)
@@ -730,7 +718,7 @@ class TestPopQudit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_pop_qudit_index_invalid2(self) -> None:
+    def test_index_invalid2(self) -> None:
         circuit = Circuit(1)
         try:
             circuit.pop_qudit(5)
@@ -739,7 +727,7 @@ class TestPopQudit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_pop_qudit_index_invalid3(self) -> None:
+    def test_index_invalid3(self) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.pop_qudit(5)
@@ -748,7 +736,7 @@ class TestPopQudit:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_pop_qudit_index_invalid_empty(self) -> None:
+    def test_index_invalid_empty(self) -> None:
         circuit = Circuit(1)
         assert circuit.get_size() == 1
         try:
@@ -759,7 +747,7 @@ class TestPopQudit:
             assert False, 'Unexpected Exception.'
 
     @pytest.mark.parametrize('qudit_index', [-4, -1, 0, 3])
-    def test_pop_qudit_append_gate_1(self, qudit_index: int) -> None:
+    def test_append_gate_1(self, qudit_index: int) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -779,7 +767,7 @@ class TestPopQudit:
         assert circuit[1, 2].location == (1, 2)
 
     @pytest.mark.parametrize('qudit_index', [-3, 1])
-    def test_pop_qudit_append_gate_2(self, qudit_index: int) -> None:
+    def test_append_gate_2(self, qudit_index: int) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -795,7 +783,7 @@ class TestPopQudit:
         assert circuit[0, 2].location == (1, 2)
 
     @pytest.mark.parametrize('qudit_index', [-2, 2])
-    def test_pop_qudit_append_gate_3(self, qudit_index: int) -> None:
+    def test_append_gate_3(self, qudit_index: int) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -811,7 +799,7 @@ class TestPopQudit:
         assert circuit[0, 1].location == (0, 1)
 
     @pytest.mark.parametrize('qudit_index', [-4, -1, 0, 3])
-    def test_pop_qudit_append_gate_4(self, qudit_index: int) -> None:
+    def test_append_gate_4(self, qudit_index: int) -> None:
         circuit = Circuit(4)
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(CNOTGate(), [1, 2])
@@ -841,7 +829,7 @@ class TestPopQudit:
         assert circuit[5, 1].location == (1, 2)
 
     @pytest.mark.parametrize('qudit_index', [-4, -3, -2, -1, 0, 1, 2, 3])
-    def test_pop_qudit_multi_gate_1(
+    def test_multi_gate_1(
             self, qudit_index: int, gen_random_utry_np: Any,
     ) -> None:
         circuit = Circuit(4)
@@ -864,7 +852,7 @@ class TestPopQudit:
         assert circuit[0, 2].location == (0, 1, 2)
 
     @pytest.mark.parametrize('qudit_index', [-2, -1, 2, 3])
-    def test_pop_qudit_multi_gate_2(
+    def test_multi_gate_2(
             self, qudit_index: int, gen_random_utry_np: Any,
     ) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
@@ -890,9 +878,9 @@ class TestPopQudit:
 
 
 class TestIsQuditInRange:
-    """This tests circuit.is_qudit_in_range."""
+    """This tests `circuit.is_qudit_in_range`."""
 
-    def test_is_qudit_in_range_type_valid_1(self, an_int: int) -> None:
+    def test_type_valid_1(self, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.is_qudit_in_range(an_int)
@@ -901,7 +889,7 @@ class TestIsQuditInRange:
         except BaseException:
             return
 
-    def test_is_qudit_in_range_type_valid_2(self, an_int: int) -> None:
+    def test_type_valid_2(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.is_qudit_in_range(an_int)
@@ -910,7 +898,7 @@ class TestIsQuditInRange:
         except BaseException:
             return
 
-    def test_is_qudit_in_range_type_invalid_1(self, not_an_int: Any) -> None:
+    def test_type_invalid_1(self, not_an_int: Any) -> None:
         circuit = Circuit(1)
         try:
             circuit.is_qudit_in_range(not_an_int)
@@ -919,7 +907,7 @@ class TestIsQuditInRange:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_is_qudit_in_range_type_invalid_2(self, not_an_int: Any) -> None:
+    def test_type_invalid_2(self, not_an_int: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.is_qudit_in_range(not_an_int)
@@ -928,35 +916,35 @@ class TestIsQuditInRange:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_is_qudit_in_range_return_type(self, an_int: int) -> None:
+    def test_return_type(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         assert isinstance(circuit.is_qudit_in_range(an_int), (bool, np.bool_))
 
     @pytest.mark.parametrize('test_value', [-5, -4, -3, -2, -1])
-    def test_is_qudit_in_range_true_neg(self, test_value: int) -> None:
+    def test_true_neg(self, test_value: int) -> None:
         circuit = Circuit(5)
         assert circuit.is_qudit_in_range(test_value)
 
     @pytest.mark.parametrize('test_value', [0, 1, 2, 3, 4])
-    def test_is_qudit_in_range_true_pos(self, test_value: int) -> None:
+    def test_true_pos(self, test_value: int) -> None:
         circuit = Circuit(5)
         assert circuit.is_qudit_in_range(test_value)
 
     @pytest.mark.parametrize('test_value', [-1000, -100, -8, -6])
-    def test_is_qudit_in_range_false_neg(self, test_value: int) -> None:
+    def test_false_neg(self, test_value: int) -> None:
         circuit = Circuit(5)
         assert not circuit.is_qudit_in_range(test_value)
 
     @pytest.mark.parametrize('test_value', [5, 6, 8, 100, 1000])
-    def test_is_qudit_in_range_false_pos(self, test_value: int) -> None:
+    def test_false_pos(self, test_value: int) -> None:
         circuit = Circuit(5)
         assert not circuit.is_qudit_in_range(test_value)
 
 
 class TestIsQuditIdle:
-    """This tests circuit.is_qudit_idle."""
+    """This tests `circuit.is_qudit_idle`."""
 
-    def test_is_qudit_idle_type_valid_1(self, an_int: int) -> None:
+    def test_type_valid_1(self, an_int: int) -> None:
         circuit = Circuit(1)
         try:
             circuit.is_qudit_idle(an_int)
@@ -965,7 +953,7 @@ class TestIsQuditIdle:
         except BaseException:
             return
 
-    def test_is_qudit_idle_type_valid_2(self, an_int: int) -> None:
+    def test_type_valid_2(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.is_qudit_idle(an_int)
@@ -974,7 +962,7 @@ class TestIsQuditIdle:
         except BaseException:
             return
 
-    def test_is_qudit_idle_type_invalid_1(self, not_an_int: Any) -> None:
+    def test_type_invalid_1(self, not_an_int: Any) -> None:
         circuit = Circuit(1)
         try:
             circuit.is_qudit_idle(not_an_int)
@@ -983,7 +971,7 @@ class TestIsQuditIdle:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_is_qudit_idle_type_invalid_2(self, not_an_int: Any) -> None:
+    def test_type_invalid_2(self, not_an_int: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
             circuit.is_qudit_idle(not_an_int)
@@ -992,13 +980,13 @@ class TestIsQuditIdle:
         except BaseException:
             assert False, 'Unexpected Exception.'
 
-    def test_is_qudit_idle_return_type(
+    def test_return_type(
             self, r6_qudit_circuit: Circuit,
     ) -> None:
         for i in range(6):
             assert isinstance(r6_qudit_circuit.is_qudit_idle(i), bool)
 
-    def test_is_qudit_idle_single(self) -> None:
+    def test_single(self) -> None:
         circuit = Circuit(4, [2, 2, 2, 2])
         assert circuit.is_qudit_idle(0)
         assert circuit.is_qudit_idle(1)
