@@ -77,7 +77,7 @@ class VariableLocationGate(Gate):
                     )
 
         if any(radix is None for radix in radix_map.values()):
-            for idx, radix in radix_map.items():
+            for idx, radix in radix_map.items():  # type: ignore
                 if radix is None:
                     radix_map[idx] = 2  # TODO: Re-evaluate
             # raise ValueError(
@@ -88,7 +88,7 @@ class VariableLocationGate(Gate):
             #     " constructor's docstring for more info.",
             # )
 
-        self.radixes = tuple(radix_map.values())
+        self.radixes = tuple(radix_map.values())  # type: ignore
         self.num_params = self.gate.get_num_params() + len(locations)
 
         self.extension_size = self.size - self.gate.get_size()
@@ -101,16 +101,16 @@ class VariableLocationGate(Gate):
 
     def get_location(self, params: Sequence[float]) -> tuple[int, ...]:
         """Returns the gate's location."""
-        idx = np.argmax(self.split_params(params)[1])
-        return self.locations[idx]
+        idx = int(np.argmax(self.split_params(params)[1]))
+        return tuple(self.locations[idx])
 
     def split_params(
             self, params: Sequence[float],
-    ) -> tuple[Sequence[float], Sequence[float]]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Split params into subgate params and location params."""
         return (
-            params[:self.gate.get_num_params()],
-            params[self.gate.get_num_params():],
+            np.array(params[:self.gate.get_num_params()]),
+            np.array(params[self.gate.get_num_params():]),
         )
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
@@ -120,7 +120,8 @@ class VariableLocationGate(Gate):
         l = softmax(l, 10)
 
         P = np.sum([a * s.get_numpy() for a, s in zip(l, self.perms)], 0)
-        G = self.gate.get_unitary(a)
+        G = self.gate.get_unitary(a)  # type: ignore
+        # TODO: Change get_unitary params to be union with np.ndarray
         PGPT = P @ np.kron(G.get_numpy(), self.I) @ P.T
         return UnitaryMatrix.closest_to(PGPT, self.get_radixes())
 
@@ -138,12 +139,13 @@ class VariableLocationGate(Gate):
         l = softmax(l, 10)
 
         P = np.sum([a * s.get_numpy() for a, s in zip(l, self.perms)], 0)
-        G = np.kron(self.gate.get_unitary(a).get_numpy(), self.I)
+        G = self.gate.get_unitary(a).get_numpy()  # type: ignore
+        G = np.kron(G, self.I)
         PG = P @ G
         GPT = G @ P.T
         PGPT = P @ GPT
 
-        dG = self.gate.get_grad(a)
+        dG = self.gate.get_grad(a)  # type: ignore
         dG = np.kron(dG, self.I)
         dG = P @ dG @ P.T
 

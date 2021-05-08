@@ -49,7 +49,10 @@ class CircuitGate(Gate):
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         return self._circuit.get_grad(params)
 
-    def get_unitary_and_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_unitary_and_grad(
+        self,
+        params: Sequence[float] = [],
+    ) -> tuple[UnitaryMatrix, np.ndarray]:
         return self._circuit.get_unitary_and_grad(params)
 
     def is_differentiable(self) -> bool:

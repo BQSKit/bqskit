@@ -4,6 +4,8 @@ from __future__ import annotations
 import abc
 from typing import Sequence
 
+import numpy as np
+
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
 
@@ -19,10 +21,10 @@ class CostFunction(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_cost(self, params: Sequence[float]) -> float:
+    def get_cost(self, params: Sequence[float] | np.ndarray) -> float:
         """Return the cost value given the input parameters."""
 
-    def __call__(self, params: Sequence[float]) -> float:
+    def __call__(self, params: Sequence[float] | np.ndarray) -> float:
         """Return the cost value given the input parameters."""
 
         if not is_sequence(params):

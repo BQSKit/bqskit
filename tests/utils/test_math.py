@@ -62,13 +62,13 @@ class TestDexpmv:
             _, dF = dexpm_exact(H, p)
             dFs0.append(dF)
 
-        dFs0 = np.array(dFs0)
+        dFs0_np = np.array(dFs0)
 
         _, dFs1 = dexpmv(H, paulis.get_numpy())
 
-        assert np.allclose(dFs0, dFs1)
+        assert np.allclose(dFs0_np, dFs1)
 
-    def test_dexpmv_invalid(self):
+    def test_dexpmv_invalid(self) -> None:
         with pytest.raises(Exception):
             dexpmv(0, 0)  # type: ignore
 

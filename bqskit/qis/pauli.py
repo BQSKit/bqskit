@@ -155,12 +155,12 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
 
         return pauli_n_qubit
 
-    def dot_product(self, alpha: Sequence[float]) -> np.ndarray:
+    def dot_product(self, alpha: Sequence[float] | np.ndarray) -> np.ndarray:
         """
         Computes the standard dot product of `alpha` with the paulis.
 
         Args:
-            alpha (Sequence[float]): The pauli coefficients.
+            alpha (Sequence[float] | np.ndarray): The pauli coefficients.
 
         Returns:
             (np.ndarray): Sum of element-wise multiplication of `alpha`

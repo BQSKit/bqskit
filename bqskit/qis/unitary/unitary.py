@@ -92,7 +92,7 @@ class Unitary (metaclass=UnitaryMeta):
         """Returns true if this unitary doesn't have parameters."""
         return not self.is_parameterized()
 
-    def check_parameters(self, params: Sequence[float]) -> None:
+    def check_parameters(self, params: Sequence[float] | np.ndarray) -> None:
         """Checks to ensure parameters are valid and match the unitary."""
         if not is_sequence(params):
             raise TypeError(

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from bqskit.ir.instantiater import Instantiater
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.unitary import LocallyOptimizableUnitary
@@ -20,13 +22,13 @@ class QFactor(Instantiater):
 
     def __init__(
         self,
-        diff_tol_a=1e-12,
-        diff_tol_r=1e-6,
-        dist_tol=1e-10,
-        max_iters=100000,
-        min_iters=1000,
-        slowdown_factor=0.0,
-    ):
+        diff_tol_a: float = 1e-12,
+        diff_tol_r: float = 1e-6,
+        dist_tol: float = 1e-10,
+        max_iters: int = 100000,
+        min_iters: int = 1000,
+        slowdown_factor: float = 0.0,
+    ) -> None:
         """
         Construct and configure a QFactor Instantiater.
 
@@ -129,7 +131,7 @@ class QFactor(Instantiater):
         self,
         circuit: Circuit,
         target: UnitaryLike | StateLike,
-    ) -> list[float]:
+    ) -> np.ndarray:
         """Instantiate `circuit` to best implement `target`."""
         pass  # TODO
 
@@ -146,6 +148,6 @@ class QFactor(Instantiater):
         """Gather all gates in `circuit` that are not locally optimizable."""
         return {
             gate
-            for gate in circuit.get_gate_set
+            for gate in circuit.get_gate_set()
             if not isinstance(gate, LocallyOptimizableUnitary)
         }

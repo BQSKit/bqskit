@@ -33,27 +33,33 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
         target: UnitaryMatrix | StateVector,
     ) -> None:
         """Construct a HilbertSchmidtCost function."""
+        if isinstance(target, StateVector):
+            raise NotImplementedError(
+                'Statevector support for hilbert-schmidt distance'
+                ' is not currently implemented.',
+            )  # TODO
+
         self.target = target
         self.circuit = circuit
         self.target_h = target.get_dagger().get_numpy()
         self.dem = target.get_dim()
 
-    def get_cost(self, params: Sequence[float]) -> float:
+    def get_cost(self, params: Sequence[float] | np.ndarray) -> float:
         """Return the cost value given the input parameters."""
-        utry = self.circuit.get_unitary(params).get_numpy()
+        utry = self.circuit.get_unitary(params).get_numpy()  # type: ignore
         num = np.abs(np.sum(self.target_h * utry))
         return 1 - (num / self.dem)
 
-    def get_grad(self, params: Sequence[float]) -> np.ndarray:
+    def get_grad(self, params: Sequence[float] | np.ndarray) -> np.ndarray:
         """Return the cost gradient given the input parameters."""
         return self.get_cost_and_grad(params)[1]
 
     def get_cost_and_grad(
         self,
-        params: Sequence[float],
+        params: Sequence[float] | np.ndarray,
     ) -> tuple[float, np.ndarray]:
         """Return the cost and gradient given the input parameters."""
-        M, dM = self.circuit.get_unitary_and_grad(params)
+        M, dM = self.circuit.get_unitary_and_grad(params)  # type: ignore
         trace_prod = np.sum(self.target_h * M.get_numpy())
         num = np.abs(trace_prod)
         cost = 1 - (num / self.dem)

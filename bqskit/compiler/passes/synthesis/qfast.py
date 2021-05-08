@@ -116,7 +116,7 @@ class QFASTDecompositionPass(SynthesisPass):
         self.progress_threshold = progress_threshold
         self.cost = cost
         self.max_depth = max_depth
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""

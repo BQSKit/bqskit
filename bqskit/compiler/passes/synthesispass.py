@@ -55,13 +55,13 @@ class SynthesisPass(BasePass):
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
 
-        if not isinstance(self.collection_filter, Callable):
+        if not callable(self.collection_filter):
             raise TypeError(
                 'Expected callable method that maps Operations to booleans for'
                 ' collection_filter, got %s.' % type(self.collection_filter),
             )
 
-        if not isinstance(self.replace_filter, Callable):
+        if not callable(self.replace_filter):
             raise TypeError(
                 'Expected callable method that maps Circuit and Operations to'
                 ' booleans for replace_filter'

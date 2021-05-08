@@ -149,7 +149,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             gate.get_size() * count for gate, count in self._gate_set.items()
         ])
 
-        return weighted_num_operations / depth
+        return float(weighted_num_operations / depth)
 
     def get_coupling_graph(self) -> set[tuple[int, int]]:
         """
@@ -979,7 +979,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             (Circuit): The circuit formed from all the popped operations.
 
         Raises:
-            IndexError: If any of `points` are invalid or out-of-range.
+            IndexError: If any of `points` are invalid or out-of-range.  # TODO
 
         """
         for point in points:
@@ -1079,7 +1079,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 there exists an operation within the bounds of `points`, but
                 not contained in it.
 
-            IndexError: If any of `points` are invalid or out-of-range.
+            IndexError: If any of `points` are invalid or out-of-range.  # TODO
 
         """
 
@@ -1091,8 +1091,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if not all(is_point(point) for point in points):
             checks = [is_point(point) for point in points]
             raise TypeError(
-                'Expected sequence of points, got %s for at least one point.'
-                % points[checks.index(False)],
+                'Expected sequence of points'
+                f', got {points[checks.index(False)]} for at least one point.',
             )
 
         if len(points) == 0:
@@ -1113,13 +1113,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             for qudit_index in self[point].location:
                 if qudit_index not in region:
-                    region[qudit_index] = [self.get_num_cycles(), -1]
+                    region[qudit_index] = (self.get_num_cycles(), -1)
 
                 if cycle_index < region[qudit_index][0]:
-                    region[qudit_index][0] = cycle_index
+                    region[qudit_index] = (cycle_index, region[qudit_index][1])
 
                 if cycle_index > region[qudit_index][1]:
-                    region[qudit_index][1] = cycle_index
+                    region[qudit_index] = (region[qudit_index][0], cycle_index)
 
         # Count operations within region
         ops_in_region = set()
@@ -1138,17 +1138,23 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Calculate forward and backward boundaries
         boundary: dict[int, tuple[int, int]] = {
-            q: [-1, self.get_num_cycles()]
+            q: (-1, self.get_num_cycles())
             for q in region
         }
         for qudit_index, bounds in region.items():
             for i, cycle in enumerate(reversed(self._circuit[:bounds[0]])):
                 if cycle[qudit_index] is not None:
-                    boundary[qudit_index][0] = bounds[0] - 1 - i
+                    boundary[qudit_index] = (
+                        bounds[0] - 1 - i,
+                        boundary[qudit_index][1],
+                    )
 
             for i, cycle in enumerate(self._circuit[bounds[1] + 1:]):
                 if cycle[qudit_index] is not None:
-                    boundary[qudit_index][1] = bounds[1] + 1 + i
+                    boundary[qudit_index] = (
+                        boundary[qudit_index][0],
+                        bounds[1] + 1 + i,
+                    )
 
         # Push outside gates to side if necessary
         region_back_min = min(bound[0] for bound in region.values())
@@ -1161,9 +1167,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         region_back_min += amount_to_shift
         boundary_back_max += amount_to_shift
         points = [(p[0] + amount_to_shift, p[1]) for p in points]
-        for bounds in region.values():
-            bounds[0] += amount_to_shift
-            bounds[1] += amount_to_shift
+        region = {
+            i: (b[0] + amount_to_shift, b[1] + amount_to_shift)
+            for i, b in region.items()
+        }
 
         for cycle_index in range(region_back_min, boundary_back_max + 1):
             # for qudit_index, op in enumerate(self._circuit[cycle_index]):
@@ -1194,7 +1201,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         slice_radixes = [self.get_radixes()[q] for q in qudits]
         slice = Circuit(slice_size, slice_radixes)
         for point in points:
-            slice.append(self[point])
+            try:
+                slice.append(self[point])
+            except IndexError:
+                pass
         return slice
 
     def clear(self) -> None:
@@ -1245,12 +1255,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cycle, qudit, param = self.get_param_location(param_index)
         self[cycle, qudit].params[param] = value
 
-    def set_params(self, params: Sequence[float]) -> None:
+    def set_params(self, params: Sequence[float] | np.ndarray) -> None:
         """Set all parameters at once."""
         self.check_parameters(params)
         param_index = 0
         for op in self:
-            op.params = params[param_index: param_index + op.get_num_params()]
+            op.params = list(
+                params[param_index: param_index + op.get_num_params()],
+            )
             param_index += op.get_num_params()
 
     def freeze_param(self, param_index: int) -> None:
@@ -1542,7 +1554,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         target: StateLike | UnitaryLike,
         method: str | None = None,
         multistarts: int = 1,
-        **kwargs: dict[str, Any],
+        **kwargs: Any,
     ) -> None:
         """
         Instantiate the circuit with respect to a target state or unitary.
@@ -1593,10 +1605,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Check target
         try:
-            typed_target = StateVector(target)
+            typed_target = StateVector(target)  # type: ignore
         except Exception:
             try:
-                typed_target = UnitaryMatrix(target)
+                typed_target = UnitaryMatrix(target)  # type: ignore
             except Exception as ex:
                 raise TypeError(
                     'Expected either StateVector or UnitaryMatrix for target'
@@ -1635,7 +1647,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         elif method == 'qfactor':
             pass
 
-    def minimize(self, cost: CostFunction, **kwargs: Any) -> float:
+    def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
         """
         Minimize the circuit's cost with respect to some CostFunction.
 
@@ -1702,12 +1714,16 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         ...
 
     @overload
-    def __getitem__(self, points: Sequence[CircuitPoint] | slice) -> Circuit:
+    def __getitem__(
+        self,
+        points: Sequence[CircuitPoint] | slice | tuple[slice],
+    ) -> Circuit:
         ...
 
     def __getitem__(
         self,
-        points: CircuitPointLike | Sequence[CircuitPoint] | slice,
+        points: CircuitPointLike | Sequence[CircuitPoint]
+        | slice | tuple[slice],
     ) -> Operation | Circuit:
         """
         Retrieve an operation from a point or a circuit from a point sequence.
@@ -1734,9 +1750,64 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
 
         if is_point(points):
-            return self.get_operation(points)
+            return self.get_operation(points)  # type: ignore
 
-        elif isinstance(points, slice) or is_sequence(points):
+        elif isinstance(points, slice):
+            points = [
+                CircuitPoint(cycle_index, qudit_index)
+                for cycle_index in range(
+                    points.start if not None else 0,
+                    points.stop,
+                    points.step if not None else 1,
+                )
+                for qudit_index in range(self.get_size())
+            ]
+            return self.get_slice(points)
+
+        elif is_sequence(points):
+            if isinstance(points, tuple) and len(points) == 2:
+                if (
+                    isinstance(points[0], slice)
+                    and isinstance(points[1], slice)
+                ):
+                    points = [
+                        CircuitPoint(cycle_index, qudit_index)
+                        for cycle_index in range(
+                            points[0].start if not None else 0,
+                            points[0].stop,
+                            points[0].step if not None else 1,
+                        )
+                        for qudit_index in range(
+                            points[1].start if not None else 0,
+                            points[1].stop,
+                            points[1].step if not None else 1,
+                        )
+                    ]
+                if (
+                    isinstance(points[0], slice)
+                    and is_integer(points[1])
+                ):
+                    points = [
+                        CircuitPoint(cycle_index, points[1])  # type: ignore
+                        for cycle_index in range(
+                            points[0].start if not None else 0,
+                            points[0].stop,
+                            points[0].step if not None else 1,
+                        )
+                    ]
+                if (
+                    is_integer(points[0])
+                    and isinstance(points[1], slice)
+                ):
+                    points = [
+                        CircuitPoint(points[0], qudit_index)  # type: ignore
+                        for qudit_index in range(
+                            points[1].start if not None else 0,
+                            points[1].stop,
+                            points[1].step if not None else 1,
+                        )
+                    ]
+
             return self.get_slice(points)
 
         raise TypeError(

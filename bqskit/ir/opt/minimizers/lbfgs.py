@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bqskit.ir.opt.cost.differentiable import DifferentiableCostFunction
+
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.function import CostFunction
@@ -28,6 +30,11 @@ class LBFGSMinimizer(Minimizer):
 
     def minimize(self, circuit: Circuit, cost: CostFunction) -> np.ndarray:
         """Minimize the circuit with respect to some cost function."""
+
+        if not isinstance(cost, DifferentiableCostFunction):
+            raise RuntimeError(
+                'L-BFGS optimizer requires a differentiable cost function.',
+            )
 
         res = opt.minimize(
             cost.get_cost_and_grad,

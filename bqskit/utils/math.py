@@ -1,8 +1,6 @@
 """This module implements some numerical functions."""
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 
 from bqskit.utils.typing import is_numeric
@@ -90,12 +88,12 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
     return exps / np.sum(exps)
 
 
-def dot_product(alpha: Sequence[float], sigma: np.ndarray) -> np.ndarray:
+def dot_product(alpha: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     """
     Computes the standard dot product of `alpha` with `sigma`.
 
     Args:
-        alpha (Sequence[float]): The alpha coefficients.
+        alpha (np.ndarray): The alpha coefficients.
 
         sigma (np.ndarray): Sequence of matrices or vector of numbers.
 

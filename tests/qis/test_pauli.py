@@ -12,7 +12,7 @@ from bqskit.qis.pauli import PauliMatrices
 
 class TestPauliMatricesConstructor:
 
-    def in_array(self, needle, haystack) -> bool:
+    def in_array(self, needle: Any, haystack: Any) -> bool:
         for elem in haystack:
             if np.allclose(elem, needle):
                 return True
@@ -148,7 +148,7 @@ class TestPauliMatricesConstructor:
 
 class TestPauliMatricesGetProjectionMatrices:
 
-    def in_array(self, needle, haystack) -> bool:
+    def in_array(self, needle: Any, haystack: Any) -> bool:
         for elem in haystack:
             if np.allclose(elem, needle):
                 return True
@@ -173,328 +173,328 @@ class TestPauliMatricesGetProjectionMatrices:
             projected_paulis = paulis.get_projection_matrices([invalid_qubit])  # noqa
 
     @pytest.mark.parametrize('invalid_q_set', [[], [0, 0], [0, 1, 2, 4]])
-    def test_invalid_value_2(self, invalid_q_set: int) -> None:
+    def test_invalid_value_2(self, invalid_q_set: list[int]) -> None:
         paulis = PauliMatrices(4)
         with pytest.raises(ValueError):
-            projected_paulis = paulis.get_projection_matrices(invalid_q_set)  # noqa
+            paulis.get_projection_matrices(invalid_q_set)
 
     def test_proj_3_0(self) -> None:
         num_qubits = 3
         qubit_proj = 0
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(X, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
+        assert self.in_array(np.kron(np.kron(X, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
 
     def test_proj_3_1(self) -> None:
         num_qubits = 3
         qubit_proj = 1
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(I, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
+        assert self.in_array(np.kron(np.kron(I, X), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
 
     def test_proj_3_2(self) -> None:
         num_qubits = 3
         qubit_proj = 2
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(I, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
+        assert self.in_array(np.kron(np.kron(I, I), X), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
 
     def test_proj_4_0(self) -> None:
         num_qubits = 4
         qubit_proj = 0
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(np.kron(X, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Y, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Z, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), paulis)
+        assert self.in_array(np.kron(np.kron(np.kron(X, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Y, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
 
     def test_proj_4_1(self) -> None:
         num_qubits = 4
         qubit_proj = 1
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(np.kron(I, X), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, Y), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, Z), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), paulis)
+        assert self.in_array(np.kron(np.kron(np.kron(I, X), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, Y), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, Z), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
 
     def test_proj_4_2(self) -> None:
         num_qubits = 4
         qubit_proj = 2
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), X), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), paulis)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), X), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), Y), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), Z), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
 
     def test_proj_4_3(self) -> None:
         num_qubits = 4
         qubit_proj = 3
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_proj])
-        assert len(paulis) == 4
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 4
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), X), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), Z), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), paulis)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), X), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), Y), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), Z), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
 
     def test_proj_3_01(self) -> None:
         num_qubits = 3
         qubit_pro1 = 0
         qubit_pro2 = 1
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
-        assert len(paulis) == 16
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 16
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(X, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), I), paulis)
+        assert self.in_array(np.kron(np.kron(X, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(X, X), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, X), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, X), I), projs)
+        assert self.in_array(np.kron(np.kron(I, X), I), projs)
+        assert self.in_array(np.kron(np.kron(X, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(X, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
 
     def test_proj_3_02(self) -> None:
         num_qubits = 3
         qubit_pro1 = 0
         qubit_pro2 = 2
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
-        assert len(paulis) == 16
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 16
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(X, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Z), paulis)
+        assert self.in_array(np.kron(np.kron(X, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(X, I), X), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), X), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), X), projs)
+        assert self.in_array(np.kron(np.kron(I, I), X), projs)
+        assert self.in_array(np.kron(np.kron(X, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(X, I), Z), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), Z), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
 
     def test_proj_3_12(self) -> None:
         num_qubits = 3
         qubit_pro1 = 1
         qubit_pro2 = 2
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
-        assert len(paulis) == 16
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 16
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(I, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Z), paulis)
+        assert self.in_array(np.kron(np.kron(I, X), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, X), X), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), X), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), X), projs)
+        assert self.in_array(np.kron(np.kron(I, I), X), projs)
+        assert self.in_array(np.kron(np.kron(I, X), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, X), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
 
     def test_proj_3_012(self) -> None:
         num_qubits = 3
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([0, 1, 2])
-        assert len(paulis) == 64
+        projs = paulis.get_projection_matrices([0, 1, 2])
+        assert len(projs) == 64
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(I, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(I, X), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, Y), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, Z), Z), paulis)
-        assert self.in_array(np.kron(np.kron(I, I), Z), paulis)
+        assert self.in_array(np.kron(np.kron(I, X), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, X), X), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), X), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), X), projs)
+        assert self.in_array(np.kron(np.kron(I, I), X), projs)
+        assert self.in_array(np.kron(np.kron(I, X), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(I, X), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, Y), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
 
-        assert self.in_array(np.kron(np.kron(X, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(X, X), X), paulis)
-        assert self.in_array(np.kron(np.kron(X, Y), X), paulis)
-        assert self.in_array(np.kron(np.kron(X, Z), X), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(X, X), Y), paulis)
-        assert self.in_array(np.kron(np.kron(X, Y), Y), paulis)
-        assert self.in_array(np.kron(np.kron(X, Z), Y), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(X, X), Z), paulis)
-        assert self.in_array(np.kron(np.kron(X, Y), Z), paulis)
-        assert self.in_array(np.kron(np.kron(X, Z), Z), paulis)
-        assert self.in_array(np.kron(np.kron(X, I), Z), paulis)
+        assert self.in_array(np.kron(np.kron(X, X), I), projs)
+        assert self.in_array(np.kron(np.kron(X, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(X, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(X, I), I), projs)
+        assert self.in_array(np.kron(np.kron(X, X), X), projs)
+        assert self.in_array(np.kron(np.kron(X, Y), X), projs)
+        assert self.in_array(np.kron(np.kron(X, Z), X), projs)
+        assert self.in_array(np.kron(np.kron(X, I), X), projs)
+        assert self.in_array(np.kron(np.kron(X, X), Y), projs)
+        assert self.in_array(np.kron(np.kron(X, Y), Y), projs)
+        assert self.in_array(np.kron(np.kron(X, Z), Y), projs)
+        assert self.in_array(np.kron(np.kron(X, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(X, X), Z), projs)
+        assert self.in_array(np.kron(np.kron(X, Y), Z), projs)
+        assert self.in_array(np.kron(np.kron(X, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(X, I), Z), projs)
 
-        assert self.in_array(np.kron(np.kron(Y, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Y, X), X), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Y), X), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Z), X), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(Y, X), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Y), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Z), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Y, X), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Y), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Y, Z), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Y, I), Z), paulis)
+        assert self.in_array(np.kron(np.kron(Y, X), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Y, X), X), projs)
+        assert self.in_array(np.kron(np.kron(Y, Y), X), projs)
+        assert self.in_array(np.kron(np.kron(Y, Z), X), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), X), projs)
+        assert self.in_array(np.kron(np.kron(Y, X), Y), projs)
+        assert self.in_array(np.kron(np.kron(Y, Y), Y), projs)
+        assert self.in_array(np.kron(np.kron(Y, Z), Y), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(Y, X), Z), projs)
+        assert self.in_array(np.kron(np.kron(Y, Y), Z), projs)
+        assert self.in_array(np.kron(np.kron(Y, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(Y, I), Z), projs)
 
-        assert self.in_array(np.kron(np.kron(Z, X), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), I), paulis)
-        assert self.in_array(np.kron(np.kron(Z, X), X), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Y), X), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Z), X), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), X), paulis)
-        assert self.in_array(np.kron(np.kron(Z, X), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Y), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Z), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), Y), paulis)
-        assert self.in_array(np.kron(np.kron(Z, X), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Y), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Z, Z), Z), paulis)
-        assert self.in_array(np.kron(np.kron(Z, I), Z), paulis)
+        assert self.in_array(np.kron(np.kron(Z, X), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, Y), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, X), X), projs)
+        assert self.in_array(np.kron(np.kron(Z, Y), X), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), X), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), X), projs)
+        assert self.in_array(np.kron(np.kron(Z, X), Y), projs)
+        assert self.in_array(np.kron(np.kron(Z, Y), Y), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), Y), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), Y), projs)
+        assert self.in_array(np.kron(np.kron(Z, X), Z), projs)
+        assert self.in_array(np.kron(np.kron(Z, Y), Z), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), Z), projs)
 
     def test_proj_4_02(self) -> None:
         num_qubits = 4
         qubit_pro1 = 0
         qubit_pro2 = 2
         paulis = PauliMatrices(num_qubits)
-        paulis = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
-        assert len(paulis) == 16
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 16
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
         Y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
-        assert self.in_array(np.kron(np.kron(np.kron(X, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Y, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Z, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(X, I), X), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Y, I), X), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Z, I), X), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), X), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(X, I), Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Y, I), Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Z, I), Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), Y), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(X, I), Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Y, I), Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(Z, I), Z), I), paulis)
-        assert self.in_array(np.kron(np.kron(np.kron(I, I), Z), I), paulis)
+        assert self.in_array(np.kron(np.kron(np.kron(X, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Y, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(X, I), X), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Y, I), X), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), X), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), X), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(X, I), Y), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Y, I), Y), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), Y), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), Y), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(X, I), Z), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Y, I), Z), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), Z), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), Z), I), projs)
 
 
 class TestPauliMatricesDotProduct:
@@ -619,7 +619,7 @@ class TestPauliMatricesDotProduct:
 
 class TestPauliMatricesFromString:
 
-    def in_array(self, needle, haystack) -> bool:
+    def in_array(self, needle: Any, haystack: Any) -> bool:
         for elem in haystack:
             if not needle.shape == elem.shape:
                 continue
@@ -683,7 +683,10 @@ class TestPauliMatricesFromString:
     )
     def test_single(self, pauli_str: str, pauli_mat: np.ndarray) -> None:
         assert isinstance(PauliMatrices.from_string(pauli_str), np.ndarray)
-        assert np.allclose(PauliMatrices.from_string(pauli_str), pauli_mat)
+        assert np.allclose(
+            np.array(PauliMatrices.from_string(pauli_str)),
+            pauli_mat,
+        )
 
     @pytest.mark.parametrize(
         'pauli_str, pauli_mats', [

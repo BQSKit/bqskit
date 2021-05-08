@@ -78,7 +78,7 @@ s
         return self._params
 
     @params.setter
-    def params(self, params: list[float]):
+    def params(self, params: list[float]) -> None:
         self.check_parameters(params)
         self._params = params
 

@@ -24,12 +24,12 @@ class DifferentiableCostFunction(CostFunction):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: Sequence[float]) -> np.ndarray:
+    def get_grad(self, params: Sequence[float] | np.ndarray) -> np.ndarray:
         """Return the cost gradient given the input parameters."""
 
     def get_cost_and_grad(
         self,
-        params: Sequence[float],
+        params: Sequence[float] | np.ndarray,
     ) -> tuple[float, np.ndarray]:
         """Return the cost and gradient given the input parameters."""
         return self.get_cost(params), self.get_grad(params)

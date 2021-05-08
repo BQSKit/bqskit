@@ -54,7 +54,7 @@ class CostFunctionGenerator(abc.ABC):
         target: UnitaryMatrix | StateVector,
     ) -> float:
         """Generate and calculate the cost from the CostFunction."""
-        self.gen_cost(circuit, target)(circuit.get_params())
+        return self.gen_cost(circuit, target)(circuit.get_params())
 
     def __call__(
         self,
