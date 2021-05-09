@@ -11,7 +11,7 @@ from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.math import dexpmv
+from bqskit.utils.math import dexpmv, pauli_expansion, unitary_log_no_i
 
 
 class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
@@ -57,5 +57,4 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         """Returns optimal parameters with respect to an environment matrix."""
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
-        # return pauli_expansion(unitary_log_no_i(Vh.conj().T @ U.conj().T))
-        raise NotImplementedError('TODO')  # TODO
+        return list(pauli_expansion(unitary_log_no_i(Vh.conj().T @ U.conj().T)))

@@ -1,10 +1,14 @@
 """This module implements some numerical functions."""
 from __future__ import annotations
 
+import scipy as sp
 import numpy as np
 
 from bqskit.utils.typing import is_numeric
+from bqskit.utils.typing import is_unitary
+from bqskit.utils.typing import is_hermitian
 from bqskit.utils.typing import is_sequence
+from bqskit.qis.pauli import PauliMatrices
 
 
 def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -118,3 +122,52 @@ def dot_product(alpha: np.ndarray, sigma: np.ndarray) -> np.ndarray:
         )
 
     return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))
+
+
+def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
+    """
+    Solves for H in U = e^{iH}
+    
+    Args:
+        U (np.ndarray): The unitary to decompose.
+
+    Returns:
+        H (np.ndarray): e^{iH} = U.
+    """
+
+    if not is_unitary(U, tol):
+        raise TypeError('Expected U to be unitary, got %s.' % type(U))
+
+    T, Z = sp.linalg.schur(U)
+    T = np.diag(T)
+    D = T / np.abs(T)
+    D = np.diag(np.log(D))
+    H0 = -1j * (Z @ D @ Z.conj().T)
+    return 0.5 * H0 + 0.5 * H0.conj().T
+
+
+def pauli_expansion(H: np.ndarray, tol: float = 1e-8) -> np.ndarray:
+    """
+    Computes a Pauli expansion of the hermitian matrix H.
+
+    Args:
+        H (np.ndarray): The hermitian matrix to expand.
+
+    Returns:
+        (np.ndarray): The coefficients of a Pauli expansion for H,
+            i.e., X dot Sigma = H where Sigma is Pauli matrices of
+            same size of H.
+
+    """
+
+    if not is_hermitian(H, tol):
+        raise TypeError('Expected H to be hermitian, got %s.' % type(H))
+
+    # Change basis of H to Pauli Basis (solve for coefficients -> X)
+    n = int(np.log2(len(H)))
+    paulis = PauliMatrices(n)
+    flatten_paulis = [np.reshape(pauli, 4 ** n) for pauli in paulis]
+    flatten_H = np.reshape(H, 4 ** n)
+    A = np.stack(flatten_paulis, axis=-1)
+    X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
+    return np.array(X)
