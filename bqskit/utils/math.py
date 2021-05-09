@@ -97,29 +97,14 @@ def dot_product(alpha: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     Computes the standard dot product of `alpha` with `sigma`.
 
     Args:
-        alpha (np.ndarray): The alpha coefficients.
+        alpha (np.ndarray): The alpha vector.
 
-        sigma (np.ndarray): Sequence of matrices or vector of numbers.
+        sigma (np.ndarray): The sigma vector.
 
     Returns:
         (np.ndarray): Sum of element-wise multiplication of `alpha`
             and `sigma`.
-
-    Raises:
-        ValueError: If `alpha` and `sigma` are incompatible.
-
     """
-
-    if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
-        raise TypeError(
-            'Expected a sequence of numbers, got %s.' % type(alpha),
-        )
-
-    if len(alpha) != len(sigma):
-        raise ValueError(
-            'Incorrect number of alpha values, expected %d, got %d.'
-            % (len(sigma), len(alpha)),
-        )
 
     return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))
 
