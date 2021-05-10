@@ -103,7 +103,7 @@ class PermutationMatrix(UnitaryMatrix):
         Args:
             num_qubits (int): Total number of qubits
 
-            location (Tuple[int]): The desired locations to swap
+            location (Sequence[int]): The desired locations to swap
                 the starting qubits to.
 
         Returns:
