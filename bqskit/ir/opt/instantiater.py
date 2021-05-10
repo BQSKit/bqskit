@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import abc
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.qis.state.state import StateVector
 from typing import TYPE_CHECKING
 
 import numpy as np
+
+from bqskit.qis.state.state import StateVector
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -37,7 +38,7 @@ class Instantiater(abc.ABC):
 
             target (UnitaryMatrix | StateVector): The unitary matrix to
                 implement or state to prepare.
-            
+
             x0 (np.ndarray): Initial point to use during instantiation.
 
         Returns:
@@ -68,7 +69,7 @@ class Instantiater(abc.ABC):
             ValueError: If `circuit` can be instantiated with this
                 instantiater.
         """
-    
+
     def gen_starting_points(
         self,
         multistarts: int,
@@ -84,7 +85,7 @@ class Instantiater(abc.ABC):
             circuit (Circuit): The circuit to generate the points for.
 
             target (UnitaryMatrix | StateVector): The target.
-        
+
         Return:
             (list[np.ndarray]): List of starting inputs for instantiation.
         """
@@ -95,7 +96,7 @@ class Instantiater(abc.ABC):
 
     def check_target(
         self,
-        target: UnitaryLike | StateLike
+        target: UnitaryLike | StateLike,
     ) -> UnitaryMatrix | StateVector:
         """Check `target` to be valid and return it casted."""
         try:
@@ -108,7 +109,7 @@ class Instantiater(abc.ABC):
                     'Expected either StateVector, UnitaryMatrix, or'
                     ' CostFunction for target, got %s.' % type(target),
                 ) from ex
-                
+
         return typed_target
 
     @staticmethod

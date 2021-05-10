@@ -8,6 +8,7 @@ from typing import Iterable
 from typing import Iterator
 from typing import overload
 from typing import Sequence
+from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -1774,7 +1775,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         )
 
     class CircuitIterator(
-        Iterator[Union[Operation, tuple[CircuitPoint, Operation]]],
+        Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
     ):
         def __init__(
                 self,
@@ -1840,7 +1841,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 return op
 
     class QuditIterator(
-            Iterator[Union[Operation, tuple[CircuitPoint, Operation]]],
+            Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
     ):
         def __init__(
                 self,

@@ -1,20 +1,18 @@
 """This module implements the QFactor class."""
 from __future__ import annotations
-from bqskit.ir.opt.cost.function import CostFunction
 
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 from bqskit.ir.opt.instantiater import Instantiater
-from bqskit.qis.state.state import StateLike, StateVector
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary import LocallyOptimizableUnitary
-from bqskit.qis.unitary.unitarymatrix import UnitaryLike, UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
 if TYPE_CHECKING:
-    from bqskit.ir.gate import Gate
     from bqskit.ir.circuit import Circuit
 
 
@@ -57,7 +55,6 @@ class QFactor(Instantiater):
                 Increasing this may increase runtime and reduce chance
                 of getting stuck in local minima.
                 (Default: 0.0)
-
         """
 
         if not is_real_number(diff_tol_a):
@@ -139,9 +136,9 @@ class QFactor(Instantiater):
 
         if isinstance(typed_target, StateVector):
             raise NotImplementedError(
-                "QFactor is not currently implemented for StateVector targets."
+                'QFactor is not currently implemented for StateVector targets.',
             )
-        
+
         return x0  # TODO
 
     @staticmethod
@@ -172,15 +169,15 @@ class QFactor(Instantiater):
         }
 
         if len(invalid_gates) == 0:
-            raise ValueError("Circuit can be instantiated.")
+            raise ValueError('Circuit can be instantiated.')
 
         return (
             'Cannot instantiate circuit with qfactor'
             ' because the following gates are not locally optimizable: %s.'
             % ', '.join(str(g) for g in invalid_gates)
         )
-        
+
     @staticmethod
     def get_method_name() -> str:
         """Return the name of this method."""
-        return "qfactor"
+        return 'qfactor'
