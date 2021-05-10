@@ -11,7 +11,7 @@ from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
-from bqskit.ir.gates.composed.varloc import VariableLocationGate
+from bqskit.ir.gates.composed.vlg import VariableLocationGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtGenerator
@@ -132,7 +132,7 @@ class QFASTDecompositionPass(SynthesisPass):
         model = MachineModel(utry.get_size())
         locations = model.get_valid_locations(self.gate.get_size())
         circuit.append_gate(
-            VariableLocationGate(self.gate, locations),
+            VariableLocationGate(self.gate, locations, circuit.get_radixes()),
             list(range(utry.get_size())),
         )
 
@@ -245,9 +245,8 @@ class QFASTDecompositionPass(SynthesisPass):
         locations = copy.deepcopy(head_gate.locations)
         locations.remove(location)
         new_head = Operation(
-            VariableLocationGate(self.gate, locations),
+            VariableLocationGate(self.gate, locations, circuit.get_radixes()),
             list(range(circuit.get_size())),
-            # TODO: Fix bug when qubits missing from VLG
         )
         circuit.pop()
         circuit.append(new_head)
@@ -265,7 +264,7 @@ class QFASTDecompositionPass(SynthesisPass):
         )
 
         new_head = Operation(
-            VariableLocationGate(self.gate, locations),
+            VariableLocationGate(self.gate, locations, circuit.get_radixes()),
             list(range(circuit.get_size())),
         )
 

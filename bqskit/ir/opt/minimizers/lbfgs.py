@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import logging
+
 import numpy as np
 import scipy.optimize as opt
 
@@ -10,6 +12,7 @@ from bqskit.ir.opt.cost.differentiable import DifferentiableCostFunction
 from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.minimizer import Minimizer
 
+_logger = logging.getLogger(__name__)
 
 class LBFGSMinimizer(Minimizer):
     """
@@ -38,5 +41,8 @@ class LBFGSMinimizer(Minimizer):
             method='L-BFGS-B',
             options=self.options,
         )
+
+        if not res.success:
+            _logger.warning(res.message)
 
         return res.x

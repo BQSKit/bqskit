@@ -1386,73 +1386,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Return the gradient of the circuit."""
-        if len(params) != 0:
-            self.check_parameters(params)
-            param_index = 0
-
-        left = UnitaryBuilder(self.get_size(), self.get_radixes())
-        right = UnitaryBuilder(self.get_size(), self.get_radixes())
-
-        for op in self:
-            if len(params) != 0:
-                gparams = params[param_index:param_index + op.get_num_params()]
-                right.apply_right(op.get_unitary(gparams), op.location)
-                param_index += op.get_num_params()
-            else:
-                right.apply_right(op.get_unitary(), op.location)
-
-        grads = []
-        for op in self:
-            if len(params) != 0:
-                gparams = params[param_index:param_index + op.get_num_params()]
-                right.apply_left(
-                    op.get_unitary(gparams),
-                    op.location,
-                    inverse=True,
-                )
-                param_index += op.get_num_params()
-                for grad in op.get_grad(gparams):
-                    # TODO: use tensor contractions here instead of mm
-                    # Should work fine with non unitary gradients
-                    # TODO: Fix for non qubits
-                    full_grad = np.kron(
-                        grad, np.identity(
-                            2 ** (self.get_size() - op.get_size()),
-                        ),
-                    )
-                    perm = PermutationMatrix.from_qubit_location(
-                        self.get_size(), op.location,
-                    )
-                    full_grad = perm.get_numpy() @ full_grad
-                    full_grad = full_grad @ perm.get_numpy().T
-                    grads.append(
-                        left.get_unitary().get_numpy() @
-                        full_grad @ right.get_unitary().get_numpy(),
-                    )
-                left.apply_right(op.get_unitary(gparams), op.location)
-            else:
-                right.apply_left(op.get_unitary(), op.location, inverse=True)
-                for grad in op.get_grad():
-                    # TODO: use tensor contractions here instead of mm
-                    # Should work fine with non unitary gradients
-                    # TODO: Fix for non qubits
-                    full_grad = np.kron(
-                        grad, np.identity(
-                            2 ** (self.get_size() - op.get_size()),
-                        ),
-                    )
-                    perm = PermutationMatrix.from_qubit_location(
-                        self.get_size(), op.location,
-                    )
-                    full_grad = perm.get_numpy() @ full_grad
-                    full_grad = full_grad @ perm.get_numpy().T
-                    grads.append(
-                        left.get_unitary().get_numpy() @
-                        full_grad @ right.get_unitary().get_numpy(),
-                    )
-                left.apply_right(op.get_unitary(gparams), op.location)
-
-        return np.array(grads)
+        return self.get_unitary_and_grad(params)[1]
 
     def get_unitary_and_grad(
         self, params: Sequence[float] = [],
@@ -1476,28 +1410,26 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         grads = []
         param_index = 0
         for op in self:
+            perm = PermutationMatrix.from_qubit_location(
+                self.get_size(), op.location,
+            ).get_numpy()
+            permT = perm.T
+            iden = np.identity(2 ** (self.get_size() - op.get_size()))
+
             if len(params) != 0:
                 gparams = params[param_index:param_index + op.get_num_params()]
+                param_index += op.get_num_params()
                 right.apply_left(
                     op.get_unitary(gparams),
                     op.location,
                     inverse=True,
                 )
-                param_index += op.get_num_params()
                 for grad in op.get_grad(gparams):
                     # TODO: use tensor contractions here instead of mm
                     # Should work fine with non unitary gradients
                     # TODO: Fix for non qubits
-                    full_grad = np.kron(
-                        grad, np.identity(
-                            2 ** (self.get_size() - op.get_size()),
-                        ),
-                    )
-                    perm = PermutationMatrix.from_qubit_location(
-                        self.get_size(), op.location,
-                    )
-                    full_grad = perm.get_numpy() @ full_grad
-                    full_grad = full_grad @ perm.get_numpy().T
+                    full_grad = np.kron(grad, iden)
+                    full_grad = perm @ full_grad @ permT
                     grads.append(
                         right.get_unitary().get_numpy() @
                         full_grad @ left.get_unitary().get_numpy(),
@@ -1509,16 +1441,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     # TODO: use tensor contractions here instead of mm
                     # Should work fine with non unitary gradients
                     # TODO: Fix for non qubits
-                    full_grad = np.kron(
-                        grad, np.identity(
-                            2 ** (self.get_size() - op.get_size()),
-                        ),
-                    )
-                    perm = PermutationMatrix.from_qubit_location(
-                        self.get_size(), op.location,
-                    )
-                    full_grad = perm.get_numpy() @ full_grad
-                    full_grad = full_grad @ perm.get_numpy().T
+                    full_grad = np.kron(grad, iden)
+                    full_grad = perm @ full_grad @ permT
                     grads.append(
                         right.get_unitary().get_numpy() @
                         full_grad @ left.get_unitary().get_numpy(),

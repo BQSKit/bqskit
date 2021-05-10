@@ -20,7 +20,12 @@ class VariableLocationGate(Gate):
     gate.
     """
 
-    def __init__(self, gate: Gate, locations: Sequence[Sequence[int]]) -> None:
+    def __init__(
+        self,
+        gate: Gate,
+        locations: Sequence[Sequence[int]],
+        radixes: Sequence[int],
+    ) -> None:
         """
         Create a gate that has parameterized location.
 
@@ -29,6 +34,9 @@ class VariableLocationGate(Gate):
 
             locations (Sequence[Sequence[int]]): A sequence of locations.
                 Each location represents a valid placement for gate.
+            
+            radixes (Sequence[int]): The number of orthogonal
+                states for each qudit. Defaults to qubits.
 
         Raises:
             ValueError: If there are not enough locations or the locations
@@ -58,35 +66,34 @@ class VariableLocationGate(Gate):
 
         self.gate = gate
         self.name = 'VariableLocationGate(%s)' % gate.get_name()
-        self.size = max(max(l) for l in locations) + 1
         self.locations = list(locations)
 
-        # Calculate radixes and
-        # Ensure that the gate can be applied to all locations
-        radix_map: dict[int, int | None] = {i: None for i in range(self.size)}
-        for l in locations:
-            for radix, qudit_index in zip(gate.get_radixes(), l):
-                if radix_map[qudit_index] is None:
-                    radix_map[qudit_index] = radix
-                elif radix_map[qudit_index] != radix:
-                    raise ValueError(
-                        'Gate cannot be applied to all locations'
-                        ' due to radix mismatch.',
-                    )
+        if radixes is None:
+            # Calculate radixes
+            radix_map: dict[int, int | None] = {i: None for i in range(self.size)}
+            for l in locations:
+                for radix, qudit_index in zip(gate.get_radixes(), l):
+                    if radix_map[qudit_index] is None:
+                        radix_map[qudit_index] = radix
+                    elif radix_map[qudit_index] != radix:
+                        raise ValueError(
+                            'Gate cannot be applied to all locations'
+                            ' due to radix mismatch.',
+                        )
 
-        if any(radix is None for radix in radix_map.values()):
-            for idx, radix in radix_map.items():  # type: ignore
-                if radix is None:
-                    radix_map[idx] = 2  # TODO: Re-evaluate
-            # raise ValueError(
-            #     'Unable to determine radix for qudit: %d.'
-            #     % [radix is None for radix in radix_map.values()].index(True)
-            #     + 'If a qudit is not included in the specified locations,'
-            #     ' you should leave it out, see the attached note in the'
-            #     " constructor's docstring for more info.",
-            # )
+            self.radixes = tuple(radix_map.values())  # type: ignore
+        else:
+            for l in locations:
+                for radix, qudit_index in zip(gate.get_radixes(), l):
+                    if radixes[qudit_index] != radix:
+                        raise ValueError(
+                            'Gate cannot be applied to all locations'
+                            ' due to radix mismatch.',
+                        )
 
-        self.radixes = tuple(radix_map.values())  # type: ignore
+            self.radixes = tuple(radixes)
+
+        self.size = len(self.radixes)
         self.num_params = self.gate.get_num_params() + len(locations)
 
         self.extension_size = self.size - self.gate.get_size()
