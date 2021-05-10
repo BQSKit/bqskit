@@ -16,7 +16,6 @@ class DifferentiableUnitary(Unitary):
 
     A DifferentiableUnitary exposes the `get_grad` abstract method and the
     `get_unitary_and_grad` method.
-
     """
 
     @abc.abstractmethod
@@ -39,7 +38,6 @@ class DifferentiableUnitary(Unitary):
             should equal (num_params,N,N), where the return value's
             i-th element is the matrix derivative of the unitary
             with respect to the i-th parameter.
-
         """
 
     def get_unitary_and_grad(
@@ -62,6 +60,5 @@ class DifferentiableUnitary(Unitary):
         Notes:
             Can be overridden to speed up optimization by calculating both
             at the same time.
-
         """
         return (self.get_unitary(params), self.get_grad(params))

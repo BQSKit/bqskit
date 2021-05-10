@@ -17,7 +17,6 @@ class CostFunction(abc.ABC):
     A CostFunction is a map from a vector of real numbers to a real number. This
     output represents cost and minimizers will attempt to reduce it. The input
     should represent circuit parameters.
-
     """
 
     @abc.abstractmethod

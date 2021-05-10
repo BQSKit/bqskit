@@ -14,7 +14,6 @@ class LocallyOptimizableUnitary(Unitary):
     The LocallyOptimizableUnitary base class.
 
     A LocallyOptimizableUnitary exposes the `optimize` abstract method.
-
     """
 
     @abc.abstractmethod
@@ -33,7 +32,6 @@ class LocallyOptimizableUnitary(Unitary):
 
         Returns
             (list[float]): The parameters that optimizes this unitary.
-
         """
 
     def check_env_matrix(self, env_matrix: np.ndarray) -> None:

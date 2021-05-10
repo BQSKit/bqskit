@@ -3,7 +3,6 @@ This module implements the PauliMatrices class.
 
 A PauliMatrices object represents the entire of set of pauli matrices for some
 number of qubits.
-
 """
 from __future__ import annotations
 
@@ -13,14 +12,11 @@ from typing import overload
 from typing import Sequence
 
 import numpy as np
-import scipy as sp
 
 from bqskit.utils.cachedclass import CachedClass
-from bqskit.utils.typing import is_hermitian
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
-from bqskit.utils.typing import is_unitary
 
 
 class PauliMatrices(CachedClass, Sequence[np.ndarray]):
@@ -64,7 +60,6 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
 
         Raises:
             ValueError: If `size` is less than or equal to 0.
-
         """
 
         if not is_integer(size):
@@ -125,7 +120,6 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
 
         Raises:
             ValueError: if `q_set` is an invalid set of qubit indices.
-
         """
 
         if not all(is_integer(q) for q in q_set):
@@ -168,7 +162,6 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
 
         Raises:
             ValueError: If `alpha` and `self.paulis` are incompatible.
-
         """
 
         if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
@@ -202,7 +195,6 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
 
         Raises:
             ValueError: if `pauli_string` is invalid.
-
         """
 
         if not isinstance(pauli_string, str):

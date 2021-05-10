@@ -9,7 +9,6 @@ Circuit cycle methods:
         location: Sequence[int],
     ) -> bool:
     def find_available_cycle(self, location: Sequence[int]) -> int:
-
 """
 from __future__ import annotations
 

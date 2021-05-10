@@ -24,7 +24,6 @@ class CostFunctionGenerator(abc.ABC):
     which in turn, will generate configured CostFunctions. This is useful
     since passes might be working with changing circuits and will need to
     regenerate CostFunctions from time to time.
-
     """
 
     @abc.abstractmethod
@@ -45,7 +44,6 @@ class CostFunctionGenerator(abc.ABC):
             (CostFunction): The primitive cost function
                 that can be directly passed to a minimizer. This maps
                 parameters or circuit inputs to a cost.
-
         """
 
     def calc_cost(

@@ -24,7 +24,6 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
     parameters to a cost value that is based on the Hilbert-Schmidt inner
     product. This function is global-phase-aware, meaning that the cost is zero
     if the target and circuit unitary differ only by a global phase.
-
     """
 
     def __init__(
@@ -77,7 +76,6 @@ class HilbertSchmidtGenerator(CostFunctionGenerator):
     The HilbertSchmidtGenerator class.
 
     This generator produces configured HilbertSchmidtCost functions.
-
     """
 
     def gen_cost(

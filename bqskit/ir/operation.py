@@ -19,7 +19,6 @@ class Operation(DifferentiableUnitary):
     The Operation class.
 
     A Operation groups together a gate, its parameters and location.
-
     """
 
     def __init__(

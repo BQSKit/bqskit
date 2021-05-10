@@ -10,7 +10,6 @@ class CircuitPoint(NamedTuple):
     The CircuitPoint NamedTuple class.
 
     A CircuitPoint is a 2d-index into the Circuit data structure.
-
     """
     cycle: int
     qudit: int

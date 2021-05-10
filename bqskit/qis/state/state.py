@@ -30,7 +30,6 @@ class StateVector:
         Raises:
             TypeError: If `radixes` is not specified and the constructor
                 cannot determine `radixes`.
-
         """
         # Copy Constructor
         if isinstance(vec, StateVector):

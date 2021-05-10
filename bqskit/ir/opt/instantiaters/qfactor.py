@@ -1,14 +1,15 @@
 """This module implements the QFactor class."""
 from __future__ import annotations
+from bqskit.ir.opt.cost.function import CostFunction
 
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.ir.instantiater import Instantiater
-from bqskit.qis.state.state import StateLike
+from bqskit.ir.opt.instantiater import Instantiater
+from bqskit.qis.state.state import StateLike, StateVector
 from bqskit.qis.unitary import LocallyOptimizableUnitary
-from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike, UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
@@ -130,24 +131,56 @@ class QFactor(Instantiater):
     def instantiate(
         self,
         circuit: Circuit,
-        target: UnitaryLike | StateLike,
+        target: UnitaryMatrix | StateVector,
+        x0: np.ndarray,
     ) -> np.ndarray:
-        """Instantiate `circuit` to best implement `target`."""
-        pass  # TODO
+        """Instantiate `circuit`, see Instantiater for more info."""
+        typed_target = self.check_target(target)
+
+        if isinstance(typed_target, StateVector):
+            raise NotImplementedError(
+                "QFactor is not currently implemented for StateVector targets."
+            )
+        
+        return x0  # TODO
 
     @staticmethod
     def is_capable(circuit: Circuit) -> bool:
-        """Return true if the circuit can be instantiated with qfactor."""
+        """Return true if the circuit can be instantiated."""
         return all(
             isinstance(gate, LocallyOptimizableUnitary)
             for gate in circuit.get_gate_set()
         )
 
     @staticmethod
-    def get_invalid_gates(circuit: Circuit) -> set[Gate]:
-        """Gather all gates in `circuit` that are not locally optimizable."""
-        return {
+    def get_violation_report(circuit: Circuit) -> str:
+        """
+        Return a message explaining why `circuit` cannot be instantiated.
+
+        Args:
+            circuit (Circuit): Generate a report for this circuit.
+
+        Raises:
+            ValueError: If `circuit` can be instantiated with this
+                instantiater.
+        """
+
+        invalid_gates = {
             gate
             for gate in circuit.get_gate_set()
             if not isinstance(gate, LocallyOptimizableUnitary)
         }
+
+        if len(invalid_gates) == 0:
+            raise ValueError("Circuit can be instantiated.")
+
+        return (
+            'Cannot instantiate circuit with qfactor'
+            ' because the following gates are not locally optimizable: %s.'
+            % ', '.join(str(g) for g in invalid_gates)
+        )
+        
+    @staticmethod
+    def get_method_name() -> str:
+        """Return the name of this method."""
+        return "qfactor"

@@ -1,14 +1,12 @@
 """This module implements some numerical functions."""
 from __future__ import annotations
 
-import scipy as sp
 import numpy as np
+import scipy as sp
 
-from bqskit.utils.typing import is_numeric
-from bqskit.utils.typing import is_unitary
-from bqskit.utils.typing import is_hermitian
-from bqskit.utils.typing import is_sequence
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.utils.typing import is_hermitian
+from bqskit.utils.typing import is_unitary
 
 
 def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -84,7 +82,6 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
 
     Returns:
         (np.ndarray): Output vector of softmax.
-
     """
 
     shiftx = beta * (x - np.max(x))
@@ -112,7 +109,7 @@ def dot_product(alpha: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
     """
     Solves for H in U = e^{iH}
-    
+
     Args:
         U (np.ndarray): The unitary to decompose.
 
@@ -142,7 +139,6 @@ def pauli_expansion(H: np.ndarray, tol: float = 1e-8) -> np.ndarray:
         (np.ndarray): The coefficients of a Pauli expansion for H,
             i.e., X dot Sigma = H where Sigma is Pauli matrices of
             same size of H.
-
     """
 
     if not is_hermitian(H, tol):

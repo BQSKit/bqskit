@@ -36,7 +36,6 @@ fixtures that need to be verified:
     not_a_seq_complex
     a_seq_bool
     not_a_seq_bool
-
 """
 from __future__ import annotations
 

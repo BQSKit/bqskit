@@ -7,7 +7,6 @@ conjugate transpose of the input gate.
 For example:
     >>> DaggerGate(TGate()).get_unitary() == TdgGate().get_unitary()
     True
-
 """
 from __future__ import annotations
 
@@ -35,7 +34,6 @@ class DaggerGate(
 
         Args:
             gate (Gate): The Gate to conjugate transpose.
-
         """
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))
@@ -65,7 +63,6 @@ class DaggerGate(
         Notes:
             The derivative of the conjugate transpose of matrix is equal
             to the conjugate transpose of the derivative.
-
         """
         self.check_parameters(params)
         if hasattr(self, 'utry'):

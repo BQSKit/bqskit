@@ -2,7 +2,6 @@
 This module implements the ConstantGate base class.
 
 A ConstantGate is one that does not change during circuit optimization.
-
 """
 from __future__ import annotations
 

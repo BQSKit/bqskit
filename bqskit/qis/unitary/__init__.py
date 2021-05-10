@@ -4,7 +4,6 @@ The Unitary package.
 This package exports the Unitary base class and several children
 classes: UnitaryMatrix, UnitaryBuilder, DifferentiableUnitary, and
 LocallyOptimizableUnitary.
-
 """
 from __future__ import annotations
 

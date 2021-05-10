@@ -18,8 +18,11 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost import HilbertSchmidtGenerator
-from bqskit.ir.opt.inst.qfactor import QFactor
+from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtCost
+from bqskit.ir.opt.instantiater import Instantiater
+from bqskit.ir.opt.instantiaters import instantiater_order
+from bqskit.ir.opt.instantiaters.minimization import Minimization
+from bqskit.ir.opt.instantiaters.qfactor import QFactor
 from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
@@ -60,7 +63,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             one cycle. The Operation object is a CachedClass, so it may appear
             multiple times throughout the circuit, but never as one logical
             operation across multiple cycles.
-
     """
 
     def __init__(self, size: int, radixes: Sequence[int] = []) -> None:
@@ -83,7 +85,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Examples:
             >>> circ = Circuit(4)  # Creates four-qubit empty circuit.
             >>> circ = Circuit(2, [2, 3])  # Creates one qubit and one qutrit.
-
         """
         if size <= 0:
             raise ValueError(
@@ -164,7 +165,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 all-to-all connectivity.
 
             The graph is undirected.
-
         """
         coupling_graph = set()
         for op in self:
@@ -202,7 +202,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             ValueError: If `radix` is < 2
-
         """
 
         if not is_integer(radix):
@@ -226,7 +225,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             ValueError: If any radix in `radixes` is < 2.
-
         """
 
         for radix in radixes:
@@ -243,7 +241,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             ValueError: If `radix` is < 2.
-
         """
 
         if not is_integer(qudit_index):
@@ -297,7 +294,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             IndexError: If `qudit_index` is out of range.
 
             ValueError: If circuit only has one qudit.
-
         """
 
         if not is_integer(qudit_index):
@@ -381,7 +377,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If `cycle_index` is out of range.
-
         """
 
         if not is_integer(cycle_index):
@@ -443,7 +438,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             False
             >>> circuit.is_cycle_unoccupied(1, [1])
             True
-
         """
         if not is_integer(cycle_index):
             raise TypeError(
@@ -484,7 +478,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circuit.append_gate(ZGate(), [1])
             >>> circuit.find_available_cycle([1])
             1
-
         """
 
         if not is_valid_location(location, self.get_size()):
@@ -557,7 +550,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circuit.append_gate(CNOTGate(), [0, 1])
             >>> circuit.get_operation((1, 0))
             CNOTGate()@(0, 1)
-
         """
         if not self.is_point_in_range(point):
             raise IndexError('Out-of-range or invalid point.')
@@ -607,7 +599,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> opX = Operation(XGate(), [0])
             >>> circuit.point(opX)
             CircuitPoint(cycle=1, qudit=0)
-
         """
         if isinstance(op, Operation):
             self.check_valid_operation(op)
@@ -661,7 +652,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ = Circuit(1)
             >>> op = Operation(H(), [0])
             >>> circ.append(op) # Appends a Hadamard gate to qudit 0.
-
         """
         self.check_valid_operation(op)
 
@@ -695,7 +685,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ = Circuit(1)
             >>> # Append a Hadamard gate to qudit 0.
             >>> circ.append_gate(H(), [0])
-
         """
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate, got %s.' % type(gate))
@@ -738,7 +727,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Notes:
             See `append` for more info.
-
         """
         for op in ops:
             self.append(op)
@@ -770,7 +758,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Notes:
             Clamps cycle to be in range.
-
         """
         self.check_valid_operation(op)
 
@@ -819,7 +806,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `gate` cannot be placed on the circuit due to
                 either an invalid location or gate radix mismatch.
-
         """
 
         _params = params if len(params) > 0 else [0.0] * gate.get_num_params()
@@ -868,7 +854,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.remove(op)
             >>> circ.num_gates
             0
-
         """
         self.pop(self.point(op))
 
@@ -892,7 +877,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.append(op)
             >>> circ.count(op)
             2
-
         """
 
         count = 0
@@ -934,7 +918,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.pop(0, 0)
             >>> circ.get_num_gates()
             0
-
         """
 
         # Use given point
@@ -980,7 +963,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If any of `points` are invalid or out-of-range.  # TODO
-
         """
         for point in points:
             if not self.is_point_in_range(point):
@@ -1040,7 +1022,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `op` cannot be placed on the circuit due to
                 either an invalid location or gate radix mismatch.
-
         """
         self.pop(point)
         self.insert(point[0], op)
@@ -1080,7 +1061,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 not contained in it.
 
             IndexError: If any of `points` are invalid or out-of-range.  # TODO
-
         """
 
         if not is_sequence(points):
@@ -1299,7 +1279,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             6
             >>> circ.get_param_location(4)
             (1, 0, 1)
-
         """
         if param_index < 0:
             raise IndexError('Negative parameter index is not supported.')
@@ -1342,7 +1321,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Raises:
             IndexError: If any of the indices are out of range.
-
         """
         if not is_sequence(qudit_permutation):
             raise TypeError(
@@ -1385,7 +1363,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> circ.append(op)
             >>> circ.get_unitary() == H().get_unitary()
             True
-
         """
         if len(params) != 0:
             self.check_parameters(params)
@@ -1559,9 +1536,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         Instantiate the circuit with respect to a target state or unitary.
 
-        Attempts to change the parameters of the circuit such that the circuit
-        either implements the target unitary or maps the zero state to
-        the target state.
+        Attempts to change the parameters of the circuit such that the
+        circuit either implements the target unitary or maps the zero
+        state to the target state.
 
         Args:
             target (StateLike | UnitaryLike): The target unitary or state.
@@ -1575,53 +1552,72 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 the circuit. Currently, `"qfactor"` and `"minimization"`
                 are supported. If left None, attempts to pick best method.
 
-            multistarts (int): The number of parallel instantiation jobs
-                to spawn and manage. (Default: 1)
+            multistarts (int): The number of instantiation jobs to spawn
+                and manage. (Default: 1)
 
             kwargs (dict[str, Any]): Method specific options, passed
-                directly to method subroutines. For more info, see
-                `circuit.minimize` or `bqskit.ir.opt.qfactor`.
+                directly to method constructor. For more info, see
+                `bqskit.ir.opt.instantiaters`.
 
+        Raises:
+            ValueError: If `method` is invalid.
+
+            ValueError: If `circuit` is incompatible with any method.
+
+            ValueError: If `target` dimension doesn't match with circuit.
+
+            ValueError: If `multistarts` is not a positive integer.
         """
-        # Check or assign method
+        # Assign method if unspecified
         if method is None:
-            # if QFactor.is_capable(self) and isinstance(target, UnitaryLike):
-            #     method = 'qfactor'
-            # else:  # TODO
-            method = 'minimization'
+            error_msg = ''
+            for inst in instantiater_order:
+                if inst.is_capable(self):  # type: ignore
+                    method = inst.get_method_name()  # type: ignore
+                    break
+                else:
+                    report = inst.get_violation_report(self)  # type: ignore
+                    error_msg += report + '\n'
 
-        elif method == 'qfactor' and not QFactor.is_capable(self):
+            if method is None:
+                raise ValueError(
+                    'No instantiation method works for this circuit.\n%s'
+                    % error_msg,
+                )
+
+        # Create instantiater
+        instantiater: Instantiater
+
+        if method.lower() == 'qfactor':
+            instantiater = QFactor(**kwargs)
+
+        elif method.lower() == 'minimization':
+            instantiater = Minimization(**kwargs)
+
+        else:
             raise ValueError(
-                'Cannot instantiate circuit with qfactor'
-                'because the following gates are not locally optimizable: '
-                ', '.join(
-                    str(g)
-                    for g in QFactor.get_invalid_gates(self)
-                ) + '.',
+                'No such method %s; expected "qfactor" or "minimization".',
             )
 
-        elif method != 'qfactor' and method != 'minimization':
-            raise ValueError('Unrecognized method: %s.' % method)
+        if not instantiater.is_capable(self):
+            raise ValueError(
+                'Circuit cannot be instantiated using the %s method.\n %s'
+                % (method, instantiater.get_violation_report(self)),
+            )
 
-        # Check target
+        # Check Target
         try:
             typed_target = StateVector(target)  # type: ignore
-        except Exception:
+        except (ValueError, TypeError):
             try:
                 typed_target = UnitaryMatrix(target)  # type: ignore
-            except Exception as ex:
+            except (ValueError, TypeError) as ex:
                 raise TypeError(
-                    'Expected either StateVector or UnitaryMatrix for target'
-                    ', got %s.' % type(target),
+                    'Expected either StateVector or UnitaryMatrix'
+                    ' for target, got %s.' % type(target),
                 ) from ex
-        target = typed_target
 
-        if isinstance(target, StateVector) and method == 'qfactor':
-            raise NotImplementedError(
-                'QFactor-based state-preparation is not supported.',
-            )
-
-        if target.get_dim() != self.get_dim():
+        if typed_target.get_dim() != self.get_dim():
             raise ValueError('Target dimension mismatch with circuit.')
 
         # Check multistarts
@@ -1636,20 +1632,27 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 ', got %d' % multistarts,
             )
 
-        # Instantiate the circuit
-        if method == 'minimization':
-            cost = HilbertSchmidtGenerator()
-            if 'cost' in kwargs:
-                cost = kwargs['cost']
-                del kwargs['cost']
-            self.minimize(cost.gen_cost(self, target), **kwargs)
+        # Generate starting points
+        starts = instantiater.gen_starting_points(
+            multistarts,
+            self,
+            typed_target,
+        )
 
-        elif method == 'qfactor':
-            pass
+        # Instantiate the circuit
+        params = []
+        for start in starts:
+            params.append(instantiater.instantiate(self, typed_target, start))
+
+        cost_fn = HilbertSchmidtCost(self, typed_target)
+        self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
         """
         Minimize the circuit's cost with respect to some CostFunction.
+
+        Attempts to change the parameters of the circuit such that the
+        circuit's cost according to `cost` is best minimized.
 
         Args:
             cost (CostFunction): The cost function to use when evaluting
@@ -1657,53 +1660,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             method (str): The minimization method to use. If unspecified,
                 attempts to assign best method. (kwarg)
-
         """
-        self.set_params(LBFGSMinimizer().minimize(self, cost))
-        # if 'method' in kwargs:
-        #     method = kwargs['method']
-        # else:
-        #     # Find default # TODO: When others are implemented
-        #     method = 'lbfgs'
-        #     # if all(
-        #     #     isinstance(gate, LocallyOptimizableUnitary)
-        #     #     for gate in self._gate_set
-        #     # ):
-        #     #     method = "qfactor"
-
-        #     # elif all(
-        #     #     isinstance(gate, DifferentiableUnitary)
-        #     #     for gate in self._gate_set
-        #     # ):
-        #     #     if isinstance(obj, ResidualFunction):
-        #     #         method = "ceres"
-        #     #     else:
-        #     #         method = "lbfgs"
-
-        #     # else:
-        #     #     method = "cobyla"
-
-        # if method == 'qfactor':
-        #     if cost is not None:
-        #         raise RuntimeWarning(
-        #             'QFactor minimization method selected'
-        #             ', ignoring specified cost function.',
-        #         )
-        #     minimizer = QFactorMinimizer()
-
-        # elif method == 'ceres':
-        #     pass
-
-        # elif method == 'lbfgs':
-        #     if cost is None:
-        #         cost = HSDistance()
-
-        # elif method == 'cobyla':
-        #     pass
-
-        # # figured out all arguments
-
-        # # Optimizer(...).optimize(self)
+        self.set_params(LBFGSMinimizer().minimize(cost, self.get_params()))
 
     # endregion
 
@@ -1746,7 +1704,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Notes:
             If a circuit is returned, it is not a view but rather a copy.
-
         """
 
         if is_point(points):
@@ -1987,7 +1944,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Two circuits are equal if: 1) They have the same number of operations.
         2) All qudit radixes are equal. 3) All operations in simulation order
         are equal.
-
         """
         if not isinstance(rhs, Circuit):
             raise NotImplemented

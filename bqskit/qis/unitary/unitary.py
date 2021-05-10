@@ -21,7 +21,6 @@ class Unitary (metaclass=UnitaryMeta):
 
     A Unitary is map from zero or more real numbers to a unitary matrix. This is
     captured in the main `get_unitary` abstract method.
-
     """
 
     num_params: int
@@ -73,7 +72,6 @@ class Unitary (metaclass=UnitaryMeta):
 
         Returns:
             (UnitaryMatrix): The unitary matrix.
-
         """
 
     def is_qubit_only(self) -> bool:

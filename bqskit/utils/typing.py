@@ -80,7 +80,6 @@ def is_valid_location(
 
     Returns:
         (bool): True if the location is valid.
-
     """
     if not is_iterable(location):
         return False
@@ -123,7 +122,6 @@ def is_valid_radixes(
 
     Returns:
         (bool): True if the radixes are valid.
-
     """
 
     if not is_sequence(radixes):
@@ -165,7 +163,6 @@ def is_valid_coupling_graph(
 
     Returns:
         (bool): Valid or not
-
     """
 
     if not isinstance(coupling_graph, set):

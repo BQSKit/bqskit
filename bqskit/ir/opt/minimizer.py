@@ -6,10 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.ir.opt.cost.function import CostFunction
-
 if TYPE_CHECKING:
-    from bqskit.ir.circuit import Circuit
+    from bqskit.ir.opt.cost.function import CostFunction
 
 
 class Minimizer(abc.ABC):
@@ -18,24 +16,22 @@ class Minimizer(abc.ABC):
 
     An minimizer finds the parameters for a circuit template that minimizes some
     CostFunction.
-
     """
 
     @abc.abstractmethod
-    def minimize(self, circuit: Circuit, cost: CostFunction) -> np.ndarray:
+    def minimize(self, cost: CostFunction, x0: np.ndarray) -> np.ndarray:
         """
-        Minimize the circuit with respect to some cost function.
+        Minimize `cost` starting from the initial point `x0`.
 
         Args:
-            circuit (Circuit): The circuit whose parameters are being explored.
-
             cost (CostFunction): The CostFunction to minimize.
 
+            x0 (np.ndarray): The initial point.
+
         Returns:
-            (np.ndarray): The circuit parameters that minimizes the cost.
+            (np.ndarray): The inputs that best minimizes the cost.
 
         Notes:
             This function should be side-effect free. This is because many
-            calls may be running in parallel on the same circuit.
-
+            calls may be running in parallel.
         """

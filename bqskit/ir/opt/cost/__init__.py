@@ -7,7 +7,6 @@ constructed normally. CostFunctions are minimized by minimizers, which change
 the parameters such that the cost value is best minimized. Minimization can be
 used on its own with `circuit.minimize` or as a circuit instantiation method
 with `circuit.instantiate`.
-
 """
 from __future__ import annotations
 

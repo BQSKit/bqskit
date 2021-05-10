@@ -28,7 +28,6 @@ class QFASTDecompositionPass(SynthesisPass):
 
     Performs one QFAST decomposition step breaking down a unitary into a
     sequence of smaller operations.
-
     """
 
     def __init__(
@@ -75,7 +74,6 @@ class QFASTDecompositionPass(SynthesisPass):
 
         Raises:
             ValueError: If max_depth is nonpositive.
-
         """
 
         if not isinstance(gate, Gate):
@@ -144,7 +142,7 @@ class QFASTDecompositionPass(SynthesisPass):
         failed_locs: list[tuple[tuple[int, ...], float]] = []
 
         while True:
-            circuit.instantiate(utry, cost=self.cost)
+            circuit.instantiate(utry, cost_fn_gen=self.cost)
 
             dist = self.cost.gen_cost(
                 circuit, utry,
@@ -237,7 +235,6 @@ class QFASTDecompositionPass(SynthesisPass):
 
             location (Sequence[int]): The location to remove from the
                 VLG head.
-
         """
 
         _logger.debug(

@@ -27,7 +27,6 @@ Circuit class properties:
 This test is broken down into multiple parts. First, a few simple known
 circuits have their properties tested. Then, each property is tested
 in depth individually.
-
 """
 from __future__ import annotations
 

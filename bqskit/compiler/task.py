@@ -6,7 +6,6 @@ The CompilationTask class describes a compilation problem. These can be
 submitted to an engine. The different CompilationTask states are enumerated in
 TaskStatus. Once a CompilationTask is completed, a TaskResult is returned. If an
 exception occurred during execution, it will be reraised as a TaskException.
-
 """
 from __future__ import annotations
 
@@ -80,7 +79,6 @@ class CompilationTask():
 
             passes (Sequence[BasePass]): The configured operations to be
                 performed on the circuit.
-
         """
         self.task_id = uuid.uuid4()
         self.input_circuit = input_circuit

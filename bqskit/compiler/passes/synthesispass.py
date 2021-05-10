@@ -24,7 +24,6 @@ class SynthesisPass(BasePass):
 
     SynthesisPass will iterate through the circuit and call
     the synthesize function on gates that pass the collection filter.
-
     """
 
     def __init__(
@@ -49,7 +48,6 @@ class SynthesisPass(BasePass):
                 output from synthesis and the original operation. If this
                 returns true, the operation will be replaced with the
                 synthesized circuit. Defaults to always replace.
-
         """
 
         self.collection_filter = collection_filter or default_collection_filter
@@ -85,7 +83,6 @@ class SynthesisPass(BasePass):
             This function should be self-contained and have no side effects.
             This is because it potentially will be called multiple times in
             parallel from one SynthesisPass instance.
-
         """
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:

@@ -75,7 +75,6 @@ Circuit operation, gate, and circuit methods:
             qudit_index: int,
             reversed: bool = False,
     ) -> Iterator[tuple[CircuitPoint, Operation]]:
-
 """
 from __future__ import annotations
 

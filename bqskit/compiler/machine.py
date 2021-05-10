@@ -2,7 +2,6 @@
 This module implements the MachineModel class.
 
 A MachineModel models a quantum processing unit's connectivity.
-
 """
 from __future__ import annotations
 
@@ -33,7 +32,6 @@ class MachineModel:
             coupling_graph (set[tuple[int, int]] | None): List of
                 connected qudit pairs. If None, then a fully-connected
                 coupling_graph is used as a default.
-
         """
 
         if not isinstance(num_qudits, int):
@@ -80,7 +78,6 @@ class MachineModel:
 
         Raises:
             ValueError: If the gate_size is nonpositive or too large.
-
         """
 
         if gate_size > self.num_qudits:

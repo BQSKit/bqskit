@@ -10,7 +10,6 @@ class UnitaryMeta(abc.ABCMeta):
     The UnitaryMeta metaclass.
 
     Necessary to provide isinstance checks for composed classes.
-
     """
 
     def __instancecheck__(cls, instance: Any) -> bool:
@@ -25,7 +24,6 @@ class UnitaryMeta(abc.ABCMeta):
 
         This can be used with composed classes to implement
         conditional inheritance.
-
         """
         if cls.__name__ == 'DifferentiableUnitary':  # TODO: write test
             if hasattr(instance, 'is_differentiable'):

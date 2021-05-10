@@ -2,7 +2,6 @@
 This module implements the UnitaryMatrix class.
 
 This is a concrete unitary matrix that can be operated on.
-
 """
 from __future__ import annotations
 
@@ -46,7 +45,6 @@ class UnitaryMatrix(Unitary):
             ...         [1, 0],
             ...     ],
             ... )  # Creates a single-qubit Pauli X unitary matrix.
-
         """
 
         # Copy Constructor
@@ -141,7 +139,6 @@ class UnitaryMatrix(Unitary):
 
         Returns:
             (UnitaryMatrix): The unitary matrix closest to M.
-
         """
 
         if not is_square_matrix(M):

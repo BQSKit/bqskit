@@ -18,7 +18,6 @@ class VariableLocationGate(Gate):
 
     A VariableLocationGate continuously encodes multiple locations for another
     gate.
-
     """
 
     def __init__(self, gate: Gate, locations: Sequence[Sequence[int]]) -> None:
@@ -44,7 +43,6 @@ class VariableLocationGate(Gate):
             you would give the VariableLocationGate the (0, 1) and (1, 2)
             locations and place the VariableLocationGate on qubits
             (2, 3, 5) on the circuit.
-
         """
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))

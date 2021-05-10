@@ -11,7 +11,9 @@ from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.math import dexpmv, pauli_expansion, unitary_log_no_i
+from bqskit.utils.math import dexpmv
+from bqskit.utils.math import pauli_expansion
+from bqskit.utils.math import unitary_log_no_i
 
 
 class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):

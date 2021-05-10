@@ -20,7 +20,6 @@ class DifferentiableCostFunction(CostFunction):
     and the `get_cost_and_grad` method. When subclassing, you only need to
     implement the `gen_cost` and `gen_grad` function factories. You can
     overwrite gen_cost_and_grad for optimization in some cases.
-
     """
 
     @abc.abstractmethod

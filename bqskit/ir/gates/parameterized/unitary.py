@@ -28,7 +28,6 @@ class VariableUnitaryGate(
 
             radixes (Sequence[int]): The number of orthogonal
                 states for each qudit. Defaults to qubits.
-
         """
         if size <= 0:
             raise ValueError('Expected positive integer, got %d' % size)
@@ -49,7 +48,6 @@ class VariableUnitaryGate(
             Ideally, params form a unitary matrix when reshaped,
             however, params are unconstrained so we return the closest
             UnitaryMatrix to the given matrix.
-
         """
         self.check_parameters(params)
         return UnitaryMatrix.closest_to(np.reshape(params, self.shape))

@@ -3,7 +3,6 @@ This module implements the PermutationMatrix and some helper functions.
 
 A PermutationMatrix is a binary, square matrix with a single 1 in each row and
 column.
-
 """
 from __future__ import annotations
 
@@ -31,7 +30,6 @@ def swap_bit(i: int, j: int, b: int) -> int:
 
     Returns:
         (int): The number b with the bits in index 1 and 2 swapped.
-
     """
 
     if i == j:
@@ -63,7 +61,6 @@ def swap(x: int, y: int, n: int) -> cb.Permutation:
 
     Raises:
         ValueError: If x or y is an invalid qubit index.
-
     """
 
     if x < 0 or x > n or y < 0 or y > n:
@@ -133,7 +130,6 @@ class PermutationMatrix(UnitaryMatrix):
             that swaps the two qubits, giving by the permutation [0] -> [1]
             or in the second case [0, 1] -> [1, 0]. Both calls produce
             identical permutations.
-
         """
 
         if not isinstance(num_qubits, int):

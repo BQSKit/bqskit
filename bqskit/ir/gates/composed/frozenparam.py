@@ -31,7 +31,6 @@ class FrozenParameterGate(
                 than the number of parameters `gate` takes or less than 0
                 or if the total amount of `frozen_params` is larger than
                 the number of parameters `gate` takes.
-
         """
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate, got %s.' % type(gate))

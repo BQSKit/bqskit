@@ -19,7 +19,6 @@ class CircuitGate(Gate):
     The CircuitGate class.
 
     A CircuitGate is a immutable circuit represented as a gate.
-
     """
 
     def __init__(self, circuit: Circuit, move: bool = False) -> None:
@@ -33,7 +32,6 @@ class CircuitGate(Gate):
                 This should only be used when you are sure `circuit` will no
                 longer be used on caller side. If unsure use the default.
                 (Default: False)
-
         """
 
         self._circuit = circuit if move else circuit.copy()
