@@ -34,7 +34,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self.check_parameters(params)
 
         eiH = sp.linalg.expm(-1j * self.paulis.dot_product(params))
-        return UnitaryMatrix(eiH)
+        return UnitaryMatrix(eiH, check_arguments=False)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Returns the gradient for this gate, see Gate for more info."""
@@ -53,7 +53,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
 
         H = -1j * self.paulis.dot_product(params)
         U, dU = dexpmv(H, -1j * self.paulis.get_numpy())
-        return UnitaryMatrix(U), dU
+        return UnitaryMatrix(U, check_arguments=False), dU
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
         """Returns optimal parameters with respect to an environment matrix."""

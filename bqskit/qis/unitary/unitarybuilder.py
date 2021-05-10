@@ -53,6 +53,7 @@ class UnitaryBuilder(Unitary):
         self.size = num_qudits
         self.num_params = 0
         self.radixes = tuple(radixes or [2] * num_qudits)
+        self.dim = int(np.prod(self.radixes))
 
         if not is_valid_radixes(self.radixes, self.get_size()):
             raise TypeError('Invalid qudit radixes.')
@@ -63,7 +64,7 @@ class UnitaryBuilder(Unitary):
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Build the unitary."""
         utry = self.tensor.reshape((self.get_dim(), self.get_dim()))
-        return UnitaryMatrix(utry, self.get_radixes())
+        return UnitaryMatrix(utry, self.get_radixes(), False)
 
     def apply_right(
         self, utry: UnitaryMatrix,

@@ -6,6 +6,7 @@ column.
 """
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Sequence
 
 import numpy as np
@@ -88,6 +89,7 @@ class PermutationMatrix(UnitaryMatrix):
         super().__init__(np_perm)
 
     @staticmethod
+    @lru_cache(maxsize=None)
     def from_qubit_location(
         num_qubits: int,
         location: Sequence[int],

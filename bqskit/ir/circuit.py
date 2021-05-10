@@ -1393,7 +1393,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the unitary and gradient of the circuit."""
         if len(params) != 0:
-            self.check_parameters(params)
+            # self.check_parameters(params)
             param_index = 0
 
         left = UnitaryBuilder(self.get_size(), self.get_radixes())

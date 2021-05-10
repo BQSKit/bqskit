@@ -1,9 +1,8 @@
 """This module implements the LBFGSMinimizer class."""
 from __future__ import annotations
 
-from typing import Any
-
 import logging
+from typing import Any
 
 import numpy as np
 import scipy.optimize as opt
@@ -13,6 +12,7 @@ from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.minimizer import Minimizer
 
 _logger = logging.getLogger(__name__)
+
 
 class LBFGSMinimizer(Minimizer):
     """
@@ -35,9 +35,9 @@ class LBFGSMinimizer(Minimizer):
             )
 
         res = opt.minimize(
-            cost.get_cost,
+            cost.get_cost_and_grad,
             x0,
-            jac=cost.get_grad,
+            jac=True,
             method='L-BFGS-B',
             options=self.options,
         )

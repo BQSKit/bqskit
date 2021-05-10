@@ -26,6 +26,7 @@ class Unitary (metaclass=UnitaryMeta):
     num_params: int
     radixes: tuple[int, ...]
     size: int
+    dim: int
 
     def get_num_params(self) -> int:
         """Returns the number of parameters for this unitary."""
@@ -59,6 +60,9 @@ class Unitary (metaclass=UnitaryMeta):
 
     def get_dim(self) -> int:
         """Returns the matrix dimension for this unitary."""
+        if hasattr(self, 'dim'):
+            return self.dim
+
         return int(np.prod(self.get_radixes()))
 
     @abc.abstractmethod

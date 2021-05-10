@@ -34,7 +34,7 @@ class VariableLocationGate(Gate):
 
             locations (Sequence[Sequence[int]]): A sequence of locations.
                 Each location represents a valid placement for gate.
-            
+
             radixes (Sequence[int]): The number of orthogonal
                 states for each qudit. Defaults to qubits.
 
@@ -70,7 +70,9 @@ class VariableLocationGate(Gate):
 
         if radixes is None:
             # Calculate radixes
-            radix_map: dict[int, int | None] = {i: None for i in range(self.size)}
+            radix_map: dict[int, int | None] = {
+                i: None for i in range(self.size)
+            }
             for l in locations:
                 for radix, qudit_index in zip(gate.get_radixes(), l):
                     if radix_map[qudit_index] is None:
