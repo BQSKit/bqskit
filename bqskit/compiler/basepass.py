@@ -1,8 +1,8 @@
 """
 This module implements the BasePass class.
 
-All bqskit passes must inherit from the BasePass class and implement the
-run function. A pass represents an operation on a circuit.
+All bqskit passes must inherit from the BasePass class and implement the run
+function. A pass represents an operation on a circuit.
 """
 from __future__ import annotations
 

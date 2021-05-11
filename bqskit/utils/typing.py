@@ -8,6 +8,8 @@ from typing import Any
 
 import numpy as np
 
+from bqskit.ir.point import CircuitPoint
+
 
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +35,31 @@ def is_sequence(test_variable: Any) -> bool:
 
 def is_numeric(test_variable: Any) -> bool:
     """Return true if test_variable is numeric."""
-    return isinstance(test_variable, numbers.Number)
+    return (
+        isinstance(test_variable, numbers.Number)
+        and not isinstance(test_variable, bool)
+    )
+
+
+def is_complex(test_variable: Any) -> bool:
+    """Return true if test_variable is complex."""
+    return (
+        isinstance(test_variable, (complex, np.complex64, np.complex128))
+        or np.iscomplex(test_variable)
+    )
+
+
+def is_real_number(test_variable: Any) -> bool:
+    """Return true if `test_variable` is a real number."""
+    return is_numeric(test_variable) and not is_complex(test_variable)
+
+
+def is_integer(test_variable: Any) -> bool:
+    """Return true if test_variable is an integer."""
+    return (
+        isinstance(test_variable, (int, np.integer))
+        and not isinstance(test_variable, bool)
+    )
 
 
 def is_valid_location(
@@ -41,9 +67,9 @@ def is_valid_location(
     num_qudits: int | None = None,
 ) -> bool:
     """
-    Determines if the sequence of qudits form a valid location. A valid
-    location is a set of qubit indices (integers) that are greater than or
-    equal to zero, and if num_qudits is specified, less than num_qudits.
+    Determines if the sequence of qudits form a valid location. A valid location
+    is a set of qubit indices (integers) that are greater than or equal to zero,
+    and if num_qudits is specified, less than num_qudits.
 
     Args:
         location (Sequence[int]): The location to check.
@@ -58,7 +84,7 @@ def is_valid_location(
     if not is_iterable(location):
         return False
 
-    if not all([isinstance(qudit, int) for qudit in location]):
+    if not all([is_integer(qudit) for qudit in location]):
         _logger.debug('Location is not an iterable of ints.')
         return False
 
@@ -101,8 +127,13 @@ def is_valid_radixes(
     if not is_sequence(radixes):
         return False
 
-    if not all([isinstance(qudit, int) for qudit in radixes]):
-        _logger.debug('Radixes is not a tuple of ints.')
+    if not all([is_integer(qudit) for qudit in radixes]):
+        fail_idx = [is_integer(qudit) for qudit in radixes].index(False)
+        _logger.debug(
+            'Radixes is not a tuple of ints, got: %s.' % type(
+                radixes[fail_idx],
+            ),
+        )
         return False
 
     if not all([radix >= 2 for radix in radixes]):
@@ -117,14 +148,14 @@ def is_valid_radixes(
 
 
 def is_valid_coupling_graph(
-    coupling_graph: Sequence[tuple[int, int]],
+    coupling_graph: set[tuple[int, int]],
     num_qudits: int | None = None,
 ) -> bool:
     """
     Checks if the coupling graph is valid.
 
     Args:
-        coupling_graph (Sequence[tuple[int, int]]): The coupling graph
+        coupling_graph (set[tuple[int, int]]): The coupling graph
             to check.
 
         num_qudits (int | None): The total number of qudits. All qudits
@@ -134,8 +165,8 @@ def is_valid_coupling_graph(
         (bool): Valid or not
     """
 
-    if not is_sequence(coupling_graph):
-        _logger.debug('Coupling graph is not a Sequence.')
+    if not isinstance(coupling_graph, set):
+        _logger.debug('Coupling graph is not a set.')
         return False
 
     if len(coupling_graph) == 0:
@@ -150,29 +181,41 @@ def is_valid_coupling_graph(
         return False
 
     if num_qudits is not None:
-        if not (isinstance(num_qudits, int) and num_qudits > 0):
+        if not (is_integer(num_qudits) and num_qudits > 0):
             _logger.debug('Invalid num_qudits in coupling graph check.')
             return False
 
         if not all(
-            qubit < num_qudits
+            qudit < num_qudits
             for pair in coupling_graph
-            for qubit in pair
+            for qudit in pair
         ):
             _logger.debug('Coupling graph has invalid qudits.')
             return False
 
-    # TODO: Reevaluate if this should be an error
-    if len(coupling_graph) != len(set(coupling_graph)):
-        _logger.debug('Coupling graph has duplicates.')
-        return False
-
-    # TODO: Reevaluate if this should be an error
     if not all([
         len(pair) == len(set(pair))
         for pair in coupling_graph
     ]):
         _logger.debug('Coupling graph has an invalid pair.')
+        return False
+
+    return True
+
+
+def is_vector(V: np.ndarray) -> bool:
+    """Return true if V is a vector."""
+
+    if not isinstance(V, np.ndarray):
+        _logger.debug('V is not an numpy array.')
+        return False
+
+    if len(V.shape) != 1:
+        _logger.debug('V is not an 1-dimensional array.')
+        return False
+
+    if V.dtype.kind not in 'biufc':
+        _logger.debug('V is not a numeric array.')
         return False
 
     return True
@@ -285,5 +328,51 @@ def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
 
     if not all(e == 1 or e == 0 for row in P for e in row):
         _logger.debug('Not all elements are 0 or 1.')
+        return False
+
+    return True
+
+
+def is_pure_state(V: np.ndarray, tol: float = 1e-8) -> bool:
+    """Return true if V is a pure state vector."""
+    if not is_vector(V):
+        return False
+
+    if not np.allclose(
+        np.sum(np.abs([elem for elem in V])),
+        1, rtol=0, atol=tol,
+    ):
+        _logger.debug('Failed pure state criteria.')
+        return False
+
+    return True
+
+
+def is_point(point: Any) -> bool:
+    """Return true is point is a CircuitPointLike."""
+    if isinstance(point, CircuitPoint):
+        return True
+
+    if not isinstance(point, tuple):
+        _logger.debug('Point is not a tuple.')
+        return False
+
+    if len(point) != 2:
+        _logger.debug(
+            'Expected point to contain two values, got %d.' % len(point),
+        )
+        return False
+
+    if not is_integer(point[0]):
+        _logger.debug(
+            'Expected integer values in point, got %s.' % type(point[0]),
+        )
+        return False
+
+    if not is_integer(point[1]):
+        _logger.debug(
+            'Expected integer values in point, got %s.' % type(point[1]),
+        )
+        return False
 
     return True

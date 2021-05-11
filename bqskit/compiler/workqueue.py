@@ -1,8 +1,8 @@
 """
 This module implements the WorkQueue class.
 
-The WorkQueue Class starts a new work thread that executes and tracks
-the tasks enqueued in it.
+The WorkQueue Class starts a new work thread that executes and tracks the tasks
+enqueued in it.
 """
 from __future__ import annotations
 

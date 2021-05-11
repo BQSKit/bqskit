@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import NamedTuple
+from typing import Tuple
 from typing import Union
 
 
@@ -15,4 +16,4 @@ class CircuitPoint(NamedTuple):
     qudit: int
 
 
-CircuitPointLike = Union[tuple[int, int], CircuitPoint]
+CircuitPointLike = Union[Tuple[int, int], CircuitPoint]

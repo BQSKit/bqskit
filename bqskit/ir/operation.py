@@ -55,10 +55,13 @@ s
         self.radixes = gate.get_radixes()
         self.size = gate.get_size()
 
+        if len(params) == 0 and self.get_num_params() != 0:
+            params = [0.0] * self.get_num_params()
+
         self.check_parameters(params)
 
         self._gate = gate
-        self._location = list(location)
+        self._location = tuple(location)
         self._params = list(params)
 
     @property
@@ -66,12 +69,17 @@ s
         return self._gate
 
     @property
-    def location(self) -> list[int]:
+    def location(self) -> tuple[int, ...]:
         return self._location
 
     @property
     def params(self) -> list[float]:
         return self._params
+
+    @params.setter
+    def params(self, params: list[float]) -> None:
+        self.check_parameters(params)
+        self._params = params
 
     def get_qasm(self) -> str:
         """Returns the qasm string for this operation."""
@@ -89,15 +97,15 @@ s
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Return the op's unitary, see Unitary for more info."""
-        if params:
-            self.check_parameters(params)
+        if len(params) != 0:
+            # self.check_parameters(params)
             return self.gate.get_unitary(params)
         return self.gate.get_unitary(self.params)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Return the op's gradient, see Unitary for more info."""
-        if params:
-            self.check_parameters(params)
+        if len(params) != 0:
+            # self.check_parameters(params)
             return self.gate.get_grad(params)  # type: ignore
         return self.gate.get_grad(self.params)  # type: ignore
 
@@ -105,8 +113,8 @@ s
         self, params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the op's unitary and gradient, see Unitary for more info."""
-        if params:
-            self.check_parameters(params)
+        if len(params) != 0:
+            # self.check_parameters(params)
             return self.gate.get_unitary_and_grad(params)  # type: ignore
         return self.gate.get_unitary_and_grad(self.params)  # type: ignore
 
@@ -124,11 +132,14 @@ s
             and all(x == y for x, y in zip(self.location, rhs.location))
         )
 
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
     def __str__(self) -> str:
-        pass  # TODO
+        return str(self.gate) + '@' + str(self.location) + str(self.params)
 
     def __repr__(self) -> str:
-        pass  # TODO
+        return str(self.gate) + '@' + str(self.location)
 
     def is_differentiable(self) -> bool:
         """Check if operation is differentiable."""

@@ -21,7 +21,12 @@ from bqskit.utils.typing import is_valid_radixes
 class UnitaryMatrix(Unitary):
     """The UnitaryMatrix Class."""
 
-    def __init__(self, utry: UnitaryLike, radixes: Sequence[int] = []) -> None:
+    def __init__(
+        self,
+        utry: UnitaryLike,
+        radixes: Sequence[int] = [],
+        check_arguments: bool = True,
+    ) -> None:
         """
         Constructs a UnitaryMatrix with the supplied unitary matrix.
 
@@ -58,7 +63,7 @@ class UnitaryMatrix(Unitary):
 
         np_utry = np.array(utry, dtype=np.complex128)
 
-        if not is_unitary(np_utry):
+        if check_arguments and not is_unitary(np_utry):
             raise TypeError('Expected unitary matrix.')
 
         self.utry = np_utry
@@ -66,15 +71,16 @@ class UnitaryMatrix(Unitary):
         self.num_params = 0
 
         if radixes:
-            self.radixes = list(radixes)
+            self.radixes = tuple(radixes)
 
         # Check if unitary dimension is a power of two
         elif self.dim & (self.dim - 1) == 0:
-            self.radixes = [2] * int(np.round(np.log2(self.dim)))
+            self.radixes = tuple([2] * int(np.round(np.log2(self.dim))))
 
         # Check if unitary dimension is a power of three
         elif 3 ** int(np.round(np.log(self.dim) / np.log(3))) == self.dim:
-            self.radixes = [3] * int(np.round(np.log(self.dim) / np.log(3)))
+            radixes = [3] * int(np.round(np.log(self.dim) / np.log(3)))
+            self.radixes = tuple(radixes)
 
         else:
             raise TypeError(
@@ -82,8 +88,11 @@ class UnitaryMatrix(Unitary):
                 ' for UnitaryMatrix with dim %d.' % self.dim,
             )
 
-        if not is_valid_radixes(self.radixes):
+        if check_arguments and not is_valid_radixes(self.radixes):
             raise TypeError('Invalid qudit radixes.')
+
+        if check_arguments and np.prod(self.radixes) != self.dim:
+            raise ValueError('Qudit radixes mismatch with dimension.')
 
         self.size = len(self.radixes)
 
@@ -99,6 +108,13 @@ class UnitaryMatrix(Unitary):
     def get_dagger(self) -> UnitaryMatrix:
         """Returns the conjugate transpose of the unitary matrix."""
         return UnitaryMatrix(self.utry.conj().T)
+
+    def get_distance_from(self, other: UnitaryMatrix) -> float:
+        """Returns the distance to `other`."""
+        num = np.abs(np.trace(other.get_numpy().conj().T @ self.get_numpy()))
+        dem = self.get_dim()
+        dist = 1 - (num / dem)
+        return dist if dist > 0.0 else 0.0
 
     @staticmethod
     def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
@@ -134,9 +150,11 @@ class UnitaryMatrix(Unitary):
             raise TypeError('Expected square matrix.')
 
         V, _, Wh = sp.linalg.svd(M)
-        return UnitaryMatrix(V @ Wh, radixes)
+        return UnitaryMatrix(V @ Wh, radixes, False)
 
     def __matmul__(self, rhs: object) -> UnitaryMatrix:
+        if isinstance(rhs, UnitaryMatrix):
+            rhs = rhs.get_numpy()
         res: np.ndarray = self.get_numpy() @ rhs  # type: ignore
         return UnitaryMatrix(res, self.get_radixes())
 

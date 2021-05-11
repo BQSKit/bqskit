@@ -1,10 +1,10 @@
 """
 This module implements the Compiler class.
 
-The Compiler class is a handle on a backend compiler. The backend
-compiler is responsible for executing compilation tasks. When creating a
-Compiler class, by default, a new process is started where compilation
-tasks can be submitted to be run.
+The Compiler class is a handle on a backend compiler. The backend compiler is
+responsible for executing compilation tasks. When creating a Compiler class, by
+default, a new process is started where compilation tasks can be submitted to be
+run.
 """
 from __future__ import annotations
 
@@ -26,9 +26,9 @@ class Compiler:
 
     def __init__(self) -> None:
         """
-        Compiler Constructor. Starts a new backend compiler on the local
-        machine with an empty WorkQueue, establishes a connection, and then
-        starts running.
+        Compiler Constructor. Starts a new backend compiler on the local machine
+        with an empty WorkQueue, establishes a connection, and then starts
+        running.
 
         Examples:
             >>> compiler = Compiler()

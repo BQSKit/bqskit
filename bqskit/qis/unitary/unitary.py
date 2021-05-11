@@ -19,13 +19,14 @@ class Unitary (metaclass=UnitaryMeta):
     """
     The Unitary base class.
 
-    A Unitary is map from zero or more real numbers to a unitary matrix.
-    This is captured in the main `get_unitary` abstract method.
+    A Unitary is map from zero or more real numbers to a unitary matrix. This is
+    captured in the main `get_unitary` abstract method.
     """
 
     num_params: int
-    radixes: list[int]
+    radixes: tuple[int, ...]
     size: int
+    dim: int
 
     def get_num_params(self) -> int:
         """Returns the number of parameters for this unitary."""
@@ -37,7 +38,7 @@ class Unitary (metaclass=UnitaryMeta):
             ': %s.' % self.__class__.__name__,
         )
 
-    def get_radixes(self) -> list[int]:
+    def get_radixes(self) -> tuple[int, ...]:
         """Returns the number of orthogonal states for each qudit."""
         if hasattr(self, 'radixes'):
             return self.radixes
@@ -59,6 +60,9 @@ class Unitary (metaclass=UnitaryMeta):
 
     def get_dim(self) -> int:
         """Returns the matrix dimension for this unitary."""
+        if hasattr(self, 'dim'):
+            return self.dim
+
         return int(np.prod(self.get_radixes()))
 
     @abc.abstractmethod
@@ -90,7 +94,7 @@ class Unitary (metaclass=UnitaryMeta):
         """Returns true if this unitary doesn't have parameters."""
         return not self.is_parameterized()
 
-    def check_parameters(self, params: Sequence[float]) -> None:
+    def check_parameters(self, params: Sequence[float] | np.ndarray) -> None:
         """Checks to ensure parameters are valid and match the unitary."""
         if not is_sequence(params):
             raise TypeError(

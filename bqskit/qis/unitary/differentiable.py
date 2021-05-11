@@ -14,8 +14,8 @@ class DifferentiableUnitary(Unitary):
     """
     The DifferentiableUnitary base class.
 
-    A DifferentiableUnitary exposes the `get_grad` abstract method and
-    the `get_unitary_and_grad` method.
+    A DifferentiableUnitary exposes the `get_grad` abstract method and the
+    `get_unitary_and_grad` method.
     """
 
     @abc.abstractmethod

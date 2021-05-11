@@ -24,7 +24,7 @@ class TestBasicGate:
         assert param_gate.get_num_params() != 0
 
     def test_get_radixes(self, gate: Gate) -> None:
-        assert isinstance(gate.get_radixes(), list)
+        assert isinstance(gate.get_radixes(), tuple)
         assert all(isinstance(radix, int) for radix in gate.get_radixes())
         assert all(radix > 0 for radix in gate.get_radixes())
 

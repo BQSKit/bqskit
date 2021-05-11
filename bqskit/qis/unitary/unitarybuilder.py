@@ -18,10 +18,9 @@ class UnitaryBuilder(Unitary):
     """
     The UnitaryBuilder Class.
 
-    A UnitaryBuilder is similar to a StringBuilder in the sense that it
-    is an efficient way to string together or accumulate Unitary's. This
-    class uses concepts from tensor networks to efficiently multiply
-    unitary matrices.
+    A UnitaryBuilder is similar to a StringBuilder in the sense that it is an
+    efficient way to string together or accumulate Unitary's. This class uses
+    concepts from tensor networks to efficiently multiply unitary matrices.
     """
 
     def __init__(self, num_qudits: int, radixes: Sequence[int] = []) -> None:
@@ -53,7 +52,8 @@ class UnitaryBuilder(Unitary):
 
         self.size = num_qudits
         self.num_params = 0
-        self.radixes = list(radixes or [2] * num_qudits)
+        self.radixes = tuple(radixes or [2] * num_qudits)
+        self.dim = int(np.prod(self.radixes))
 
         if not is_valid_radixes(self.radixes, self.get_size()):
             raise TypeError('Invalid qudit radixes.')
@@ -64,7 +64,7 @@ class UnitaryBuilder(Unitary):
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Build the unitary."""
         utry = self.tensor.reshape((self.get_dim(), self.get_dim()))
-        return UnitaryMatrix(utry, self.get_radixes())
+        return UnitaryMatrix(utry, self.get_radixes(), False)
 
     def apply_right(
         self, utry: UnitaryMatrix,
@@ -122,7 +122,7 @@ class UnitaryBuilder(Unitary):
         self.tensor = self.tensor.reshape((left_dim, -1))
         self.tensor = utry_np @ self.tensor
 
-        shape = self.get_radixes() * 2
+        shape = list(self.get_radixes()) * 2
         shape = [shape[p] for p in perm]
         self.tensor = self.tensor.reshape(shape)
         inv_perm = list(np.argsort(perm))
@@ -177,7 +177,12 @@ class UnitaryBuilder(Unitary):
         ]
         right_perm = [x + self.get_size() for x in location]
 
-        right_dim = int(np.prod([self.get_radixes()[x] for x in right_perm]))
+        right_dim = int(
+            np.prod([
+                self.get_radixes()[x - self.get_size()]
+                for x in right_perm
+            ]),
+        )
 
         utry = utry.get_dagger() if inverse else utry
         utry_np = utry.get_numpy()
@@ -187,7 +192,7 @@ class UnitaryBuilder(Unitary):
         self.tensor = self.tensor.reshape((-1, right_dim))
         self.tensor = self.tensor @ utry_np
 
-        shape = self.get_radixes() * 2
+        shape = list(self.get_radixes()) * 2
         shape = [shape[p] for p in perm]
         self.tensor = self.tensor.reshape(shape)
         inv_perm = list(np.argsort(perm))
