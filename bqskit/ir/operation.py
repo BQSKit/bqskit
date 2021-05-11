@@ -143,8 +143,8 @@ s
 
     def is_differentiable(self) -> bool:
         """Check if operation is differentiable."""
-        return isinstance(self._gate, DifferentiableUnitary)
+        return isinstance(self.gate, DifferentiableUnitary)
 
     def is_locally_optimizable(self) -> bool:
         """Check if operation is locally optimizable."""
-        return isinstance(self._gate, LocallyOptimizableUnitary)
+        return isinstance(self.gate, LocallyOptimizableUnitary)
