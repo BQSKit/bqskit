@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+import traceback
 from multiprocessing.connection import Connection
 from queue import Queue
 from threading import Thread
@@ -72,8 +73,8 @@ class WorkQueue:
 
             # Handle Errors
             except Exception as e:
-                _logger.debug('Error executing task: %s' % task.task_id)
-                _logger.debug(e)
+                _logger.error('Error executing task: %s' % task.task_id)
+                _logger.error(traceback.format_exc())
                 self.tasks[task.task_id] = {
                     'status': TaskStatus.ERROR,
                     'message': str(e),
