@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import logging
 import time
-import uuid
 import traceback
+import uuid
 from multiprocessing.connection import Connection
 from queue import Queue
 from threading import Thread

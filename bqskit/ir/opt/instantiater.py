@@ -8,6 +8,7 @@ import numpy as np
 
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_integer
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -88,8 +89,22 @@ class Instantiater(abc.ABC):
 
         Return:
             (list[np.ndarray]): List of starting inputs for instantiation.
+
+        Raises:
+            ValueError: If `multistarts` is not a positive integer.
         """
-        return [
+        if not is_integer(multistarts):
+            raise TypeError(
+                'Expected int for multistarts, got %s.' % type(multistarts),
+            )
+
+        if multistarts <= 0:
+            raise ValueError(
+                'Expected positive integer for multistarts'
+                ', got %d' % multistarts,
+            )
+
+        return [  # [ circuit.get_params() ] + [  # TODO: re-evaluate
             np.random.random(circuit.get_num_params())
             for i in range(multistarts)
         ]
