@@ -9,6 +9,7 @@ from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.compiler.passes.synthesis import QFASTDecompositionPass
 from bqskit.ir import Circuit
+
 # Enable logging
 logging.getLogger('bqskit').setLevel(logging.DEBUG)
 

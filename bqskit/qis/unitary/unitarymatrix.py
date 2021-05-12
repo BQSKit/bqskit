@@ -107,7 +107,7 @@ class UnitaryMatrix(Unitary):
 
     def get_dagger(self) -> UnitaryMatrix:
         """Returns the conjugate transpose of the unitary matrix."""
-        return UnitaryMatrix(self.utry.conj().T)
+        return UnitaryMatrix(self.utry.conj().T, self.get_radixes(), False)
 
     def get_distance_from(self, other: UnitaryMatrix) -> float:
         """Returns the distance to `other`."""

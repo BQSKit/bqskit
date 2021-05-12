@@ -12,6 +12,7 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import dexpmv
+from bqskit.utils.math import dot_product
 from bqskit.utils.math import pauli_expansion
 from bqskit.utils.math import unitary_log_no_i
 
@@ -28,20 +29,22 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self.size = size
         self.paulis = PauliMatrices(self.size)
         self.num_params = len(self.paulis)
+        self.sigmav = (-1j / self.get_dim()) * self.paulis.get_numpy()
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
         self.check_parameters(params)
 
-        eiH = sp.linalg.expm(-1j * self.paulis.dot_product(params))
+        H = dot_product(params, self.sigmav)
+        eiH = sp.linalg.expm(H)
         return UnitaryMatrix(eiH, check_arguments=False)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Returns the gradient for this gate, see Gate for more info."""
         self.check_parameters(params)
 
-        H = -1j * self.paulis.dot_product(params)
-        _, dU = dexpmv(H, -1j * self.paulis.get_numpy())
+        H = dot_product(params, self.sigmav)
+        _, dU = dexpmv(H, self.sigmav)
         return dU
 
     def get_unitary_and_grad(
@@ -51,8 +54,8 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         """Returns the unitary and gradient, see Gate for more info."""
         self.check_parameters(params)
 
-        H = -1j * self.paulis.dot_product(params)
-        U, dU = dexpmv(H, -1j * self.paulis.get_numpy())
+        H = dot_product(params, self.sigmav)
+        U, dU = dexpmv(H, self.sigmav)
         return UnitaryMatrix(U, check_arguments=False), dU
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:

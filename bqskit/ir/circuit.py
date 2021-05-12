@@ -1393,63 +1393,55 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the unitary and gradient of the circuit."""
         if len(params) != 0:
-            # self.check_parameters(params)
+            self.check_parameters(params)
             param_index = 0
 
+        # Collect matrices, gradients, and locations
+        matrices = []
+        grads = []
+        locations = []
+
+        for op in self:
+            if len(params) != 0:
+                gparams = params[param_index:param_index + op.get_num_params()]
+                param_index += op.get_num_params()
+                M, dM = op.get_unitary_and_grad(gparams)
+                matrices.append(M)
+                grads.append(dM)
+                locations.append(op.location)
+            else:
+                M, dM = op.get_unitary_and_grad()
+                matrices.append(M)
+                grads.append(dM)
+                locations.append(op.location)
+
+        # Calculate gradient
         left = UnitaryBuilder(self.get_size(), self.get_radixes())
         right = UnitaryBuilder(self.get_size(), self.get_radixes())
+        full_gards = []
 
-        for op in self:
-            if len(params) != 0:
-                gparams = params[param_index:param_index + op.get_num_params()]
-                right.apply_right(op.get_unitary(gparams), op.location)
-                param_index += op.get_num_params()
-            else:
-                right.apply_right(op.get_unitary(), op.location)
+        for M, loc in zip(matrices, locations):
+            right.apply_right(M, loc)
 
-        grads = []
-        param_index = 0
-        for op in self:
-            perm = PermutationMatrix.from_qubit_location(
-                self.get_size(), op.location,
-            ).get_numpy()
+        for M, dM, loc in zip(matrices, grads, locations):
+            perm = PermutationMatrix.from_qubit_location(self.get_size(), loc)
+            perm = perm.get_numpy()
             permT = perm.T
-            iden = np.identity(2 ** (self.get_size() - op.get_size()))
+            iden = np.identity(2 ** (self.get_size() - len(loc)))
 
-            if len(params) != 0:
-                gparams = params[param_index:param_index + op.get_num_params()]
-                param_index += op.get_num_params()
-                right.apply_left(
-                    op.get_unitary(gparams),
-                    op.location,
-                    inverse=True,
-                )
-                for grad in op.get_grad(gparams):
-                    # TODO: use tensor contractions here instead of mm
-                    # Should work fine with non unitary gradients
-                    # TODO: Fix for non qubits
-                    full_grad = np.kron(grad, iden)
-                    full_grad = perm @ full_grad @ permT
-                    grads.append(
-                        right.get_unitary().get_numpy() @
-                        full_grad @ left.get_unitary().get_numpy(),
-                    )
-                left.apply_right(op.get_unitary(gparams), op.location)
-            else:
-                right.apply_left(op.get_unitary(), op.location, inverse=True)
-                for grad in op.get_grad():
-                    # TODO: use tensor contractions here instead of mm
-                    # Should work fine with non unitary gradients
-                    # TODO: Fix for non qubits
-                    full_grad = np.kron(grad, iden)
-                    full_grad = perm @ full_grad @ permT
-                    grads.append(
-                        right.get_unitary().get_numpy() @
-                        full_grad @ left.get_unitary().get_numpy(),
-                    )
-                left.apply_right(op.get_unitary(), op.location)
+            right.apply_left(M, loc, inverse=True)
+            right_utry = right.get_unitary().get_numpy()
+            left_utry = left.get_unitary().get_numpy()
+            for grad in dM:
+                # TODO: use tensor contractions here instead of mm
+                # Should work fine with non unitary gradients
+                # TODO: Fix for non qubits
+                full_grad = np.kron(grad, iden)
+                full_grad = perm @ full_grad @ permT
+                full_gards.append(right_utry @ full_grad @ left_utry)
+            left.apply_right(M, loc)
 
-        return left.get_unitary(), np.array(grads)
+        return left.get_unitary(), np.array(full_gards)
 
     def instantiate(
         self,
@@ -1544,18 +1536,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if typed_target.get_dim() != self.get_dim():
             raise ValueError('Target dimension mismatch with circuit.')
-
-        # Check multistarts
-        if not is_integer(multistarts):
-            raise TypeError(
-                'Expected int for multistarts, got %s.' % type(multistarts),
-            )
-
-        if multistarts <= 0:
-            raise ValueError(
-                'Expected positive integer for multistarts'
-                ', got %d' % multistarts,
-            )
 
         # Generate starting points
         starts = instantiater.gen_starting_points(

@@ -1,6 +1,8 @@
 """This module implements some numerical functions."""
 from __future__ import annotations
 
+from typing import Sequence
+
 import numpy as np
 import scipy as sp
 
@@ -89,7 +91,10 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
     return exps / np.sum(exps)
 
 
-def dot_product(alpha: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+def dot_product(
+    alpha: np.ndarray | Sequence[float],
+    sigma: np.ndarray | Sequence[float],
+) -> np.ndarray:
     """
     Computes the standard dot product of `alpha` with `sigma`.
 
@@ -117,7 +122,7 @@ def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
         H (np.ndarray): e^{iH} = U.
     """
 
-    if not is_unitary(U, tol):
+    if not is_unitary(U, tol):  # TODO: Re-evaluate check
         raise TypeError('Expected U to be unitary, got %s.' % type(U))
 
     T, Z = sp.linalg.schur(U)
@@ -141,7 +146,7 @@ def pauli_expansion(H: np.ndarray, tol: float = 1e-8) -> np.ndarray:
             same size of H.
     """
 
-    if not is_hermitian(H, tol):
+    if not is_hermitian(H, tol):  # TODO: Re-evaluate check
         raise TypeError('Expected H to be hermitian, got %s.' % type(H))
 
     # Change basis of H to Pauli Basis (solve for coefficients -> X)

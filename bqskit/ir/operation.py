@@ -98,14 +98,14 @@ s
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Return the op's unitary, see Unitary for more info."""
         if len(params) != 0:
-            # self.check_parameters(params)
+            self.check_parameters(params)
             return self.gate.get_unitary(params)
         return self.gate.get_unitary(self.params)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Return the op's gradient, see Unitary for more info."""
         if len(params) != 0:
-            # self.check_parameters(params)
+            self.check_parameters(params)
             return self.gate.get_grad(params)  # type: ignore
         return self.gate.get_grad(self.params)  # type: ignore
 
@@ -114,7 +114,7 @@ s
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the op's unitary and gradient, see Unitary for more info."""
         if len(params) != 0:
-            # self.check_parameters(params)
+            self.check_parameters(params)
             return self.gate.get_unitary_and_grad(params)  # type: ignore
         return self.gate.get_unitary_and_grad(self.params)  # type: ignore
 

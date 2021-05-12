@@ -159,4 +159,5 @@ class VariableLocationGate(Gate):
         perm_array = np.array([perm.get_numpy() for perm in self.perms])
         dP = perm_array @ GPT + PG @ perm_array.transpose((0, 2, 1)) - 2 * PGPT
         dP = np.array([10 * x * y for x, y in zip(l, dP)])
-        return PGPT, np.concatenate([dG, dP])
+        U = UnitaryMatrix.closest_to(PGPT, self.get_radixes())
+        return U, np.concatenate([dG, dP])
