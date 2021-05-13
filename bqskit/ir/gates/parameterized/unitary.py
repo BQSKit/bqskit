@@ -31,14 +31,19 @@ class VariableUnitaryGate(
         """
         if size <= 0:
             raise ValueError('Expected positive integer, got %d' % size)
-        if radixes is not None and not is_valid_radixes(radixes, size):
+
+        if len(radixes) == 0:
+            radixes = [2] * size
+
+        if not is_valid_radixes(radixes, size):
             raise TypeError('Invalid radixes.')
 
         self.size = size
-        self.radixes = tuple(radixes or [2] * size)
+        self.radixes = tuple(radixes)
         self.dim = int(np.prod(self.radixes))
         self.shape = (self.dim, self.dim)
         self.num_params = self.dim**2
+        self.name = 'VariableUnitaryGate(%d)' % self.get_size()
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """
