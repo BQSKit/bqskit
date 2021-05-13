@@ -1,6 +1,7 @@
 """This module implements the Circuit class."""
 from __future__ import annotations
 
+import copy
 import logging
 from typing import Any
 from typing import Collection
@@ -1171,8 +1172,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
         circuit = Circuit(self.get_size(), self.get_radixes())
-        circuit._circuit = self._circuit.copy()
-        circuit._gate_set = self._gate_set.copy()
+        circuit._circuit = copy.deepcopy(self._circuit)
+        circuit._gate_set = copy.deepcopy(self._gate_set)
         return circuit
 
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
