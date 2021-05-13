@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+from numpy import savez_compressed
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -286,8 +288,8 @@ class SimplePartitioner(BasePass):
         # Do while there are still gates to partition
         # NOTE: This assumes circuit and topology qudit numbers are equal
         sched_depth = [0 for i in range(self.num_qudits)]
-        while not all(
-            [self.num_ops_left(circuit, sched_depth[p], p) for p 
+        while any(
+            [self.num_ops_left(circuit, p, sched_depth[p]) for p 
                 in range(self.num_qudits)]
         ):
             # Find the scores of the qudit groups.
@@ -335,10 +337,11 @@ class SimplePartitioner(BasePass):
                         else:
                             curr_block.score += self.single_gate_score
 
-                # Update the best_block if the current block scores higher
-                if curr_block.score > best_block.score:
+                # Update the best_block if the current block scores higher, or
+                # if they are they same, pick the block with the earliest cycle
+                if (curr_block.score > best_block.score):
                     best_block = curr_block
-
+                
             # Replace the highest scoring block with a CircuitGate.
             qudits = best_block.block_start.keys()
             points_in_block = []
@@ -356,5 +359,7 @@ class SimplePartitioner(BasePass):
             circuit.fold(points_in_block)
 
             # Update the scheduled depth list
-            for q in qudits:
-                sched_depth[q] += 1
+            to_update = best_block.block_end.keys()
+            new_cycle = max([sched_depth[qudit] for qudit in to_update]) + 1
+            for qudit in to_update:
+                sched_depth[qudit] = new_cycle

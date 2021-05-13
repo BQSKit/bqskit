@@ -215,26 +215,42 @@ class TestMachineConstructor:
         """
         Test run with a linear topology.
         """
-        #                          ###########     #####
-        # 0 --o-----o--------    --#-o-----o-#-----#---#--
-        # 1 --x--o--x-----o--    --#-x--o--x-#######-o-#--
-        # 2 -----x-----o--x-- => --#----x----#---o-#-x-#--
-        # 3 -----o-----x-----    --###########-o-x-#####--
-        # 4 -----x-----------    ------------#-x---#------
-        #                                    #######
+        #     0  1  2  3  4        #########     
+        # 0 --o-----o--------    --#-o---o-#-----#######--
+        # 1 --x--o--x--o-----    --#-x-o-x-#######-o---#--
+        # 2 -----x--o--x--o-- => --#---x---#---o-#-x-o-#--
+        # 3 --o-----x-----x--    --#########-o-x-#---x-#--
+        # 4 --x--------------    ----------#-x---#######--
+        #                                  #######
         num_q = 5
         coup_map = set([(0,1),(1,2),(2,3),(3,4)])
         circ = Circuit(num_q)
         circ.append_gate(CNOTGate(), [0,1])
+        circ.append_gate(CNOTGate(), [3,4])
         circ.append_gate(CNOTGate(), [1,2])
         circ.append_gate(CNOTGate(), [0,1])
-        circ.append_gate(CNOTGate(), [3,4])
         circ.append_gate(CNOTGate(), [2,3])
         circ.append_gate(CNOTGate(), [1,2])
+        circ.append_gate(CNOTGate(), [2,3])
         mach = MachineModel(num_q, coup_map)
         part = SimplePartitioner(mach, 3)
+
         data = {}
 
         part.run(circ, data)
 
-        pass
+        assert len(circ) == 3
+
+        circ_iter = circ.CircuitIterator(
+            circuit = circ._circuit,
+            and_points = True
+        )
+        for point, op in circ_iter:
+            if point.cycle == 0:
+                assert point.qudit in [0,1,2]
+            elif point.cycle == 1:
+                assert point.qudit in [2,3,4]
+            elif point.cycle == 2:
+                assert point.qudit in [1,2,3]
+            
+            assert len(op.location) == 3

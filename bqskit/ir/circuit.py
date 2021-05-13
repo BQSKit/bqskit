@@ -1159,9 +1159,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 if cycle_index < region[qudit_index][0]:
                     op = self._circuit[cycle_index][qudit_index]
                     if op is not None:
-                        shifted_cycle_index = cycle_index - amount_to_shift
-                        self._circuit[shifted_cycle_index][qudit_index] = op
-                        self._circuit[cycle_index][qudit_index] = None
+                        new_cycle_index = cycle_index - amount_to_shift
+                        for involved_qudit in op.location:
+                            self._circuit[new_cycle_index][involved_qudit] = op
+                            self._circuit[cycle_index][involved_qudit] = None
 
         # Pop operations, form CircuitGate, insert gate
         circuit_gate = CircuitGate(self.batch_pop(points), True)
@@ -1782,7 +1783,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self.max_cycle = len(circuit)
             self.subset = set(subset) if subset is not None \
                 else set([x for x in range(len(circuit[0]))])
-            self.max_qudit = 0 if self.max_cycle == 0 else len(self.subset)
+            self.max_qudit = 0 if self.max_cycle == 0 else len(circuit[0])
             self.cycle = 0 if not reversed else self.max_cycle - 1
             self.qudit = 0 if not reversed else self.max_qudit - 1
             self.qudits_to_skip: set[int] = set()
