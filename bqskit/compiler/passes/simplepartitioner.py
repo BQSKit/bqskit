@@ -7,6 +7,8 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.point import CircuitPoint
+from bqskit.ir.operation import Operation
+from bqskit.compiler.machine import MachineModel
 
 import os
 
@@ -20,14 +22,13 @@ from operator import attrgetter
 
 class SimplePartitioner(BasePass):
     # Class variables
-    used_qudits = set()
-    qudit_groups = []
+    used_qudits = set()     # set[int]
+    qudit_groups = []       # list[set[int]]
     
     def __init__(
         self,
         machine: MachineModel,
-        block_size: int = 3,
-        renumbering: dict[int, int] | None = None
+        block_size: int = 3
     ) -> None:
         """
         Constructor for a SimplePartitioner based on the QGo algorithm.
@@ -39,18 +40,15 @@ class SimplePartitioner(BasePass):
                 qudits in the topology.
 
             block_size (int): Size of synthesizable partition blocks.
-
-            renumbering (dict[int,int]): An optional map from logical qudits in
-                the circuit (from here on called vertices) to physical qudits 
-                in the topology (from here on called qudits).
+        
+        Reference:
+            https://arxiv.org/pdf/2012.09835.pdf
         """
         # NOTE: num_qudits is the number of qudits in the physical topology, not 
         # in the algorithm/circuit.
         self.block_size = block_size
         self.machine = machine
         self.num_qudits = self.machine.num_qudits
-        # The 
-        self.renumbering = renumbering or {k:k for k in range(self.num_qudits)}
 
         # Default scores for multi qudit and single qudit gates in QGo
         self.multi_gate_score  = 1000
@@ -74,7 +72,7 @@ class SimplePartitioner(BasePass):
                 used_qudits.add(qudit)
         return used_qudits
 
-    def get_qudit_groups(self) -> list[list[int]]:
+    def get_qudit_groups(self) -> list[set[int]]:
         """
         Returns a list of all the valid qudit groups in the coupling map. 
 
@@ -114,7 +112,7 @@ class SimplePartitioner(BasePass):
         # Return the set as a list of paths/qudit groups
         list_of_paths = []
         for path in found_paths:
-            list_of_paths.append(list(path))
+            list_of_paths.append(path)
         return list_of_paths
 
     def _qudit_group_search(
@@ -209,7 +207,7 @@ class SimplePartitioner(BasePass):
         # Cannot have more algorithmic qubits than physical qubits
         if self.num_qudits < self.num_verts:
             raise ValueError(
-                'Expected num_qudits > circuit.get_size(), '
+                'Expected num_qudits >= circuit.get_size(), '
                 'got %d (num_qudits) and %d' %(self.num_qudits, self.num_verts)
             )
 
@@ -261,7 +259,8 @@ class SimplePartitioner(BasePass):
         for circ_point, circ_op in qudit_iter:
             if circ_point.cycle >= cycle:
                 num_ops += 1
-        return num_op
+        return num_ops
+
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
@@ -302,14 +301,21 @@ class SimplePartitioner(BasePass):
 
                 # Find the earliest cycle in the group in which each q is 
                 # involved with an "outsider" qudit 
-                insider_qudits = set(q_group)
-                # TODO: CHANGE FROM USING CIRCUITITERATOR
-                circ_iter = CircuitIterator(circuit, and_points = True)
+                insider_qudits = q_group
+                # TODO: CircuitIterator is costly to use, find a way to iterate
+                #   through a subcircuit in order.
+                circ_iter = Circuit.SubCircuitIterator(
+                    circuit = circuit._circuit, 
+                    subset = q_group,
+                    and_points = True)
+                # Skip operations that are before the block_start or do not
+                # involve qudits in the insider_qudits
                 for point, op in circ_iter:
-                    # Skip operations that are before the block_start or do not
-                    # involve qudits in the q_group
-                    if (point.qudit not in q_group or \
-                        point.cycle < curr_block.block_start[point.qudit]):
+                    # Check if we have finished partitioning the current block
+                    if len(insider_qudits) == 0:
+                        break
+                    # Do not count outside block limits
+                    elif point.cycle < sched_depth[point.qudit]:
                         continue
 
                     # Check that op doesn't interact with outsider qudits.
@@ -317,11 +323,14 @@ class SimplePartitioner(BasePass):
                     # of the block for it and add it to the outsiders.
                     if any(other_qudit not in insider_qudits for other_qudit 
                         in op.location):
-                        curr_block.block_end[point.qudit] = point.cycle
+                        curr_block.block_end[point.qudit] = max(point.cycle-1,0)
                         insider_qudits -= set([point.qudit])
-                    # Else add to the score of the current block
+                    # Else add to the score of the current block, update the
+                    # end of the block for all still valid insider qudits.
                     else:
-                        if len(op.localtion) >= 2:
+                        for insider in insider_qudits:
+                            curr_block.block_end[insider] = point.cycle
+                        if len(op.location) >= 2:
                             curr_block.score += self.multi_gate_score
                         else:
                             curr_block.score += self.single_gate_score
@@ -333,13 +342,19 @@ class SimplePartitioner(BasePass):
             # Replace the highest scoring block with a CircuitGate.
             qudits = best_block.block_start.keys()
             points_in_block = []
-            for q in qudits:
-                points = [CircuitPoint(cycle=cyc ,qudit=q) for cyc in
-                    range(best_block.block_start[q], best_block.block_end[q])]
-                points_in_block.extend(points)
-            # May need to check that all the points in points_in_block are valid indices
+            circ_iter = circuit.SubCircuitIterator(
+                circuit = circuit._circuit,
+                subset = qudits,
+                and_points = True
+            )
+            for point, op in circ_iter:
+                if point.cycle >= best_block.block_start[point.qudit] and \
+                    point.cycle <= best_block.block_end[point.qudit] and \
+                        all(other_qs in qudits for other_qs in op.location):
+                    points_in_block.append(point)
+
             circuit.fold(points_in_block)
 
             # Update the scheduled depth list
             for q in qudits:
-                sched_depth[q] = best_block.block_end[q]
+                sched_depth[q] += 1
