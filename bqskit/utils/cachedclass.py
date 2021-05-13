@@ -50,3 +50,9 @@ class CachedClass:
                 (cls, args, tuple(kwargs.items()))
             ] = super().__new__(cls)
         return cls._instances[(cls, args, tuple(kwargs.items()))]
+
+    def __copy__(self) -> CachedClass:
+        return self
+
+    def __deepcopy__(self, memo: Any) -> CachedClass:
+        return self.__copy__()
