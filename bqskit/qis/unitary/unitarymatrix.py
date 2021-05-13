@@ -13,6 +13,7 @@ import numpy as np
 import scipy as sp
 
 from bqskit.qis.unitary.unitary import Unitary
+from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_unitary
 from bqskit.utils.typing import is_valid_radixes
@@ -152,11 +153,55 @@ class UnitaryMatrix(Unitary):
         V, _, Wh = sp.linalg.svd(M)
         return UnitaryMatrix(V @ Wh, radixes, False)
 
+    @staticmethod
+    def random(size: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
+        """
+        Sample a random unitary from the haar distribution.
+
+        Args:
+            size (np.ndarray): The number of qudits for the matrix. This
+                is not the dimension.
+
+            radixes (Sequence[int]): The radixes for the Unitary.
+
+        Returns:
+            (UnitaryMatrix): A random unitary matrix.
+        """
+
+        if not is_integer(size):
+            raise TypeError('Expected int for size, got %s.' % type(size))
+
+        if size <= 0:
+            raise ValueError('Expected positive number for size.')
+
+        radixes = tuple(radixes if len(radixes) > 0 else [2] * size)
+
+        if not is_valid_radixes(radixes):
+            raise TypeError('Invalid qudit radixes.')
+
+        if len(radixes) != size:
+            raise ValueError(
+                'Expected length of radixes to be equal to size:'
+                ' %d != %d' % (len(radixes), size),
+            )
+
+        U = sp.stats.unitary_group.rvs(int(np.prod(radixes)))
+        return UnitaryMatrix(U, radixes, False)
+
     def __matmul__(self, rhs: object) -> UnitaryMatrix:
         if isinstance(rhs, UnitaryMatrix):
             rhs = rhs.get_numpy()
         res: np.ndarray = self.get_numpy() @ rhs  # type: ignore
         return UnitaryMatrix(res, self.get_radixes())
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Unitary):
+            raise NotImplemented
+
+        return np.allclose(
+            self.get_numpy(),
+            other.get_unitary().get_numpy(),
+        )
 
     def save(self, filename: str) -> None:
         """Saves the unitary to a file."""
