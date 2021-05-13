@@ -1160,9 +1160,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 if cycle_index < region[qudit_index][0]:
                     op = self._circuit[cycle_index][qudit_index]
                     if op is not None:
-                        shifted_cycle_index = cycle_index - amount_to_shift
-                        self._circuit[shifted_cycle_index][qudit_index] = op
-                        self._circuit[cycle_index][qudit_index] = None
+                        new_cycle_index = cycle_index - amount_to_shift
+                        for involved_qudit in op.location:
+                            self._circuit[new_cycle_index][involved_qudit] = op
+                            self._circuit[cycle_index][involved_qudit] = None
 
         # Pop operations, form CircuitGate, insert gate
         circuit_gate = CircuitGate(self.batch_pop(points), True)
@@ -1679,6 +1680,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             ', got %s.' % type(points),
         )
 
+    # TODO: Current constructor for CircuitIterator requires that outside code
+    #   pass circuit._circuit. 
     class CircuitIterator(
         Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
     ):
@@ -1745,6 +1748,81 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 self.step()
                 return op
 
+    class SubCircuitIterator(
+        Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
+    ):
+        def __init__(
+                self,
+                circuit: list[list[Operation | None]],
+                subset: Sequence[int] = None,
+                reversed: bool = False,
+                and_points: bool = False,
+        ) -> None:
+            self.circuit = circuit
+            self.reversed = reversed
+            self.and_points = and_points
+            self.max_cycle = len(circuit)
+            self.subset = set(subset) if subset is not None \
+                else set([x for x in range(len(circuit[0]))])
+            self.max_qudit = 0 if self.max_cycle == 0 else len(circuit[0])
+            self.cycle = 0 if not reversed else self.max_cycle - 1
+            self.qudit = 0 if not reversed else self.max_qudit - 1
+            self.qudits_to_skip: set[int] = set()
+
+        def increment_iter(self) -> None:
+            self.qudit += 1
+            while self.qudit in self.qudits_to_skip or \
+                self.qudit not in self.subset:
+                self.qudit += 1
+                if self.qudit >= self.max_qudit:
+                    self.qudit = 0
+                    self.cycle += 1
+                    self.qudits_to_skip.clear()
+                    break
+
+        def decrement_iter(self) -> None:
+            self.qudit -= 1
+            while self.qudit in self.qudits_to_skip or \
+                self.qudit not in self.subset:
+                self.qudit -= 1
+                if self.qudit < 0:
+                    self.qudit = self.max_qudit - 1
+                    self.cycle -= 1
+                    self.qudits_to_skip.clear()
+                    break
+
+        def step(self) -> None:
+            if not self.reversed:
+                self.increment_iter()
+            else:
+                self.decrement_iter()
+
+        def dereference(self) -> Operation | None:
+            if self.cycle < 0 or self.cycle >= self.max_cycle:
+                raise StopIteration
+            return self.circuit[self.cycle][self.qudit]
+
+        def __iter__(self) -> Iterator[
+            Operation
+            | tuple[CircuitPoint, Operation]
+        ]:
+            return self
+
+        def __next__(self) -> Operation | tuple[CircuitPoint, Operation]:
+            while self.dereference() is None or self.qudit not in self.subset:
+                self.step()
+            op: Operation = self.dereference()  # type: ignore
+            self.qudits_to_skip.update(op.location)
+            if self.and_points:
+                cycle, qudit = self.cycle, self.qudit
+                self.step()
+                return CircuitPoint(cycle, qudit), op
+            else:
+                self.step()
+                return op
+
+    # TODO: Current constructor for QuditIterator requires that outside code
+    #   pass circuit._circuit. 
     class QuditIterator(
             Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
     ):
