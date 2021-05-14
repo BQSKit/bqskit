@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
+import pytest
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix

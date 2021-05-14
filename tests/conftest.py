@@ -12,9 +12,9 @@ from typing import Callable
 from typing import Sequence
 
 import numpy as np
-import pytest
 from scipy.stats import unitary_group
 
+import pytest
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
