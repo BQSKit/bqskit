@@ -8,6 +8,7 @@ import numpy as np
 
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
 
@@ -23,41 +24,44 @@ class UnitaryBuilder(Unitary):
     concepts from tensor networks to efficiently multiply unitary matrices.
     """
 
-    def __init__(self, num_qudits: int, radixes: Sequence[int] = []) -> None:
+    def __init__(self, size: int, radixes: Sequence[int] = []) -> None:
         """
         UnitaryBuilder constructor.
 
         Args:
-            num_qudits (int): The number of qudits to build a Unitary for.
+            size (int): The number of qudits to build a Unitary for.
 
             radixes (Sequence[int]): A sequence with its length equal
-                to `num_qudits`. Each element specifies the base of a
+                to `size`. Each element specifies the base of a
                 qudit. Defaults to qubits.
 
         Raises:
-            ValueError: if num_qudits is nonpositive.
+            ValueError: if size is nonpositive.
 
         Examples:
             >>> builder = UnitaryBuilder(4)  # Creates a 4-qubit builder.
         """
 
-        if not isinstance(num_qudits, int):
-            raise TypeError(
-                'Invalid type for num_qudits: '
-                'expected int, got %s.' % type(num_qudits),
-            )
+        if not is_integer(size):
+            raise TypeError('Expected int for size, got %s.' % type(size))
 
-        if num_qudits <= 0:
-            raise ValueError('Expected positive number for num_qudits.')
+        if size <= 0:
+            raise ValueError('Expected positive number for size.')
 
-        self.size = num_qudits
-        self.num_params = 0
-        self.radixes = tuple(radixes or [2] * num_qudits)
-        self.dim = int(np.prod(self.radixes))
+        self.size = size
+        self.radixes = tuple(radixes if len(radixes) > 0 else [2] * self.size)
 
-        if not is_valid_radixes(self.radixes, self.get_size()):
+        if not is_valid_radixes(self.radixes):
             raise TypeError('Invalid qudit radixes.')
 
+        if len(self.radixes) != self.size:
+            raise ValueError(
+                'Expected length of radixes to be equal to size:'
+                ' %d != %d' % (len(self.radixes), self.size),
+            )
+
+        self.num_params = 0
+        self.dim = int(np.prod(self.radixes))
         self.tensor = np.identity(self.get_dim())
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
