@@ -195,13 +195,16 @@ class UnitaryMatrix(Unitary):
         return UnitaryMatrix(res, self.get_radixes())
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Unitary):
-            raise NotImplemented
+        if isinstance(other, Unitary):
+            return np.allclose(
+                self.get_numpy(),
+                other.get_unitary().get_numpy(),
+            )
 
-        return np.allclose(
-            self.get_numpy(),
-            other.get_unitary().get_numpy(),
-        )
+        if isinstance(other, np.ndarray):
+            return np.allclose(self.get_numpy(), other)
+
+        raise NotImplemented
 
     def save(self, filename: str) -> None:
         """Saves the unitary to a file."""
