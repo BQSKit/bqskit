@@ -1,36 +1,28 @@
 """This module defines the SimplePartitioner pass."""
 from __future__ import annotations
 
-from typing import Any, Sequence
-
-from numpy import savez_compressed
+from typing import Any
+from typing import Iterable
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.point import CircuitPoint
-from bqskit.ir.operation import Operation
 from bqskit.compiler.machine import MachineModel
-
-import os
-
-from math import sqrt, ceil
-from operator import attrgetter
+from bqskit.ir.circuit import Circuit
 
 # TODO:
 #   Layout should be a separate pass from partitioning. The partitioner may
 #   need to be changed so that it can accept a layout assignment, but by
 #   default assumes the numberings in the algorithm and topology are equal.
 
+
 class SimplePartitioner(BasePass):
     # Class variables
-    used_qudits = set()     # set[int]
-    qudit_groups = []       # list[set[int]]
-    
+    used_qudits: set[int] = set()
+    qudit_groups: list[set[int]] = []
+
     def __init__(
         self,
         machine: MachineModel,
-        block_size: int = 3
+        block_size: int = 3,
     ) -> None:
         """
         Constructor for a SimplePartitioner based on the QGo algorithm.
@@ -38,24 +30,23 @@ class SimplePartitioner(BasePass):
         Args:
             machine (MachineModel): Description of the physical layout of
                 qudits in hardware. This variable will set the coupling map
-                used for synthesis and determines the number of physical 
+                used for synthesis and determines the number of physical
                 qudits in the topology.
 
             block_size (int): Size of synthesizable partition blocks.
-        
+
         Reference:
             https://arxiv.org/pdf/2012.09835.pdf
         """
-        # NOTE: num_qudits is the number of qudits in the physical topology, not 
+        # NOTE: num_qudits is the number of qudits in the physical topology, not
         # in the algorithm/circuit.
         self.block_size = block_size
         self.machine = machine
         self.num_qudits = self.machine.num_qudits
 
         # Default scores for multi qudit and single qudit gates in QGo
-        self.multi_gate_score  = 1000
+        self.multi_gate_score = 1000
         self.single_gate_score = 1
-        
 
     def get_used_qudit_set(self, circuit: Circuit) -> set[int]:
         """
@@ -65,7 +56,7 @@ class SimplePartitioner(BasePass):
             circuit (Circuit): The circuit to be analyzed.
 
         Returns:
-            used_qudits (set[int]): The set containing the indices of all 
+            used_qudits (set[int]): The set containing the indices of all
                 qudits used in any operation during the circuit.
         """
         used_qudits = set()
@@ -76,13 +67,13 @@ class SimplePartitioner(BasePass):
 
     def get_qudit_groups(self) -> list[set[int]]:
         """
-        Returns a list of all the valid qudit groups in the coupling map. 
+        Returns a list of all the valid qudit groups in the coupling map.
 
         Args:
-            None 
+            None
 
         Returns:
-            qudit_groups (Sequence[Sequence[int]]): A list of all groups of 
+            qudit_groups (Sequence[Sequence[int]]): A list of all groups of
                 physically connected qudits that are < block_size away from each
                 other.
 
@@ -90,50 +81,47 @@ class SimplePartitioner(BasePass):
             Does a breadth first search on all pairs of qudits, keeps paths
             that have length equal to block_size. Note that the coupling map
             is assumed to be undirected.
-
         """
         # Create an adjaceny dict
-        adj_dict = {k:[] for k in range(self.num_qudits)}
+        adj_dict: dict[int, list[int]] = {k: [] for k in range(self.num_qudits)}
         for edge in self.machine.coupling_graph:
             adj_dict[edge[0]].append(edge[1])
             adj_dict[edge[1]].append(edge[0])
 
-        found_paths = set([])
+        found_paths: set[list[int]] = set()
         # For each qudit
         for vertex in range(self.num_qudits):
-            path = set()
+            path: set[int] = set()
             # Get every vald set containing s with cardinality == block_size
             self._qudit_group_search(
-                adj_dict = adj_dict, 
-                all_paths = found_paths, 
-                path = path, 
-                vertex = vertex, 
-                limit = self.block_size
+                adj_dict=adj_dict,
+                all_paths=found_paths,
+                path=path,
+                vertex=vertex,
+                limit=self.block_size,
             )
 
         # Return the set as a list of paths/qudit groups
-        list_of_paths = []
-        for path in found_paths:
-            list_of_paths.append(path)
-        return list_of_paths
+        return [set(path) for path in found_paths]
 
     def _qudit_group_search(
-        self, 
-        adj_dict : dict[int,int],
-        all_paths : set[frozenset[int]],
-        path : set[int],
-        vertex : int,
-        limit  : int,
+        self,
+        adj_dict: dict[int, list[int]],
+        all_paths: set[list[int]],
+        path: set[int],
+        vertex: int,
+        limit: int,
     ) -> None:
         """
         Add paths of length == limit to the all_paths list.
 
         Args:
-            adj_dict (dict[int,int]): Adjacency list/dictionary for the graph.
+            adj_dict (dict[int, list[int]]): Adjacency list/dictionary for
+                the graph.
 
-            all_paths (set[frozenset[int]]): A list that countains all paths 
+            all_paths (set[list[int]]): A list that countains all paths
                 found so far of length == limit.
-                
+
             path (set[int]): The list that charts the current path
                 through the graph.
 
@@ -146,19 +134,19 @@ class SimplePartitioner(BasePass):
         curr_path = path.copy()
         curr_path.add(vertex)
         if len(curr_path) == limit:
-            all_paths.add(frozenset(curr_path))
+            all_paths.add(curr_path)  # type: ignore
         else:
-            frontier = []
+            frontier: list[int] = []
             for node in curr_path:
                 frontier.extend(adj_dict[node])
             for neighbor in frontier:
                 if neighbor not in curr_path:
                     self._qudit_group_search(
-                        adj_dict = adj_dict, 
-                        all_paths = all_paths, 
-                        path = curr_path, 
-                        vertex = neighbor, 
-                        limit = limit
+                        adj_dict=adj_dict,
+                        all_paths=all_paths,
+                        path=curr_path,
+                        vertex=neighbor,
+                        limit=limit,
                     )
 
     class BlockInfo:
@@ -167,31 +155,31 @@ class SimplePartitioner(BasePass):
 
         A BlockInfo object contains the description of a synthesizable block.
 
-        Notes: For each qudit, the block_start is inclusive and the block_end 
-            is exclusive, meaning the block_end cycle should not be included 
+        Notes: For each qudit, the block_start is inclusive and the block_end
+            is exclusive, meaning the block_end cycle should not be included
             in the synthesizable block.
         """
+
         def __init__(
-            self, 
-            qudits: Sequence[int] | None = None,
-            score: int = 0
+            self,
+            qudits: Iterable[int] | None = None,
+            score: int = 0,
         ) -> None:
             """
             The BlockInfo Constructor.
 
             Args:
-                qudits (Sequence[int]): A list of qudits in the block.
+                qudits (Iterable[int]): A list of qudits in the block.
             """
-            self.block_start = {k:0 for k in qudits} if qudits is not None \
-                else {}
-            self.block_end   = {k:0 for k in qudits} if qudits is not None \
-                else {}
+            qudits = [] if qudits is None else qudits
+            self.block_start = {k: 0 for k in qudits}
+            self.block_end = {k: 0 for k in qudits}
             self.score = score
 
     def _set_run_parameters(
-        self, 
-        circuit: Circuit, 
-        data: dict[str, Any]
+        self,
+        circuit: Circuit,
+        data: dict[str, Any],
     ) -> None:
         """
         Set up the SimplePartitioner variables for the current run call.
@@ -202,7 +190,7 @@ class SimplePartitioner(BasePass):
             data (dict[str, Any]): Additional data for the run.
         """
         # num_qudits is the number of physical qubits in the topology
-        self.num_qudits = data["num_qudits"] if "num_qudits" in data \
+        self.num_qudits = data['num_qudits'] if 'num_qudits' in data \
             else self.num_qudits
         # num_verts is the number of qubits used in the algorithm/circuit
         self.num_verts = circuit.get_size()
@@ -210,37 +198,39 @@ class SimplePartitioner(BasePass):
         if self.num_qudits < self.num_verts:
             raise ValueError(
                 'Expected num_qudits >= circuit.get_size(), '
-                'got %d (num_qudits) and %d' %(self.num_qudits, self.num_verts)
+                'got %d (num_qudits) and %d' % (
+                    self.num_qudits, self.num_verts,
+                ),
             )
 
-        # If a coupling map is provided in the data dict, it will be used. 
+        # If a coupling map is provided in the data dict, it will be used.
         # Otherwise the coupling graph assigned to the MachineModel will be
-        # used. 
-        self.coupling_graph = data["coupling_graph"] if "coupling_graph" in \
+        # used.
+        self.coupling_graph = data['coupling_graph'] if 'coupling_graph' in \
             data else self.machine.coupling_graph
 
-        self.block_size = data["block_size"] if "block_size" in data \
+        self.block_size = data['block_size'] if 'block_size' in data \
             else self.block_size
         if self.block_size < 2 or self.block_size > self.num_qudits:
             raise ValueError(
                 'Expected  2 <= block_size <= num_qudits, '
-                'got %d' %(self.block_size)
+                'got %d' % (self.block_size),
             )
 
         # Change scores for multi and single qudit gates if desired
-        if "multi_gate_score" in data:
-            self.multi_gate_score = data["multi_gate_score"]
-        if "single_gate_score" in data:
-            self.single_gate_score = data["single_gate_score"]
+        if 'multi_gate_score' in data:
+            self.multi_gate_score = data['multi_gate_score']
+        if 'single_gate_score' in data:
+            self.single_gate_score = data['single_gate_score']
 
         # Get the set of all vertices used in the algorithm
-        #self.used_verts = get_used_qudit_set(circuit)
+        # self.used_verts = get_used_qudit_set(circuit)
 
     def num_ops_left(
         self,
-        circuit : Circuit,
-        qudit : int,
-        cycle : int
+        circuit: Circuit,
+        qudit: int,
+        cycle: int,
     ) -> int:
         """
         Return the number of operations on a qudit at and beyond the cycle
@@ -263,10 +253,9 @@ class SimplePartitioner(BasePass):
                 num_ops += 1
         return num_ops
 
-
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
-        Partition gates in a circuit into a series of CircuitGates. 
+        Partition gates in a circuit into a series of CircuitGates.
 
         Args:
             circuit (Circuit): Circuit to be partitioned.
@@ -289,8 +278,10 @@ class SimplePartitioner(BasePass):
         # NOTE: This assumes circuit and topology qudit numbers are equal
         sched_depth = [0 for i in range(self.num_qudits)]
         while any(
-            [self.num_ops_left(circuit, p, sched_depth[p]) for p 
-                in range(self.num_qudits)]
+            [
+                self.num_ops_left(circuit, p, sched_depth[p]) for p
+                in range(self.num_qudits)
+            ],
         ):
             # Find the scores of the qudit groups.
             best_block = self.BlockInfo()
@@ -301,18 +292,19 @@ class SimplePartitioner(BasePass):
                 for qudit in q_group:
                     curr_block.block_start[qudit] = sched_depth[qudit]
 
-                # Find the earliest cycle in the group in which each q is 
-                # involved with an "outsider" qudit 
+                # Find the earliest cycle in the group in which each q is
+                # involved with an "outsider" qudit
                 insider_qudits = q_group
                 # TODO: CircuitIterator is costly to use, find a way to iterate
                 #   through a subcircuit in order.
-                circ_iter = Circuit.SubCircuitIterator(
-                    circuit = circuit._circuit, 
-                    subset = q_group,
-                    and_points = True)
+                circ_iter = Circuit.SubCircuitIterator(  # type: ignore
+                    circuit=circuit._circuit,
+                    subset=q_group,  # type: ignore
+                    and_points=True,
+                )
                 # Skip operations that are before the block_start or do not
                 # involve qudits in the insider_qudits
-                for point, op in circ_iter:
+                for point, op in circ_iter:  # type: ignore
                     # Check if we have finished partitioning the current block
                     if len(insider_qudits) == 0:
                         break
@@ -323,10 +315,14 @@ class SimplePartitioner(BasePass):
                     # Check that op doesn't interact with outsider qudits.
                     # If a qudit interacts with an outsider, mark the end
                     # of the block for it and add it to the outsiders.
-                    if any(other_qudit not in insider_qudits for other_qudit 
-                        in op.location):
-                        curr_block.block_end[point.qudit] = max(point.cycle-1,0)
-                        insider_qudits -= set([point.qudit])
+                    if any(
+                        other_qudit not in insider_qudits for other_qudit
+                        in op.location
+                    ):
+                        curr_block.block_end[point.qudit] = max(
+                            point.cycle - 1, 0,
+                        )
+                        insider_qudits -= {point.qudit}
                     # Else add to the score of the current block, update the
                     # end of the block for all still valid insider qudits.
                     else:
@@ -341,16 +337,16 @@ class SimplePartitioner(BasePass):
                 # if they are they same, pick the block with the earliest cycle
                 if (curr_block.score > best_block.score):
                     best_block = curr_block
-                
+
             # Replace the highest scoring block with a CircuitGate.
             qudits = best_block.block_start.keys()
             points_in_block = []
-            circ_iter = circuit.SubCircuitIterator(
-                circuit = circuit._circuit,
-                subset = qudits,
-                and_points = True
+            circ_iter = circuit.SubCircuitIterator(  # type: ignore
+                circuit=circuit._circuit,
+                subset=qudits,  # type: ignore
+                and_points=True,
             )
-            for point, op in circ_iter:
+            for point, op in circ_iter:  # type: ignore
                 if point.cycle >= best_block.block_start[point.qudit] and \
                     point.cycle <= best_block.block_end[point.qudit] and \
                         all(other_qs in qudits for other_qs in op.location):

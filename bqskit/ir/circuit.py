@@ -1681,7 +1681,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         )
 
     # TODO: Current constructor for CircuitIterator requires that outside code
-    #   pass circuit._circuit. 
+    #   pass circuit._circuit.
     class CircuitIterator(
         Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
     ):
@@ -1754,7 +1754,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         def __init__(
                 self,
                 circuit: list[list[Operation | None]],
-                subset: Sequence[int] = None,
+                subset: Sequence[int] | None = None,
                 reversed: bool = False,
                 and_points: bool = False,
         ) -> None:
@@ -1763,7 +1763,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self.and_points = and_points
             self.max_cycle = len(circuit)
             self.subset = set(subset) if subset is not None \
-                else set([x for x in range(len(circuit[0]))])
+                else {x for x in range(len(circuit[0]))}
             self.max_qudit = 0 if self.max_cycle == 0 else len(circuit[0])
             self.cycle = 0 if not reversed else self.max_cycle - 1
             self.qudit = 0 if not reversed else self.max_qudit - 1
@@ -1772,7 +1772,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         def increment_iter(self) -> None:
             self.qudit += 1
             while self.qudit in self.qudits_to_skip or \
-                self.qudit not in self.subset:
+                    self.qudit not in self.subset:
                 self.qudit += 1
                 if self.qudit >= self.max_qudit:
                     self.qudit = 0
@@ -1783,7 +1783,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         def decrement_iter(self) -> None:
             self.qudit -= 1
             while self.qudit in self.qudits_to_skip or \
-                self.qudit not in self.subset:
+                    self.qudit not in self.subset:
                 self.qudit -= 1
                 if self.qudit < 0:
                     self.qudit = self.max_qudit - 1
@@ -1822,7 +1822,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 return op
 
     # TODO: Current constructor for QuditIterator requires that outside code
-    #   pass circuit._circuit. 
+    #   pass circuit._circuit.
     class QuditIterator(
             Iterator[Union[Operation, Tuple[CircuitPoint, Operation]]],
     ):

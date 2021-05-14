@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import scipy as sp
 
-import pytest
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.permutation import swap
 from bqskit.qis.permutation import swap_bit
