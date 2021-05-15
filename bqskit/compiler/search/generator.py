@@ -26,7 +26,8 @@ class LayerGenerator(abc.ABC):
 
     @abc.abstractmethod
     def gen_successors(
-        self, circuit: Circuit,
+        self,
+        circuit: Circuit,
         data: dict[str, Any],
     ) -> list[Circuit]:
         """Generate the initial layer for search."""
