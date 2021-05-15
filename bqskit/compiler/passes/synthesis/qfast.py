@@ -144,11 +144,7 @@ class QFASTDecompositionPass(SynthesisPass):
         while True:
             circuit.instantiate(utry, cost_fn_gen=self.cost)
 
-            dist = self.cost.gen_cost(
-                circuit, utry,
-            ).get_cost(
-                circuit.get_params(),
-            )
+            dist = self.cost.calc_cost(circuit, utry)
 
             _logger.info(
                 'Finished optimizing depth %d at %e cost.' % (depth, dist),
