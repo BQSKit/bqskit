@@ -107,7 +107,7 @@ class SearchSynthesisPass(SynthesisPass):
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
-        frontier = Frontier(self.heuristic_function)
+        frontier = Frontier(utry, self.heuristic_function)
 
         best_dist = 1.0
         best_circ = None
