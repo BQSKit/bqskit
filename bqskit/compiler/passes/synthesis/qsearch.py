@@ -1,4 +1,4 @@
-"""This module implements the SearchSynthesisPass."""
+"""This module implements the QSearchSynthesisPass."""
 from __future__ import annotations
 
 import logging
@@ -19,8 +19,15 @@ from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
 
-class SearchSynthesisPass(SynthesisPass):
-    """The SearchSynthesisPass class."""
+class QSearchSynthesisPass(SynthesisPass):
+    """
+    The QSearchSynthesisPass class.
+
+    References:
+        Davis, Marc G., et al. “Towards Optimal Topology Aware Quantum
+        Circuit Synthesis.” 2020 IEEE International Conference on Quantum
+        Computing and Engineering (QCE). IEEE, 2020.
+    """
 
     def __init__(
         self,
