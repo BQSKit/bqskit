@@ -21,15 +21,19 @@ class U3Gate(QubitGate, DifferentiableUnitary):
         """Returns the unitary for this gate, see Unitary for more info."""
         self.check_parameters(params)
 
-        cos = np.cos(params[0] / 2)
-        sin = np.sin(params[0] / 2)
-        eip = np.exp(1j * params[1])
-        eil = np.exp(1j * params[2])
+        ct = np.cos(params[0] / 2)
+        st = np.sin(params[0] / 2)
+        cp = np.cos(params[1])
+        sp = np.sin(params[1])
+        cl = np.cos(params[2])
+        sl = np.sin(params[2])
+        el = cl + 1j * sl
+        ep = cp + 1j * sp
 
         return UnitaryMatrix(
             [
-                [cos, -eil * sin],
-                [eip * sin, eip * eil * cos],
+                [ct, -el * st],
+                [ep * st, ep * el * ct],
             ],
         )
 
@@ -37,28 +41,32 @@ class U3Gate(QubitGate, DifferentiableUnitary):
         """Returns the gradient for this gate, see Gate for more info."""
         self.check_parameters(params)
 
-        cos = np.cos(params[0] / 2)
-        sin = np.sin(params[0] / 2)
-        eip = np.exp(1j * params[0])
-        eil = np.exp(1j * params[1])
-        deip = 1j * np.exp(1j * params[0])
-        deil = 1j * np.exp(1j * params[1])
+        ct = np.cos(params[0] / 2)
+        st = np.sin(params[0] / 2)
+        cp = np.cos(params[1])
+        sp = np.sin(params[1])
+        cl = np.cos(params[2])
+        sl = np.sin(params[2])
+        el = cl + 1j * sl
+        ep = cp + 1j * sp
+        del_ = -sl + 1j * cl
+        dep_ = -sp + 1j * cp
 
         return np.array(
             [
                 [  # wrt params[0]
-                    [-sin, -eil * cos],
-                    [eip * cos, -eip * eil * cos],
+                    [-0.5 * st, -0.5 * ct * el],
+                    [0.5 * ct * ep, -0.5 * st * el * ep],
                 ],
 
                 [  # wrt params[1]
                     [0, 0],
-                    [deip * sin, deip * eil * cos],
+                    [st * dep_, ct * el * dep_],
                 ],
 
                 [  # wrt params[2]
-                    [0, -deil * sin],
-                    [0, eip * deil * cos],
+                    [0, -st * del_],
+                    [0, ct * ep * del_],
                 ],
             ], dtype=np.complex128,
         )
