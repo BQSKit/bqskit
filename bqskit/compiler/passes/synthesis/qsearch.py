@@ -7,7 +7,9 @@ from typing import Any
 from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.compiler.search.frontier import Frontier
 from bqskit.compiler.search.generator import LayerGenerator
+from bqskit.compiler.search.generators import SimpleLayerGenerator
 from bqskit.compiler.search.heuristic import HeuristicFunction
+from bqskit.compiler.search.heuristics import AStarHeuristic
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -31,8 +33,8 @@ class QSearchSynthesisPass(SynthesisPass):
 
     def __init__(
         self,
-        heuristic_function: HeuristicFunction,
-        layer_generator: LayerGenerator,
+        heuristic_function: HeuristicFunction = AStarHeuristic(),
+        layer_generator: LayerGenerator = SimpleLayerGenerator(),
         success_threshold: float = 1e-6,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         max_depth: int | None = None,
@@ -119,7 +121,7 @@ class QSearchSynthesisPass(SynthesisPass):
         best_dist = 1.0
         best_circ = None
 
-        self.layer_gen.gen_initial_layer(utry, data)
+        frontier.add(self.layer_gen.gen_initial_layer(utry, data))
 
         while not frontier.empty():
             child_circuits = self.layer_gen.gen_successors(frontier.pop(), data)
