@@ -305,11 +305,12 @@ class SimplePartitioner(BasePass):
                 # Skip operations that are before the block_start or do not
                 # involve qudits in the insider_qudits
                 for point, op in circ_iter:  # type: ignore
+                    # Do not count outside block limits
                     # Check if we have finished partitioning the current block
                     if len(insider_qudits) == 0:
                         break
-                    # Do not count outside block limits
-                    elif point.cycle < sched_depth[point.qudit]:
+                    elif point.cycle < sched_depth[point.qudit] or point.qudit \
+                        not in insider_qudits:
                         continue
 
                     # Check that op doesn't interact with outsider qudits.

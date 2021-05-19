@@ -26,4 +26,3 @@ mach = MachineModel(num_q, coup_map)
 part = SimplePartitioner(mach, 3)
 
 part.run(circ, {})
-print('hello')
