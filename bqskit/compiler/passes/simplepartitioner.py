@@ -309,8 +309,7 @@ class SimplePartitioner(BasePass):
                     # Check if we have finished partitioning the current block
                     if len(insider_qudits) == 0:
                         break
-                    elif point.cycle < sched_depth[point.qudit] or point.qudit \
-                        not in insider_qudits:
+                    elif point.cycle < sched_depth[point.qudit]:
                         continue
 
                     # Check that op doesn't interact with outsider qudits.
@@ -320,10 +319,13 @@ class SimplePartitioner(BasePass):
                         other_qudit not in insider_qudits for other_qudit
                         in op.location
                     ):
-                        curr_block.block_end[point.qudit] = max(
-                            point.cycle - 1, 0,
-                        )
-                        insider_qudits -= {point.qudit}
+                        for other_qudit in op.location:
+                            if other_qudit in insider_qudits:
+                                curr_block.block_end[other_qudit] = max(
+                                    point.cycle - 1, 0,
+                                )
+                                insider_qudits -= {other_qudit}
+
                     # Else add to the score of the current block, update the
                     # end of the block for all still valid insider qudits.
                     else:
