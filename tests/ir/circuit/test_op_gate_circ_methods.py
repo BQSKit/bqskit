@@ -92,6 +92,7 @@ from bqskit.ir.gates import ConstantUnitaryGate
 from bqskit.ir.gates import CPIGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import IdentityGate
+from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import XGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
@@ -1069,6 +1070,20 @@ class TestFold:
         assert test_gate._circuit[1, 2].gate is wide_gate
         check_no_idle_cycles(circuit)
         assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
+
+    def test_parameters(self) -> None:
+        circ = Circuit(2)
+        circ.append_gate(CNOTGate(), [1, 0])
+        circ.append_gate(U3Gate(), [0], [0, 0, 0.23])
+        circ.append_gate(CNOTGate(), [1, 0])
+
+        before_fold = circ.get_unitary()
+
+        circ.fold([(0, 0), (1, 0), (2, 0)])
+
+        after_fold = circ.get_unitary()
+
+        assert after_fold == before_fold
 
 
 class TestCopy:
