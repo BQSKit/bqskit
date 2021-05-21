@@ -4,10 +4,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import numpy as np
+from scipy.stats import linregress
+
 from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.compiler.search.frontier import Frontier
 from bqskit.compiler.search.generator import LayerGenerator
+from bqskit.compiler.search.generators import SimpleLayerGenerator
 from bqskit.compiler.search.heuristic import HeuristicFunction
+from bqskit.compiler.search.heuristics import AStarHeuristic
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -31,11 +36,13 @@ class LEAPSynthesisPass(SynthesisPass):
 
     def __init__(
         self,
-        heuristic_function: HeuristicFunction,
-        layer_generator: LayerGenerator,
+        heuristic_function: HeuristicFunction = AStarHeuristic(),
+        layer_generator: LayerGenerator = SimpleLayerGenerator(),
         success_threshold: float = 1e-6,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
-        max_depth: int | None = None,
+        max_layer: int | None = None,
+        min_prefix_layers: int = 3,
+        instantiate_options: dict[str, Any] = {},
         **kwargs: Any,
     ) -> None:
         """
@@ -58,16 +65,23 @@ class LEAPSynthesisPass(SynthesisPass):
                 a cost less than the `success_threshold`.
                 (Default: HSDistance())
 
-            max_depth (int): The maximum number of gates to append without
+            max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
+
+            min_prefix_layers (int): The minimum number of layers needed
+                to prefix the circuit.
+
+            instantiate_options (dict[str: Any]): Options passed directly
+                to circuit.instantiate when instantiating circuit
+                templates. (Default: {})
 
             kwargs (dict[str, Any]): Keyword arguments that are passed
                 directly to SynthesisPass's constructor. See SynthesisPass
                 for more info.
 
         Raises:
-            ValueError: If max_depth is nonpositive.
+            ValueError: If `max_depth` or `min_prefix_layers` is nonpositive.
         """
         if not isinstance(heuristic_function, HeuristicFunction):
             raise TypeError(
@@ -93,63 +107,162 @@ class LEAPSynthesisPass(SynthesisPass):
                 % type(cost),
             )
 
-        if max_depth is not None and not is_integer(max_depth):
+        if max_layer is not None and not is_integer(max_layer):
             raise TypeError(
-                'Expected max_depth to be an integer, got %s' % type(
-                    max_depth,
-                ),
+                'Expected max_layer to be an integer, got %s' % type(max_layer),
             )
 
-        if max_depth is not None and max_depth <= 0:
+        if max_layer is not None and max_layer <= 0:
             raise ValueError(
-                'Expected max_depth to be positive, got %d.' % int(max_depth),
+                'Expected max_layer to be positive, got %d.' % int(max_layer),
+            )
+
+        if min_prefix_layers is not None and not is_integer(min_prefix_layers):
+            raise TypeError(
+                'Expected min_prefix_layers to be an integer, got %s'
+                % type(min_prefix_layers),
+            )
+
+        if min_prefix_layers is not None and min_prefix_layers <= 0:
+            raise ValueError(
+                'Expected min_prefix_layers to be positive, got %d.'
+                % int(min_prefix_layers),
+            )
+
+        if not isinstance(instantiate_options, dict):
+            raise TypeError(
+                'Expected dictionary for instantiate_options, got %s.'
+                % type(instantiate_options),
             )
 
         self.heuristic_function = heuristic_function
         self.layer_gen = layer_generator
         self.success_threshold = success_threshold
         self.cost = cost
-        self.max_depth = max_depth
+        self.max_layer = max_layer
+        self.min_prefix_layers = min_prefix_layers
+        self.instantiate_options = {'cost_fn_gen': self.cost}
+        self.instantiate_options.update(instantiate_options)
         super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
         frontier = Frontier(utry, self.heuristic_function)
 
-        best_dist = 1.0
-        best_circ = None
+        # Seed the search with an initial layer
+        initial_layer = self.layer_gen.gen_initial_layer(utry, data)
+        initial_layer.instantiate(
+            utry,
+            **self.instantiate_options,  # type: ignore
+        )
+        frontier.add(initial_layer, 0)
 
-        self.layer_gen.gen_initial_layer(utry, data)
+        # Track best circuit, initially the initial layer
+        best_dist = self.cost.calc_cost(initial_layer, utry)
+        best_circ = initial_layer
+        best_layer = 0
+        best_dists = [best_dist]
+        best_layers = [0]
+        last_prefix_layer = 0
+        _logger.info('Search started, initial layer has cost: %e.' % best_dist)
 
         while not frontier.empty():
-            child_circuits = self.layer_gen.gen_successors(frontier.pop(), data)
-            for circuit in child_circuits:
-                if self.max_depth and circuit.get_num_cycles() < self.max_depth:
-                    continue
+            top_circuit, layer = frontier.pop()
 
-                circuit.instantiate(utry, cost_fn_gen=self.cost)
+            # Generate successors and evaluate each
+            for circuit in self.layer_gen.gen_successors(top_circuit, data):
+
+                circuit.instantiate(
+                    utry,
+                    **self.instantiate_options,  # type: ignore
+                )
 
                 dist = self.cost.calc_cost(circuit, utry)
 
+                if dist < best_dist:
+                    _logger.info(
+                        'New best circuit found with %d layer%s and cost: %e.'
+                        % (layer + 1, '' if layer == 0 else 's', dist),
+                    )
+                    best_dist = dist
+                    best_circ = circuit
+                    best_layer = layer
+
+                    if self.check_leap_condition(
+                        layer + 1,
+                        best_dist,
+                        best_layers,
+                        best_dists,
+                        last_prefix_layer,
+                    ):
+                        _logger.info(
+                            'Prefix formed at %d layers.' % (layer + 1),
+                        )
+                        last_prefix_layer = layer + 1
+                        frontier.clear()
+                        if self.max_layer is None or layer + 1 < self.max_layer:
+                            frontier.add(circuit, layer + 1)
+                        break
+
                 if dist < self.success_threshold:
-                    _logger.info('Circuit found with cost: %e.' % dist)
                     _logger.info('Successful synthesis.')
                     return circuit
 
-                if dist < best_dist:
-                    _logger.info('Circuit found with cost: %e.' % dist)
-                    best_dist = dist
-                    best_circ = circuit
-
-                # TODO: Add LEAP ALGORITHM
-
-                frontier.add(circuit)
+                if self.max_layer is None or layer + 1 < self.max_layer:
+                    frontier.add(circuit, layer + 1)
 
         _logger.info('Frontier emptied.')
-        _logger.info('Returning best known circuit with dist: %e.' % best_dist)
-
-        if best_circ is None:
-            _logger.warning('No circuit found during search.')
-            best_circ = Circuit.from_unitary(utry)
+        _logger.info(
+            'Returning best known circuit with %d layer%s and cost: %e.'
+            % (best_layer, '' if best_layer == 1 else 's', best_dist),
+        )
 
         return best_circ
+
+    def check_leap_condition(
+        self,
+        new_layer: int,
+        best_dist: float,
+        best_layers: list[int],
+        best_dists: list[float],
+        last_prefix_layer: int,
+    ) -> bool:
+        """
+        Return true if the leap condition is satisfied.
+
+        Args:
+            new_layer (int): The current layer in search.
+
+            best_dist (float): The current best distance in search.
+
+            best_layers (list[int]): The list of layers associated
+                with recorded best distances.
+
+            best_dists (list[float]): The list of recorded best
+                distances.
+
+            last_prefix_layer (int): The last layer a prefix was formed.
+        """
+
+        with np.errstate(invalid='ignore', divide='ignore'):
+            # Calculate predicted best value
+            m, y_int, _, _, _ = linregress(best_layers, best_dists)
+            predicted_best = m * (new_layer) + y_int
+
+            # Track new values
+            best_layers.append(new_layer)
+            best_dists.append(best_dist)
+
+            if np.isnan(predicted_best):
+                return False
+
+            # Compute difference between actual value
+            delta = predicted_best - best_dist
+
+            _logger.debug(
+                'Predicted best value %f for new best best with delta %f.'
+                % (predicted_best, delta),
+            )
+
+            layers_added = new_layer - last_prefix_layer
+            return delta < 0 and layers_added >= self.min_prefix_layers

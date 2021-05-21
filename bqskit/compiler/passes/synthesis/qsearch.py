@@ -74,7 +74,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 for more info.
 
         Raises:
-            ValueError: If max_depth is nonpositive.
+            ValueError: If `max_depth` is nonpositive.
         """
         if not isinstance(heuristic_function, HeuristicFunction):
             raise TypeError(
