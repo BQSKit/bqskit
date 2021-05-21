@@ -89,11 +89,11 @@ s
         else:
             full_params = self.params
 
-        return '{}({}) q[{}];'.format(
+        return '{}({}) q[{}];\n'.format(
             self.gate.get_qasm_name(),
             ', '.join([str(p) for p in full_params]),
             '], q['.join([str(q) for q in self.location]),
-        )
+        ).replace('()', '')
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Return the op's unitary, see Unitary for more info."""
