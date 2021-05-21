@@ -37,7 +37,7 @@ class QSearchSynthesisPass(SynthesisPass):
         layer_generator: LayerGenerator = SimpleLayerGenerator(),
         success_threshold: float = 1e-6,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
-        max_depth: int | None = None,
+        max_layer: int | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -60,7 +60,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 a cost less than the `success_threshold`.
                 (Default: HSDistance())
 
-            max_depth (int): The maximum number of gates to append without
+            max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
 
@@ -95,23 +95,21 @@ class QSearchSynthesisPass(SynthesisPass):
                 % type(cost),
             )
 
-        if max_depth is not None and not is_integer(max_depth):
+        if max_layer is not None and not is_integer(max_layer):
             raise TypeError(
-                'Expected max_depth to be an integer, got %s' % type(
-                    max_depth,
-                ),
+                'Expected max_layer to be an integer, got %s' % type(max_layer),
             )
 
-        if max_depth is not None and max_depth <= 0:
+        if max_layer is not None and max_layer <= 0:
             raise ValueError(
-                'Expected max_depth to be positive, got %d.' % int(max_depth),
+                'Expected max_layer to be positive, got %d.' % int(max_layer),
             )
 
         self.heuristic_function = heuristic_function
         self.layer_gen = layer_generator
         self.success_threshold = success_threshold
         self.cost = cost
-        self.max_depth = max_depth
+        self.max_layer = max_layer
         super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
@@ -120,13 +118,16 @@ class QSearchSynthesisPass(SynthesisPass):
 
         best_dist = 1.0
         best_circ = None
+        best_layer = 0
 
-        frontier.add(self.layer_gen.gen_initial_layer(utry, data))
+        # BUG: Initial layer never gets instantiated
+        frontier.add(self.layer_gen.gen_initial_layer(utry, data), 0)
 
         while not frontier.empty():
-            child_circuits = self.layer_gen.gen_successors(frontier.pop(), data)
+            top_circuit, layer = frontier.pop()
+            child_circuits = self.layer_gen.gen_successors(top_circuit, data)
             for circuit in child_circuits:
-                if self.max_depth and circuit.get_num_cycles() < self.max_depth:
+                if self.max_layer is not None and layer < self.max_layer:
                     continue
 
                 circuit.instantiate(utry, cost_fn_gen=self.cost)
@@ -134,19 +135,29 @@ class QSearchSynthesisPass(SynthesisPass):
                 dist = self.cost.calc_cost(circuit, utry)
 
                 if dist < self.success_threshold:
-                    _logger.info('Circuit found with cost: %e.' % dist)
+                    _logger.info(
+                        'Circuit found with %d layers and cost: %e.'
+                        % (layer, dist),
+                    )
                     _logger.info('Successful synthesis.')
                     return circuit
 
                 if dist < best_dist:
-                    _logger.info('Circuit found with cost: %e.' % dist)
+                    _logger.info(
+                        'Circuit found with %d layers and cost: %e.'
+                        % (layer, dist),
+                    )
                     best_dist = dist
                     best_circ = circuit
+                    best_layer = layer
 
-                frontier.add(circuit)
+                frontier.add(circuit, layer + 1)
 
         _logger.info('Frontier emptied.')
-        _logger.info('Returning best known circuit with dist: %e.' % best_dist)
+        _logger.info(
+            'Returning best known circuit with %d layers and cost: %e.'
+            % (best_layer, best_dist),
+        )
 
         if best_circ is None:
             _logger.warning('No circuit found during search.')

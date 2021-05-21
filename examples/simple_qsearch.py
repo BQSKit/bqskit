@@ -11,7 +11,7 @@ from bqskit.compiler.passes.synthesis import QSearchSynthesisPass
 from bqskit.ir import Circuit
 
 # Enable logging
-logging.getLogger('bqskit').setLevel(logging.DEBUG)
+logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
 
 # Let's create a random 3-qubit unitary to synthesize and add it to a circuit.
 circuit = Circuit.from_unitary(unitary_group.rvs(8))
