@@ -38,6 +38,7 @@ class QSearchSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-6,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         max_layer: int | None = None,
+        instantiate_options: dict[str, Any] = {},
         **kwargs: Any,
     ) -> None:
         """
@@ -63,6 +64,10 @@ class QSearchSynthesisPass(SynthesisPass):
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
+
+            instantiate_options (dict[str: Any]): Options passed directly
+                to circuit.instantiate when instantiating circuit
+                templates. (Default: {})
 
             kwargs (dict[str, Any]): Keyword arguments that are passed
                 directly to SynthesisPass's constructor. See SynthesisPass
@@ -105,62 +110,72 @@ class QSearchSynthesisPass(SynthesisPass):
                 'Expected max_layer to be positive, got %d.' % int(max_layer),
             )
 
+        if not isinstance(instantiate_options, dict):
+            raise TypeError(
+                'Expected dictionary for instantiate_options, got %s.'
+                % type(instantiate_options),
+            )
+
         self.heuristic_function = heuristic_function
         self.layer_gen = layer_generator
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
+        self.instantiate_options = {'cost_fn_gen': self.cost}
+        self.instantiate_options.update(instantiate_options)
         super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
         frontier = Frontier(utry, self.heuristic_function)
 
-        best_dist = 1.0
-        best_circ = None
-        best_layer = 0
+        # Seed the search with an initial layer
+        initial_layer = self.layer_gen.gen_initial_layer(utry, data)
+        initial_layer.instantiate(
+            utry,
+            **self.instantiate_options,  # type: ignore
+        )
+        frontier.add(initial_layer, 0)
 
-        # BUG: Initial layer never gets instantiated
-        frontier.add(self.layer_gen.gen_initial_layer(utry, data), 0)
+        # Track best circuit, initially the initial layer
+        best_dist = self.cost.calc_cost(initial_layer, utry)
+        best_circ = initial_layer
+        best_layer = 0
+        _logger.info('Search started, initial layer has cost: %e.' % best_dist)
 
         while not frontier.empty():
             top_circuit, layer = frontier.pop()
-            child_circuits = self.layer_gen.gen_successors(top_circuit, data)
-            for circuit in child_circuits:
-                if self.max_layer is not None and layer < self.max_layer:
-                    continue
 
-                circuit.instantiate(utry, cost_fn_gen=self.cost)
+            # Generate successors and evaluate each
+            for circuit in self.layer_gen.gen_successors(top_circuit, data):
+
+                circuit.instantiate(
+                    utry,
+                    **self.instantiate_options,  # type: ignore
+                )
 
                 dist = self.cost.calc_cost(circuit, utry)
 
-                if dist < self.success_threshold:
-                    _logger.info(
-                        'Circuit found with %d layers and cost: %e.'
-                        % (layer, dist),
-                    )
-                    _logger.info('Successful synthesis.')
-                    return circuit
-
                 if dist < best_dist:
                     _logger.info(
-                        'Circuit found with %d layers and cost: %e.'
-                        % (layer, dist),
+                        'New best circuit found with %d layer%s and cost: %e.'
+                        % (layer + 1, '' if layer == 0 else 's', dist),
                     )
                     best_dist = dist
                     best_circ = circuit
                     best_layer = layer
 
-                frontier.add(circuit, layer + 1)
+                if dist < self.success_threshold:
+                    _logger.info('Successful synthesis.')
+                    return circuit
+
+                if self.max_layer is None or layer + 1 < self.max_layer:
+                    frontier.add(circuit, layer + 1)
 
         _logger.info('Frontier emptied.')
         _logger.info(
-            'Returning best known circuit with %d layers and cost: %e.'
-            % (best_layer, best_dist),
+            'Returning best known circuit with %d layer%s and cost: %e.'
+            % (best_layer, '' if best_layer == 1 else 's', best_dist),
         )
-
-        if best_circ is None:
-            _logger.warning('No circuit found during search.')
-            best_circ = Circuit.from_unitary(utry)
 
         return best_circ
