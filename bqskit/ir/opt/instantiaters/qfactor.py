@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -34,6 +35,7 @@ class QFactor(Instantiater):
         slowdown_factor: float = 0.0,
         reinit_delay: int = 40,
         log_delay: int = 100,
+        **kwargs: Any,
     ) -> None:
         """
         Construct and configure a QFactor Instantiater.
