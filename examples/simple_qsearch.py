@@ -1,4 +1,4 @@
-"""This script is contains a simple use case of the QFAST synthesis method."""
+"""This script is contains a simple use case of the QSearch synthesis method."""
 from __future__ import annotations
 
 import logging
