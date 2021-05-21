@@ -42,7 +42,7 @@ class VariableUnitaryGate(
         self.radixes = tuple(radixes)
         self.dim = int(np.prod(self.radixes))
         self.shape = (self.dim, self.dim)
-        self.num_params = self.dim**2
+        self.num_params = 2 * self.dim**2
         self.name = 'VariableUnitaryGate(%d)' % self.get_size()
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
@@ -55,7 +55,11 @@ class VariableUnitaryGate(
             UnitaryMatrix to the given matrix.
         """
         self.check_parameters(params)
-        return UnitaryMatrix.closest_to(np.reshape(params, self.shape))
+        mid = len(params) // 2
+        real = np.array(params[:mid], dtype=np.complex128)
+        imag = 1j * np.array(params[mid:], dtype=np.complex128)
+        x = real + imag
+        return UnitaryMatrix.closest_to(np.reshape(x, self.shape))
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Returns the gradient for this gate, see Gate for more info."""
@@ -68,4 +72,5 @@ class VariableUnitaryGate(
         """Returns optimal parameters with respect to an environment matrix."""
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
-        return list(np.reshape(Vh.conj().T @ U.conj().T, (self.num_params,)))
+        x = np.reshape(Vh.conj().T @ U.conj().T, (self.num_params // 2,))
+        return list(np.real(x)) + list(np.imag(x))
