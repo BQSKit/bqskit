@@ -1166,9 +1166,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                             self._circuit[cycle_index][involved_qudit] = None
 
         # Pop operations, form CircuitGate, insert gate
-        circuit_gate = CircuitGate(self.batch_pop(points), True)
+        circuit = self.batch_pop(points)
+        circuit_params = list(circuit.get_params())
+        circuit_gate = CircuitGate(circuit, True)
         qudits = sorted(list(region.keys()))
-        self.insert_gate(region_back_min, circuit_gate, qudits)
+        self.insert_gate(region_back_min, circuit_gate, qudits, circuit_params)
 
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
