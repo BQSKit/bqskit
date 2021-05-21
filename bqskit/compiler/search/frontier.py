@@ -3,11 +3,21 @@ from __future__ import annotations
 
 import heapq
 import itertools
+from typing import Any
+from typing import NamedTuple
 
 from bqskit.compiler.search.heuristic import HeuristicFunction
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+
+class FrontierElement(NamedTuple):
+    """The Frontier contains FrontierElements."""
+    cost: float
+    element_id: int
+    circuit: Circuit
+    extra_data: Any
 
 
 class Frontier:
@@ -42,18 +52,20 @@ class Frontier:
 
         self.target = target
         self.heuristic_function = heuristic_function
-        self._frontier: list[tuple[float, int, Circuit]] = []
+        self._frontier: list[FrontierElement] = []
         self._counter = itertools.count()
 
-    def add(self, circuit: Circuit) -> None:
+    def add(self, circuit: Circuit, extra_data: Any = None) -> None:
         """Add `circuit` into the frontier."""
         heuristic_value = self.heuristic_function(circuit, self.target)
         count = next(self._counter)
-        heapq.heappush(self._frontier, (heuristic_value, count, circuit))
+        elem = FrontierElement(heuristic_value, count, circuit, extra_data)
+        heapq.heappush(self._frontier, elem)
 
-    def pop(self) -> Circuit:
+    def pop(self) -> tuple[Circuit, Any]:
         """Pop the top circuit."""
-        return heapq.heappop(self._frontier)[2]
+        elem = heapq.heappop(self._frontier)
+        return elem.circuit, elem.extra_data
 
     def empty(self) -> bool:
         """Return true if the frontier is empty."""
