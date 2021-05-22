@@ -19,9 +19,8 @@ repos:
     -   id: fix-byte-order-marker
     -   id: fix-encoding-pragma
         args: ['--remove']
-    # TODO: enable once we make a release
-    #-   id: no-commit-to-branch
-    #    args: [--branch, master]
+    -   id: no-commit-to-branch
+        args: [--branch, master]
 -   repo: https://github.com/myint/docformatter
     rev: v1.3.1
     hooks:
