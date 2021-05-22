@@ -1,3 +1,4 @@
+"""This example script showcases the SimplePartitioner."""
 from __future__ import annotations
 
 import numpy as np
@@ -14,26 +15,26 @@ from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 
 
-def make_line(n):
+def make_line(n):  # type: ignore
     edge_set = set()
     for i in range(0, n - 1):
         edge_set.add((i, i + 1))
     return edge_set
 
 
-def input_state(circ, n):
+def input_state(circ, n):  # type: ignore
     for j in range(n):
         circ.append_gate(HGate(), [j])
         circ.append_gate(U1Gate(), [j], [-np.pi / float(2**(j))])
 
 
-def qft(circ, n):
+def qft(circ, n):  # type: ignore
     for j in range(n):
         circ.append_gate(HGate(), [j])
         for k in range(j + 1, n):
             circ.append_gate(
                 ControlledGate(U1Gate()), [
-                k, j,
+                    k, j,
                 ], [np.pi / float(2**(k - j))],
             )
     for j in range(int(np.floor(n / 2))):
@@ -44,10 +45,9 @@ def qft(circ, n):
 num_q = 5
 coup_map = make_line(num_q)
 circ = Circuit(num_q)
-"""
-input_state(circ, num_q)
-qft(circ, num_q)
-"""
+# input_state(circ, num_q)
+# qft(circ, num_q)
+
 # Make QFT circuit
 circ.append_gate(CNOTGate(), [1, 0])
 circ.append_gate(U3Gate(), [0], [0, 0, 7 * pi / 4])
@@ -138,7 +138,7 @@ circ.append_gate(CNOTGate(), [4, 3])
 # Do partitioning
 mach = MachineModel(num_q, coup_map)
 part = SimplePartitioner(mach, 3)
-data = {}
+data = {}  # type: ignore
 
 part.run(circ, data)
 
@@ -146,5 +146,5 @@ circ_iter = circ.CircuitIterator(circuit=circ._circuit)
 count = 0
 for op in circ_iter:
     print('unitary %d' % (count))
-    print(op.get_unitary().get_numpy())
+    print(op.get_unitary().get_numpy())  # type: ignore
     count += 1
