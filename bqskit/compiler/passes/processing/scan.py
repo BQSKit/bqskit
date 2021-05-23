@@ -71,3 +71,22 @@ class ScanningGateRemovalPass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
+        target = circuit.get_unitary()
+
+        circuit_copy = circuit.copy()
+        for point, op in circuit.operations_with_points(reversed=True):
+            _logger.info(f'Attempting removal of operation at point {point}.')
+            _logger.debug(f'Operation: {op}')
+
+            working_copy = circuit_copy.copy()
+            working_copy.pop(point)
+            working_copy.instantiate(
+                target,
+                **self.instantiate_options,  # type: ignore
+            )
+
+            if self.cost(working_copy, target) < self.success_threshold:
+                _logger.info('Successfully removed operation.')
+                circuit_copy = working_copy
+
+        circuit.become(circuit_copy)
