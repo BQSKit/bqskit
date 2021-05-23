@@ -7,6 +7,7 @@ import numpy as np
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
+from bqskit.compiler.passes.processing import ScanningGateRemovalPass
 from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
 from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
 from bqskit.ir import Circuit
@@ -37,10 +38,12 @@ task = CompilationTask(
             ),
             instantiate_options={
                 'min_iters': 0,
-                'diff_tol_r': 1e-3,
+                'diff_tol_r': 1e-4,
+                'dist_tol': 1e-8,
                 'max_iters': 2500,
             },
         ),
+        ScanningGateRemovalPass(),
     ],
 )
 
