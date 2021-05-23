@@ -1177,6 +1177,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit._gate_set = copy.deepcopy(self._gate_set)
         return circuit
 
+    def become(self, circuit: Circuit) -> None:
+        """Become a deep copy of `circuit`."""
+        self._circuit = copy.deepcopy(circuit._circuit)
+        self._gate_set = copy.deepcopy(circuit._gate_set)
+
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
         qudits = sorted({point[1] for point in points})
