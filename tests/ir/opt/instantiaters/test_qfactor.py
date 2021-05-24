@@ -34,9 +34,12 @@ class TestQFactorEndToEnd:
         params = QFactor().instantiate(circuit, u1, circuit.get_params())
         circuit.set_params(params)
 
+        g1_params = list(np.reshape(u1, (64,)))
+        g1_params = list(np.real(g1_params)) + list(np.imag(g1_params))
+
         assert np.allclose(
             circuit.get_unitary().get_numpy(),
-            g1.get_unitary(list(np.reshape(u1, (64,)))).get_numpy(),
+            g1.get_unitary(g1_params).get_numpy(),
         )
 
     def test_2_gate(self) -> None:
