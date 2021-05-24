@@ -124,7 +124,10 @@ class OPENQASMVisitor(Visitor):
     def gate(self, args: Any) -> None:
         gate_name = args.children[0]
         param_list = None if len(args.children) == 2 else args.children[1]
-        var_list = args.children[1 if len(args.children) == 2 else 2]
+        if len(args.children) == 2:
+            var_list = args.children[1]
+        else:
+            var_list = args.children[2]
 
         if gate_name not in self.gate_defs:
             raise LangException('Unrecognized gate: %s.' % gate_name)
