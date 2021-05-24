@@ -247,22 +247,22 @@ class LEAPSynthesisPass(SynthesisPass):
         with np.errstate(invalid='ignore', divide='ignore'):
             # Calculate predicted best value
             m, y_int, _, _, _ = linregress(best_layers, best_dists)
-            predicted_best = m * (new_layer) + y_int
+        predicted_best = m * (new_layer) + y_int
 
-            # Track new values
-            best_layers.append(new_layer)
-            best_dists.append(best_dist)
+        # Track new values
+        best_layers.append(new_layer)
+        best_dists.append(best_dist)
 
-            if np.isnan(predicted_best):
-                return False
+        if np.isnan(predicted_best):
+            return False
 
-            # Compute difference between actual value
-            delta = predicted_best - best_dist
+        # Compute difference between actual value
+        delta = predicted_best - best_dist
 
-            _logger.debug(
-                'Predicted best value %f for new best best with delta %f.'
-                % (predicted_best, delta),
-            )
+        _logger.debug(
+            'Predicted best value %f for new best best with delta %f.'
+            % (predicted_best, delta),
+        )
 
-            layers_added = new_layer - last_prefix_layer
-            return delta < 0 and layers_added >= self.min_prefix_size
+        layers_added = new_layer - last_prefix_layer
+        return delta < 0 and layers_added >= self.min_prefix_size
