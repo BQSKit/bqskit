@@ -25,7 +25,7 @@ data = {'multi_gate_score': 1, 'single_gate_score': 1}
 part.run(circ, data)
 
 # for point, op in circ.operations_with_points():
-#	print(op, point)
+#     print(op, point)
 
 print('Num Cycles After:', circ.get_num_cycles())
 print('Num Ops After:', circ.get_num_operations())

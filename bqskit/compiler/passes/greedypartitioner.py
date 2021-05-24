@@ -14,8 +14,8 @@ from bqskit.ir.circuit import Circuit
 
 class GreedyPartitioner(BasePass):
     # Class variables
-    used_qudits = set()     # set[int]
-    qudit_groups = []       # list[set[int]]
+    used_qudits: set[int] = set()
+    qudit_groups: list[set[int]] = []
 
     def __init__(
         self,
@@ -68,20 +68,20 @@ class GreedyPartitioner(BasePass):
             is assumed to be undirected.
         """
         # Create an adjaceny dict
-        adj_dict = {k: [] for k in range(self.num_verts)}
+        adj_dict = {k: [] for k in range(self.num_verts)}  # type: ignore
         for edge in self.coupling_graph:
             if edge[0] < self.num_verts and edge[1] < self.num_verts:
                 adj_dict[edge[0]].append(edge[1])
                 adj_dict[edge[1]].append(edge[0])
 
-        found_paths = set()
+        found_paths = set()  # type: ignore
         # For each qudit
         for vertex in range(self.num_verts):
-            path = set()
+            path = set()  # type: ignore
             # Get every valid set containing vertex with cardinality ==
             # block_size
             self._qudit_group_search(
-                adj_dict=adj_dict,
+                adj_dict=adj_dict,  # type: ignore
                 all_paths=found_paths,
                 path=path,
                 vertex=vertex,
@@ -125,9 +125,9 @@ class GreedyPartitioner(BasePass):
         if len(curr_path) == limit:
             all_paths.add(frozenset(curr_path))
         else:
-            frontier = []
+            frontier = []  # type: ignore
             for node in curr_path:
-                frontier.extend(adj_dict[node])
+                frontier.extend(adj_dict[node])  # type: ignore
             for neighbor in frontier:
                 if neighbor not in curr_path:
                     self._qudit_group_search(
@@ -172,7 +172,7 @@ class GreedyPartitioner(BasePass):
             self.single_gate_score = data['single_gate_score']
 
         # Get the set of all vertices used in the algorithm
-        #self.used_verts = get_used_qudit_set(circuit)
+        # self.used_verts = get_used_qudit_set(circuit)
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
@@ -194,7 +194,7 @@ class GreedyPartitioner(BasePass):
         # Find all paths between any two used vertices that is less than the
         # synthesizable blocksize
         self.qudit_groups = [
-            list(q_group)
+            list(q_group)  # type: ignore
             for q_group in self.get_qudit_groups()
         ]
 
@@ -210,16 +210,16 @@ class GreedyPartitioner(BasePass):
                     if all([qudit in q_group for qudit in op.location]):
                         for qudit in op.location:
                             op_cycles[cycle][q_group_index][
-                                q_group.index(
-                                qudit,
+                                q_group.index(  # type: ignore
+                                    qudit,
                                 )
                             ] = self.multi_gate_score
                     else:
                         for qudit in op.location:
                             if qudit in q_group:
                                 op_cycles[cycle][q_group_index][
-                                    q_group.index(
-                                    qudit,
+                                    q_group.index(  # type: ignore
+                                        qudit,
                                     )
                                 ] = -1
             else:
@@ -227,8 +227,8 @@ class GreedyPartitioner(BasePass):
                 for q_group_index, q_group in enumerate(self.qudit_groups):
                     if qudit in q_group:
                         op_cycles[cycle][q_group_index][
-                            q_group.index(
-                            qudit,
+                            q_group.index(  # type: ignore
+                                qudit,
                             )
                         ] = self.single_gate_score
 
@@ -240,8 +240,10 @@ class GreedyPartitioner(BasePass):
             for cycle in range(num_cycles):
                 if cycle:
                     for qudit in range(self.block_size):
-                        if op_cycles[cycle - 1][q_group_index][qudit] == - \
-                                1 and op_cycles[cycle][q_group_index][qudit] != -1:
+                        if (
+                            op_cycles[cycle - 1][q_group_index][qudit] == -1
+                            and op_cycles[cycle][q_group_index][qudit] != -1
+                        ):
                             max_blocks.append(
                                 [score, block_start, block_ends, q_group_index],
                             )
@@ -256,7 +258,6 @@ class GreedyPartitioner(BasePass):
             max_blocks.append([score, block_start, block_ends, q_group_index])
 
         block_id = -1
-        new_blocks = []
         max_blocks.sort()
         remaining_assignments = self.num_verts * num_cycles
         block_map = [[-1] * self.num_verts for cycle in range(num_cycles)]
@@ -266,15 +267,20 @@ class GreedyPartitioner(BasePass):
             if len(max_blocks) == 1:
                 perform_assign = True
             else:
-                block_start = max_blocks[-1][1]
-                block_ends = max_blocks[-1][2]
-                q_group_index = max_blocks[-1][3]
+                block_start = max_blocks[-1][1]  # type: ignore
+                block_ends = max_blocks[-1][2]  # type: ignore
+                q_group_index = max_blocks[-1][3]  # type: ignore
                 score = 0
                 for cycle in range(block_start, max(block_ends)):
                     for qudit in range(self.block_size):
-                        if cycle < block_ends[qudit] and block_map[cycle][self.qudit_groups[q_group_index][qudit]] == -1:
+                        if (
+                            cycle < block_ends[qudit]
+                            and block_map[cycle][
+                                self.qudit_groups[q_group_index][qudit]  # type: ignore  # noqa
+                            ] == -1
+                        ):
                             score += 1
-                if score < max_blocks[-2][0]:
+                if score < max_blocks[-2][0]:  # type: ignore
                     max_blocks[-1][0] = score
                     max_blocks.sort()
                 else:
@@ -282,13 +288,15 @@ class GreedyPartitioner(BasePass):
 
             if perform_assign:
                 block_id += 1
-                block_start = max_blocks[-1][1]
-                block_ends = max_blocks[-1][2]
-                q_group_index = max_blocks[-1][3]
+                block_start = max_blocks[-1][1]  # type: ignore
+                block_ends = max_blocks[-1][2]  # type: ignore
+                q_group_index = max_blocks[-1][3]  # type: ignore
                 prev_status = None
                 for cycle in range(block_start, max(block_ends)):
                     status = [
-                        block_map[cycle][self.qudit_groups[q_group_index][qudit]]
+                        block_map[cycle][
+                            self.qudit_groups[q_group_index][qudit]  # type: ignore  # noqa
+                        ]
                         for qudit in range(self.block_size)
                     ]
                     if prev_status and len(prev_status) <= len(
@@ -296,9 +304,16 @@ class GreedyPartitioner(BasePass):
                     ) and status != prev_status:
                         block_id += 1
                     for qudit in range(self.block_size):
-                        if cycle < block_ends[qudit] and block_map[cycle][self.qudit_groups[q_group_index][qudit]] == -1:
+                        if (
+                            cycle < block_ends[qudit]
+                            and block_map[cycle][
+                                self.qudit_groups[  # type: ignore
+                                    q_group_index
+                                ][qudit]
+                            ] == -1
+                        ):
                             block_map[cycle][
-                                self.qudit_groups[q_group_index]
+                                self.qudit_groups[q_group_index]  # type: ignore
                                 [qudit]
                             ] = block_id
                             remaining_assignments -= 1
@@ -308,7 +323,7 @@ class GreedyPartitioner(BasePass):
         for cycle in range(num_cycles):
             if not cycle or block_map[cycle] == block_map[cycle - 1]:
                 continue
-            indices = [{}, {}]
+            indices = [{}, {}]  # type: ignore
             for i in range(2):
                 for qudit in range(self.num_verts):
                     block = block_map[cycle - i][qudit]
@@ -320,9 +335,8 @@ class GreedyPartitioner(BasePass):
                     if all([qudit in prev_qudits for qudit in current_qudits]):
                         for qudit in current_qudits:
                             block_map[cycle][qudit] = prev_blocks
-            prev_cycle = cycle
 
-        blocks = {}
+        blocks = {}  # type: ignore
         for cycle in range(num_cycles):
             for qudit in range(self.num_verts):
                 if block_map[cycle][qudit] not in blocks:
@@ -332,7 +346,7 @@ class GreedyPartitioner(BasePass):
 
         block_order = []
         for block in blocks.values():
-            block_order.append([block, block[-1]])
+            block_order.append([block, block[-1]])  # type: ignore
         block_order.sort(reverse=True, key=lambda x: x[1])
 
         for block, start_cycle in block_order:
@@ -340,7 +354,11 @@ class GreedyPartitioner(BasePass):
             for point, op in circuit.operations_with_points():
                 cycle = point.cycle
                 qudit = point.qudit
-                if qudit in block and cycle >= start_cycle and cycle <= block[qudit]:
+                if (
+                    qudit in block  # type: ignore
+                    and cycle >= start_cycle
+                    and cycle <= block[qudit]  # type: ignore
+                ):
                     points_in_block.append(point)
 
             circuit.fold(points_in_block)
