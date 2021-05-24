@@ -41,7 +41,7 @@ class LEAPSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-6,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         max_layer: int | None = None,
-        min_prefix_layers: int = 3,
+        min_prefix_size: int = 3,
         instantiate_options: dict[str, Any] = {},
         **kwargs: Any,
     ) -> None:
@@ -69,7 +69,7 @@ class LEAPSynthesisPass(SynthesisPass):
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
 
-            min_prefix_layers (int): The minimum number of layers needed
+            min_prefix_size (int): The minimum number of layers needed
                 to prefix the circuit.
 
             instantiate_options (dict[str: Any]): Options passed directly
@@ -81,7 +81,7 @@ class LEAPSynthesisPass(SynthesisPass):
                 for more info.
 
         Raises:
-            ValueError: If `max_depth` or `min_prefix_layers` is nonpositive.
+            ValueError: If `max_depth` or `min_prefix_size` is nonpositive.
         """
         if not isinstance(heuristic_function, HeuristicFunction):
             raise TypeError(
@@ -117,16 +117,16 @@ class LEAPSynthesisPass(SynthesisPass):
                 'Expected max_layer to be positive, got %d.' % int(max_layer),
             )
 
-        if min_prefix_layers is not None and not is_integer(min_prefix_layers):
+        if min_prefix_size is not None and not is_integer(min_prefix_size):
             raise TypeError(
-                'Expected min_prefix_layers to be an integer, got %s'
-                % type(min_prefix_layers),
+                'Expected min_prefix_size to be an integer, got %s'
+                % type(min_prefix_size),
             )
 
-        if min_prefix_layers is not None and min_prefix_layers <= 0:
+        if min_prefix_size is not None and min_prefix_size <= 0:
             raise ValueError(
-                'Expected min_prefix_layers to be positive, got %d.'
-                % int(min_prefix_layers),
+                'Expected min_prefix_size to be positive, got %d.'
+                % int(min_prefix_size),
             )
 
         if not isinstance(instantiate_options, dict):
@@ -140,7 +140,7 @@ class LEAPSynthesisPass(SynthesisPass):
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
-        self.min_prefix_layers = min_prefix_layers
+        self.min_prefix_size = min_prefix_size
         self.instantiate_options = {'cost_fn_gen': self.cost}
         self.instantiate_options.update(instantiate_options)
         super().__init__(**kwargs)
@@ -265,4 +265,4 @@ class LEAPSynthesisPass(SynthesisPass):
             )
 
             layers_added = new_layer - last_prefix_layer
-            return delta < 0 and layers_added >= self.min_prefix_layers
+            return delta < 0 and layers_added >= self.min_prefix_size
