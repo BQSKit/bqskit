@@ -310,17 +310,12 @@ class QPredictDecompositionPass(SynthesisPass):
             for size, sorted_locations in sorted_locations_by_size.items()
         }
 
-        sorted_locations: list[tuple[int, ...]] = []
-        # for i in range(max(sorted_locations_length.values())):
-        #     for size, locations in sorted_locations_by_size.items():
-        #         if i < sorted_locations_length[size]:
-        #             sorted_locations.append(locations[i][0])
-
         sorted_locations_by_sorted_size = sorted(
             sorted_locations_by_size.items(),
             key=lambda x: x[0],
         )
 
+        sorted_locations: list[tuple[int, ...]] = []
         for size, locations in sorted_locations_by_sorted_size:
             for i in range(self.fail_limit):
                 if i < sorted_locations_length[size]:
