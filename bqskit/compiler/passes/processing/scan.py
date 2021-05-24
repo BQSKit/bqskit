@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.point import CircuitPoint
@@ -26,6 +28,7 @@ class ScanningGateRemovalPass(BasePass):
         success_threshold: float = 1e-6,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         instantiate_options: dict[str, Any] = {},
+        collection_filter: Callable[[Operation], bool] | None = None,
     ) -> None:
         """
         Construct a ScanningGateRemovalPass.
@@ -47,6 +50,13 @@ class ScanningGateRemovalPass(BasePass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
+
+            collection_filter (Callable[[Operation], bool] | None):
+                A predicate that determines which operations should be
+                attempted to be removed. Called with each operation
+                in the circuit. If this returns true, this pass will
+                attempt to remove that operation. Defaults to all
+                operations.
         """
 
         if not is_real_number(success_threshold):
@@ -65,6 +75,14 @@ class ScanningGateRemovalPass(BasePass):
             raise TypeError(
                 'Expected dictionary for instantiate_options, got %s.'
                 % type(instantiate_options),
+            )
+
+        self.collection_filter = collection_filter or default_collection_filter
+
+        if not callable(self.collection_filter):
+            raise TypeError(
+                'Expected callable method that maps Operations to booleans for'
+                ' collection_filter, got %s.' % type(self.collection_filter),
             )
 
         self.start_from_left = start_from_left
@@ -86,6 +104,11 @@ class ScanningGateRemovalPass(BasePass):
         circuit_copy = circuit.copy()
         reverse_iter = not self.start_from_left
         for point, op in circuit.operations_with_points(reversed=reverse_iter):
+
+            if not self.collection_filter(op):
+                _logger.debug(f'Skipping operation {op} at point {point}.')
+                continue
+
             _logger.info(f'Attempting removal of operation at point {point}.')
             _logger.debug(f'Operation: {op}')
 
@@ -105,3 +128,7 @@ class ScanningGateRemovalPass(BasePass):
                 circuit_copy = working_copy
 
         circuit.become(circuit_copy)
+
+
+def default_collection_filter(op: Operation) -> bool:
+    return True
