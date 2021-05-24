@@ -14,8 +14,8 @@ from bqskit.ir.circuit import Circuit
 
 class GreedyPartitioner(BasePass):
     # Class variables
-    used_qudits: set[int] = set()     # set[int]
-    qudit_groups: list[set[int]] = []       # list[set[int]]
+    used_qudits: set[int] = set()
+    qudit_groups: list[set[int]] = []
 
     def __init__(
         self,
