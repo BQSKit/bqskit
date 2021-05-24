@@ -114,7 +114,7 @@ class OPENQASMVisitor(Visitor):
 
     def qreg(self, args: Any) -> None:
         reg_name = args.children[0]
-        if any(reg_name == reg[0] for reg in self.qubit_regs):
+        if any(reg_name == reg.name for reg in self.qubit_regs):
             raise LangException('Qubit register redeclared: %s.' % reg_name)
         reg_size = int(args.children[1])
         reg = QubitReg(reg_name, reg_size)
