@@ -141,7 +141,7 @@ class LEAPSynthesisPass(SynthesisPass):
         self.cost = cost
         self.max_layer = max_layer
         self.min_prefix_size = min_prefix_size
-        self.instantiate_options = {'cost_fn_gen': self.cost}
+        self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
         self.instantiate_options.update(instantiate_options)
         super().__init__(**kwargs)
 
@@ -172,10 +172,7 @@ class LEAPSynthesisPass(SynthesisPass):
             # Generate successors and evaluate each
             for circuit in self.layer_gen.gen_successors(top_circuit, data):
 
-                circuit.instantiate(
-                    utry,
-                    **self.instantiate_options,  # type: ignore
-                )
+                circuit.instantiate(utry, **self.instantiate_options)
 
                 dist = self.cost.calc_cost(circuit, utry)
 
