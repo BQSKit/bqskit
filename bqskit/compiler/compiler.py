@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 from multiprocessing import Pipe
 from multiprocessing import Process
+from typing import Any
 
 from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.task import TaskResult
@@ -43,7 +44,15 @@ class Compiler:
         self.process.start()
         _logger.info('Started compiler process.')
 
-    def __del__(self) -> None:
+    def __enter__(self) -> Compiler:
+        """Enter a context for this compiler."""
+        return self
+
+    def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
+        """Shutdowns compiler and closes connection."""
+        self.close()
+
+    def close(self) -> None:
         """Shutdowns compiler and closes connection."""
         self.conn.send('CLOSE')
         self.process.join()

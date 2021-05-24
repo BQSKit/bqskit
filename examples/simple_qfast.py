@@ -20,10 +20,7 @@ circuit = Circuit.from_unitary(unitary_group.rvs(8))
 task = CompilationTask(circuit, [QFASTDecompositionPass()])
 
 # Finally let's create create the compiler and execute the CompilationTask.
-compiler = Compiler()
-compiled_circuit = compiler.compile(task)
-for op in compiled_circuit:
-    print(op)
-
-# Close our connection to the compiler backend
-del compiler
+with Compiler() as compiler:
+    compiled_circuit = compiler.compile(task)
+    for op in compiled_circuit:
+        print(op)
