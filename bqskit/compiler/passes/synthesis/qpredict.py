@@ -189,9 +189,11 @@ class QPredictDecompositionPass(SynthesisPass):
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
 
-        # 0. Skip any unitaries too small for the configured gate.
+        # 0. Skip any unitaries too small for the configured block.
         if self.block_size_start > utry.get_size():
-            _logger.warning('Skipping unitary synthesis since gate is larger.')
+            _logger.warning(
+                'Skipping synthesis: block size is larger than input unitary.',
+            )
             return Circuit.from_unitary(utry)
 
         # 1. Create empty circuit with same size and radixes as `utry`.
