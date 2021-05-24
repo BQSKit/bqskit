@@ -88,7 +88,7 @@ class SimplePartitioner(BasePass):
             adj_dict[edge[0]].append(edge[1])
             adj_dict[edge[1]].append(edge[0])
 
-        found_paths: set[list[int]] = set()
+        found_paths: set[frozenset[int]] = set()
         # For each qudit
         for vertex in range(self.num_qudits):
             path: set[int] = set()
@@ -107,7 +107,7 @@ class SimplePartitioner(BasePass):
     def _qudit_group_search(
         self,
         adj_dict: dict[int, list[int]],
-        all_paths: set[list[int]],
+        all_paths: set[frozenset[int]],
         path: set[int],
         vertex: int,
         limit: int,
@@ -119,7 +119,7 @@ class SimplePartitioner(BasePass):
             adj_dict (dict[int, list[int]]): Adjacency list/dictionary for
                 the graph.
 
-            all_paths (set[list[int]]): A list that countains all paths
+            all_paths (set[frozenset[int]]): A list that countains all paths
                 found so far of length == limit.
 
             path (set[int]): The list that charts the current path
@@ -134,7 +134,7 @@ class SimplePartitioner(BasePass):
         curr_path = path.copy()
         curr_path.add(vertex)
         if len(curr_path) == limit:
-            all_paths.add(curr_path)  # type: ignore
+            all_paths.add(frozenset(curr_path))  # type: ignore
         else:
             frontier: list[int] = []
             for node in curr_path:
@@ -294,7 +294,7 @@ class SimplePartitioner(BasePass):
 
                 # Find the earliest cycle in the group in which each q is
                 # involved with an "outsider" qudit
-                insider_qudits = q_group
+                insider_qudits = q_group.copy()
                 # TODO: CircuitIterator is costly to use, find a way to iterate
                 #   through a subcircuit in order.
                 circ_iter = Circuit.SubCircuitIterator(  # type: ignore
@@ -305,10 +305,10 @@ class SimplePartitioner(BasePass):
                 # Skip operations that are before the block_start or do not
                 # involve qudits in the insider_qudits
                 for point, op in circ_iter:  # type: ignore
+                    # Do not count outside block limits
                     # Check if we have finished partitioning the current block
                     if len(insider_qudits) == 0:
                         break
-                    # Do not count outside block limits
                     elif point.cycle < sched_depth[point.qudit]:
                         continue
 
@@ -319,10 +319,13 @@ class SimplePartitioner(BasePass):
                         other_qudit not in insider_qudits for other_qudit
                         in op.location
                     ):
-                        curr_block.block_end[point.qudit] = max(
-                            point.cycle - 1, 0,
-                        )
-                        insider_qudits -= {point.qudit}
+                        for other_qudit in op.location:
+                            if other_qudit in insider_qudits:
+                                curr_block.block_end[other_qudit] = max(
+                                    point.cycle - 1, 0,
+                                )
+                                insider_qudits -= {other_qudit}
+
                     # Else add to the score of the current block, update the
                     # end of the block for all still valid insider qudits.
                     else:
