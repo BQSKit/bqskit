@@ -23,4 +23,9 @@ class DijkstraHeuristic(HeuristicFunction):
         target: UnitaryMatrix | StateVector,
     ) -> float:
         """Return the heuristic's value, see HeuristicFunction for more info."""
-        return float(circuit.get_num_operations())
+        cost = 0.0
+        for gate in circuit.get_gate_set():
+            if gate.get_size() == 1:
+                continue
+            cost += float(circuit.count(gate))
+        return cost

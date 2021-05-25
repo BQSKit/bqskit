@@ -68,6 +68,11 @@ class AStarHeuristic(HeuristicFunction):
         target: UnitaryMatrix | StateVector,
     ) -> float:
         """Return the heuristic's value, see HeuristicFunction for more info."""
-        cost = float(circuit.get_num_operations())
+        cost = 0.0
+        for gate in circuit.get_gate_set():
+            if gate.get_size() == 1:
+                continue
+            cost += float(circuit.count(gate))
+
         heuristic = self.cost_gen.calc_cost(circuit, target)
         return self.heuristic_factor * heuristic + self.cost_factor * cost
