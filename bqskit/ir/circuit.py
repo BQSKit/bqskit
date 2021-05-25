@@ -1187,14 +1187,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
         qudits = sorted({point[1] for point in points})
+        ops = []
+        for point in sorted(points):
+            try:
+                op = (point[0], self[point])
+                if op not in ops:
+                    ops.append(op)
+            except IndexError:
+                continue
+
         slice_size = len(qudits)
         slice_radixes = [self.get_radixes()[q] for q in qudits]
         slice = Circuit(slice_size, slice_radixes)
-        for point in points:
-            try:
-                slice.append(self[point])
-            except IndexError:
-                pass
+        slice.extend([op[1] for op in ops])
         return slice
 
     def clear(self) -> None:
