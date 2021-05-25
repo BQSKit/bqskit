@@ -46,6 +46,7 @@ task = CompilationTask(
             },
         ),
         WindowOptimizationPass(
+            window_size=11,
             synthesispass=QSearchSynthesisPass(
                 layer_generator=SimpleLayerGenerator(
                     single_qudit_gate_1=VariableUnitaryGate(1),
