@@ -25,7 +25,7 @@ class ScanningGateRemovalPass(BasePass):
     def __init__(
         self,
         start_from_left: bool = True,
-        success_threshold: float = 1e-6,
+        success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         instantiate_options: dict[str, Any] = {},
         collection_filter: Callable[[Operation], bool] | None = None,

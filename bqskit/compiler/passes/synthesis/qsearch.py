@@ -35,7 +35,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self,
         heuristic_function: HeuristicFunction = AStarHeuristic(),
         layer_generator: LayerGenerator = SimpleLayerGenerator(),
-        success_threshold: float = 1e-6,
+        success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
         max_layer: int | None = None,
         instantiate_options: dict[str, Any] = {},
