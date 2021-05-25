@@ -38,8 +38,8 @@ task = CompilationTask(
             ),
             instantiate_options={
                 'min_iters': 0,
-                'diff_tol_r': 1e-4,
-                'dist_tol': 1e-8,
+                'diff_tol_r': 1e-5,
+                'dist_tol': 1e-11,
                 'max_iters': 2500,
             },
         ),
