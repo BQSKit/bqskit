@@ -41,7 +41,7 @@ class ScanningGateRemovalPass(BasePass):
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
                 described by the hilbert schmidt cost function.
-                (Default: 1e-6)
+                (Default: 1e-10)
 
             cost (CostFunction | None): The cost function that determines
                 successful removal of a gate.
