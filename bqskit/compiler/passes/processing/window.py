@@ -122,7 +122,6 @@ class WindowOptimizationPass(BasePass):
 
             # Synthesize
             utry = window.get_unitary()
-            print(utry.get_numpy())
             new_window = self.synthesispass.synthesize(utry, data)
 
             # Replace
