@@ -166,6 +166,10 @@ class LEAPSynthesisPass(SynthesisPass):
         last_prefix_layer = 0
         _logger.info('Search started, initial layer has cost: %e.' % best_dist)
 
+        if best_dist < self.success_threshold:
+            _logger.info('Successful synthesis.')
+            return initial_layer
+
         while not frontier.empty():
             top_circuit, layer = frontier.pop()
 
