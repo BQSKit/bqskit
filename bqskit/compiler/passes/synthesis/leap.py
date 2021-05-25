@@ -148,6 +148,7 @@ class LEAPSynthesisPass(SynthesisPass):
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
         frontier = Frontier(utry, self.heuristic_function)
+        data['window_markers'] = []
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
@@ -201,6 +202,7 @@ class LEAPSynthesisPass(SynthesisPass):
                         )
                         last_prefix_layer = layer + 1
                         frontier.clear()
+                        data['window_markers'].append(circuit.get_num_cycles())
                         if self.max_layer is None or layer + 1 < self.max_layer:
                             frontier.add(circuit, layer + 1)
                         break
