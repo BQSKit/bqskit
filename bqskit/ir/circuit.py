@@ -1627,9 +1627,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             points = [
                 CircuitPoint(cycle_index, qudit_index)
                 for cycle_index in range(
-                    points.start if not None else 0,
+                    points.start if points.start is not None else 0,
                     points.stop,
-                    points.step if not None else 1,
+                    points.step if points.step is not None else 1,
                 )
                 for qudit_index in range(self.get_size())
             ]
@@ -1644,14 +1644,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     points = [
                         CircuitPoint(cycle_index, qudit_index)
                         for cycle_index in range(
-                            points[0].start if not None else 0,
+                            0 if points[0].start is None else points[0].start,
                             points[0].stop,
-                            points[0].step if not None else 1,
+                            1 if points[0].step is None else points[0].step,
                         )
                         for qudit_index in range(
-                            points[1].start if not None else 0,
+                            0 if points[1].start is None else points[1].start,
                             points[1].stop,
-                            points[1].step if not None else 1,
+                            1 if points[1].step is None else points[1].step,
                         )
                     ]
                 if (
@@ -1661,9 +1661,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     points = [
                         CircuitPoint(cycle_index, points[1])  # type: ignore
                         for cycle_index in range(
-                            points[0].start if not None else 0,
+                            0 if points[0].start is None else points[0].start,
                             points[0].stop,
-                            points[0].step if not None else 1,
+                            1 if points[0].step is None else points[0].step,
                         )
                     ]
                 if (
@@ -1673,9 +1673,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     points = [
                         CircuitPoint(points[0], qudit_index)  # type: ignore
                         for qudit_index in range(
-                            points[1].start if not None else 0,
+                            0 if points[1].start is None else points[1].start,
                             points[1].stop,
-                            points[1].step if not None else 1,
+                            1 if points[1].step is None else points[1].step,
                         )
                     ]
 
