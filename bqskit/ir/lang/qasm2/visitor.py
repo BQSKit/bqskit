@@ -31,7 +31,9 @@ from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rxx import RXXGate
 from bqskit.ir.gates.parameterized.ry import RYGate
+from bqskit.ir.gates.parameterized.ryy import RYYGate
 from bqskit.ir.gates.parameterized.rz import RZGate
+from bqskit.ir.gates.parameterized.rzz import RZZGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
@@ -108,6 +110,8 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['sx'] = GateDef('sx', 0, 1, SXGate())
         self.gate_defs['sxdg'] = GateDef('sxdg', 0, 1, DaggerGate(SXGate()))
         self.gate_defs['rxx'] = GateDef('rxx', 1, 2, RXXGate())
+        self.gate_defs['ryy'] = GateDef('ryy', 1, 2, RYYGate())
+        self.gate_defs['rzz'] = GateDef('rzz', 1, 2, RZZGate())
         self.gate_defs['cu1'] = GateDef('cu1', 1, 2, ControlledGate(U1Gate()))
         self.gate_defs['cu2'] = GateDef('cu2', 2, 2, ControlledGate(U2Gate()))
         self.gate_defs['cu3'] = GateDef('cu3', 3, 2, ControlledGate(U3Gate()))
