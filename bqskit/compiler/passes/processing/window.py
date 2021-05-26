@@ -5,6 +5,8 @@ import logging
 from typing import Any
 from typing import Callable
 
+import numpy as np
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passes.synthesis.qsearch import QSearchSynthesisPass
 from bqskit.compiler.passes.synthesispass import SynthesisPass
@@ -26,7 +28,7 @@ class WindowOptimizationPass(BasePass):
 
     def __init__(
         self,
-        window_size: int = 9,
+        window_size: int = 14,
         synthesispass: SynthesisPass = QSearchSynthesisPass(),
         replace_filter: Callable[[Circuit, Circuit], bool] | None = None,
     ) -> None:
@@ -35,7 +37,7 @@ class WindowOptimizationPass(BasePass):
 
         Args:
             window_size (int): The size of the window to surround each
-                marker.
+                marker. (Default: 14)
 
             synthesispass (SynthesisPass): The configured synthesis algorithm
                 to use during window synthesis.
@@ -84,7 +86,7 @@ class WindowOptimizationPass(BasePass):
 
         # Check data for windows markers
         if 'window_markers' not in data:
-            _logger.debug('Did not find any window markers.')
+            _logger.warning('Did not find any window markers.')
             return
 
         window_markers = data['window_markers']
@@ -105,8 +107,7 @@ class WindowOptimizationPass(BasePass):
 
             # Slice window
             begin_cycle = marker - self.window_size // 2
-            end_cycle = marker + self.window_size // 2
-            end_cycle += 1 if self.window_size % 2 == 1 else 0
+            end_cycle = marker + np.ceil(self.window_size / 2)
 
             if begin_cycle < 0:
                 begin_cycle = 0
