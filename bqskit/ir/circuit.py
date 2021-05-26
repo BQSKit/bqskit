@@ -1048,6 +1048,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self.pop(point)
         self.insert_circuit(point[0], circuit, location)
 
+    def compress(self) -> None:
+        """Compress the circuit's cycles."""
+        pass  # TODO
+
     def fold(self, points: Sequence[CircuitPointLike]) -> None:
         """
         Fold the operations at the specified `points` into a CircuitGate.
