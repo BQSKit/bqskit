@@ -60,19 +60,4 @@ class CostFunctionGenerator(abc.ABC):
         target: UnitaryMatrix | StateVector,
     ) -> float:
         """Generate and calculate the cost from the CostFunction."""
-
-        if not isinstance(circuit, Circuit):
-            raise TypeError(
-                'Expected circuit, got %s.' % type(circuit),
-            )
-
-        if (
-            not isinstance(target, UnitaryMatrix)
-            and not isinstance(target, StateVector)
-        ):
-            raise TypeError(
-                'Expected UnitaryMatrix or StateVector for target'
-                ', got %s.' % type(target),
-            )
-
         return self.calc_cost(circuit, target)

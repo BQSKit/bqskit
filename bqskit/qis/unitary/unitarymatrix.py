@@ -11,6 +11,7 @@ from typing import Union
 
 import numpy as np
 import scipy as sp
+from scipy.stats import unitary_group
 
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.utils.typing import is_integer
@@ -185,7 +186,7 @@ class UnitaryMatrix(Unitary):
                 ' %d != %d' % (len(radixes), size),
             )
 
-        U = sp.stats.unitary_group.rvs(int(np.prod(radixes)))
+        U = unitary_group.rvs(int(np.prod(radixes)))
         return UnitaryMatrix(U, radixes, False)
 
     def __matmul__(self, rhs: object) -> UnitaryMatrix:

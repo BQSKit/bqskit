@@ -40,7 +40,7 @@ class HilbertSchmidtCost(DifferentiableCostFunction):
 
         self.target = target
         self.circuit = circuit
-        self.target_h = target.get_dagger().get_numpy()
+        self.target_h = target.get_numpy().conj()
         self.dem = target.get_dim()
 
     def get_cost(self, params: Sequence[float] | np.ndarray) -> float:

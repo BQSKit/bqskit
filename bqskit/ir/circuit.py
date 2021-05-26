@@ -1179,17 +1179,27 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit._gate_set = copy.deepcopy(self._gate_set)
         return circuit
 
+    def become(self, circuit: Circuit) -> None:
+        """Become a deep copy of `circuit`."""
+        self._circuit = copy.deepcopy(circuit._circuit)
+        self._gate_set = copy.deepcopy(circuit._gate_set)
+
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
         qudits = sorted({point[1] for point in points})
+        ops = []
+        for point in sorted(points):
+            try:
+                op = (point[0], self[point])
+                if op not in ops:
+                    ops.append(op)
+            except IndexError:
+                continue
+
         slice_size = len(qudits)
         slice_radixes = [self.get_radixes()[q] for q in qudits]
         slice = Circuit(slice_size, slice_radixes)
-        for point in points:
-            try:
-                slice.append(self[point])
-            except IndexError:
-                pass
+        slice.extend([op[1] for op in ops])
         return slice
 
     def clear(self) -> None:
@@ -1622,9 +1632,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             points = [
                 CircuitPoint(cycle_index, qudit_index)
                 for cycle_index in range(
-                    points.start if not None else 0,
+                    points.start if points.start is not None else 0,
                     points.stop,
-                    points.step if not None else 1,
+                    points.step if points.step is not None else 1,
                 )
                 for qudit_index in range(self.get_size())
             ]
@@ -1639,14 +1649,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     points = [
                         CircuitPoint(cycle_index, qudit_index)
                         for cycle_index in range(
-                            points[0].start if not None else 0,
+                            0 if points[0].start is None else points[0].start,
                             points[0].stop,
-                            points[0].step if not None else 1,
+                            1 if points[0].step is None else points[0].step,
                         )
                         for qudit_index in range(
-                            points[1].start if not None else 0,
+                            0 if points[1].start is None else points[1].start,
                             points[1].stop,
-                            points[1].step if not None else 1,
+                            1 if points[1].step is None else points[1].step,
                         )
                     ]
                 if (
@@ -1656,9 +1666,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     points = [
                         CircuitPoint(cycle_index, points[1])  # type: ignore
                         for cycle_index in range(
-                            points[0].start if not None else 0,
+                            0 if points[0].start is None else points[0].start,
                             points[0].stop,
-                            points[0].step if not None else 1,
+                            1 if points[0].step is None else points[0].step,
                         )
                     ]
                 if (
@@ -1668,9 +1678,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     points = [
                         CircuitPoint(points[0], qudit_index)  # type: ignore
                         for qudit_index in range(
-                            points[1].start if not None else 0,
+                            0 if points[1].start is None else points[1].start,
                             points[1].stop,
-                            points[1].step if not None else 1,
+                            1 if points[1].step is None else points[1].step,
                         )
                     ]
 
