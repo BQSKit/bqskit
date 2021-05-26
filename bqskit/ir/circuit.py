@@ -1176,6 +1176,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         qudits = sorted(list(region.keys()))
         self.insert_gate(region_back_min, circuit_gate, qudits, circuit_params)
 
+    def unfold(self, point: CircuitPointLike) -> None:
+        """Unfold the CircuitGate at `point` into the circuit."""
+        pass  # TODO
+
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
         circuit = Circuit(self.get_size(), self.get_radixes())
