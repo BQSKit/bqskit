@@ -4,5 +4,11 @@ from __future__ import annotations
 from bqskit.compiler.passes.control.ifthenelse import IfThenElsePass
 from bqskit.compiler.passes.control.predicate import PassPredicate
 from bqskit.compiler.passes.control.predicates.change import ChangePredicate
+from bqskit.compiler.passes.control.whileloop import WhileLoopPass
 
-__all__ = ['IfThenElsePass', 'PassPredicate', 'ChangePredicate']
+__all__ = [
+    'IfThenElsePass',
+    'WhileLoopPass',
+    'PassPredicate',
+    'ChangePredicate',
+]
