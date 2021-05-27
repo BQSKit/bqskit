@@ -28,6 +28,7 @@ from bqskit.ir.opt.instantiaters.qfactor import QFactor
 from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
+from bqskit.ir.region import CircuitRegion
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
@@ -1178,6 +1179,21 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def unfold(self, point: CircuitPointLike) -> None:
         """Unfold the CircuitGate at `point` into the circuit."""
+        pass  # TODO
+
+    def surround(self, point: CircuitPointLike, size: int) -> CircuitRegion:
+        """
+        Retrieve the maximal region in this circuit with `point` included.
+
+        Args:
+            point (CircuitPointLike): Find a surrounding region for this
+                point. This point will be in the final CircuitRegion.
+
+            size (int): The number of qudits to include in the region.
+
+        Raises:
+            IndexError: If `point` is not a valid index.
+        """
         pass  # TODO
 
     def copy(self) -> Circuit:
