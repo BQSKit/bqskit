@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import abc
 
+from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 
 
@@ -10,5 +11,5 @@ class StateVectorMap(abc.ABC):
     """The StateVectorMap base class."""
 
     @abc.abstractmethod
-    def get_statevector(self, in_state: StateVector) -> StateVector:
+    def get_statevector(self, in_state: StateLike) -> StateVector:
         """Calculate the output state given the input state."""

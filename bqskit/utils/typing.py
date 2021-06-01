@@ -5,6 +5,7 @@ import logging
 import numbers
 from collections.abc import Sequence
 from typing import Any
+from typing import Mapping
 
 import numpy as np
 
@@ -20,17 +21,17 @@ def is_iterable(test_variable: Any) -> bool:
         iterator = iter(test_variable)  # noqa: F841
         return True
     except TypeError:
-        _logger.debug('Invalid iterable.')
         return False
 
 
 def is_sequence(test_variable: Any) -> bool:
     """Returns true if test_variable is a sequence."""
-    if isinstance(test_variable, (Sequence, np.ndarray)):
-        return True
-    else:
-        _logger.debug('Invalid sequence.')
-        return False
+    return isinstance(test_variable, (Sequence, np.ndarray))
+
+
+def is_mapping(test_variable: Any) -> bool:
+    """Returns true if test_variable is a mapping."""
+    return isinstance(test_variable, Mapping)
 
 
 def is_numeric(test_variable: Any) -> bool:
@@ -60,48 +61,6 @@ def is_integer(test_variable: Any) -> bool:
         isinstance(test_variable, (int, np.integer))
         and not isinstance(test_variable, bool)
     )
-
-
-def is_valid_location(
-    location: Sequence[int],
-    num_qudits: int | None = None,
-) -> bool:
-    """
-    Determines if the sequence of qudits form a valid location. A valid location
-    is a set of qubit indices (integers) that are greater than or equal to zero,
-    and if num_qudits is specified, less than num_qudits.
-
-    Args:
-        location (Sequence[int]): The location to check.
-
-        num_qudits (int | None): The total number of qudits.
-            All qudit indices should be less than this. If None,
-            don't check.
-
-    Returns:
-        (bool): True if the location is valid.
-    """
-    if not is_iterable(location):
-        return False
-
-    if not all([is_integer(qudit) for qudit in location]):
-        _logger.debug('Location is not an iterable of ints.')
-        return False
-
-    if len(location) != len(set(location)):
-        _logger.debug('Location has duplicates.')
-        return False
-
-    if not all([qudit >= 0 for qudit in location]):
-        _logger.debug('Location invalid; qudit indices must be nonnegative.')
-        return False
-
-    if num_qudits is not None:
-        if not all([qudit < num_qudits for qudit in location]):
-            _logger.debug('Location has an erroneously large qudit.')
-            return False
-
-    return True
 
 
 def is_valid_radixes(
@@ -328,21 +287,6 @@ def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
 
     if not all(e == 1 or e == 0 for row in P for e in row):
         _logger.debug('Not all elements are 0 or 1.')
-        return False
-
-    return True
-
-
-def is_pure_state(V: np.ndarray, tol: float = 1e-8) -> bool:
-    """Return true if V is a pure state vector."""
-    if not is_vector(V):
-        return False
-
-    if not np.allclose(
-        np.sum(np.abs([elem for elem in V])),
-        1, rtol=0, atol=tol,
-    ):
-        _logger.debug('Failed pure state criteria.')
         return False
 
     return True

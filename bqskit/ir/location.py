@@ -1,12 +1,17 @@
 """This module implements the CircuitLocation class."""
 from __future__ import annotations
 
+import logging
+from typing import Any
+from typing import Iterable
 from typing import overload
 from typing import Sequence
 from typing import Union
 
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence
+_logger = logging.getLogger(__name__)
 
 
 class CircuitLocation(Sequence[int]):
@@ -17,21 +22,47 @@ class CircuitLocation(Sequence[int]):
     usually describes where a gate or operation is being applied.
     """
 
-    def __init__(self, location: Sequence[int]) -> None:
-        """Construct a CircuitLocation from `location`."""
+    def __init__(self, location: int | Iterable[int]) -> None:
+        """
+        Construct a CircuitLocation from `location`.
 
-        if not is_sequence(location):
+        Args:
+            location (int | Iterable[int]): The qudit indices.
+
+        Raises:
+            ValueError: If any qudit index is negative.
+
+            ValueError: If there are duplicates in location.
+        """
+
+        if is_integer(location):  # TODO: Typeguard
+            location = [location]  # type: ignore
+
+        assert not isinstance(location, int)  # TODO: Typeguard
+        location = list(location)
+
+        if not is_iterable(location):
             raise TypeError(
-                'Expected sequence of integers for location'
+                'Expected iterable of integers for location'
                 f', got {type(location)}.',
             )
 
         if not all(is_integer(qudit_index) for qudit_index in location):
-            truth_vals = [is_integer(qudit_index) for qudit_index in location]
+            checks = [is_integer(qudit_index) for qudit_index in location]
             raise TypeError(
-                'Expected sequence of integers for location'
-                f', got atleast one {type(location[truth_vals.index(False)])}',
+                'Expected iterable of integers for location'
+                f', got atleast one {type(location[checks.index(False)])}.',
             )
+
+        if not all(qudit_index >= 0 for qudit_index in location):
+            checks = [qudit_index >= 0 for qudit_index in location]
+            raise ValueError(
+                'Expected iterable of positive integers for location'
+                f', got atleast one {location[checks.index(False)]}.',
+            )
+
+        if len(set(location)) != len(location):
+            raise ValueError('Location has duplicate qudit indices.')
 
         self._location: tuple[int, ...] = tuple(location)
 
@@ -64,5 +95,74 @@ class CircuitLocation(Sequence[int]):
         """Return the number of qudits described by the location."""
         return len(self._location)
 
+    def union(self, other: CircuitLocationLike) -> CircuitLocation:
+        """Return the location containing qudits from self or other."""
+        other = CircuitLocation(other)
+        return CircuitLocation(set(self).union(set(other)))
 
-CircuitLocationLike = Union[Sequence[int], CircuitLocation]
+    def intersection(self, other: CircuitLocationLike) -> CircuitLocation:
+        """Return the location containing qudits from self and other."""
+        other = CircuitLocation(other)
+        return CircuitLocation(set(self).intersection(set(other)))
+
+    @staticmethod
+    def is_location(location: Any, num_qudits: int | None = None) -> bool:
+        """
+        Determines if the sequence of qudits form a valid location. A valid
+        location is a set of qubit indices (integers) that are greater than or
+        equal to zero, and if num_qudits is specified, less than num_qudits.
+
+        Args:
+            location (Any): The location to check.
+
+            num_qudits (int | None): The total number of qudits.
+                All qudit indices should be less than this. If None,
+                don't check.
+
+        Returns:
+            (bool): True if the location is valid.
+        """
+        if isinstance(location, CircuitLocation):
+            if num_qudits is not None:
+                return max(location) < num_qudits
+            return True
+
+        if is_integer(location):
+            location = [location]
+
+        if not is_iterable(location):
+            _logger.debug(
+                'Expected iterable of integers for location'
+                f', got {type(location)}.',
+            )
+            return False
+
+        if not all(is_integer(qudit_index) for qudit_index in location):
+            checks = [is_integer(qudit_index) for qudit_index in location]
+            _logger.debug(
+                'Expected iterable of integers for location'
+                f', got atleast one {type(location[checks.index(False)])}.',
+            )
+            return False
+
+        if not all(qudit_index >= 0 for qudit_index in location):
+            checks = [qudit_index >= 0 for qudit_index in location]
+            _logger.debug(
+                'Expected iterable of positive integers for location'
+                f', got atleast one {location[checks.index(False)]}.',
+            )
+            return False
+
+        if len(set(location)) != len(location):
+            _logger.debug('Location has duplicate qudit indices.')
+            return False
+
+        if num_qudits is not None:
+            if not all([qudit < num_qudits for qudit in location]):
+                _logger.debug('Location has an erroneously large qudit.')
+                return False
+
+        return True
+
+
+CircuitLocationLike = Union[int, Iterable[int], CircuitLocation]
