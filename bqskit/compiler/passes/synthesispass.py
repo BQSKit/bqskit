@@ -7,7 +7,6 @@ from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.circuit import CircuitPoint
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
@@ -89,18 +88,21 @@ class SynthesisPass(BasePass):
         """Perform the pass's operation, see BasePass for more info."""
 
         # Collect synthesizable operations
-        ops_to_syn: list[tuple[CircuitPoint, Operation]] = []
-        for point, op in circuit.operations_with_points():
+        ops_to_syn: list[tuple[int, Operation]] = []
+        for cycle, op in circuit.operations_with_cycles():
             if self.collection_filter(op):
-                ops_to_syn.append((point, op))
+                ops_to_syn.append((cycle, op))
 
         # Synthesize operations
-        for point, op in ops_to_syn:
-            # BUG: point is invalid on second successful iteration
-            # TODO: Gather synthesized circuits and batch replace
+        for cycle, op in ops_to_syn:
             syn_circuit = self.synthesize(op.get_unitary(), data)
             if self.replace_filter(syn_circuit, op):
-                circuit.replace_with_circuit(point, syn_circuit, op.location)
+                circuit.replace_gate(
+                    (cycle, op.location[0]),
+                    CircuitGate(syn_circuit, True),
+                    op.location,
+                    list(syn_circuit.get_params()),  # TODO: RealVector
+                )
 
 
 def default_collection_filter(op: Operation) -> bool:

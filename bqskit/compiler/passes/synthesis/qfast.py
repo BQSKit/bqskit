@@ -12,6 +12,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
 from bqskit.ir.gates.composed.vlg import VariableLocationGate
+from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtGenerator
@@ -130,7 +131,7 @@ class QFASTDecompositionPass(SynthesisPass):
         # 2. Calculate relevant coupling_graph and create the VLG head.
         # TODO: Look for topology info in `data`, use all-to-all otherwise.
         model = MachineModel(utry.get_size())
-        locations = model.get_valid_locations(self.gate.get_size())
+        locations = model.get_locations(self.gate.get_size())
         circuit.append_gate(
             VariableLocationGate(self.gate, locations, circuit.get_radixes()),
             list(range(utry.get_size())),
@@ -139,7 +140,7 @@ class QFASTDecompositionPass(SynthesisPass):
         # 3. Bottom-up synthesis: build circuit up one gate at a time
         depth = 1
         last_dist = 1.0
-        failed_locs: list[tuple[tuple[int, ...], float]] = []
+        failed_locs: list[tuple[CircuitLocation, float]] = []
 
         while True:
             circuit.instantiate(utry, cost_fn_gen=self.cost)
@@ -179,16 +180,16 @@ class QFASTDecompositionPass(SynthesisPass):
                 failed_locs.append((location, dist))
                 self.restrict_head(circuit, location)
 
-    def get_location_of_head(self, circuit: Circuit) -> tuple[int, ...]:
+    def get_location_of_head(self, circuit: Circuit) -> CircuitLocation:
         """Return the current location of the `circuit`'s VLG head."""
         head_gate: VariableLocationGate = circuit[-1, 0].gate  # type: ignore
-        return tuple(head_gate.get_location(circuit[-1, 0].params))
+        return CircuitLocation(head_gate.get_location(circuit[-1, 0].params))
 
     def expand(
         self,
         circuit: Circuit,
-        location: Sequence[int],
-        locations: Sequence[Sequence[int]],
+        location: CircuitLocation,
+        locations: Sequence[CircuitLocation],
     ) -> None:
         """Expand the circuit after a successful layer."""
 
@@ -221,7 +222,7 @@ class QFASTDecompositionPass(SynthesisPass):
     def restrict_head(
         self,
         circuit: Circuit,
-        location: Sequence[int],
+        location: CircuitLocation,
     ) -> None:
         """
         Remove `location` from the VLG Head in `circuit`.
@@ -229,7 +230,7 @@ class QFASTDecompositionPass(SynthesisPass):
         Args:
             circuit (Circuit): The circuit to restrict its VLG head.
 
-            location (Sequence[int]): The location to remove from the
+            location (CircuitLocation): The location to remove from the
                 VLG head.
         """
 
@@ -250,7 +251,7 @@ class QFASTDecompositionPass(SynthesisPass):
     def lift_head_restrictions(
         self,
         circuit: Circuit,
-        locations: Sequence[Sequence[int]],
+        locations: Sequence[CircuitLocation],
     ) -> None:
         """Set the `circuit`'s VLG head's valid locations to `locations`."""
 

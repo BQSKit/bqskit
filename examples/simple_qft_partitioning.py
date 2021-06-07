@@ -5,7 +5,7 @@ import numpy as np
 from numpy import pi
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.simplepartitioner import SimplePartitioner
+from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.ir import Circuit
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.constant.cx import CNOTGate
@@ -13,6 +13,7 @@ from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.iterator import CircuitIterator
 
 
 def make_line(n):  # type: ignore
@@ -137,12 +138,12 @@ circ.append_gate(CNOTGate(), [4, 3])
 
 # Do partitioning
 mach = MachineModel(num_q, coup_map)
-part = SimplePartitioner(mach, 3)
+part = ScanPartitioner(mach, 3)
 data = {}  # type: ignore
 
 part.run(circ, data)
 
-circ_iter = circ.CircuitIterator(circuit=circ._circuit)
+circ_iter = CircuitIterator(circ)
 count = 0
 for op in circ_iter:
     print('unitary %d' % (count))

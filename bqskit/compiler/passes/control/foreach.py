@@ -83,17 +83,16 @@ class ForEachBlockPass(BasePass):
         # Perform work
         for point, op in blocks:
             gate: CircuitGate = op.gate  # type: ignore
-            circuit = gate._circuit.copy()
+            circuit = gate._circuit.copy()  # TODO: OVERWRITING CIRCUIT
             circuit.set_params(op.params)
 
-            for loop_pass in self.loop_body:
-                if is_sequence(self.loop_body):
-                    for loop_pass in self.loop_body:
-                        # TODO: Pass only subtopology when topology avail
-                        loop_pass.run(circuit, data)
-                else:
+            if is_sequence(self.loop_body):
+                for loop_pass in self.loop_body:
                     # TODO: Pass only subtopology when topology avail
-                    self.loop_body.run(circuit, data)
+                    loop_pass.run(circuit, data)
+            else:
+                # TODO: Pass only subtopology when topology avail
+                self.loop_body.run(circuit, data)
 
             if self.replace_filter(circuit, op):
                 circuit.replace_gate(

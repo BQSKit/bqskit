@@ -14,7 +14,7 @@ from bqskit.utils.typing import is_sequence
 _logger = logging.getLogger(__name__)
 
 
-class CircuitLocation(Sequence[int]):
+class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
     """
     The CircuitLocation class.
 
@@ -163,6 +163,24 @@ class CircuitLocation(Sequence[int]):
                 return False
 
         return True
+
+    def __str__(self) -> str:
+        return self._location.__str__()
+
+    def __repr__(self) -> str:
+        return self._location.__repr__()
+
+    def __hash__(self) -> int:
+        return self._location.__hash__()
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, CircuitLocation):
+            return self._location.__eq__(other._location)
+
+        if is_integer(other):
+            return len(self) == 1 and self[0] == other
+
+        return self._location.__eq__(other)
 
 
 CircuitLocationLike = Union[int, Iterable[int], CircuitLocation]

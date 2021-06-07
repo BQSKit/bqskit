@@ -884,7 +884,7 @@ class TestFold:
     def test_type_valid(self, points: Sequence[CircuitPointLike]) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         try:
-            circuit.fold(points)
+            circuit.fold(circuit.get_region(points))
         except TypeError:
             assert False, 'Unexpected TypeError.'
         except BaseException:
@@ -917,12 +917,12 @@ class TestFold:
     def test_invalid_points(self, points: Sequence[CircuitPointLike]) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         with pytest.raises(IndexError):
-            circuit.fold(points)
+            circuit.fold(circuit.get_region(points))
 
     def test_empty(self, r6_qudit_circuit: Circuit) -> None:
         num_ops = r6_qudit_circuit.get_num_operations()
         gate_set = r6_qudit_circuit.get_gate_set()
-        r6_qudit_circuit.fold([])
+        r6_qudit_circuit.fold(r6_qudit_circuit.get_region([]))
         assert num_ops == r6_qudit_circuit.get_num_operations()
         assert gate_set == r6_qudit_circuit.get_gate_set()
 
@@ -943,7 +943,7 @@ class TestFold:
         circuit.append_gate(wide_gate, [0, 1, 2, 3])
         circuit.append_gate(wide_gate, [0, 1, 2, 3])
         with pytest.raises(ValueError):
-            circuit.fold(points)
+            circuit.fold(circuit.get_region(points))
 
     def test_correctness_1(self) -> None:
         circuit = Circuit(4)
@@ -956,7 +956,7 @@ class TestFold:
         assert circuit.get_depth() == 4
         utry = circuit.get_unitary()
 
-        circuit.fold([(0, 0), (1, 0)])
+        circuit.fold(circuit.get_region([(0, 0), (1, 0)]))
         assert circuit.get_num_operations() == 3
         assert circuit.get_depth() == 3
         check_no_idle_cycles(circuit)
@@ -973,7 +973,7 @@ class TestFold:
             assert isinstance(test_gate._circuit[0, q].gate, IdentityGate)
             assert isinstance(test_gate._circuit[1, q].gate, IdentityGate)
 
-        circuit.fold([(1, 0), (2, 0)])
+        circuit.fold(circuit.get_region([(1, 0), (2, 0)]))
         assert circuit.get_num_operations() == 2
         assert circuit.get_depth() == 2
         check_no_idle_cycles(circuit)
@@ -993,7 +993,7 @@ class TestFold:
             assert isinstance(test_gate._circuit[0, q].gate, IdentityGate)
             assert isinstance(test_gate._circuit[1, q].gate, IdentityGate)
 
-        circuit.fold([(0, 0), (1, 0)])
+        circuit.fold(circuit.get_region([(0, 0), (1, 0)]))
         assert circuit.get_num_operations() == 1
         assert circuit.get_depth() == 1
         check_no_idle_cycles(circuit)
@@ -1026,7 +1026,7 @@ class TestFold:
         circuit.append_gate(wide_gate, [0, 1, 2])
         utry = circuit.get_unitary()
 
-        circuit.fold([(0, 1), (1, 0)])
+        circuit.fold(circuit.get_region([(0, 1), (1, 0)]))
         assert circuit.get_num_operations() == 2
         assert circuit.get_depth() == 2
         assert circuit[0, 0].gate is HGate()
@@ -1056,7 +1056,7 @@ class TestFold:
         circuit.append_gate(XGate(), [4])
         utry = circuit.get_unitary()
 
-        circuit.fold([(0, 2), (1, 1), (2, 1)])
+        circuit.fold(circuit.get_region([(0, 2), (1, 1), (2, 1)]))
         assert circuit.get_num_operations() == 9
         assert circuit.get_depth() == 3
         assert circuit.count(HGate()) == 2
@@ -1079,7 +1079,7 @@ class TestFold:
 
         before_fold = circ.get_unitary()
 
-        circ.fold([(0, 0), (1, 0), (2, 0)])
+        circ.fold(circ.get_region([(0, 0), (1, 0), (2, 0)]))
 
         after_fold = circ.get_unitary()
 

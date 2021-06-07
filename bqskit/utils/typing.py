@@ -9,8 +9,6 @@ from typing import Mapping
 
 import numpy as np
 
-from bqskit.ir.point import CircuitPoint
-
 
 _logger = logging.getLogger(__name__)
 
@@ -107,15 +105,14 @@ def is_valid_radixes(
 
 
 def is_valid_coupling_graph(
-    coupling_graph: set[tuple[int, int]],
+    coupling_graph: Any,
     num_qudits: int | None = None,
 ) -> bool:
     """
     Checks if the coupling graph is valid.
 
     Args:
-        coupling_graph (set[tuple[int, int]]): The coupling graph
-            to check.
+        coupling_graph (Any): The coupling graph to check.
 
         num_qudits (int | None): The total number of qudits. All qudits
             should be less than this. If None, don't check.
@@ -124,8 +121,8 @@ def is_valid_coupling_graph(
         (bool): Valid or not
     """
 
-    if not isinstance(coupling_graph, set):
-        _logger.debug('Coupling graph is not a set.')
+    if not is_iterable(coupling_graph):
+        _logger.debug('Coupling graph is not iterable.')
         return False
 
     if len(coupling_graph) == 0:
@@ -287,36 +284,6 @@ def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
 
     if not all(e == 1 or e == 0 for row in P for e in row):
         _logger.debug('Not all elements are 0 or 1.')
-        return False
-
-    return True
-
-
-def is_point(point: Any) -> bool:
-    """Return true is point is a CircuitPointLike."""
-    if isinstance(point, CircuitPoint):
-        return True
-
-    if not isinstance(point, tuple):
-        _logger.debug('Point is not a tuple.')
-        return False
-
-    if len(point) != 2:
-        _logger.debug(
-            'Expected point to contain two values, got %d.' % len(point),
-        )
-        return False
-
-    if not is_integer(point[0]):
-        _logger.debug(
-            'Expected integer values in point, got %s.' % type(point[0]),
-        )
-        return False
-
-    if not is_integer(point[1]):
-        _logger.debug(
-            'Expected integer values in point, got %s.' % type(point[1]),
-        )
         return False
 
     return True

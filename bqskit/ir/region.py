@@ -49,6 +49,36 @@ class QuditBounds(NamedTuple):
 
         return self.lower < other.upper and self.upper > other.lower
 
+    def intersection(self, other: QuditBoundsLike) -> QuditBounds:
+        """Return the range defined by both `self` and `other` bounds."""
+        if not QuditBounds.is_bounds(other):
+            raise TypeError(f'Expected QuditBounds, got {type(other)}.')
+
+        other = QuditBounds(*other)
+
+        if not self.overlaps(other):
+            raise ValueError('Empty intersection in bounds.')
+
+        return QuditBounds(
+            max(self.lower, other.lower),
+            min(self.upper, other.upper),
+        )
+
+    def union(self, other: QuditBoundsLike) -> QuditBounds:
+        """Return the range defined by `self` or `other` bounds."""
+        if not QuditBounds.is_bounds(other):
+            raise TypeError(f'Expected QuditBounds, got {type(other)}.')
+
+        other = QuditBounds(*other)
+
+        if not self.overlaps(other):
+            raise ValueError('Union would lead to invalid bounds.')
+
+        return QuditBounds(
+            min(self.lower, other.lower),
+            max(self.upper, other.upper),
+        )
+
     @staticmethod
     def is_bounds(bounds: Any) -> bool:
         """Return true if bounds is a QuditBoundsLike."""
@@ -116,6 +146,10 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         return max(bound[1] for bound in self.values())
 
     @property
+    def max_min_cycle(self) -> int:
+        return max(bound[0] for bound in self.values())
+
+    @property
     def min_qudit(self) -> int:
         return min(self.keys())
 
@@ -136,7 +170,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             for cycle_index in bounds.indices
         ]
 
-    def shift_left(self, amount_to_shift: int) -> None:
+    def shift_left(self, amount_to_shift: int) -> CircuitRegion:
         """
         Shift the region to the left by `amount_to_shift`.
 
@@ -153,13 +187,13 @@ class CircuitRegion(Mapping[int, QuditBounds]):
                 f'Cannot shift region to the left by {amount_to_shift}.',
             )
 
-        self._bounds = {
+        return CircuitRegion({
             qudit_index:
             QuditBounds(bound[0] - amount_to_shift, bound[1] - amount_to_shift)
             for qudit_index, bound in self._bounds.items()
-        }
+        })
 
-    def shift_right(self, amount_to_shift: int) -> None:
+    def shift_right(self, amount_to_shift: int) -> CircuitRegion:
         """
         Shift the region to the right by `amount_to_shift`.
 
@@ -167,11 +201,11 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             amount_to_shift (int): Add `amount_to_shift` to all
                 cycle indices.
         """
-        self._bounds = {
+        return CircuitRegion({
             qudit_index:
             QuditBounds(bound[0] + amount_to_shift, bound[1] + amount_to_shift)
             for qudit_index, bound in self._bounds.items()
-        }
+        })
 
     def overlaps(self, other: CircuitPointLike | CircuitRegionLike) -> bool:
         """Return true if `other` overlaps this region."""
@@ -210,6 +244,107 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             'Expected either CircuitPoint or CircuitRegion, got %s.'
             % type(other),
         )
+
+    def __contains__(self, other: object) -> bool:
+        if is_integer(other):
+            return other in self.keys()
+
+        if CircuitPoint.is_point(other):  # TODO: TypeGuard
+            other = CircuitPoint(*other)  # type: ignore
+            return (
+                other[0] in self.keys()
+                and self[other[0]].lower <= other[1] <= self[other[0]].upper
+            )
+
+        if CircuitRegion.is_region(other):  # TODO: TypeGuard
+            other = CircuitRegion(other)  # type: ignore
+            return (
+                all(qudit in self.keys() for qudit in other.keys())
+                and all(
+                    self[qudit].lower <= other[qudit][0] <= self[qudit].upper
+                    for qudit in self.keys()
+                )
+                and all(
+                    self[qudit].lower <= other[qudit][1] <= self[qudit].upper
+                    for qudit in self.keys()
+                )
+            )
+
+        return NotImplemented
+
+    def transpose(self) -> dict[int, list[int]]:
+        """Flip region to map cycle indices to qudit indices."""
+
+    def intersection(self, other: CircuitRegionLike) -> CircuitRegion:
+        if not CircuitRegion.is_region(other):
+            raise TypeError(f'Expected CircuitRegion, got {type(other)}.')
+
+        other = CircuitRegion(other)
+        location = self.location.intersection(other.location)
+
+        region: dict[int, QuditBounds] = {}
+        for qudit in location:
+            if self[qudit].overlaps(other[qudit]):
+                region[qudit] = self[qudit].intersection(other[qudit])
+
+        return CircuitRegion(region)
+
+    def union(self, other: CircuitRegionLike) -> CircuitRegion:
+        if not CircuitRegion.is_region(other):
+            raise TypeError(f'Expected CircuitRegion, got {type(other)}.')
+
+        other = CircuitRegion(other)
+        location = self.location.union(other.location)
+
+        region: dict[int, QuditBounds] = {}
+        for qudit in location:
+            if qudit in self and qudit in other:
+                region[qudit] = self[qudit].union(other[qudit])
+
+            elif qudit in self:
+                region[qudit] = self[qudit]
+
+            elif qudit in other:
+                region[qudit] = other[qudit]
+
+        return CircuitRegion(region)
+
+    def __eq__(self, other: object) -> bool:
+        if CircuitRegion.is_region(other):  # TODO: TypeGuard
+            other = CircuitRegion(other)  # type: ignore
+            return sorted(self.items()) == sorted(other.items())
+
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return tuple(sorted(self.items())).__hash__()
+
+    def __str__(self) -> str:
+        return super().__str__()
+
+    def __repr__(self) -> str:
+        return super().__repr__()
+
+    def __lt__(self, other: object) -> bool:
+        if CircuitPoint.is_point(other):  # TODO: TypeGuard
+            other = CircuitPoint(*other)  # type: ignore
+            if other[0] < self.min_cycle:
+                return True
+
+            if other[1] in self.keys():
+                return other[0] < self[other[1]].lower
+
+        elif CircuitRegion.is_region(other):  # TODO: TypeGuard
+            other = CircuitRegion(other)  # type: ignore
+
+            if len(self.location.intersection(other.location)) != 0:
+                return self.max_min_cycle < other.max_min_cycle
+
+            min_point = (self.min_cycle, self.min_qudit)
+            other_min_point = (other.min_cycle, other.min_qudit)
+            return min_point < other_min_point
+
+        return NotImplemented
 
     @staticmethod
     def is_region(region: Any) -> bool:

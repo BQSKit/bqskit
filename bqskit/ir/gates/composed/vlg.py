@@ -6,10 +6,11 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.location import CircuitLocation
+from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import softmax
-from bqskit.utils.typing import is_valid_location
 
 
 class VariableLocationGate(Gate):
@@ -23,7 +24,7 @@ class VariableLocationGate(Gate):
     def __init__(
         self,
         gate: Gate,
-        locations: Sequence[Sequence[int]],
+        locations: Sequence[CircuitLocationLike],
         radixes: Sequence[int],
     ) -> None:
         """
@@ -32,7 +33,7 @@ class VariableLocationGate(Gate):
         Args:
             gate (Gate): The gate to parameterize location for.
 
-            locations (Sequence[Sequence[int]]): A sequence of locations.
+            locations (Sequence[CircuitLocationLike]): A sequence of locations.
                 Each location represents a valid placement for gate.
 
             radixes (Sequence[int]): The number of orthogonal
@@ -55,8 +56,10 @@ class VariableLocationGate(Gate):
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))
 
-        if not all(is_valid_location(l) for l in locations):
+        if not all(CircuitLocation.is_location(l) for l in locations):
             raise TypeError('Expected a sequence of valid locations.')
+
+        locations = [CircuitLocation(l) for l in locations]
 
         if not all(len(l) == gate.get_size() for l in locations):
             raise ValueError('Invalid sized location.')

@@ -115,7 +115,9 @@ class WindowOptimizationPass(BasePass):
             if end_cycle > circuit.get_num_cycles():
                 end_cycle = circuit.get_num_cycles()
 
-            window = circuit[begin_cycle: end_cycle]
+            window = Circuit(circuit.get_size(), circuit.get_radixes())
+            window.extend(circuit[begin_cycle: end_cycle])  # TODO: get_slice
+
             _logger.info(
                 'Resynthesizing window from cycle '
                 f'{begin_cycle} to {end_cycle}.',

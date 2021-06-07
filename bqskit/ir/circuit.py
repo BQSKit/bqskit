@@ -16,6 +16,8 @@ import numpy as np
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
+from bqskit.ir.gates.composed.tagged import TaggedGate
+from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.location import CircuitLocation
@@ -207,6 +209,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             isinstance(gate, DifferentiableUnitary)
             for gate in self.get_gate_set()
         )
+
+    def get_active_qudits(self) -> list[int]:
+        """Return qudits involved in at least one operation."""
+        return [
+            qudit
+            for qudit in range(self.get_size())
+            if not self.is_qudit_idle(qudit)
+        ]
 
     # endregion
 
@@ -542,6 +552,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self.is_cycle_in_range(point[0])
             and self.is_qudit_in_range(point[1])
         )
+
+    def is_point_idle(self, point: CircuitPointLike) -> bool:
+        """Return true if an operation exists at `point`."""
+        if not CircuitPoint.is_point(point):
+            raise TypeError(f'Expected CircuitPoint, got {type(point)}.')
+
+        return self._circuit[point[0]][point[1]] is None
 
     def check_valid_operation(self, op: Operation) -> None:
         """Check that `op` can be applied to the circuit."""
@@ -1103,12 +1120,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     # region Region Methods
 
-    def check_region(self, region: CircuitRegionLike) -> None:
+    def check_region(
+        self,
+        region: CircuitRegionLike,
+        strict: bool = False,
+    ) -> None:
         """
         Check `region` to be a valid in the context of this circuit.
 
         Args:
             region (CircuitRegionLike): The region to check.
+
+            strict (bool): If True, fail on any disconnect, even if there
+                are no gates in the disconnect. (Default: False)
 
         Raises:
             ValueError: If `region` includes qudits not in the circuit,
@@ -1140,11 +1164,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     continue
                 min_index = min(qudit_bounds.upper, other_qudit_bounds.upper)
                 max_index = max(qudit_bounds.lower, other_qudit_bounds.lower)
-                for cycle_index in range(min_index + 1, max_index - 1):
+                for cycle_index in range(min_index + 1, max_index):
                     try:
                         op = self[cycle_index, qudit_index]
                     except IndexError:
                         continue
+
+                    if strict:
+                        raise ValueError('Disconnect detected in region.')
 
                     if other_qudit_index in op.location:
                         raise ValueError(
@@ -1226,11 +1253,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         region_back_min += amount_to_shift
         boundary_back_max += amount_to_shift
-        points = [(p[0] + amount_to_shift, p[1]) for p in region.points]
-        region = {
+        region = CircuitRegion({
             i: (b[0] + amount_to_shift, b[1] + amount_to_shift)
             for i, b in region.items()
-        }
+        })
 
         for cycle_index in range(region_back_min, boundary_back_max + 1):
             for qudit_index in region:
@@ -1243,7 +1269,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                             self._circuit[cycle_index][involved_qudit] = None
 
         # Pop operations, form CircuitGate, insert gate
-        circuit = self.batch_pop(points)
+        circuit = self.batch_pop(region.points)
         circuit_params = list(circuit.get_params())
         circuit_gate = CircuitGate(circuit, True)
         qudits = sorted(list(region.keys()))
@@ -1251,7 +1277,52 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def batch_fold(self, regions: Iterable[CircuitRegionLike]) -> None:
         """Fold all `regions` at once."""
-        pass  # TODO
+        regions = [CircuitRegion(region) for region in regions]
+
+        # Check for invalid input
+        for i, region1 in enumerate(regions):
+            # check regions to be valid
+            self.check_region(region1)
+
+            # Ensure no two regions overlap
+            for j, region2 in enumerate(regions):
+                if i == j:
+                    continue
+
+                if region1.overlaps(region2):
+                    raise ValueError('Cannot batch fold overlapping regions.')
+
+        # Regions that contain empty cycles can cause problems later
+        # Remove empty cycles in regions by inserting tagged gates
+        for region in regions:
+            for cycle, qudits in sorted(region.transpose().items()):
+                if all(self.is_point_idle((cycle, qudit)) for qudit in qudits):
+                    self.insert_gate(
+                        cycle,
+                        TaggedGate(IdentityGate(1), '__fold_placeholder__'),
+                        qudits[0],
+                    )
+
+        # sort and fold regions, tracking cycle changes
+        num_cycles = self.get_num_cycles()
+        for region in sorted(regions):
+
+            # Remove tagged gates just before folding
+            points_to_pop = []
+            for cycle, op in self.operations_with_cycles(
+                    qudits_or_region=region,
+            ):
+                if isinstance(op.gate, TaggedGate):
+                    if op.gate.tag == '__fold_placeholder__':
+                        points_to_pop.append((cycle, op.location[0]))
+            self.batch_pop(points_to_pop)
+
+            # Fold after adjusting for cycle changes
+            amount_to_shift = self.get_num_cycles() - num_cycles
+            if amount_to_shift > 0:
+                self.fold(region.shift_left(amount_to_shift))
+            else:
+                self.fold(region.shift_right(amount_to_shift))
 
     def unfold(self, point: CircuitPointLike) -> None:
         """Unfold the CircuitGate at `point` into the circuit."""
@@ -1390,6 +1461,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                         break
 
                     # Otherwise consider both 1) adding the operation
+                    # BUG: Consider adding gate only if can fit in partition
                     if (cycle_index, op) not in node[1]:
                         added_node = copy.deepcopy(node)
                         added_node[1].append((cycle_index, op))
@@ -1636,11 +1708,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise IndexError('Negative parameter index is not supported.')
 
         count = 0
-        for point, op in self.operations_with_points():
+        for cycle, op in self.operations_with_cycles():
             count += len(op.params)
             if count > param_index:
                 param = param_index - (count - len(op.params))
-                return (*point, param)
+                return (cycle, op.location[0], param)
 
         raise IndexError('Out-of-range parameter index.')
 
@@ -2123,14 +2195,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             reverse,
         )  # type: ignore
 
-    def operations_with_points(
+    def operations_with_cycles(
         self,
         start: CircuitPointLike = CircuitPoint(0, 0),
         end: CircuitPointLike | None = None,
         qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
         exclude: bool = False,
         reverse: bool = False,
-    ) -> Iterator[tuple[CircuitPoint, Operation]]:
+    ) -> Iterator[tuple[int, Operation]]:
         """Create and return an iterator, for more info see CircuitIterator."""
         return CircuitIterator(
             self,

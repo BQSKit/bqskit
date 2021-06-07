@@ -23,7 +23,7 @@ class CircuitIterator(
     Iterator[
         Union[
             Operation,
-            Tuple[CircuitPoint, Operation],  # if and_points == True
+            Tuple[int, Operation],  # if and_cycles == True
         ]
     ],
 ):
@@ -46,7 +46,7 @@ class CircuitIterator(
             qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
             exclude: bool = False,
             reverse: bool = False,
-            and_points: bool = False,
+            and_cycles: bool = False,
     ) -> None:
         """
         Construct a CircuitIterator.
@@ -80,8 +80,8 @@ class CircuitIterator(
             reverse (bool): Reverse the ordering. If true, then end acts
                 as start and vice versa. (Default: False)
 
-            and_points (bool): If true, in addition to the operation,
-                return the CircuitPoint where it was found. (Default: False)
+            and_cycles (bool): If true, in addition to the operation,
+                return the cycle index where it was found. (Default: False)
         """
         if not CircuitPoint.is_point(start):
             raise TypeError(f'Expected point for start, got {type(start)}.')
@@ -100,7 +100,7 @@ class CircuitIterator(
         self.end = CircuitPoint(*end)
         self.exclude = exclude
         self.reverse = reverse
-        self.and_points = and_points
+        self.and_cycles = and_cycles
 
         # Set mode of iteration:
         if qudits_or_region is None:
@@ -135,6 +135,14 @@ class CircuitIterator(
 
         self.max_qudit = max(self.qudits)
         self.min_qudit = min(self.qudits)
+        self.min_cycle = self.region.min_cycle
+        self.max_cycle = self.region.max_cycle
+
+        if start < (self.min_cycle, self.min_qudit):
+            start = CircuitPoint(self.min_cycle, self.min_qudit)
+
+        if end > (self.max_cycle, self.max_qudit):
+            end = CircuitPoint(self.max_cycle, self.max_qudit)
 
         assert isinstance(start, CircuitPoint)  # TODO: Typeguard
         assert isinstance(end, CircuitPoint)  # TODO: Typeguard
@@ -197,12 +205,13 @@ class CircuitIterator(
         if point < self.start or point > self.end:
             raise StopIteration
 
-    def __next__(self) -> Operation | tuple[CircuitPoint, Operation]:
+    def __next__(self) -> Operation | tuple[int, Operation]:
         while True:
             self.step()
             op = self.circuit._circuit[self.cycle][self.qudit]
 
             if op is None:
+                self.qudits_to_skip.add(self.qudit)
                 continue
 
             if self.exclude:
@@ -217,8 +226,8 @@ class CircuitIterator(
 
             self.qudits_to_skip.update(op.location)
 
-            if self.and_points:
-                return CircuitPoint(self.cycle, self.qudit), op
+            if self.and_cycles:
+                return self.cycle, op
 
             return op
 
