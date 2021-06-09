@@ -164,7 +164,10 @@ class CircuitIterator(
         while (
             self.qudit in self.qudits_to_skip
             or self.qudit not in self.qudits
-            or self.cycle not in self.region[self.qudit]
+            or (
+                self.cycle not in self.region[self.qudit]
+                and self.cycle <= self.max_cycle
+            )
         ):
             self.qudit += 1
 
@@ -178,7 +181,10 @@ class CircuitIterator(
         while (
             self.qudit in self.qudits_to_skip
             or self.qudit not in self.qudits
-            or self.cycle not in self.region[self.qudit]
+            or (
+                self.cycle not in self.region[self.qudit]
+                and self.cycle >= self.min_cycle
+            )
         ):
             self.qudit -= 1
 

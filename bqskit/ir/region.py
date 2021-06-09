@@ -240,6 +240,8 @@ class CircuitRegion(Mapping[int, QuditBounds]):
                 ):
                     return True
 
+            return False
+
         raise TypeError(
             'Expected either CircuitPoint or CircuitRegion, got %s.'
             % type(other),
@@ -247,7 +249,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
     def __contains__(self, other: object) -> bool:
         if is_integer(other):
-            return other in self.keys()
+            return other in self._bounds.keys()
 
         if CircuitPoint.is_point(other):  # TODO: TypeGuard
             other = CircuitPoint(*other)  # type: ignore
@@ -274,6 +276,16 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
     def transpose(self) -> dict[int, list[int]]:
         """Flip region to map cycle indices to qudit indices."""
+        qudit_cycles: dict[int, list[int]] = {
+            i: []
+            for i in range(self.min_cycle, self.max_cycle + 1)
+        }
+
+        for qudit_index, bounds in sorted(self.items()):
+            for cycle_index in range(bounds.lower, bounds.upper + 1):
+                qudit_cycles[cycle_index].append(qudit_index)
+
+        return {k: v for k, v in qudit_cycles.items() if len(v) > 0}
 
     def intersection(self, other: CircuitRegionLike) -> CircuitRegion:
         if not CircuitRegion.is_region(other):
@@ -320,10 +332,10 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         return tuple(sorted(self.items())).__hash__()
 
     def __str__(self) -> str:
-        return super().__str__()
+        return str(self._bounds)
 
     def __repr__(self) -> str:
-        return super().__repr__()
+        return repr(self._bounds)
 
     def __lt__(self, other: object) -> bool:
         if CircuitPoint.is_point(other):  # TODO: TypeGuard
@@ -338,11 +350,31 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             other = CircuitRegion(other)  # type: ignore
 
             if len(self.location.intersection(other.location)) != 0:
-                return self.max_min_cycle < other.max_min_cycle
+                lt = None
+                for qudit in self.location.intersection(other.location):
+                    if lt is None:
+                        lt = self[qudit] < other[qudit]
+                    elif lt != self[qudit] < other[qudit]:
+                        raise ValueError('Both regions depend on each other.')
 
-            min_point = (self.min_cycle, self.min_qudit)
-            other_min_point = (other.min_cycle, other.min_qudit)
-            return min_point < other_min_point
+                assert lt is not None
+                return lt
+
+            lower_bounds = tuple(
+                reversed(sorted({x.lower for x in self.values()})),
+            )
+            other_lower_bounds = tuple(
+                reversed(sorted({x.lower for x in other.values()})),
+            )
+            upper_bounds = tuple(
+                reversed(sorted({x.upper for x in self.values()})),
+            )
+            other_upper_bounds = tuple(
+                reversed(sorted({x.upper for x in other.values()})),
+            )
+            return (lower_bounds, upper_bounds) < (
+                other_lower_bounds, other_upper_bounds,
+            )
 
         return NotImplemented
 

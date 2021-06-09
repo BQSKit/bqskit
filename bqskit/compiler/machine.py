@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import itertools as it
-from functools import cache
+from functools import lru_cache
 from typing import Iterable
 
 from bqskit.ir.location import CircuitLocation
@@ -61,7 +61,7 @@ class MachineModel:
             self._adjacency_list[q0].append(q1)
             self._adjacency_list[q1].append(q0)
 
-    @cache
+    @lru_cache(maxsize=None)
     def get_locations(self, block_size: int) -> list[CircuitLocation]:
         """
         Returns a list of locations that complies with the machine.

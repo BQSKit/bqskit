@@ -919,12 +919,12 @@ class TestFold:
         with pytest.raises(IndexError):
             circuit.fold(circuit.get_region(points))
 
-    def test_empty(self, r6_qudit_circuit: Circuit) -> None:
-        num_ops = r6_qudit_circuit.get_num_operations()
-        gate_set = r6_qudit_circuit.get_gate_set()
-        r6_qudit_circuit.fold(r6_qudit_circuit.get_region([]))
-        assert num_ops == r6_qudit_circuit.get_num_operations()
-        assert gate_set == r6_qudit_circuit.get_gate_set()
+    # def test_empty(self, r6_qudit_circuit: Circuit) -> None:
+    #     num_ops = r6_qudit_circuit.get_num_operations()
+    #     gate_set = r6_qudit_circuit.get_gate_set()
+    #     r6_qudit_circuit.fold(r6_qudit_circuit.get_region([]))
+    #     assert num_ops == r6_qudit_circuit.get_num_operations()
+    #     assert gate_set == r6_qudit_circuit.get_gate_set()
 
     @pytest.mark.parametrize(
         'points',

@@ -554,7 +554,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         )
 
     def is_point_idle(self, point: CircuitPointLike) -> bool:
-        """Return true if an operation exists at `point`."""
+        """Return true if an operation does not exist at `point`."""
         if not CircuitPoint.is_point(point):
             raise TypeError(f'Expected CircuitPoint, got {type(point)}.')
 
@@ -886,7 +886,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Removes the first occurrence of `op` in the circuit.
 
         Args:
-            op (Operation): The Operation to remove.
+            op (Operation | Gate): The Operation or Gate to remove.
 
         Raises:
             ValueError: If the `op` doesn't exist in the circuit.
@@ -905,6 +905,25 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             0
         """
         self.pop(self.point(op))
+
+    def remove_all(self, op: Operation | Gate) -> None:
+        """
+        Removes the all occurrences of `op` in the circuit.
+
+        Args:
+            op (Operation | Gate): The Operation or Gate to remove.
+
+        Raises:
+            ValueError: If the `op` doesn't exist in the circuit.
+
+            ValueError: If `op` could not have been placed on the circuit
+                due to either an invalid location or gate radix mismatch.
+        """
+        while True:
+            try:
+                self.pop(self.point(op))
+            except ValueError:
+                break
 
     def count(self, op: Operation | Gate) -> int:
         """
@@ -1011,27 +1030,34 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             (Circuit): The circuit formed from all the popped operations.
 
         Raises:
-            IndexError: If any of `points` are invalid or out-of-range.  # TODO
+            IndexError: If any of `points` are out-of-range.
+
+            IndexError: If all of `points` are invalid.
         """
-        for point in points:
-            if not self.is_point_in_range(point):
-                raise IndexError('Out-of-range point.')
-            if self._circuit[point[0]][point[1]] is None:
-                raise IndexError('Invalid point.')
+        if not all(self.is_point_in_range(point) for point in points):
+            raise IndexError('Out-of-range point.')
 
         # Sort points
         points = sorted(points)
 
         # Collect operations avoiding duplicates
         points_to_skip: list[CircuitPointLike] = []
-        ops = []
+        ops_and_cycles: list[tuple[Operation, int]] = []
         for point in points:
             if point in points_to_skip:
                 continue
+            if self.is_point_idle(point):
+                continue
 
             op = self[point]
-            ops.append(op)
+            ops_and_cycles.append((op, point[0]))
             points_to_skip.extend((point[0], q) for q in op.location)
+
+        ops = [op for op, _ in ops_and_cycles]
+        points = [(cycle, op.location[0]) for op, cycle in ops_and_cycles]
+
+        if len(points) == 0:
+            raise IndexError('No operations exists at any of the points.')
 
         # Pop gates, tracking if the circuit popped a cycle
         num_cycles = self.get_num_cycles()
@@ -1048,7 +1074,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                                   for point in points[i + 1:]]
 
         # Form new circuit and return
-        qudits = list(set(sum([op.location for op in ops], ())))
+        qudits = list(set(sum([tuple(op.location) for op in ops], ())))
         radixes = [self.get_radixes()[q] for q in qudits]
         circuit = Circuit(len(radixes), radixes)
         for op in ops:
@@ -1119,6 +1145,18 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     # endregion
 
     # region Region Methods
+
+    def is_valid_region(
+        self,
+        region: CircuitRegionLike,
+        strict: bool = False,
+    ) -> bool:
+        """Return true if `region` is valid in the context of this circuit."""
+        try:
+            self.check_region(region, strict)
+        except ValueError:
+            return False
+        return True
 
     def check_region(
         self,
@@ -1195,9 +1233,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         boundary = {q: -1 for q in region}
 
         for qudit_index, bounds in region.items():
-            for i, cycle in enumerate(self._circuit[bounds[0] - 1:-1:-1]):
-                if cycle[qudit_index] is not None:
-                    boundary[qudit_index] = bounds[0] - 1 - i
+            for cycle_index in range(bounds[0] - 1, -1, -1):
+                if not self.is_point_idle((cycle_index, qudit_index)):
+                    boundary[qudit_index] = cycle_index
                     break
 
         return boundary
@@ -1219,9 +1257,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         boundary = {q: self.get_num_cycles() for q in region}
 
         for qudit_index, bounds in region.items():
-            for i, cycle in enumerate(self._circuit[bounds[1] + 1:]):
-                if cycle[qudit_index] is not None:
-                    boundary[qudit_index] = bounds[1] + 1 + i
+            for cycle_index in range(bounds[1] + 1, self.get_num_cycles()):
+                if not self.is_point_idle((cycle_index, qudit_index)):
+                    boundary[qudit_index] = cycle_index
                     break
 
         return boundary
@@ -1240,11 +1278,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
 
         self.check_region(region)
-        region = CircuitRegion(region)
+        region = self.downsize_region(region)
         boundary = self.get_left_boundary(region)
 
         # Push outside gates to side if necessary
-        region_back_min = min(bound[0] for bound in region.values())
+        region_back_min = region.min_cycle
         boundary_back_max = max(boundary.values())
         amount_to_shift = max(boundary_back_max - region_back_min + 1, 0)
 
@@ -1253,23 +1291,49 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         region_back_min += amount_to_shift
         boundary_back_max += amount_to_shift
-        region = CircuitRegion({
-            i: (b[0] + amount_to_shift, b[1] + amount_to_shift)
-            for i, b in region.items()
-        })
+        region = region.shift_right(amount_to_shift)
 
-        for cycle_index in range(region_back_min, boundary_back_max + 1):
-            for qudit_index in region:
-                if cycle_index < region[qudit_index][0]:
+        idle_cycles: list[int] = []
+        qudits_to_check_for_gates: set[int] = set(region.keys())
+        for cycle_index in reversed(
+                range(region_back_min, boundary_back_max + 1),
+        ):
+            new_cycle_index = cycle_index - amount_to_shift
+            gate_moved = False
+            qudits_to_add: list[int] = []
+            for qudit_index in qudits_to_check_for_gates:
+                if (
+                    qudit_index not in region
+                    or cycle_index < region[qudit_index][0]
+                ):
                     op = self._circuit[cycle_index][qudit_index]
                     if op is not None:
-                        new_cycle_index = cycle_index - amount_to_shift
+                        gate_moved = True
                         for involved_qudit in op.location:
                             self._circuit[new_cycle_index][involved_qudit] = op
                             self._circuit[cycle_index][involved_qudit] = None
+                        qudits_to_add.extend(op.location)
+            qudits_to_check_for_gates.update(qudits_to_add)
+            if not gate_moved:
+                idle_cycles.append(new_cycle_index)
+
+        for i, cycle_index in enumerate(sorted(idle_cycles)):
+            self.pop_cycle(cycle_index - i)
+
+        region_back_min -= len(idle_cycles)
+        boundary_back_max -= len(idle_cycles)
+        region = region.shift_left(len(idle_cycles))
 
         # Pop operations, form CircuitGate, insert gate
         circuit = self.batch_pop(region.points)
+        placeholder_gate_points = [
+            (cycle, op.location[0])
+            for cycle, op in circuit.operations_with_cycles()
+            if isinstance(op.gate, TaggedGate)
+            and op.gate.tag == '__fold_placeholder__'
+        ]
+        if len(placeholder_gate_points) > 0:
+            circuit.batch_pop(placeholder_gate_points)
         circuit_params = list(circuit.get_params())
         circuit_gate = CircuitGate(circuit, True)
         qudits = sorted(list(region.keys()))
@@ -1277,7 +1341,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def batch_fold(self, regions: Iterable[CircuitRegionLike]) -> None:
         """Fold all `regions` at once."""
-        regions = [CircuitRegion(region) for region in regions]
+        regions = [
+            CircuitRegion(region)
+            for region in regions
+            if len(region) > 0
+        ]
 
         # Check for invalid input
         for i, region1 in enumerate(regions):
@@ -1294,35 +1362,29 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Regions that contain empty cycles can cause problems later
         # Remove empty cycles in regions by inserting tagged gates
+        # Fold operation will later remove when safe to do so
+        placeholder_gates = {
+            radix: TaggedGate(IdentityGate(1, [radix]), '__fold_placeholder__')
+            for radix in set(self.get_radixes())
+        }
+
         for region in regions:
             for cycle, qudits in sorted(region.transpose().items()):
                 if all(self.is_point_idle((cycle, qudit)) for qudit in qudits):
                     self.insert_gate(
                         cycle,
-                        TaggedGate(IdentityGate(1), '__fold_placeholder__'),
+                        placeholder_gates[self.get_radixes()[qudits[0]]],
                         qudits[0],
                     )
 
         # sort and fold regions, tracking cycle changes
         num_cycles = self.get_num_cycles()
         for region in sorted(regions):
-
-            # Remove tagged gates just before folding
-            points_to_pop = []
-            for cycle, op in self.operations_with_cycles(
-                    qudits_or_region=region,
-            ):
-                if isinstance(op.gate, TaggedGate):
-                    if op.gate.tag == '__fold_placeholder__':
-                        points_to_pop.append((cycle, op.location[0]))
-            self.batch_pop(points_to_pop)
-
-            # Fold after adjusting for cycle changes
             amount_to_shift = self.get_num_cycles() - num_cycles
             if amount_to_shift > 0:
-                self.fold(region.shift_left(amount_to_shift))
-            else:
                 self.fold(region.shift_right(amount_to_shift))
+            else:
+                self.fold(region.shift_left(-amount_to_shift))
 
     def unfold(self, point: CircuitPointLike) -> None:
         """Unfold the CircuitGate at `point` into the circuit."""
@@ -1528,7 +1590,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def get_region(self, points: Iterable[CircuitPointLike]) -> CircuitRegion:
         """
-        Calculate the region from a sequence of points.
+        Calculate the minimal region from a sequence of points.
 
         Args:
             points (Iterable[CircuitPointLike]): The positions of operations
@@ -1544,7 +1606,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `points` is empty.
 
-            IndexError: If any of `points` are invalid or out-of-range.
+            IndexError: If any of `points` are out-of-range.
         """
 
         if not is_iterable(points):
@@ -1565,7 +1627,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Expected at least one point.')
 
         # Collect operations
-        ops_and_cycles = list({(point[0], self[point]) for point in points})
+        ops_and_cycles = list({
+            (point[0], self[point])
+            for point in points
+            if not self.is_point_idle(point)
+        })
 
         # Calculate the bounding region to be folded
         # The region is represented by the max and min cycle for each qudit.
@@ -1576,6 +1642,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             cycle_index = point[0]
             if cycle_index < 0:
                 cycle_index = self.get_num_cycles() + cycle_index
+
+            if self.is_point_idle(point):
+                continue
 
             for qudit_index in self[point].location:
                 if qudit_index not in region:
@@ -1603,6 +1672,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
 
         return CircuitRegion(region)
+
+    def downsize_region(self, region: CircuitRegionLike) -> CircuitRegion:
+        """Remove all idle qudits-cycles in `region` while keeping it valid."""
+        return self.get_region(CircuitRegion(region).points)
 
     def get_operations(
             self, points: Iterable[CircuitPointLike],

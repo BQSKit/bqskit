@@ -119,12 +119,47 @@ class ScanPartitioner(BasePass):
         qudit_groups = model.get_locations(self.block_size)
 
         # divider splits the circuit into partitioned and unpartitioned spaces.
-        divider = [0 for _ in range(circuit.get_size())]
+        active_qudits = circuit.get_active_qudits()
         num_cycles = circuit.get_num_cycles()
-        regions: list[CircuitRegion] = []
+        divider = [
+            0 if q in active_qudits else num_cycles
+            for q in range(circuit.get_size())
+        ]
 
-        # Do while there are still gates to partition
+        # Form regions until there are no more gates to partition
+        regions: list[CircuitRegion] = []
         while any(cycle < num_cycles for cycle in divider):
+
+            # Move past/skip any gates that are larger than block size
+            qudits_to_increment: list[int] = []
+            for qudit, cycle in enumerate(divider):
+                if qudit in qudits_to_increment or cycle >= num_cycles:
+                    continue
+
+                if not circuit.is_point_idle((cycle, qudit)):
+                    op = circuit[cycle, qudit]
+                    if len(op.location) > self.block_size:
+                        if all(divider[q] == cycle for q in op.location):
+                            qudits_to_increment.extend(op.location)
+                            _logger.warning(
+                                'Skipping gate larger than block size.',
+                            )
+
+            for qudit in qudits_to_increment:
+                divider[qudit] += 1
+
+            # Skip any idle qudit-cycles
+            amount_to_add_to_each_qudit = [0 for _ in range(circuit.get_size())]
+            for qudit, cycle in enumerate(divider):
+                while (
+                    cycle < num_cycles
+                    and circuit.is_point_idle((cycle, qudit))
+                ):
+                    amount_to_add_to_each_qudit[qudit] += 1
+                    cycle += 1
+
+            for qudit, amount in enumerate(amount_to_add_to_each_qudit):
+                divider[qudit] += amount
 
             # Find the scores of the qudit groups.
             best_score = None
@@ -146,7 +181,7 @@ class ScanPartitioner(BasePass):
                 for cycle, op in ops_and_cycles:
                     if len(op.location.union(in_qudits)) != len(in_qudits):
                         for qudit_index in op.location.intersection(in_qudits):
-                            stopped_cycles[qudit_index] = cycle - 1
+                            stopped_cycles[qudit_index] = cycle
                             in_qudits.remove(qudit_index)
                     else:
                         if len(op.location) > 1:
@@ -160,11 +195,12 @@ class ScanPartitioner(BasePass):
                 if best_score is None or score > best_score:
                     best_score = score
                     best_region = CircuitRegion({
-                        qudit_index: (
-                            divider[qudit_index],
-                            stopped_cycles[qudit_index],
+                        qudit: (
+                            divider[qudit],
+                            stopped_cycles[qudit] - 1,
                         )
-                        for qudit_index in qudit_group
+                        for qudit in qudit_group
+                        if stopped_cycles[qudit] - 1 >= divider[qudit]
                     })
 
             if best_score is None or best_region is None:
