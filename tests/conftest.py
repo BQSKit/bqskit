@@ -97,16 +97,16 @@ type_dict = {
     'float_9': np.longdouble(1234.0),
     'float_10': np.float32(1234.0),
     'float_11': np.float64(1234.0),
-    'complex_1': complex(0.0j),
-    'complex_2': complex(0.0 + 0.0j),
+    'complex_1': complex(0.0j),  # type: ignore # Needs typeshed sync
+    'complex_2': complex(0.0 + 0.0j),    # type: ignore # Needs typeshed sync
     'complex_3': 1.0j,
     'complex_4': 1.0 + 1.0j,
     'complex_5': 1.0 - 1.0j,
     'complex_7': np.csingle(1234 + 1234j),
     'complex_8': np.cdouble(1234 + 1234j),
     'complex_9': np.clongdouble(1234 + 1234j),
-    'complex_10': np.complex64(1234 + 1234j),
-    'complex_11': np.complex128(1234 + 1234j),
+    'complex_10': np.complex64(1234 + 1234j),  # type: ignore # needs newer numpy
+    'complex_11': np.complex128(1234 + 1234j),  # type: ignore # needs newer numpy
     'bool_1': False,
     'bool_2': True,
     'bool_3': np.bool_(False),
