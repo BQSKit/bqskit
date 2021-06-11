@@ -1,5 +1,6 @@
 """This module implements the SimpleLayerGenerator class."""
 from __future__ import annotations
+from bqskit.compiler.machine import MachineModel
 
 from typing import Any
 
@@ -11,6 +12,8 @@ from bqskit.ir.gates import U3Gate
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
+import logging
+_logger = logging.getLogger(__name__)
 
 class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
     """
@@ -185,15 +188,28 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
         if circuit.get_size() < 2:
             raise ValueError('Cannot expand a single-qudit circuit.')
 
-        # TODO: Look in data for topology information
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+        if 'machine_model' in data:
+            model = data['machine_model']
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
 
         # TODO: Reconsider linear topology default
         successors = []
-        for i in range(circuit.get_size() - 1):
+        for edge in model.coupling_graph:
             successor = circuit.copy()
-            successor.append_gate(self.two_qudit_gate, [i, i + 1])
-            successor.append_gate(self.single_qudit_gate_1, [i])
-            successor.append_gate(self.single_qudit_gate_2, [i + 1])
+            successor.append_gate(self.two_qudit_gate, [edge[0], edge[1]])
+            successor.append_gate(self.single_qudit_gate_1, edge[0])
+            successor.append_gate(self.single_qudit_gate_2, edge[1])
             successors.append(successor)
 
         return successors
