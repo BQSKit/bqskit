@@ -118,8 +118,10 @@ class ScanPartitioner(BasePass):
         # NOTE: This assumes circuit and topology qudit numbers are equal
         qudit_groups = model.get_locations(self.block_size)
         # Prune unused qudit groups
-        used_qudits = [q for q in range(circuit.get_size()) 
-            if not circuit.is_qudit_idle(q)]
+        used_qudits = [
+            q for q in range(circuit.get_size())
+            if not circuit.is_qudit_idle(q)
+        ]
         for qudit_group in qudit_groups:
             if all(qudit_group) not in used_qudits:
                 qudit_groups.remove(qudit_group)

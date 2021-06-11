@@ -1,9 +1,10 @@
 """This module implements the SimpleLayerGenerator class."""
 from __future__ import annotations
-from bqskit.compiler.machine import MachineModel
 
+import logging
 from typing import Any
 
+from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.search.generator import LayerGenerator
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
@@ -11,9 +12,8 @@ from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import U3Gate
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
-import logging
 _logger = logging.getLogger(__name__)
+
 
 class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
     """

@@ -18,8 +18,9 @@ from bqskit.ir.gates import VariableUnitaryGate
 # Enable logging
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
 
-if __name__ == "__main__":
-    # Let's create a random 3-qubit unitary to synthesize and add it to a circuit.
+if __name__ == '__main__':
+    # Let's create a random 3-qubit unitary to synthesize and add it to a
+    # circuit.
     toffoli = np.array([
         [1, 0, 0, 0, 0, 0, 0, 0],
         [0, 1, 0, 0, 0, 0, 0, 0],
@@ -50,14 +51,14 @@ if __name__ == "__main__":
                 layer_generator=layer_generator,
                 instantiate_options=instantiate_options,
             ),
-            #WindowOptimizationPass(
+            # WindowOptimizationPass(
             #    window_size=11,
             #    synthesispass=QSearchSynthesisPass(
             #        layer_generator=layer_generator,
             #        instantiate_options=instantiate_options,
             #    ),
-            #),
-            #ScanningGateRemovalPass(),
+            # ),
+            # ScanningGateRemovalPass(),
         ],
     )
 
