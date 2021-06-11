@@ -134,7 +134,7 @@ class SimplePartitioner(BasePass):
         curr_path = path.copy()
         curr_path.add(vertex)
         if len(curr_path) == limit:
-            all_paths.add(frozenset(curr_path))  # type: ignore
+            all_paths.add(frozenset(curr_path))
         else:
             frontier: list[int] = []
             for node in curr_path:
@@ -297,7 +297,7 @@ class SimplePartitioner(BasePass):
                 insider_qudits = q_group.copy()
                 # TODO: CircuitIterator is costly to use, find a way to iterate
                 #   through a subcircuit in order.
-                circ_iter = Circuit.SubCircuitIterator(  # type: ignore
+                circ_iter = Circuit.SubCircuitIterator(
                     circuit=circuit._circuit,
                     subset=q_group,  # type: ignore
                     and_points=True,
@@ -344,7 +344,7 @@ class SimplePartitioner(BasePass):
             # Replace the highest scoring block with a CircuitGate.
             qudits = best_block.block_start.keys()
             points_in_block = []
-            circ_iter = circuit.SubCircuitIterator(  # type: ignore
+            circ_iter = circuit.SubCircuitIterator(
                 circuit=circuit._circuit,
                 subset=qudits,  # type: ignore
                 and_points=True,

@@ -50,7 +50,7 @@ class TestMachineConstructor:
     def test_coupling_graph_invalid(self) -> None:
         coupling_graph = {(0, 1), (1, 2), (2, 3)}
         with pytest.raises(TypeError):
-            MachineModel(2, coupling_graph)  # type: ignore
+            MachineModel(2, coupling_graph)
         with pytest.raises(TypeError):
             MachineModel(2, (0, 1))  # type: ignore
         with pytest.raises(TypeError):
@@ -95,11 +95,11 @@ class TestMachineGetValidLocations:
         model = MachineModel(4, coupling_graph)
 
         with pytest.raises(ValueError):
-            model.get_valid_locations(5)  # type: ignore
+            model.get_valid_locations(5)
         with pytest.raises(ValueError):
-            model.get_valid_locations(0)  # type: ignore
+            model.get_valid_locations(0)
         with pytest.raises(ValueError):
-            model.get_valid_locations(-2)  # type: ignore
+            model.get_valid_locations(-2)
         with pytest.raises(TypeError):
             model.get_valid_locations('a')  # type: ignore
 
@@ -133,6 +133,6 @@ class TestMachineGetSubgraph:
         with pytest.raises(TypeError):
             model.get_subgraph(5)  # type: ignore
         with pytest.raises(TypeError):
-            model.get_subgraph((5,))  # type: ignore
+            model.get_subgraph((5,))
         with pytest.raises(TypeError):
             model.get_subgraph('a')  # type: ignore
