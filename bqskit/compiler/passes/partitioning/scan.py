@@ -123,7 +123,7 @@ class ScanPartitioner(BasePass):
             if not circuit.is_qudit_idle(q)
         ]
         for qudit_group in qudit_groups:
-            if all(qudit_group) not in used_qudits:
+            if all([q not in used_qudits for q in qudit_group]):
                 qudit_groups.remove(qudit_group)
 
         # divider splits the circuit into partitioned and unpartitioned spaces.
