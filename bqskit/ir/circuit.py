@@ -20,7 +20,7 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtCost
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.instantiaters.minimization import Minimization

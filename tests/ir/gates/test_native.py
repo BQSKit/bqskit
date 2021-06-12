@@ -1,14 +1,20 @@
-from bqskit.ir.gates import (
-    RXGate, RYGate, RZGate, CNOTGate, U1Gate, U2Gate, U3Gate
-)
-from bqskitrs import Circuit
-from bqskit.ir import Circuit as Circ
+from __future__ import annotations
 
 import numpy as np
-
 import pytest
+from bqskitrs import Circuit
 
-GATES = (
+from bqskit.ir import Circuit as Circ
+from bqskit.ir.gate import Gate
+from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import RXGate
+from bqskit.ir.gates import RYGate
+from bqskit.ir.gates import RZGate
+from bqskit.ir.gates import U1Gate
+from bqskit.ir.gates import U2Gate
+from bqskit.ir.gates import U3Gate
+
+NATIVE_GATES = (
     RXGate(),
     RYGate(),
     RZGate(),
@@ -19,8 +25,8 @@ GATES = (
 )
 
 
-@pytest.mark.parametrize("gate", GATES, ids=lambda gate: repr(gate))
-def test_get_unitary(gate):
+@pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
+def test_get_unitary(gate: Gate) -> None:
     size = gate.get_size()
     circ = Circ(size)
     circ.append_gate(gate, list(range(size)))
@@ -29,8 +35,9 @@ def test_get_unitary(gate):
     circuit = Circuit(circ)
     assert np.allclose(circ.get_unitary(x).get_numpy(), circuit.get_unitary(x))
 
-@pytest.mark.parametrize("gate", GATES, ids=lambda gate: repr(gate))
-def test_get_grad(gate):
+
+@pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
+def test_get_grad(gate: Gate) -> None:
     size = gate.get_size()
     circ = Circ(size)
     circ.append_gate(gate, list(range(size)))
@@ -40,10 +47,11 @@ def test_get_grad(gate):
     grad_python = circ.get_grad(x)
     grad_rust = circuit.get_grad(x)
     for py, rs in zip(grad_python, grad_rust):
-        assert np.allclose(py, rs), print(py) or print(rs)
+        assert np.allclose(py, rs)
 
-@pytest.mark.parametrize("gate", GATES, ids=lambda gate: repr(gate))
-def test_get_unitary_and_grad(gate):
+
+@pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
+def test_get_unitary_and_grad(gate: Gate) -> None:
     size = gate.get_size()
     circ = Circ(size)
     circ.append_gate(gate, list(range(size)))
@@ -54,4 +62,4 @@ def test_get_unitary_and_grad(gate):
     utry_rust, grad_rust = circuit.get_unitary_and_grad(x)
     assert np.allclose(utry_python.get_numpy(), utry_rust)
     for i, (py, rs) in enumerate(zip(grad_python, grad_rust)):
-        assert np.allclose(py, rs), print(py) or print(rs) or i
+        assert np.allclose(py, rs)

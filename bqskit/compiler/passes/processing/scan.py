@@ -8,7 +8,7 @@ from typing import Callable
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_real_number
@@ -26,7 +26,7 @@ class ScanningGateRemovalPass(BasePass):
         self,
         start_from_left: bool = True,
         success_threshold: float = 1e-10,
-        cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
+        cost: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
         instantiate_options: dict[str, Any] = {},
         collection_filter: Callable[[Operation], bool] | None = None,
     ) -> None:
@@ -45,7 +45,7 @@ class ScanningGateRemovalPass(BasePass):
 
             cost (CostFunction | None): The cost function that determines
                 successful removal of a gate.
-                (Default: HilbertSchmidtGenerator())
+                (Default: HilbertSchmidtCostGenerator())
 
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
