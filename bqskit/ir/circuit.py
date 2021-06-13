@@ -1565,7 +1565,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for start in starts:
             params.append(instantiater.instantiate(self, typed_target, start))
 
-        cost_fn = HilbertSchmidtCost(self, typed_target)
+        cost_fn = HilbertSchmidtCost(self, typed_target.get_numpy())
         self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:

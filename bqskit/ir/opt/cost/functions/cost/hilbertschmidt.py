@@ -28,20 +28,6 @@ class HilbertSchmidtCost(
     if the target and circuit unitary differ only by a global phase.
     """
 
-    def __init__(
-        self,
-        circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
-    ) -> None:
-        """Construct a HilbertSchmidtCost function."""
-        if isinstance(target, StateVector):
-            raise NotImplementedError(
-                'Statevector support for hilbert-schmidt distance'
-                ' is not currently implemented.',
-            )  # TODO
-
-        super().__init__(self, circuit, target.get_numpy())
-
 
 class HilbertSchmidtCostGenerator(CostFunctionGenerator):
     """
@@ -56,4 +42,4 @@ class HilbertSchmidtCostGenerator(CostFunctionGenerator):
         target: UnitaryMatrix | StateVector,
     ) -> CostFunction:
         """Generate a CostFunction, see CostFunctionGenerator for more info."""
-        return HilbertSchmidtCost(circuit, target)
+        return HilbertSchmidtCost(circuit, target.get_numpy())

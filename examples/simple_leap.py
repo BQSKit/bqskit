@@ -18,7 +18,7 @@ from bqskit.ir.gates import VariableUnitaryGate
 # Enable logging
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
 
-# Let's create a random 3-qubit unitary to synthesize and add it to a circuit.
+# Let's create a 3-qubit toffoli unitary to synthesize and add it to a circuit.
 toffoli = np.array([
     [1, 0, 0, 0, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0, 0, 0],

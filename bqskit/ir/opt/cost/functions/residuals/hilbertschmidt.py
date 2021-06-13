@@ -28,20 +28,6 @@ class HilbertSchmidtResiduals(
     zero if the target and circuit unitary differ only by a global phase.
     """
 
-    def __init__(
-        self,
-        circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
-    ) -> None:
-        """Construct a HilbertSchmidtResiduals function."""
-        if isinstance(target, StateVector):
-            raise NotImplementedError(
-                'Statevector support for hilbert-schmidt distance'
-                ' is not currently implemented.',
-            )  # TODO
-
-        super().__init__(self, circuit, target.get_numpy())
-
 
 class HilbertSchmidtResidualsGenerator(CostFunctionGenerator):
     """
@@ -56,4 +42,4 @@ class HilbertSchmidtResidualsGenerator(CostFunctionGenerator):
         target: UnitaryMatrix | StateVector,
     ) -> CostFunction:
         """Generate a CostFunction, see CostFunctionGenerator for more info."""
-        return HilbertSchmidtResiduals(circuit, target)
+        return HilbertSchmidtResiduals(circuit, target.get_numpy())
