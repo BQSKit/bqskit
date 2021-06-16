@@ -1,6 +1,7 @@
 """This module implements the SynthesisPass abstract class."""
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
 from typing import Any
 from typing import Callable
@@ -11,6 +12,8 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+_logger = logging.getLogger(__name__)
 
 
 class SynthesisPass(BasePass):
@@ -94,15 +97,28 @@ class SynthesisPass(BasePass):
                 ops_to_syn.append((cycle, op))
 
         # Synthesize operations
+        errors: list[float] = []
         for cycle, op in ops_to_syn:
             syn_circuit = self.synthesize(op.get_unitary(), data)
+
             if self.replace_filter(syn_circuit, op):
+                # Calculate errors
+                new_utry = syn_circuit.get_unitary()
+                old_utry = op.get_unitary()
+                errors.append(new_utry.get_distance_from(old_utry))
+
                 circuit.replace_gate(
                     (cycle, op.location[0]),
                     CircuitGate(syn_circuit, True),
                     op.location,
                     list(syn_circuit.get_params()),  # TODO: RealVector
                 )
+
+        data['synthesispass_error_sum'] = sum(errors)  # TODO: Might be replaced
+        _logger.info(
+            'Synthesis pass completed. Upper bound on '
+            f"circuit error is {data['synthesispass_error_sum']}",
+        )
 
 
 def default_collection_filter(op: Operation) -> bool:
