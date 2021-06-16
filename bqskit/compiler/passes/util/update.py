@@ -1,4 +1,4 @@
-"""This module implements the InjectDataPass class."""
+"""This module implements the UpdateDataPass class."""
 from __future__ import annotations
 
 import logging
@@ -11,16 +11,16 @@ from bqskit.ir.circuit import Circuit
 _logger = logging.getLogger(__name__)
 
 
-class InjectDataPass(BasePass):
+class UpdateDataPass(BasePass):
     """
-    The InjectDataPass class.
+    The UpdateDataPass class.
 
-    The InjectDataPass adds a key-value pair to data dictionary.
+    The UpdateDataPass adds a key-value pair to data dictionary.
     """
 
     def __init__(self, key: str, val: Any) -> None:
         """
-        Construct a InjectDataPass.
+        Construct a UpdateDataPass.
 
         Args:
             key (str): The key to add.

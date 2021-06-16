@@ -23,7 +23,7 @@ class ClusteringPartitioner(BasePass):
 
     def __init__(self, block_size: int = 3, num_points: int = 8) -> None:
         """
-        Construct a SimplePartitioner.
+        Construct a ClusteringPartitioner.
 
         Args:
             block_size (int): Maximum size of partitioned blocks.
@@ -83,8 +83,15 @@ class ClusteringPartitioner(BasePass):
             return
 
         for i in range(self.num_points):
+            # Randomly select a point
             # TODO: Tile and pick points better
-            cycle = np.random.randint(circuit.get_num_cycles())
-            qudit = np.random.randint(circuit.get_size())
+            cycle = 0
+            qudit = 0
+            while True:
+                cycle = np.random.randint(circuit.get_num_cycles())
+                qudit = np.random.randint(circuit.get_size())
+                if not circuit.is_point_idle((cycle, qudit)):
+                    break
+
             region = circuit.surround((cycle, qudit), self.block_size)
             circuit.fold(region)

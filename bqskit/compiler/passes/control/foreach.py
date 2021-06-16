@@ -77,9 +77,9 @@ class ForEachBlockPass(BasePass):
 
         # Collect CircuitGate blocks
         blocks: list[tuple[CircuitPoint, Operation]] = []
-        for point, op in circuit.operations_with_points():
+        for cycle, op in circuit.operations_with_cycles():
             if isinstance(op.gate, CircuitGate):
-                blocks.append((point, op))
+                blocks.append((cycle, op))
 
         # If a MachineModel is provided in the data dict, it will be used.
         # Otherwise all-to-all connectivity is assumed.
@@ -99,8 +99,9 @@ class ForEachBlockPass(BasePass):
         sub_data = data.copy()
 
         # Perform work
-        for point, op in blocks:
+        for cycle, op in blocks:
             gate: CircuitGate = op.gate  # type: ignore
+<<<<<<< HEAD
             sub_circuit = gate._circuit.copy()
             sub_circuit.set_params(op.params)
 
@@ -109,6 +110,10 @@ class ForEachBlockPass(BasePass):
                 len(op.location),
                 model.get_subgraph(op.location, sub_numbering),
             )
+=======
+            circuit = gate._circuit.copy()
+            circuit.set_params(op.params)
+>>>>>>> b7e98b8ed2337013990eb48247bdd3e5d5e3c9bd
 
             if is_sequence(self.loop_body):
                 for loop_pass in self.loop_body:
@@ -118,7 +123,7 @@ class ForEachBlockPass(BasePass):
 
             if self.replace_filter(circuit, op):
                 circuit.replace_gate(
-                    point,
+                    (cycle, op.location[0]),
                     CircuitGate(circuit, True),
                     op.location,
                     circuit.get_params(),
