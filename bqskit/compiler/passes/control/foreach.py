@@ -9,12 +9,12 @@ from typing import Callable
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_sequence
-from bqskit.compiler.machine import MachineModel
 
 _logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class ForEachBlockPass(BasePass):
                 ' defaulting to all-to-all.',
             )
             model = MachineModel(circuit.get_size())
-        
+
         sub_data = data.copy()
 
         # Perform work
@@ -104,9 +104,11 @@ class ForEachBlockPass(BasePass):
             sub_circuit = gate._circuit.copy()
             sub_circuit.set_params(op.params)
 
-            sub_numbering = {op.location[i]: i for i in len(op.location)}
-            sub_data['machine_model'] = MachineModel(len(op.location), 
-                model.get_subgraph(op.location, sub_numbering))
+            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
+            sub_data['machine_model'] = MachineModel(
+                len(op.location),
+                model.get_subgraph(op.location, sub_numbering),
+            )
 
             if is_sequence(self.loop_body):
                 for loop_pass in self.loop_body:

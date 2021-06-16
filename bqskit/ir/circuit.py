@@ -1433,10 +1433,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if init_op.get_size() > size:
             raise ValueError('Gate at point is too large for size.')
 
-        Node = tuple[
-            list[tuple[CircuitPoint, str, bool]],
-            list[tuple[int, Operation]],
-            CircuitLocation,
+        Node = tuple[  # type: ignore
+            list[tuple[CircuitPoint, str, bool]],  # type: ignore
+            list[tuple[int, Operation]],  # type: ignore
+            CircuitLocation,  # type: ignore
         ]
         """
         A Node in the search tree.

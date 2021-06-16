@@ -1,16 +1,20 @@
 """This module implements the SynthesisPass abstract class."""
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
 from typing import Any
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+_logger = logging.getLogger(__name__)
 
 
 class SynthesisPass(BasePass):
@@ -93,9 +97,34 @@ class SynthesisPass(BasePass):
             if self.collection_filter(op):
                 ops_to_syn.append((cycle, op))
 
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+        if 'machine_model' in data:
+            model = data['machine_model']
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
+
+        sub_data = data.copy()
+        new_circ = Circuit(circuit.get_size())
+
         # Synthesize operations
         for cycle, op in ops_to_syn:
-            syn_circuit = self.synthesize(op.get_unitary(), data)
+            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
+            sub_data['machine_model'] = MachineModel(
+                len(op.location),
+                model.get_subgraph(op.location, sub_numbering),
+            )
+
+            syn_circuit = self.synthesize(op.get_unitary(), sub_data)
+
             if self.replace_filter(syn_circuit, op):
                 circuit.replace_gate(
                     (cycle, op.location[0]),
@@ -103,6 +132,15 @@ class SynthesisPass(BasePass):
                     op.location,
                     list(syn_circuit.get_params()),  # TODO: RealVector
                 )
+            new_circ.append_circuit(syn_circuit, op.location)
+        circuit.clear()
+        circuit.append_circuit(
+            new_circ, [
+                x for x in range(
+                    new_circ.get_size(),
+                )
+            ],
+        )
 
 
 def default_collection_filter(op: Operation) -> bool:

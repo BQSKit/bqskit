@@ -153,7 +153,7 @@ class MachineModel:
     def get_subgraph(
         self,
         location: CircuitLocationLike,
-        renumbering : dict[int,int] = None
+        renumbering: dict[int, int] = None,  # type: ignore
     ) -> list[tuple[int, int]]:
         """Returns the sub_coupling_graph with qudits in location."""
         if not CircuitLocation.is_location(location, self.num_qudits):
@@ -161,7 +161,7 @@ class MachineModel:
 
         location = CircuitLocation(location)
         if renumbering is None:
-            renumbering = {x:x for x in range(self.num_qudits)}
+            renumbering = {x: x for x in range(self.num_qudits)}
 
         subgraph = []
         for q0, q1 in self.coupling_graph:
