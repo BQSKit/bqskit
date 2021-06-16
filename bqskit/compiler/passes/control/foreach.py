@@ -101,7 +101,6 @@ class ForEachBlockPass(BasePass):
         # Perform work
         for cycle, op in blocks:
             gate: CircuitGate = op.gate  # type: ignore
-<<<<<<< HEAD
             sub_circuit = gate._circuit.copy()
             sub_circuit.set_params(op.params)
 
@@ -110,10 +109,6 @@ class ForEachBlockPass(BasePass):
                 len(op.location),
                 model.get_subgraph(op.location, sub_numbering),
             )
-=======
-            circuit = gate._circuit.copy()
-            circuit.set_params(op.params)
->>>>>>> b7e98b8ed2337013990eb48247bdd3e5d5e3c9bd
 
             if is_sequence(self.loop_body):
                 for loop_pass in self.loop_body:
