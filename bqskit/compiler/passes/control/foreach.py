@@ -76,14 +76,14 @@ class ForEachBlockPass(BasePass):
 
         # Collect CircuitGate blocks
         blocks: list[tuple[CircuitPoint, Operation]] = []
-        for point, op in circuit.operations_with_points():
+        for cycle, op in circuit.operations_with_cycles():
             if isinstance(op.gate, CircuitGate):
-                blocks.append((point, op))
+                blocks.append((cycle, op))
 
         # Perform work
-        for point, op in blocks:
+        for cycle, op in blocks:
             gate: CircuitGate = op.gate  # type: ignore
-            circuit = gate._circuit.copy()  # TODO: OVERWRITING CIRCUIT
+            circuit = gate._circuit.copy()
             circuit.set_params(op.params)
 
             if is_sequence(self.loop_body):
@@ -96,7 +96,7 @@ class ForEachBlockPass(BasePass):
 
             if self.replace_filter(circuit, op):
                 circuit.replace_gate(
-                    point,
+                    (cycle, op.location[0]),
                     CircuitGate(circuit, True),
                     op.location,
                     circuit.get_params(),

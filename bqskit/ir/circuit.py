@@ -1491,8 +1491,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if init_op.get_size() > size:
             raise ValueError('Gate at point is too large for size.')
 
+        HalfWire = tuple[CircuitPoint, str]
         Node = tuple[
-            list[tuple[CircuitPoint, str, bool]],
+            list[HalfWire],
             list[tuple[int, Operation]],
             CircuitLocation,
         ]
@@ -1502,18 +1503,18 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Each node represents a region that may grow further.
         The data structure tracks all half-wires in the region and
         the list of operations inside the region. For each half-wire,
-        we store the furtherest along point, it's direction, and whether
-        or not it has been stopped. The node structure additionally stores
-        the set of qudit indices involved in the region currently.
+        we store the furtherest along point and its direction. The
+        node structure additionally stores the set of qudit indices
+        involved in the region currently.
         """
 
         init_node = (
             [
-                (CircuitPoint(point[0], qudit_index), 'left', False)
+                (CircuitPoint(point[0], qudit_index), 'left')
                 for qudit_index in init_op.location
             ]
             + [
-                (CircuitPoint(point[0], qudit_index), 'right', False)
+                (CircuitPoint(point[0], qudit_index), 'right')
                 for qudit_index in init_op.location
             ],
             [(point[0], init_op)],
@@ -1529,6 +1530,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         best_node = init_node
         best_score = score(init_node)
 
+        # Exhaustive Search
         while len(frontier) > 0:
             node = frontier.pop(0)
 
@@ -1540,22 +1542,24 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             # Expand node
             for i, half_wire in enumerate(node[0]):
 
-                # If the half-wire has been stopped, then don't expand it.
-                if half_wire[2]:
-                    continue
-
                 # Explore in specified direction
                 cycle_index, qudit_index = half_wire[0]
                 step = -1 if half_wire[1] == 'left' else 1
 
-                while 0 <= cycle_index < self.get_num_cycles():
+                while True:
 
                     # Find next gate
                     cycle_index += step
+
                     if cycle_index < 0 or cycle_index >= self.get_num_cycles():
+                        stopped_node = copy.deepcopy(node)
+                        stopped_node[0].pop(i)
+                        frontier.append(stopped_node)
                         break
+
                     if self.is_point_idle((cycle_index, qudit_index)):
                         continue
+
                     op: Operation = self[cycle_index, qudit_index]
 
                     # Absorb single-qudit gates
@@ -1565,76 +1569,53 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                         new_node[0][i] = (
                             CircuitPoint(cycle_index, qudit_index),
                             half_wire[1],
-                            False,
                         )
                         frontier.append(new_node)
                         break
 
                     # Operations that are too large stop this half_wire
-                    if len(set(op.location).union(node[2])) > size:
-                        new_node = copy.deepcopy(node)
-                        new_node[0][i] = (
-                            CircuitPoint(cycle_index - step, qudit_index),
-                            half_wire[1],
-                            True,
-                        )
-                        frontier.append(new_node)
+                    if len(op.location.union(node[2])) > size:
+                        stopped_node = copy.deepcopy(node)
+                        stopped_node[0].pop(i)
+                        frontier.append(stopped_node)
                         break
 
                     # Otherwise consider both 1) adding the operation
                     if (cycle_index, op) not in node[1]:
-                        if len(node[2].union(op.location)) <= size:
-                            added_node = copy.deepcopy(node)
-                            added_node[1].append((cycle_index, op))
-                            added_node[0][i] = (
-                                CircuitPoint(cycle_index, qudit_index),
-                                half_wire[1],
-                                False,
+                        added_node = copy.deepcopy(node)
+                        added_node[1].append((cycle_index, op))
+                        added_node[0][i] = (
+                            CircuitPoint(cycle_index, qudit_index),
+                            half_wire[1],
+                        )
+                        added_node[0].extend([
+                            (
+                                CircuitPoint(cycle_index, qudit),
+                                'left',
                             )
-                            added_node[0].extend([
-                                (
-                                    CircuitPoint(cycle_index, qudit),
-                                    'left',
-                                    False,
-                                )
-                                for qudit in op.location
-                                if qudit != qudit_index
-                            ])
-                            added_node[0].extend([
-                                (
-                                    CircuitPoint(cycle_index, qudit),
-                                    'right',
-                                    False,
-                                )
-                                for qudit in op.location
-                                if qudit != qudit_index
-                            ])
-                            added_node = (
-                                added_node[0],
-                                added_node[1],
-                                added_node[2].union(op.location),
+                            for qudit in op.location
+                            if qudit != qudit_index
+                        ])
+                        added_node[0].extend([
+                            (
+                                CircuitPoint(cycle_index, qudit),
+                                'right',
                             )
-                            frontier.append(added_node)
+                            for qudit in op.location
+                            if qudit != qudit_index
+                        ])
+                        added_node = (
+                            added_node[0],
+                            added_node[1],
+                            added_node[2].union(op.location),
+                        )
+                        frontier.append(added_node)
 
                     # 2) And stopping the half_wire
                     stopped_node = copy.deepcopy(node)
-                    stopped_node[0][i] = (
-                        CircuitPoint(cycle_index - step, qudit_index),
-                        half_wire[1],
-                        True,
-                    )
+                    stopped_node[0].pop(i)
                     frontier.append(stopped_node)
                     break
-
-                # Handle the edges of the circuit by stopping half_wire
-                if cycle_index < 0 or cycle_index >= self.get_num_cycles():
-                    stopped_node = copy.deepcopy(node)
-                    stopped_node[0][i] = (
-                        CircuitPoint(cycle_index - step, qudit_index),
-                        half_wire[1],
-                        True,
-                    )
-                    frontier.append(stopped_node)
 
         # Calculate region from best node and return
         points = [half_wire[0] for half_wire in best_node[0]]
@@ -1735,7 +1716,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return self.get_region(CircuitRegion(region).points)
 
     def get_operations(
-            self, points: Iterable[CircuitPointLike],
+            self,
+            points: Iterable[CircuitPointLike],
     ) -> list[Operation]:
         """Retrieve operations from `points` without throwing IndexError."""
         if not is_iterable(points):
