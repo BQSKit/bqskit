@@ -214,7 +214,7 @@ class ScanPartitioner(BasePass):
             if best_score is None or best_region is None:
                 raise RuntimeError('No valid block found.')
 
-            _logger.info('Found block with score: {best_score}.')
+            _logger.info('Found block with score: %d.' %(best_score))
             regions.append(best_region)
 
             # Update divider
