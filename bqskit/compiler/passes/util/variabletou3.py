@@ -5,14 +5,11 @@ import logging
 from typing import Any
 
 import numpy as np
-from numpy.lib import math
-from scipy.linalg.misc import norm
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
-from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 
 _logger = logging.getLogger(__name__)
@@ -27,8 +24,7 @@ class VariableToU3Pass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
-        _logger.debug(f'Converting VariableUnitaryGates to U3Gates.')
-        i = 0
+        _logger.debug('Converting VariableUnitaryGates to U3Gates.')
         for cycle, op in circuit.operations_with_cycles():
             if isinstance(op.gate, VariableUnitaryGate) and len(
                     op.location,

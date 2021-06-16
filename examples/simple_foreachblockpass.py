@@ -4,24 +4,18 @@ from __future__ import annotations
 import logging
 
 from qiskit.quantum_info import OneQubitEulerDecomposer
-from scipy.stats import unitary_group
-from scipy.stats.morestats import circmean
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
-from bqskit.compiler.passes.processing import ScanningGateRemovalPass
-from bqskit.compiler.passes.processing import WindowOptimizationPass
 from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
-from bqskit.compiler.passes.synthesis import QSearchSynthesisPass
 from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
 from bqskit.ir import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
-from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 
@@ -40,8 +34,10 @@ if __name__ == '__main__':
 
     num_q = 5
     data = {
-        'machine_model': MachineModel(num_q, [(i, i + 1) \
-            for i in range(num_q - 1)]),
+        'machine_model': MachineModel(
+            num_q, [(i, i + 1)
+                    for i in range(num_q - 1)],
+        ),
     }
     partitioner = ScanPartitioner(3)
 
@@ -108,26 +104,5 @@ if __name__ == '__main__':
                         cycle, op.location[0],
                     ), new_op,
                 )
-                """
-                print(params)
-                print(new_params)
-                print("old")
-                print(op.get_unitary().get_numpy())
-                print("new")
-                print(new_op.get_unitary().get_numpy())
-                """
-                """
-                print("old")
-                print(op.get_unitary().get_numpy())
-                print("new")
-                print(new_op.get_unitary().get_numpy())
-                """
             else:
                 print(op)
-"""
-        new_qasm = OPENQASM2Language().encode(compiled_circuit)
-
-    with open('scratch/new_qasm.qasm', 'w') as f:
-        f.write(new_qasm)
-
-"""

@@ -117,7 +117,6 @@ class SynthesisPass(BasePass):
         # Synthesize operations
         errors: list[float] = []
         for cycle, op in ops_to_syn:
-<<<<<<< HEAD
             sub_numbering = {op.location[i]: i for i in range(len(op.location))}
             sub_data['machine_model'] = MachineModel(
                 len(op.location),
@@ -125,9 +124,6 @@ class SynthesisPass(BasePass):
             )
 
             syn_circuit = self.synthesize(op.get_unitary(), sub_data)
-=======
-            syn_circuit = self.synthesize(op.get_unitary(), data)
->>>>>>> 98145a309621568f04dfa6c405c65a29304cf2d8
 
             if self.replace_filter(syn_circuit, op):
                 # Calculate errors

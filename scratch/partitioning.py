@@ -3,13 +3,11 @@ from __future__ import annotations
 import logging
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes import synthesis
 from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.compiler.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.compiler.passes.util.unfold import UnfoldPass
 from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
 from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
-from bqskit.ir import Circuit
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 
@@ -18,20 +16,20 @@ logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
 
 def mesh(
         n: int,
-        m: int = None,
-) -> set[tuple[int]]:
+        m: int | None = None,  # type: ignore
+) -> set[tuple[int, int]]:
     """
     Generate a 2D mesh coupling map.
 
     Args:
-            n (int): If only n is provided, then this is the side length of a square
-                    grid. Otherwise it is the number of rows in the mesh.
+        n (int): If only n is provided, then this is the side length of a square
+                grid. Otherwise it is the number of rows in the mesh.
 
-            m (int|None): If m is provided, it is the number of columns in the mesh.
+        m (int|None): If m is provided, it is the number of columns in the mesh.
 
     Returns:
-            coupling_map (set[tuple[int]]): The coupling map corresponding to the
-                    2D nearest neighbor mesh that is nxn or nxm in dimensions.
+        coupling_map (set[tuple[int]]): The coupling map corresponding to the
+            2D nearest neighbor mesh that is nxn or nxm in dimensions.
     """
     cols = n if m is None else m
     rows = n
@@ -48,7 +46,7 @@ def mesh(
     return edges
 
 
-def alltoall(num_q: int) -> set[tuple[int]]:
+def alltoall(num_q: int) -> set[tuple[int, int]]:
     """
     Generate an all to all coupling map.
 
@@ -66,7 +64,7 @@ def alltoall(num_q: int) -> set[tuple[int]]:
     return edges
 
 
-def linear(num_q: int) -> set[tuple[int]]:
+def linear(num_q: int) -> set[tuple[int, int]]:
     """
     Generate a linear coupling map.
 
@@ -95,7 +93,7 @@ if __name__ == '__main__':
         circ = OPENQASM2Language().decode(f.read())
     num_q = circ.get_size()
     # Run partitioner on logical topology
-    mach = MachineModel(circ.get_size(), alltoall(num_q))
+    mach = MachineModel(circ.get_size(), list(alltoall(num_q)))
     data = {'machine_model': mach}
     part = ScanPartitioner(3)
     print('Partitioning circuit...')
