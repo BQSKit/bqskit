@@ -23,7 +23,7 @@ class ClusteringPartitioner(BasePass):
 
     def __init__(self, block_size: int = 3, num_points: int = 8) -> None:
         """
-        Construct a SimplePartitioner.
+        Construct a ClusteringPartitioner.
 
         Args:
             block_size (int): Maximum size of partitioned blocks.
