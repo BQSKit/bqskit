@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from bqskit import Circuit
-from bqskit.compiler.passes.simplepartitioner import SimplePartitioner
 from bqskit.compiler.passes.logicaltopology import LogicalTopology
+from bqskit.compiler.passes.simplepartitioner import SimplePartitioner
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 
 # Prepare circuit
-with open('scratch/qft_qasm/qft_10.qasm', 'r') as f:
+with open('scratch/qft_qasm/qft_10.qasm') as f:
     circ = OPENQASM2Language().decode(f.read())
 
 # Run partitioner on logical topology:w
@@ -20,4 +22,4 @@ print('hi')
 #   Call mapping algorithm to get a qudit layout that minimizes SWAP globally
 #   For edges that are not in the physical topology
 
-# 
+#

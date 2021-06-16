@@ -7,10 +7,7 @@ import numpy as np
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
-from bqskit.compiler.passes.processing import ScanningGateRemovalPass
-from bqskit.compiler.passes.processing import WindowOptimizationPass
 from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
-from bqskit.compiler.passes.synthesis import QSearchSynthesisPass
 from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
 from bqskit.ir import Circuit
 from bqskit.ir.gates import VariableUnitaryGate

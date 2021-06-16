@@ -113,7 +113,6 @@ class SynthesisPass(BasePass):
             model = MachineModel(circuit.get_size())
 
         sub_data = data.copy()
-        new_circ = Circuit(circuit.get_size())
 
         # Synthesize operations
         for cycle, op in ops_to_syn:
@@ -132,15 +131,6 @@ class SynthesisPass(BasePass):
                     op.location,
                     list(syn_circuit.get_params()),  # TODO: RealVector
                 )
-            new_circ.append_circuit(syn_circuit, op.location)
-        circuit.clear()
-        circuit.append_circuit(
-            new_circ, [
-                x for x in range(
-                    new_circ.get_size(),
-                )
-            ],
-        )
 
 
 def default_collection_filter(op: Operation) -> bool:

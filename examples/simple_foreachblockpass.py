@@ -1,41 +1,38 @@
 """This script is contains a simple use case of the QFAST synthesis method."""
 from __future__ import annotations
-from bqskit.ir.point import CircuitPoint
-from bqskit.ir.operation import Operation
-from bqskit.ir.gates.parameterized.u3 import U3Gate
 
 import logging
 
+from qiskit.quantum_info import OneQubitEulerDecomposer
 from scipy.stats import unitary_group
 from scipy.stats.morestats import circmean
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
-from bqskit.ir import Circuit
-from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
+from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.compiler.passes.processing import ScanningGateRemovalPass
 from bqskit.compiler.passes.processing import WindowOptimizationPass
 from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
 from bqskit.compiler.passes.synthesis import QSearchSynthesisPass
 from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
+from bqskit.ir import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
-from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
-
 from bqskit.ir.gates.constant.cx import CNOTGate
-from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.constant.h import HGate
-
-from qiskit.quantum_info import OneQubitEulerDecomposer
+from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
+from bqskit.ir.operation import Operation
+from bqskit.ir.point import CircuitPoint
 
 if __name__ == '__main__':
     # Enable logging
     logging.getLogger('bqskit').setLevel(logging.DEBUG)
 
     circuit = Circuit(5)
-    circuit.append_gate(CNOTGate(), [0,1])
+    circuit.append_gate(CNOTGate(), [0, 1])
     circuit.append_gate(HGate(), [1])
-    circuit.append_gate(CNOTGate(), [0,1])
+    circuit.append_gate(CNOTGate(), [0, 1])
     circuit.append_gate(HGate(), [0])
     circuit.append_gate(HGate(), [0])
     circuit.append_gate(HGate(), [1])
@@ -43,7 +40,8 @@ if __name__ == '__main__':
 
     num_q = 5
     data = {
-        "machine_model": MachineModel(num_q, [(i,i+1) for i in range(num_q-1)])
+        'machine_model': MachineModel(num_q, [(i, i + 1) \
+            for i in range(num_q - 1)]),
     }
     partitioner = ScanPartitioner(3)
 
@@ -64,14 +62,14 @@ if __name__ == '__main__':
             layer_generator=layer_generator,
             instantiate_options=instantiate_options,
         ),
-        #WindowOptimizationPass(
+        # WindowOptimizationPass(
         #    window_size=11,
         #    synthesispass=QSearchSynthesisPass(
         #        layer_generator=layer_generator,
         #        instantiate_options=instantiate_options,
         #    ),
-        #),
-        #ScanningGateRemovalPass(),
+        # ),
+        # ScanningGateRemovalPass(),
     ]
 
     # We will now define the CompilationTask we want to run.
@@ -91,13 +89,25 @@ if __name__ == '__main__':
                 new_utry = new_op.get_unitary().get_numpy()
                 new_params = OneQubitEulerDecomposer('U3').angles(new_utry)
 
-                u1 = Operation(U3Gate(), op.location, list(params)).get_unitary().get_numpy()
-                u2 = Operation(U3Gate(), op.location, list(new_params)).get_unitary().get_numpy()
+                u1 = Operation(
+                    U3Gate(), op.location, list(
+                        params,
+                    ),
+                ).get_unitary().get_numpy()
+                u2 = Operation(
+                    U3Gate(), op.location, list(
+                        new_params,
+                    ),
+                ).get_unitary().get_numpy()
 
                 print(norm(u1 - u2))
                 print(params)
                 print(new_params)
-                compiled_circuit.replace(CircuitPoint(cycle, op.location[0]), new_op)
+                compiled_circuit.replace(
+                    CircuitPoint(
+                        cycle, op.location[0],
+                    ), new_op,
+                )
                 """
                 print(params)
                 print(new_params)
@@ -119,5 +129,5 @@ if __name__ == '__main__':
 
     with open('scratch/new_qasm.qasm', 'w') as f:
         f.write(new_qasm)
-    
+
 """

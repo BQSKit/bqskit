@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bqskit import Circuit
 from bqskit.ir.gates.constant.h import HGate
 
@@ -10,9 +12,9 @@ circ.append_gate(HGate(), [2])
 circ.append_gate(HGate(), [0])
 circ.append_gate(HGate(), [1])
 circ.append_gate(HGate(), [2])
-fold_1 = [(0,0), (0,1)]
-fold_2 = [(1,0), (1,2)]
-fold_3 = [(2,0), (1,1), (1,2)]
+fold_1 = [(0, 0), (0, 1)]
+fold_2 = [(1, 0), (1, 2)]
+fold_3 = [(2, 0), (1, 1), (1, 2)]
 
 # Expected boundaries:
 # 0 : (-1,1)

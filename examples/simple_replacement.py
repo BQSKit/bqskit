@@ -4,8 +4,6 @@ from __future__ import annotations
 import logging
 
 from numpy import pi
-from numpy.lib.function_base import append
-from scipy.linalg import norm
 
 from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
