@@ -32,7 +32,7 @@ class ScanPartitioner(BasePass):
         multi_gate_score: int = 1000,  # TODO: Pass callable scoring_fn instead
     ) -> None:
         """
-        Construct a SimplePartitioner.
+        Construct a ScanPartitioner.
 
         Args:
             block_size (int): Maximum size of partitioned blocks.
