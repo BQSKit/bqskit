@@ -1216,53 +1216,106 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                             'Disconnected region has excluded gate in middle.',
                         )
 
-    def get_left_boundary(self, region: CircuitRegionLike) -> dict[int, int]:
+    def straighten(
+        self,
+        region: CircuitRegionLike,
+    ) -> tuple[CircuitRegion, int, CircuitRegion]:
         """
-        Find the closest previous active cycle for all of `region`'s qudits.
+        Push gates back so the region has a single starting cycle.
 
         Args:
-            region (CircuitRegionLike): The region to calculate the left
-                boundary.
+            region (CircuitRegionLike): The region to straighten.
+
+        Returns:
+            (tuple[CircuitRegion, int, CircuitRegion]):
+                Statistics on how gates where moved to straighten this
+                region. The first return value is the straightened region.
+                The second integer return value is the net number of
+                new cycles inserted at `region.min_cycle`. The last
+                return value is the shadow region, or the portion of the
+                middle region which did not move. See the Notes for
+                more info.
 
         Raises:
-            ValueError: If `region` is invalid, for more info see
-                `check_region`.
+            ValueError: If the region is invalid, see `circuit.check_region`.
+
+        Notes:
+            When isolating a region, the circuit is divided into three
+            parts by `region.min_cycle` and `region.max_min_cycle`. The
+            left region is left unchanged and the right region
+            potentially moves to the right. Gates in the middle can
+            either be moved to the right or left unchanged depending
+            on their location. The last return value describes the
+            cycle-qudits that did not move from the middle portion.
         """
+        if len(region) == 0:
+            return CircuitRegion({}), 0, CircuitRegion({})
+
         self.check_region(region)
+        region = self.downsize_region(region)
 
-        boundary = {q: -1 for q in region}
+        # Add idle cycles to create space
+        shadow_length = region.max_min_cycle - region.min_cycle
+        shadow_start = region.min_cycle
+        for i in range(shadow_length):
+            self._insert_cycle(shadow_start)
+        region = region.shift_right(shadow_length)
 
-        for qudit_index, bounds in region.items():
-            for cycle_index in range(bounds[0] - 1, -1, -1):
-                if not self.is_point_idle((cycle_index, qudit_index)):
-                    boundary[qudit_index] = cycle_index
-                    break
+        # Track region shadow and move gates
+        idle_cycles: list[int] = []
+        shadow_qudits: set[int] = set(region.keys())
+        # shadow_map = {qudit: region[qudit].lower for qudit in shadow_qudits}
+        shadow_map = {
+            qudit: min(
+                region.min_cycle - 1,
+                region[qudit].upper - shadow_length,
+            )
+            for qudit in shadow_qudits
+        }
 
-        return boundary
+        for i in range(shadow_length):
+            old_cycle_index = region.max_min_cycle - 1 - i
+            new_cycle_index = region.min_cycle - 1 - i
+            gate_moved = False
+            qudits_to_add_to_shadow: list[int] = []
 
-    def get_right_boundary(self, region: CircuitRegionLike) -> dict[int, int]:
-        """
-        Find the first following active cycle for all of `region`'s qudits.
+            for qudit_index in shadow_qudits:
+                if (
+                    qudit_index not in region
+                    or old_cycle_index < region[qudit_index][0]
+                ):
+                    op = self._circuit[old_cycle_index][qudit_index]
+                    if op is not None:
+                        gate_moved = True
+                        for qudit in op.location:
+                            self._circuit[new_cycle_index][qudit] = op
+                            self._circuit[old_cycle_index][qudit] = None
+                        qudits_to_add_to_shadow.extend(op.location)
 
-        Args:
-            region (CircuitRegionLike): The region to calculate the right
-                boundary.
+            shadow_qudits.update(qudits_to_add_to_shadow)
+            for qudit in shadow_qudits:
+                if qudit not in shadow_map:
+                    shadow_map[qudit] = new_cycle_index
 
-        Raises:
-            ValueError: If `region` is invalid, for more info see
-                `check_region`.
-        """
-        self.check_region(region)
+            if not gate_moved:
+                idle_cycles.append(new_cycle_index)
 
-        boundary = {q: self.get_num_cycles() for q in region}
+        for i, cycle_index in enumerate(sorted(idle_cycles)):
+            self.pop_cycle(cycle_index - i)
 
-        for qudit_index, bounds in region.items():
-            for cycle_index in range(bounds[1] + 1, self.get_num_cycles()):
-                if not self.is_point_idle((cycle_index, qudit_index)):
-                    boundary[qudit_index] = cycle_index
-                    break
+        region = region.shift_left(len(idle_cycles))
 
-        return boundary
+        # Prep output
+        region = CircuitRegion({
+            qudit_index: (region.min_cycle, region[qudit_index][1])
+            for qudit_index in region
+        })
+        net_new_cycles = shadow_length - len(idle_cycles)
+        shadow_region = CircuitRegion({
+            qudit_index: (shadow_start, shadow_map[qudit_index])
+            for qudit_index in shadow_qudits
+        })
+        return region, net_new_cycles, shadow_region
 
     def fold(self, region: CircuitRegionLike) -> None:
         """
@@ -1273,59 +1326,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 CircuitGate.
 
         Raises:
-            ValueError: If `region` includes qudits not in the circuit,
-                or if the region is too large for the circuit.
+            ValueError: If `region` is invalid or cannot be straightened.
         """
+        if len(region) == 0:
+            return
 
-        self.check_region(region)
-        region = self.downsize_region(region)
-        boundary = self.get_left_boundary(region)
-
-        # Push outside gates to side if necessary
-        region_back_min = region.min_cycle
-        boundary_back_max = max(boundary.values())
-        amount_to_shift = max(boundary_back_max - region_back_min + 1, 0)
-
-        for i in range(amount_to_shift):  # Add idle cycle for circuit gate
-            self._insert_cycle(region_back_min)
-
-        region_back_min += amount_to_shift
-        boundary_back_max += amount_to_shift
-        region = region.shift_right(amount_to_shift)
-
-        idle_cycles: list[int] = []
-        qudits_to_check_for_gates: set[int] = set(region.keys())
-        for cycle_index in reversed(
-                range(region_back_min, boundary_back_max + 1),
-        ):
-            new_cycle_index = cycle_index - amount_to_shift
-            gate_moved = False
-            qudits_to_add: list[int] = []
-            for qudit_index in qudits_to_check_for_gates:
-                if (
-                    qudit_index not in region
-                    or cycle_index < region[qudit_index][0]
-                ):
-                    op = self._circuit[cycle_index][qudit_index]
-                    if op is not None:
-                        gate_moved = True
-                        for involved_qudit in op.location:
-                            self._circuit[new_cycle_index][involved_qudit] = op
-                            self._circuit[cycle_index][involved_qudit] = None
-                        qudits_to_add.extend(op.location)
-            qudits_to_check_for_gates.update(qudits_to_add)
-            if not gate_moved:
-                idle_cycles.append(new_cycle_index)
-
-        for i, cycle_index in enumerate(sorted(idle_cycles)):
-            self.pop_cycle(cycle_index - i)
-
-        region_back_min -= len(idle_cycles)
-        boundary_back_max -= len(idle_cycles)
-        region = region.shift_left(len(idle_cycles))
-
-        # Pop operations, form CircuitGate, insert gate
+        region = self.straighten(region)[0]
         circuit = self.batch_pop(region.points)
+
+        # Remove placeholders if being called from batch_fold
         placeholder_gate_points = [
             (cycle, op.location[0])
             for cycle, op in circuit.operations_with_cycles()
@@ -1334,10 +1343,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         ]
         if len(placeholder_gate_points) > 0:
             circuit.batch_pop(placeholder_gate_points)
-        circuit_params = list(circuit.get_params())
-        circuit_gate = CircuitGate(circuit, True)
-        qudits = sorted(list(region.keys()))
-        self.insert_gate(region_back_min, circuit_gate, qudits, circuit_params)
+
+        # Form and insert CircuitGate
+        self.insert_gate(
+            region.min_cycle,
+            CircuitGate(circuit, True),
+            sorted(list(region.keys())),
+            list(circuit.get_params()),
+        )
 
     def batch_fold(self, regions: Iterable[CircuitRegionLike]) -> None:
         """Fold all `regions` at once."""
@@ -1346,19 +1359,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             for region in regions
             if len(region) > 0
         ]
-
-        # Check for invalid input
-        for i, region1 in enumerate(regions):
-            # check regions to be valid
-            self.check_region(region1)
-
-            # Ensure no two regions overlap
-            for j, region2 in enumerate(regions):
-                if i == j:
-                    continue
-
-                if region1.overlaps(region2):
-                    raise ValueError('Cannot batch fold overlapping regions.')
 
         # Regions that contain empty cycles can cause problems later
         # Remove empty cycles in regions by inserting tagged gates
@@ -1377,14 +1377,72 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                         qudits[0],
                     )
 
+        # Check for invalid input
+        for i, region1 in enumerate(regions):
+            # check regions to be valid
+            self.check_region(region1)
+
+            # Ensure no two regions overlap
+            for j, region2 in enumerate(regions):
+                if i == j:
+                    continue
+
+                if region1.overlaps(region2):
+                    raise ValueError('Cannot batch fold overlapping regions.')
+
+        # Sort and straighten regions, adjusting them as we go
+        straighten_regions: list[CircuitRegion] = []
+        adjustments_made: list[tuple[int, CircuitRegion]] = []
+        for region in sorted(regions, key=lambda x: x.min_cycle, reverse=True):
+            for adjustment in adjustments_made:
+                region = region.adjust(*adjustment)
+            straighten_region, added_cycles, shadow = self.straighten(region)
+            for i in range(len(straighten_regions)):
+                new_region = straighten_regions[i].adjust(added_cycles, shadow)
+                if new_region != straighten_regions[i]:
+                    straighten_regions[i] = new_region
+                    for cycle, qudits in sorted(new_region.transpose().items()):
+                        if all(
+                            self.is_point_idle((cycle, qudit))
+                            for qudit in qudits
+                        ):
+                            self.insert_gate(
+                                cycle,
+                                placeholder_gates[
+                                    self.get_radixes()[
+                                        qudits[0]
+                                    ]
+                                ],
+                                qudits[0],
+                            )
+
+            straighten_regions.append(straighten_region)
+            adjustments_made.append((added_cycles, shadow))
+
+        for region in straighten_regions:
+            for cycle, qudits in sorted(region.transpose().items()):
+                if all(self.is_point_idle((cycle, qudit)) for qudit in qudits):
+                    self.insert_gate(
+                        cycle,
+                        placeholder_gates[self.get_radixes()[qudits[0]]],
+                        qudits[0],
+                    )
+
+            for qudit in region:
+                if self.is_point_idle((region[qudit].lower, qudit)):
+                    self.insert_gate(
+                        region[qudit].lower,
+                        placeholder_gates[self.get_radixes()[qudit]],
+                        qudit,
+                    )
+
         # sort and fold regions, tracking cycle changes
         num_cycles = self.get_num_cycles()
-        for region in sorted(regions):
-            amount_to_shift = self.get_num_cycles() - num_cycles
-            if amount_to_shift > 0:
-                self.fold(region.shift_right(amount_to_shift))
-            else:
-                self.fold(region.shift_left(-amount_to_shift))
+        for region in sorted(
+            straighten_regions,
+            key=lambda x: (x.max_cycle, x.min_cycle),
+        ):
+            self.fold(region.shift_left(num_cycles - self.get_num_cycles()))
 
     def unfold(self, point: CircuitPointLike) -> None:
         """Unfold the CircuitGate at `point` into the circuit."""
@@ -1428,7 +1486,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if size <= 0:
             raise ValueError(f'Expected a positive integer size, got {size}.')
 
-        init_op: Operation = self[point]
+        init_op: Operation = self[point]  # Allow starting at an idle point
 
         if init_op.get_size() > size:
             raise ValueError('Gate at point is too large for size.')
@@ -1494,10 +1552,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
                     # Find next gate
                     cycle_index += step
-                    try:
-                        op: Operation = self[cycle_index, qudit_index]
-                    except IndexError:
+                    if cycle_index < 0 or cycle_index >= self.get_num_cycles():
+                        break
+                    if self.is_point_idle((cycle_index, qudit_index)):
                         continue
+                    op: Operation = self[cycle_index, qudit_index]
 
                     # Absorb single-qudit gates
                     if op.get_size() == 1:
@@ -1523,39 +1582,39 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                         break
 
                     # Otherwise consider both 1) adding the operation
-                    # BUG: Consider adding gate only if can fit in partition
                     if (cycle_index, op) not in node[1]:
-                        added_node = copy.deepcopy(node)
-                        added_node[1].append((cycle_index, op))
-                        added_node[0][i] = (
-                            CircuitPoint(cycle_index, qudit_index),
-                            half_wire[1],
-                            False,
-                        )
-                        added_node[0] += [
-                            (
-                                CircuitPoint(cycle_index, qudit),
-                                'left',
+                        if len(node[2].union(op.location)) <= size:
+                            added_node = copy.deepcopy(node)
+                            added_node[1].append((cycle_index, op))
+                            added_node[0][i] = (
+                                CircuitPoint(cycle_index, qudit_index),
+                                half_wire[1],
                                 False,
                             )
-                            for qudit in op.location
-                            if qudit != qudit_index
-                        ]
-                        added_node[0] += [
-                            (
-                                CircuitPoint(cycle_index, qudit),
-                                'right',
-                                False,
+                            added_node[0].extend([
+                                (
+                                    CircuitPoint(cycle_index, qudit),
+                                    'left',
+                                    False,
+                                )
+                                for qudit in op.location
+                                if qudit != qudit_index
+                            ])
+                            added_node[0].extend([
+                                (
+                                    CircuitPoint(cycle_index, qudit),
+                                    'right',
+                                    False,
+                                )
+                                for qudit in op.location
+                                if qudit != qudit_index
+                            ])
+                            added_node = (
+                                added_node[0],
+                                added_node[1],
+                                added_node[2].union(op.location),
                             )
-                            for qudit in op.location
-                            if qudit != qudit_index
-                        ]
-                        added_node = (
-                            added_node[0],
-                            added_node[1],
-                            added_node[2].union(op.location),
-                        )
-                        frontier.append(added_node)
+                            frontier.append(added_node)
 
                     # 2) And stopping the half_wire
                     stopped_node = copy.deepcopy(node)
@@ -1568,7 +1627,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     break
 
                 # Handle the edges of the circuit by stopping half_wire
-                if cycle_index == -1 or cycle_index == self.get_num_cycles():
+                if cycle_index < 0 or cycle_index >= self.get_num_cycles():
                     stopped_node = copy.deepcopy(node)
                     stopped_node[0][i] = (
                         CircuitPoint(cycle_index - step, qudit_index),
@@ -1604,8 +1663,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 in the circuit. This happens when there exists an operation
                 within the bounds of `points`, but not contained in it.
 
-            ValueError: If `points` is empty.
-
             IndexError: If any of `points` are out-of-range.
         """
 
@@ -1624,7 +1681,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
 
         if len(points) == 0:
-            raise ValueError('Expected at least one point.')
+            return CircuitRegion({})
 
         # Collect operations
         ops_and_cycles = list({
@@ -1717,6 +1774,41 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         slice = Circuit(slice_size, slice_radixes)
         slice.extend([op[1] for op in ops])
         return slice
+
+    def region_compare(
+        self, region1: CircuitRegion,
+        region2: CircuitRegion,
+    ) -> int:
+        """
+        Compares the regions and determines which one depends on the other.
+
+        If the execution of `region1` needs to come before `region2` then
+        we say `region2` depends on `region1`.
+
+        Raises:
+            ValueError: If both regions depend on each other.
+        """
+        # If one comes before other and shares qubits then easy
+        shared_qudits = region1.location.intersection(region2.location)
+        if len(shared_qudits) != 0:
+            if all(region1[qudit] < region2[qudit] for qudit in shared_qudits):
+                return -1
+            if all(region2[qudit] < region1[qudit] for qudit in shared_qudits):
+                return 1
+            raise ValueError('Both regions depend on each other.')
+
+        # Otherwise look for a chain of gates that shows dependency
+        if region1.min_max_cycle < region2.max_min_cycle:
+            pass
+
+        elif region2.min_max_cycle < region1.max_min_cycle:
+            pass
+
+        return 0
+
+        # start at region1 right_min
+        # include all qudits in region
+        # iterate until region2's
 
     # endregion
 

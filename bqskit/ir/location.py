@@ -97,13 +97,15 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
 
     def union(self, other: CircuitLocationLike) -> CircuitLocation:
         """Return the location containing qudits from self or other."""
-        other = CircuitLocation(other)
-        return CircuitLocation(set(self).union(set(other)))
+        if is_integer(other):  # TODO: TypeGuard
+            return CircuitLocation(self._location + [other])  # type: ignore  # noqa
+        return CircuitLocation(set(self).union(CircuitLocation(other)))
 
     def intersection(self, other: CircuitLocationLike) -> CircuitLocation:
         """Return the location containing qudits from self and other."""
-        other = CircuitLocation(other)
-        return CircuitLocation(set(self).intersection(set(other)))
+        if is_integer(other):  # TODO: TypeGuard
+            return CircuitLocation(other if other in self else [])  # type: ignore  # noqa
+        return CircuitLocation([x for x in self if x in other])  # type: ignore
 
     @staticmethod
     def is_location(location: Any, num_qudits: int | None = None) -> bool:
