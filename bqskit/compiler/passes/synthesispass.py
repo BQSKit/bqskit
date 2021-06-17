@@ -5,6 +5,7 @@ import logging
 from abc import abstractmethod
 from typing import Any
 from typing import Callable
+from os.path import exists
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -13,6 +14,8 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
+from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
 
 _logger = logging.getLogger(__name__)
 
@@ -33,6 +36,7 @@ class SynthesisPass(BasePass):
         self,
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: Callable[[Circuit, Operation], bool] | None = None,
+        checkpoint_dir: str | None = None,
     ):
         """
         SynthesisPass base class constructor.
@@ -51,10 +55,16 @@ class SynthesisPass(BasePass):
                 output from synthesis and the original operation. If this
                 returns true, the operation will be replaced with the
                 synthesized circuit. Defaults to always replace.
+                
+            checkpoint_dir (str | None): The path to the directory in which
+                checkpoint files should be stored. If it is not provided or
+                if the directory does not exist, no checkpoint files will be
+                generated.
         """
 
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
+        self.checkpoint_dir = checkpoint_dir
 
         if not callable(self.collection_filter):
             raise TypeError(
@@ -67,6 +77,12 @@ class SynthesisPass(BasePass):
                 'Expected callable method that maps Circuit and Operations to'
                 ' booleans for replace_filter'
                 ', got %s.' % type(self.replace_filter),
+            )
+        
+        if self.checkpoint_dir is not None and not exists(self.checkpoint_dir):
+            raise ValueError(
+                f'Expected the path to an existing directory; {checkpoint_dir}'
+                ' was passed and does not exist.'
             )
 
     @abstractmethod
@@ -116,7 +132,7 @@ class SynthesisPass(BasePass):
 
         # Synthesize operations
         errors: list[float] = []
-        for cycle, op in ops_to_syn:
+        for block_num, (cycle, op) in enumerate(ops_to_syn):
             sub_numbering = {op.location[i]: i for i in range(len(op.location))}
             sub_data['machine_model'] = MachineModel(
                 len(op.location),
@@ -124,6 +140,9 @@ class SynthesisPass(BasePass):
             )
 
             syn_circuit = self.synthesize(op.get_unitary(), sub_data)
+
+            if self.checkpoint_dir is not None:
+                save_checkpoint(syn_circuit, self.checkpoint_dir, block_num)
 
             if self.replace_filter(syn_circuit, op):
                 # Calculate errors
@@ -151,3 +170,9 @@ def default_collection_filter(op: Operation) -> bool:
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True
+
+
+def save_checkpoint(circuit: Circuit, path: str, num:int) -> None:
+    VariableToU3Pass().run(circuit, {})
+    with open(path + f'/block_{num}', 'w') as f:
+        f.write(OPENQASM2Language().encode(circuit))
