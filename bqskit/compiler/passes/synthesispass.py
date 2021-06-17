@@ -136,10 +136,12 @@ class SynthesisPass(BasePass):
         points: list[CircuitPoint] = []
         new_ops: list[Operation] = []
         for cycle, op in ops_to_syn:
-            syn_circuit = self.synthesize(op.get_unitary(), data)
-
-            if cycle != prev_cycle:
-                cycles_added = 0
+            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
+            sub_data['machine_model'] = MachineModel(
+                len(op.location),
+                model.get_subgraph(op.location, sub_numbering),
+            )
+            syn_circuit = self.synthesize(op.get_unitary(), sub_data)
             if self.replace_filter(syn_circuit, op):
                 # Calculate errors
                 new_utry = syn_circuit.get_unitary()
@@ -153,11 +155,6 @@ class SynthesisPass(BasePass):
                         list(syn_circuit.get_params()),  # TODO: RealVector
                     ),
                 )
-            prev_cycle = cycle
-            curr_depth = circuit.get_depth()
-            cycles_added += (curr_depth - prev_depth)
-            prev_depth = curr_depth
-
         data['synthesispass_error_sum'] = sum(errors)  # TODO: Might be replaced
         _logger.info(
             'Synthesis pass completed. Upper bound on '
