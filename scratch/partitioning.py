@@ -10,40 +10,9 @@ from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
 from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
+from bqskit.compiler.passes.util.intermediate import SaveIntermediatePass
 
-logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
-
-
-def mesh(
-        n: int,
-        m: int | None = None,  # type: ignore
-) -> set[tuple[int, int]]:
-    """
-    Generate a 2D mesh coupling map.
-
-    Args:
-        n (int): If only n is provided, then this is the side length of a square
-                grid. Otherwise it is the number of rows in the mesh.
-
-        m (int|None): If m is provided, it is the number of columns in the mesh.
-
-    Returns:
-        coupling_map (set[tuple[int]]): The coupling map corresponding to the
-            2D nearest neighbor mesh that is nxn or nxm in dimensions.
-    """
-    cols = n if m is None else m
-    rows = n
-
-    edges = set()
-    # Horizontals
-    for i in range(rows):
-        for j in range(cols - 1):
-            edges.add((i * cols + j, i * cols + j + 1))
-    # Verticals
-    for i in range(rows - 1):
-        for j in range(cols):
-            edges.add((i * cols + j, i * cols + j + cols))
-    return edges
+logging.getLogger('bqskit').setLevel(logging.DEBUG)
 
 
 def alltoall(num_q: int) -> set[tuple[int, int]]:
@@ -62,19 +31,6 @@ def alltoall(num_q: int) -> set[tuple[int, int]]:
             if i != j:
                 edges.add((i, j))
     return edges
-
-
-def linear(num_q: int) -> set[tuple[int, int]]:
-    """
-    Generate a linear coupling map.
-
-    Args:
-            num_q (int): Number of vertices in the graph.
-
-    Returns:
-            coupling_map (set[tuple[int]]): Linear couplings
-    """
-    return mesh(num_q, 1)
 
 
 if __name__ == '__main__':
@@ -99,15 +55,16 @@ if __name__ == '__main__':
     print('Partitioning circuit...')
     part.run(circ, data)
 
-    # Layout
+    pre_saver = SaveIntermediatePass("./scratch/temp/", "pre_qft_5")
+    pre_saver.run(circ, {})
 
     # Synthesis
     print('Synthesizing circuit...')
     instantiate_options = {
         'min_iters': 0,
-        'diff_tol_r': 1e-5,
-        'dist_tol': 1e-11,
-        'max_iters': 2500,
+        'diff_tol_r': 1e-3,
+        'dist_tol': 1e-10,
+        'max_iters': 1000,
     }
     layer_generator = SimpleLayerGenerator(
         single_qudit_gate_1=VariableUnitaryGate(1),
@@ -119,10 +76,14 @@ if __name__ == '__main__':
     synthesizer.run(circ, data)
 
     print('Transforming circuit...')
+    post_saver = SaveIntermediatePass("./scratch/temp/", "post_qft_5")
+    post_saver.run(circ, {})
+
     unfolder = UnfoldPass()
     unfolder.run(circ, data)
     converter = VariableToU3Pass()
     converter.run(circ, data)
+
 
     print('Saving circuit...')
     with open('scratch/synthesized_' + filename, 'w') as f:
