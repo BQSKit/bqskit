@@ -132,6 +132,9 @@ class SynthesisPass(BasePass):
 
         # Synthesize operations
         errors: list[float] = []
+        prev_depth = circuit.get_depth()
+        prev_cycle = prev_depth
+        cycles_added = 0
         for block_num, (cycle, op) in enumerate(ops_to_syn):
             sub_numbering = {op.location[i]: i for i in range(len(op.location))}
             sub_data['machine_model'] = MachineModel(
@@ -144,6 +147,8 @@ class SynthesisPass(BasePass):
             if self.checkpoint_dir is not None:
                 save_checkpoint(syn_circuit, self.checkpoint_dir, block_num)
 
+            if cycle != prev_cycle:
+                cycles_added = 0
             if self.replace_filter(syn_circuit, op):
                 # Calculate errors
                 new_utry = syn_circuit.get_unitary()
@@ -151,11 +156,15 @@ class SynthesisPass(BasePass):
                 errors.append(new_utry.get_distance_from(old_utry))
 
                 circuit.replace_gate(
-                    (cycle, op.location[0]),
+                    (cycle + cycles_added, op.location[0]),
                     CircuitGate(syn_circuit, True),
                     op.location,
                     list(syn_circuit.get_params()),  # TODO: RealVector
                 )
+            prev_cycle = cycle
+            curr_depth = circuit.get_depth()
+            cycles_added += (curr_depth - prev_depth)
+            prev_depth = curr_depth
 
         data['synthesispass_error_sum'] = sum(errors)  # TODO: Might be replaced
         _logger.info(
