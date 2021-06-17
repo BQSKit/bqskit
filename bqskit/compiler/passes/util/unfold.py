@@ -34,11 +34,11 @@ class UnfoldPass(BasePass):
         cycles_added = 0
         for cycle, op in sorted(blocks, key=lambda x: x[0], reverse=True):
             # Handle the case where the CircuitGate was moved due to inserts
-            cycle_to_unfold = cycle + cycles_added if cycle == prev_cycle \
-                else cycle
-            circuit.unfold((cycle_to_unfold, op.location[0]))
+            if cycle != prev_cycle:
+                cycles_added = 0
+            circuit.unfold((cycle + cycles_added, op.location[0]))
 
             prev_cycle = cycle
             curr_depth = circuit.get_depth()
-            cycles_added = curr_depth - prev_depth
+            cycles_added += (curr_depth - prev_depth)
             prev_depth = curr_depth
