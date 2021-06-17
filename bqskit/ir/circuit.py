@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import pickle
 from typing import Any
 from typing import Collection
 from typing import Iterable
@@ -12,7 +13,6 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pickle
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -34,7 +34,6 @@ from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
-#from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
@@ -2448,14 +2447,16 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 pickle.dump(self, f)
 
     @staticmethod
-    def from_file(filename: str) -> Circuit:
+    def from_file(filename: str) -> Circuit | None:
         if filename.endswith('.pickle'):
             with open(filename, 'rb') as f:
                 return pickle.load(f)
+        else:
+            return None
 
     @staticmethod
     def from_str(input_str: str) -> Circuit:
-        #if input_str.endswith('.qasm'):
+        # if input_str.endswith('.qasm'):
         #    return OPENQASM2Language().decode(input_str)
         pass
 

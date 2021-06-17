@@ -3,19 +3,19 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
+from os.path import exists
 from typing import Any
 from typing import Callable
-from os.path import exists
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
-from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
 
 _logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class SynthesisPass(BasePass):
                 output from synthesis and the original operation. If this
                 returns true, the operation will be replaced with the
                 synthesized circuit. Defaults to always replace.
-                
+
             checkpoint_dir (str | None): The path to the directory in which
                 checkpoint files should be stored. If it is not provided or
                 if the directory does not exist, no checkpoint files will be
@@ -78,11 +78,11 @@ class SynthesisPass(BasePass):
                 ' booleans for replace_filter'
                 ', got %s.' % type(self.replace_filter),
             )
-        
+
         if self.checkpoint_dir is not None and not exists(self.checkpoint_dir):
             raise ValueError(
                 f'Expected the path to an existing directory; {checkpoint_dir}'
-                ' was passed and does not exist.'
+                ' was passed and does not exist.',
             )
 
     @abstractmethod
@@ -172,7 +172,7 @@ def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True
 
 
-def save_checkpoint(circuit: Circuit, path: str, num:int) -> None:
+def save_checkpoint(circuit: Circuit, path: str, num: int) -> None:
     VariableToU3Pass().run(circuit, {})
     with open(path + f'/block_{num}', 'w') as f:
         f.write(OPENQASM2Language().encode(circuit))
