@@ -1097,9 +1097,49 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `op` cannot be placed on the circuit due to
                 either an invalid location or gate radix mismatch.
+
+            ValueError: If `point.qudit` is not in `op.location`
         """
+        if point[1] not in op.location:
+            raise ValueError("Point's qudit is not in operation's location.")
+
         self.pop(point)
         self.insert(point[0], op)
+
+    def batch_replace(
+        self,
+        points: Sequence[CircuitPointLike],
+        ops: Sequence[Operation],
+    ) -> None:
+        """
+        Replace the operations at `points` with `ops`.
+
+        Args:
+            points (Sequence[CircuitPointLike]): The indices of the
+                operations to replace.
+
+            ops (Sequence[Operation]): The to-be-inserted operations.
+
+        Raises:
+            IndexError: If there is no operation at some point.
+
+            ValueError: If any op cannot be placed on the circuit due to
+                either an invalid location or gate radix mismatch.
+
+            ValueError: If any `point.qudit` is not in `op.location`
+
+            ValueError: If `points` and `ops` have different lengths.
+        """
+        if len(points) != len(ops):
+            raise ValueError('Points and Ops have different lengths.')
+
+        points_and_ops = sorted(zip(points, ops), key=lambda x: x[0][0])
+        num_cycles = self.get_num_cycles()
+
+        for point, op in points_and_ops:
+            shrink_amount = num_cycles - self.get_num_cycles()
+            shifted_point = (point[0] - shrink_amount, point[1])
+            self.replace(shifted_point, op)
 
     def replace_gate(
         self,
@@ -1453,6 +1493,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit: Circuit = op.gate._circuit  # type: ignore
         circuit.set_params(op.params)
         self.replace_with_circuit(point, circuit, op.location)
+
+    def unfold_all(self) -> None:
+        """Unfold all CircuitGates in the circuit."""
+        while any(
+            isinstance(gate, CircuitGate)
+            for gate in self.get_gate_set()
+        ):
+            for cycle, op in self.operations_with_cycles():
+                if isinstance(op.gate, CircuitGate):
+                    self.unfold((cycle, op.location[0]))
+                    break
 
     def surround(self, point: CircuitPointLike, size: int) -> CircuitRegion:
         """

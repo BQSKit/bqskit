@@ -11,6 +11,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
+from bqskit.ir.point import CircuitPoint
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 _logger = logging.getLogger(__name__)
@@ -98,6 +99,8 @@ class SynthesisPass(BasePass):
 
         # Synthesize operations
         errors: list[float] = []
+        points: list[CircuitPoint] = []
+        new_ops: list[Operation] = []
         for cycle, op in ops_to_syn:
             syn_circuit = self.synthesize(op.get_unitary(), data)
 
@@ -106,12 +109,13 @@ class SynthesisPass(BasePass):
                 new_utry = syn_circuit.get_unitary()
                 old_utry = op.get_unitary()
                 errors.append(new_utry.get_distance_from(old_utry))
-
-                circuit.replace_gate(
-                    (cycle, op.location[0]),
-                    CircuitGate(syn_circuit, True),
-                    op.location,
-                    list(syn_circuit.get_params()),  # TODO: RealVector
+                points.append(CircuitPoint(cycle, op.location[0]))
+                new_ops.append(
+                    Operation(
+                        CircuitGate(syn_circuit, True),
+                        op.location,
+                        list(syn_circuit.get_params()),  # TODO: RealVector
+                    ),
                 )
 
         data['synthesispass_error_sum'] = sum(errors)  # TODO: Might be replaced
@@ -119,6 +123,8 @@ class SynthesisPass(BasePass):
             'Synthesis pass completed. Upper bound on '
             f"circuit error is {data['synthesispass_error_sum']}",
         )
+
+        circuit.batch_replace(points, new_ops)
 
 
 def default_collection_filter(op: Operation) -> bool:
