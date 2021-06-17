@@ -6,4 +6,5 @@
 .venv/
 .vscode/
 .mypy_cache/
+scratch/
 __pycache__
