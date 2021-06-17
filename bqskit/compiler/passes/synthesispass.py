@@ -15,6 +15,7 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
+from bqskit.ir.point import CircuitPoint
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 _logger = logging.getLogger(__name__)
@@ -132,20 +133,10 @@ class SynthesisPass(BasePass):
 
         # Synthesize operations
         errors: list[float] = []
-        prev_depth = circuit.get_depth()
-        prev_cycle = prev_depth
-        cycles_added = 0
-        for block_num, (cycle, op) in enumerate(ops_to_syn):
-            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
-            sub_data['machine_model'] = MachineModel(
-                len(op.location),
-                model.get_subgraph(op.location, sub_numbering),
-            )
-
-            syn_circuit = self.synthesize(op.get_unitary(), sub_data)
-
-            if self.checkpoint_dir is not None:
-                save_checkpoint(syn_circuit, self.checkpoint_dir, block_num)
+        points: list[CircuitPoint] = []
+        new_ops: list[Operation] = []
+        for cycle, op in ops_to_syn:
+            syn_circuit = self.synthesize(op.get_unitary(), data)
 
             if cycle != prev_cycle:
                 cycles_added = 0
@@ -154,12 +145,13 @@ class SynthesisPass(BasePass):
                 new_utry = syn_circuit.get_unitary()
                 old_utry = op.get_unitary()
                 errors.append(new_utry.get_distance_from(old_utry))
-
-                circuit.replace_gate(
-                    (cycle + cycles_added, op.location[0]),
-                    CircuitGate(syn_circuit, True),
-                    op.location,
-                    list(syn_circuit.get_params()),  # TODO: RealVector
+                points.append(CircuitPoint(cycle, op.location[0]))
+                new_ops.append(
+                    Operation(
+                        CircuitGate(syn_circuit, True),
+                        op.location,
+                        list(syn_circuit.get_params()),  # TODO: RealVector
+                    ),
                 )
             prev_cycle = cycle
             curr_depth = circuit.get_depth()
@@ -171,6 +163,8 @@ class SynthesisPass(BasePass):
             'Synthesis pass completed. Upper bound on '
             f"circuit error is {data['synthesispass_error_sum']}",
         )
+
+        circuit.batch_replace(points, new_ops)
 
 
 def default_collection_filter(op: Operation) -> bool:
