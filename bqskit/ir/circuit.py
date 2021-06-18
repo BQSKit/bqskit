@@ -1434,7 +1434,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # Sort and straighten regions, adjusting them as we go
         straighten_regions: list[CircuitRegion] = []
         adjustments_made: list[tuple[int, CircuitRegion]] = []
-        for region in sorted(regions, key=lambda x: x.min_cycle, reverse=True):
+        for region in sorted(
+            regions,
+            key=lambda x: (x.max_min_cycle, -x.min_cycle),
+            reverse=True,
+        ):
             for adjustment in adjustments_made:
                 region = region.adjust(*adjustment)
             straighten_region, added_cycles, shadow = self.straighten(region)
