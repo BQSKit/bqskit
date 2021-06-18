@@ -1076,6 +1076,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Form new circuit and return
         qudits = list(set(sum([tuple(op.location) for op in ops], ())))
+        qudits = sorted(qudits)
         radixes = [self.get_radixes()[q] for q in qudits]
         circuit = Circuit(len(radixes), radixes)
         for op in ops:
