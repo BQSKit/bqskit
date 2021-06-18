@@ -94,12 +94,6 @@ class TestMachineGetLocations:
         coupling_graph = {(0, 1), (1, 2), (2, 3)}
         model = MachineModel(4, coupling_graph)
 
-        with pytest.raises(ValueError):
-            model.get_locations(5)
-        with pytest.raises(ValueError):
-            model.get_locations(0)
-        with pytest.raises(ValueError):
-            model.get_locations(-2)
         with pytest.raises(TypeError):
             model.get_locations('a')
 
@@ -128,11 +122,5 @@ class TestMachineGetSubgraph:
         coupling_graph = {(0, 1), (1, 2), (2, 3)}
         model = MachineModel(4, coupling_graph)
 
-        with pytest.raises(TypeError):
-            model.get_subgraph(0)
-        with pytest.raises(TypeError):
-            model.get_subgraph(5)
-        with pytest.raises(TypeError):
-            model.get_subgraph((5,))
         with pytest.raises(TypeError):
             model.get_subgraph('a')  # type: ignore
