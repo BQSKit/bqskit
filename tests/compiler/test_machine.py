@@ -59,12 +59,12 @@ class TestMachineConstructor:
             MachineModel(2, 'a')  # type: ignore
 
 
-class TestMachineGetValidLocations:
+class TestMachineGetLocations:
 
     def test_1(self) -> None:
         coupling_graph = {(0, 1), (1, 2), (2, 3)}
         model = MachineModel(4, coupling_graph)
-        l = model.get_valid_locations(2)
+        l = model.get_locations(2)
 
         assert len(l) == 3
         assert (0, 1) in l
@@ -74,7 +74,7 @@ class TestMachineGetValidLocations:
     def test_2(self) -> None:
         coupling_graph = {(0, 1), (1, 2), (2, 3)}
         model = MachineModel(4, coupling_graph)
-        l = model.get_valid_locations(3)
+        l = model.get_locations(3)
 
         assert len(l) == 2
         assert (0, 1, 2) in l
@@ -82,7 +82,7 @@ class TestMachineGetValidLocations:
 
     def test_3(self) -> None:
         model = MachineModel(4)
-        l = model.get_valid_locations(3)
+        l = model.get_locations(3)
 
         assert len(l) == 4
         assert (0, 1, 2) in l
@@ -95,13 +95,21 @@ class TestMachineGetValidLocations:
         model = MachineModel(4, coupling_graph)
 
         with pytest.raises(ValueError):
+<<<<<<< HEAD
             model.get_valid_locations(5)
         with pytest.raises(ValueError):
             model.get_valid_locations(0)
         with pytest.raises(ValueError):
             model.get_valid_locations(-2)
+=======
+            model.get_locations(5)  # type: ignore
+        with pytest.raises(ValueError):
+            model.get_locations(0)  # type: ignore
+        with pytest.raises(ValueError):
+            model.get_locations(-2)  # type: ignore
+>>>>>>> origin/iterative-reoptimization
         with pytest.raises(TypeError):
-            model.get_valid_locations('a')  # type: ignore
+            model.get_locations('a')  # type: ignore
 
 
 class TestMachineGetSubgraph:
@@ -129,10 +137,13 @@ class TestMachineGetSubgraph:
         model = MachineModel(4, coupling_graph)
 
         with pytest.raises(TypeError):
+<<<<<<< HEAD
             model.get_subgraph(0)  # type: ignore
         with pytest.raises(TypeError):
             model.get_subgraph(5)  # type: ignore
         with pytest.raises(TypeError):
             model.get_subgraph((5,))
         with pytest.raises(TypeError):
+=======
+>>>>>>> origin/iterative-reoptimization
             model.get_subgraph('a')  # type: ignore

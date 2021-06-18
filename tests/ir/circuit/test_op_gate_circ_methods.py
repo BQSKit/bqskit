@@ -79,20 +79,16 @@ Circuit operation, gate, and circuit methods:
 from __future__ import annotations
 
 from typing import Any
-from typing import Sequence
 
 import numpy as np
 import pytest
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import ConstantUnitaryGate
 from bqskit.ir.gates import CPIGate
 from bqskit.ir.gates import HGate
-from bqskit.ir.gates import IdentityGate
-from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import XGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
@@ -1088,10 +1084,6 @@ class TestFold:
 
 class TestCopy:
     """This tests `circuit.copy`."""
-
-
-class TestGetSlice:
-    """This tests `circuit.get_slice`."""
 
 
 class TestClear:
