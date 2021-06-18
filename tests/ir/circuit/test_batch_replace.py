@@ -3,12 +3,9 @@ from __future__ import annotations
 
 from random import randint
 
-import pytest
-
 from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant.cx import CNOTGate
-from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.operation import Operation
 
 
@@ -125,7 +122,6 @@ class TestBatchReplace:
 
         points = []
         ops = []
-        #locs: Sequence[tuple[int, int]] = []
         for cycle, op in circ.operations_with_cycles():
             point = (cycle, op.location[0])
             ops.append(Operation(CNOTGate(), op.location))
@@ -136,5 +132,3 @@ class TestBatchReplace:
         for op in circ:
             assert isinstance(op.gate, CNOTGate)
         # Because pops are used, there is no guarantee that gate will not shift
-        # for i, op in enumerate(circ):
-        #    assert op.location == locs[i]
