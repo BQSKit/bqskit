@@ -83,7 +83,7 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
             return self._location[index]  # type: ignore  # TODO: TypeGuards
 
         if isinstance(index, slice):
-            return self._location[index]  # type: ignore  # TODO: TypeGuards
+            return self._location[index]
 
         if not is_sequence(index):
             raise TypeError(f'Invalid index type, got {type(index)}.')
@@ -104,7 +104,7 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
     def intersection(self, other: CircuitLocationLike) -> CircuitLocation:
         """Return the location containing qudits from self and other."""
         if is_integer(other):  # TODO: TypeGuard
-            return CircuitLocation(other if other in self else [])  # type: ignore  # noqa
+            return CircuitLocation(other if other in self else [])  # noqa
         return CircuitLocation([x for x in self if x in other])  # type: ignore
 
     @staticmethod

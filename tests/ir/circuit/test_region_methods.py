@@ -186,7 +186,7 @@ class TestFold:
         assert circuit.get_depth() == 2
         assert circuit[0, 0].gate is HGate()
         assert isinstance(circuit[1, 0].gate, CircuitGate)
-        test_gate: CircuitGate = circuit[1, 0].gate  # type: ignore
+        test_gate: CircuitGate = circuit[1, 0].gate
         assert test_gate._circuit[0, 1].gate is CNOTGate()
         assert test_gate._circuit[0, 2].gate is CNOTGate()
         assert test_gate._circuit[1, 0].gate is wide_gate
@@ -217,7 +217,7 @@ class TestFold:
         assert circuit.count(HGate()) == 2
         assert circuit.count(XGate()) == 6
         assert isinstance(circuit[1, 1].gate, CircuitGate)
-        test_gate: CircuitGate = circuit[1, 1].gate  # type: ignore
+        test_gate: CircuitGate = circuit[1, 1].gate
         assert test_gate._circuit[0, 1].gate is CNOTGate()
         assert test_gate._circuit[0, 2].gate is CNOTGate()
         assert test_gate._circuit[1, 0].gate is wide_gate

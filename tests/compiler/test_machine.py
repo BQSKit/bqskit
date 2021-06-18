@@ -95,21 +95,13 @@ class TestMachineGetLocations:
         model = MachineModel(4, coupling_graph)
 
         with pytest.raises(ValueError):
-<<<<<<< HEAD
-            model.get_valid_locations(5)
+            model.get_locations(5)
         with pytest.raises(ValueError):
-            model.get_valid_locations(0)
+            model.get_locations(0)
         with pytest.raises(ValueError):
-            model.get_valid_locations(-2)
-=======
-            model.get_locations(5)  # type: ignore
-        with pytest.raises(ValueError):
-            model.get_locations(0)  # type: ignore
-        with pytest.raises(ValueError):
-            model.get_locations(-2)  # type: ignore
->>>>>>> origin/iterative-reoptimization
+            model.get_locations(-2)
         with pytest.raises(TypeError):
-            model.get_locations('a')  # type: ignore
+            model.get_locations('a')
 
 
 class TestMachineGetSubgraph:
@@ -137,13 +129,10 @@ class TestMachineGetSubgraph:
         model = MachineModel(4, coupling_graph)
 
         with pytest.raises(TypeError):
-<<<<<<< HEAD
-            model.get_subgraph(0)  # type: ignore
+            model.get_subgraph(0)
         with pytest.raises(TypeError):
-            model.get_subgraph(5)  # type: ignore
+            model.get_subgraph(5)
         with pytest.raises(TypeError):
             model.get_subgraph((5,))
         with pytest.raises(TypeError):
-=======
->>>>>>> origin/iterative-reoptimization
             model.get_subgraph('a')  # type: ignore
