@@ -13,6 +13,7 @@ from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import U1Gate
 from bqskit.ir.gates import U2Gate
 from bqskit.ir.gates import U3Gate
+from bqskit.ir.gates import VariableUnitaryGate
 
 NATIVE_GATES = (
     RXGate(),
@@ -24,8 +25,17 @@ NATIVE_GATES = (
     U3Gate(),
 )
 
+NON_GRADIENT_GATES = (
+    VariableUnitaryGate(2),
+    VariableUnitaryGate(3),
+    VariableUnitaryGate(4),
+)
 
-@pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
+
+@pytest.mark.parametrize(
+    'gate', NATIVE_GATES + NON_GRADIENT_GATES,
+    ids=lambda gate: repr(gate),
+)
 def test_get_unitary(gate: Gate) -> None:
     size = gate.get_size()
     circ = Circ(size)

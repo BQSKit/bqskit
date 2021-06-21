@@ -1,4 +1,5 @@
-"""This module implements the HilbertSchmidtCost and HilbertSchmidtCostGenerator."""
+"""This module implements the HilbertSchmidtCost and
+HilbertSchmidtCostGenerator."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

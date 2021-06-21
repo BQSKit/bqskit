@@ -14,15 +14,19 @@ from bqskit.ir import Circuit
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
 
 # Let's create a 3-qubit toffoi unitary to synthesize and add it to a circuit.
-toffoli = np.array([[1,0,0,0,0,0,0,0],
-                     [0,1,0,0,0,0,0,0],
-                     [0,0,1,0,0,0,0,0],
-                     [0,0,0,1,0,0,0,0],
-                     [0,0,0,0,1,0,0,0],
-                     [0,0,0,0,0,1,0,0],
-                     [0,0,0,0,0,0,0,1],
-                     [0,0,0,0,0,0,1,0]], 
-                     dtype='complex128')
+toffoli = np.array(
+    [
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0, 1, 0],
+    ],
+    dtype='complex128',
+)
 
 circuit = Circuit.from_unitary(toffoli)
 
