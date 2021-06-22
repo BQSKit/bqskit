@@ -1798,56 +1798,40 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
-        qudits = sorted({point[1] for point in points})
-        ops = []
-        for point in sorted(points):
-            try:
-                op = (point[0], self[point])
-                if op not in ops:
-                    ops.append(op)
-            except IndexError:
+        if not all(self.is_point_in_range(point) for point in points):
+            raise IndexError('Out-of-range point.')
+
+        # Sort points
+        points = sorted(points)
+
+        # Collect operations avoiding duplicates
+        points_to_skip: list[CircuitPointLike] = []
+        ops_and_cycles: list[tuple[Operation, int]] = []
+        for point in points:
+            if point in points_to_skip:
+                continue
+            if self.is_point_idle(point):
                 continue
 
-        slice_size = len(qudits)
-        slice_radixes = [self.get_radixes()[q] for q in qudits]
-        slice = Circuit(slice_size, slice_radixes)
-        slice.extend([op[1] for op in ops])
-        return slice
+            op = self[point]
+            ops_and_cycles.append((op, point[0]))
+            points_to_skip.extend((point[0], q) for q in op.location)
 
-    def region_compare(
-        self, region1: CircuitRegion,
-        region2: CircuitRegion,
-    ) -> int:
-        """
-        Compares the regions and determines which one depends on the other.
+        ops = [op for op, _ in ops_and_cycles]
+        points = [(cycle, op.location[0]) for op, cycle in ops_and_cycles]
 
-        If the execution of `region1` needs to come before `region2` then
-        we say `region2` depends on `region1`.
+        if len(points) == 0:
+            raise IndexError('No operations exists at any of the points.')
 
-        Raises:
-            ValueError: If both regions depend on each other.
-        """
-        # If one comes before other and shares qubits then easy
-        shared_qudits = region1.location.intersection(region2.location)
-        if len(shared_qudits) != 0:
-            if all(region1[qudit] < region2[qudit] for qudit in shared_qudits):
-                return -1
-            if all(region2[qudit] < region1[qudit] for qudit in shared_qudits):
-                return 1
-            raise ValueError('Both regions depend on each other.')
-
-        # Otherwise look for a chain of gates that shows dependency
-        if region1.min_max_cycle < region2.max_min_cycle:
-            pass
-
-        elif region2.min_max_cycle < region1.max_min_cycle:
-            pass
-
-        return 0
-
-        # start at region1 right_min
-        # include all qudits in region
-        # iterate until region2's
+        # Form new circuit and return
+        qudits = list(set(sum([tuple(op.location) for op in ops], ())))
+        qudits = sorted(qudits)
+        radixes = [self.get_radixes()[q] for q in qudits]
+        circuit = Circuit(len(radixes), radixes)
+        for op in ops:
+            location = [qudits.index(q) for q in op.location]
+            circuit.append(Operation(op.gate, location, op.params))
+        return circuit
 
     # endregion
 

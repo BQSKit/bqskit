@@ -7,6 +7,7 @@ from typing import Any
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.region import CircuitRegion
 from bqskit.utils.typing import is_integer
 
@@ -221,4 +222,14 @@ class ScanPartitioner(BasePass):
             for qudit_index in best_region:
                 divider[qudit_index] = best_region[qudit_index].upper + 1
 
-        circuit.batch_fold(regions)
+        # Fold the circuit
+        folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
+        for region in regions:
+            region = circuit.downsize_region(region)
+            cgc = circuit.get_slice(region.points)
+            folded_circuit.append_gate(
+                CircuitGate(cgc, True),
+                sorted(list(region.keys())),
+                list(cgc.get_params()),
+            )
+        circuit.become(folded_circuit)
