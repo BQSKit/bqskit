@@ -4,7 +4,7 @@ from __future__ import annotations
 from bqskit.compiler.search.heuristic import HeuristicFunction
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost import CostFunctionGenerator
-from bqskit.ir.opt.cost import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_real_number
@@ -26,7 +26,7 @@ class AStarHeuristic(HeuristicFunction):
         self,
         heuristic_factor: float = 10.0,
         cost_factor: float = 1.0,
-        cost_gen: CostFunctionGenerator = HilbertSchmidtGenerator(),
+        cost_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
     ) -> None:
         """
         Construct a AStarHeuristic Function.

@@ -24,7 +24,7 @@ from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtCost
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.instantiaters.minimization import Minimization
@@ -2168,7 +2168,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for start in starts:
             params.append(instantiater.instantiate(self, typed_target, start))
 
-        cost_fn = HilbertSchmidtCost(self, typed_target)
+        cost_fn = HilbertSchmidtCost(self, typed_target.get_numpy())
         self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:

@@ -106,8 +106,8 @@ class WindowOptimizationPass(BasePass):
             marker -= index_shift
 
             # Slice window
-            begin_cycle = marker - self.window_size // 2
-            end_cycle = marker + np.ceil(self.window_size / 2)
+            begin_cycle = int(marker - self.window_size // 2)
+            end_cycle = int(marker + np.ceil(self.window_size / 2))
 
             if begin_cycle < 0:
                 begin_cycle = 0

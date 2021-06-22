@@ -4,7 +4,7 @@ from __future__ import annotations
 from bqskit.compiler.search.heuristic import HeuristicFunction
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost import CostFunctionGenerator
-from bqskit.ir.opt.cost import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -20,7 +20,7 @@ class GreedyHeuristic(HeuristicFunction):
 
     def __init__(
         self,
-        cost_gen: CostFunctionGenerator = HilbertSchmidtGenerator(),
+        cost_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
     ) -> None:
         """
         Construct a GreedyHeuristic Function.

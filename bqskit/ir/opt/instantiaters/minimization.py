@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
@@ -22,7 +22,7 @@ class Minimization(Instantiater):
 
     def __init__(
         self,
-        cost_fn_gen: CostFunctionGenerator = HilbertSchmidtGenerator(),
+        cost_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
         minimizer: Minimizer | None = None,
     ) -> None:
         """
