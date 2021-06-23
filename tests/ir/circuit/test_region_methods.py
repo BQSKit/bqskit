@@ -244,7 +244,6 @@ class TestFold:
 class TestSurround:
     """This tests circuit.surround."""
 
-    @pytest.mark.skip
     def test_small_circuit_1(self) -> None:
         circuit = Circuit(2)
         circuit.append_gate(HGate(), 0)
@@ -255,7 +254,6 @@ class TestSurround:
         region = circuit.surround((0, 1), 2)
         assert region == CircuitRegion({0: (0, 2), 1: (0, 2)})
 
-    @pytest.mark.skip
     def test_small_circuit_2(self) -> None:
         circuit = Circuit(3)
         circuit.append_gate(HGate(), 0)
@@ -273,7 +271,6 @@ class TestSurround:
         region = circuit.surround((0, 1), 2)
         assert region == CircuitRegion({0: (0, 1), 1: (0, 2)})
 
-    @pytest.mark.skip
     def test_small_circuit_3(self) -> None:
         circuit = Circuit(3)
         circuit.append_gate(HGate(), 0)
@@ -288,5 +285,29 @@ class TestSurround:
         circuit.append_gate(HGate(), 0)
         circuit.append_gate(HGate(), 1)
         circuit.append_gate(HGate(), 2)
+        circuit.append_gate(HGate(), 0)
         region = circuit.surround((0, 1), 3)
         assert region == CircuitRegion({0: (0, 5), 1: (0, 5), 2: (0, 5)})
+
+    def test_through_middle_of_outside(self) -> None:
+        circuit = Circuit(3)
+        circuit.append_gate(CNOTGate(), (0, 1))
+        circuit.append_gate(HGate(), 0)
+        circuit.append_gate(HGate(), 1)
+        circuit.append_gate(CNOTGate(), (0, 2))
+        circuit.append_gate(CNOTGate(), (0, 1))
+        region = circuit.surround((1, 0), 2)
+        assert region == CircuitRegion({0: (0, 1), 1: (0, 1)})
+
+    def test_with_fold(self, r6_qudit_circuit: Circuit) -> None:
+        cycle = 0
+        qudit = 0
+        while True:
+            cycle = np.random.randint(r6_qudit_circuit.get_num_cycles())
+            qudit = np.random.randint(r6_qudit_circuit.get_size())
+            if not r6_qudit_circuit.is_point_idle((cycle, qudit)):
+                break
+        utry = r6_qudit_circuit.get_unitary()
+        region = r6_qudit_circuit.surround((cycle, qudit), 4)
+        r6_qudit_circuit.fold(region)
+        assert r6_qudit_circuit.get_unitary() == utry
