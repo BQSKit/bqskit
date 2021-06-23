@@ -1560,6 +1560,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             list[HalfWire],
             set[tuple[int, Operation]],
             CircuitLocation,
+            set[CircuitPoint],
         ]
         """
         A Node in the search tree.
@@ -1570,7 +1571,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         each HalfWire is walked until we find a multi-qudit gate. Multi-
         qudit gates form branches in the tree on whether on the gate
         should be included. The node structure additionally stores the
-        set of qudit indices involved in the region currently.
+        set of qudit indices involved in the region currently. Also, we
+        track points that have already been explored to reduce repetition.
         """
 
         # Initialize the frontier
@@ -1585,6 +1587,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             ],
             {(point[0], init_op)},
             init_op.location,
+            {CircuitPoint(point[0], q) for q in init_op.location},
         )
 
         frontier: list[Node] = [init_node]
@@ -1601,6 +1604,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             node = frontier.pop(0)
             _logger.debug('popped node:')
             _logger.debug(node[0])
+            _logger.debug(f'Items remaining in the frontier: {len(frontier)}')
 
             # Evaluate node
             if score(node) > best_score:
@@ -1634,8 +1638,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     if cycle_index < 0 or cycle_index >= self.get_num_cycles():
                         break
 
-                    # Continue until next operation
+                    # Stop when exploring previously explored points
                     point = CircuitPoint(cycle_index, qudit_index)
+                    if point in node[3]:
+                        break
+                    node[3].add(point)
+
+                    # Continue until next operation
                     if self.is_point_idle(point):
                         continue
                     op: Operation = self[cycle_index, qudit_index]
@@ -1647,6 +1656,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     # Gates already accounted for stop the half_wire
                     if (cycle_index, op) in absorbed_gates:
                         break
+
                     if (cycle_index, op) in [(c, o) for h, c, o in branches]:
                         break
 
@@ -1695,18 +1705,21 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     child_half_wires,
                     node[1] | absorbed_gates,
                     node[2],
+                    node[3],
                 ))
 
                 # Branch/Gate taken
+                op_points = {CircuitPoint(cycle_index, q) for q in op.location}
                 frontier.append((
                     list(set(child_half_wires + expansion)),
                     node[1] | absorbed_gates | {(cycle_index, op)},
                     node[2].union(op.location),
+                    node[3] | op_points,
                 ))
 
             # Append terminal node to handle absorbed gates with no branches
             if len(node[1] | absorbed_gates) != len(node[1]):
-                frontier.append(([], node[1] | absorbed_gates, node[2]))
+                frontier.append(([], node[1] | absorbed_gates, *node[2:]))
 
         return best_region
 
