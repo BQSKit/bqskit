@@ -135,7 +135,8 @@ class UnitaryMatrix(Unitary, StateVectorMap):
             )
 
         vec = in_state.get_numpy()[:, None]
-        return self.utry @ vec
+        out_vec = self.utry @ vec
+        return StateVector(out_vec.reshape((-1,)))
 
     @staticmethod
     def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
