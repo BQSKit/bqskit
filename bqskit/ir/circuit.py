@@ -560,6 +560,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         return self._circuit[point[0]][point[1]] is None
 
+    def normalize_point(self, point: CircuitPointLike) -> CircuitPoint:
+        """Flip negative indices to positive indices."""
+        if not self.is_point_in_range(point):
+            raise IndexError('Out-of-range point.')
+
+        cycle = point[0] if point[0] >= 0 else self.get_num_cycles() + point[0]
+        qudit = point[1] if point[1] >= 0 else self.get_size() + point[1]
+        return CircuitPoint(cycle, qudit)
+
     def check_valid_operation(self, op: Operation) -> None:
         """Check that `op` can be applied to the circuit."""
         if not isinstance(op, Operation):
@@ -1543,6 +1552,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if size <= 0:
             raise ValueError(f'Expected a positive integer size, got {size}.')
+
+        point = self.normalize_point(point)
 
         init_op: Operation = self[point]  # Allow starting at an idle point
 
