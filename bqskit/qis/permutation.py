@@ -10,7 +10,6 @@ from functools import lru_cache
 from typing import Sequence
 
 import numpy as np
-
 from bqskitrs import calc_permutation_matrix
 
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike

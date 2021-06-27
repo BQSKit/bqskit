@@ -3,9 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import scipy as sp
+from bqskitrs import swap_bit
 
 from bqskit.qis.permutation import PermutationMatrix
-from bqskitrs import swap_bit
+
 
 class TestSwapBit:
 
