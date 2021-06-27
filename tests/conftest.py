@@ -713,6 +713,7 @@ def circuit_gen(
     radixes: Sequence[int] = [],
     depth: int = 10,
     constant: bool = False,
+    gateset: list[Gate] = BQSKIT_GATES,
 ) -> Circuit:
     """
     Generate a random circuit according to input specifications.
@@ -755,7 +756,7 @@ def circuit_gen(
         location_selected = None
 
         # 2a. Shuffle gates
-        shuffled_gates = BQSKIT_GATES
+        shuffled_gates = gateset
         np.random.shuffle(shuffled_gates)
 
         # 2b. Find first gate that is compatible
