@@ -4,8 +4,10 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from os.path import exists
-from typing import Any, Sequence
+from pickle import dump
+from typing import Any
 from typing import Callable
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -17,7 +19,6 @@ from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from pickle import dump
 
 _logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ class SynthesisPass(BasePass):
             model = MachineModel(circuit.get_size())
 
         sub_data = data.copy()
-        structure_list: Sequence[Sequence[int]] = []
+        structure_list: list[Sequence[int]] = []
 
         # Synthesize operations
         errors: list[float] = []
@@ -165,7 +166,7 @@ class SynthesisPass(BasePass):
                 )
                 _logger.info(
                     f'Error in synthesized CircuitGate {block_num+1} of '
-                    f'{num_blocks}: {error}'
+                    f'{num_blocks}: {error}',
                 )
         data['synthesispass_error_sum'] = sum(errors)  # TODO: Might be replaced
         _logger.info(
@@ -173,7 +174,7 @@ class SynthesisPass(BasePass):
             f"circuit error is {data['synthesispass_error_sum']}",
         )
         if self.checkpoint_dir is not None:
-            with open(f"{self.checkpoint_dir}/structure.pickle", "wb") as f:
+            with open(f'{self.checkpoint_dir}/structure.pickle', 'wb') as f:
                 dump(structure_list, f)
 
         circuit.batch_replace(points, new_ops)

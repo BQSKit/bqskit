@@ -211,7 +211,7 @@ class ScanPartitioner(BasePass):
                         )
                         for qudit in qudit_group
                         # This statement
-                        #if stopped_cycles[qudit] - 1 >= divider[qudit]
+                        # if stopped_cycles[qudit] - 1 >= divider[qudit]
                     })
 
             if best_score is None or best_region is None:
@@ -239,4 +239,3 @@ class ScanPartitioner(BasePass):
                 list(cgc.get_params()),
             )
         circuit.become(folded_circuit)
-
