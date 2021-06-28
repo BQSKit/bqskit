@@ -206,10 +206,12 @@ class ScanPartitioner(BasePass):
                     best_region = CircuitRegion({
                         qudit: (
                             divider[qudit],
+                            # Might have errors if below is removed
                             stopped_cycles[qudit] - 1,
                         )
                         for qudit in qudit_group
-                        if stopped_cycles[qudit] - 1 >= divider[qudit]
+                        # This statement
+                        #if stopped_cycles[qudit] - 1 >= divider[qudit]
                     })
 
             if best_score is None or best_region is None:
@@ -225,11 +227,16 @@ class ScanPartitioner(BasePass):
         # Fold the circuit
         folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
         for region in regions:
-            region = circuit.downsize_region(region)
-            cgc = circuit.get_slice(region.points)
+            small_region = circuit.downsize_region(region)
+            cgc = circuit.get_slice(small_region.points)
+            if len(region.location) > len(small_region.location):
+                for i in range(len(region.location)):
+                    if region.location[i] not in small_region.location:
+                        cgc.insert_qudit(i)
             folded_circuit.append_gate(
                 CircuitGate(cgc, True),
                 sorted(list(region.keys())),
                 list(cgc.get_params()),
             )
         circuit.become(folded_circuit)
+

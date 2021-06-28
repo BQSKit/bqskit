@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from os.path import exists
-from typing import Any
+from typing import Any, Sequence
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
@@ -17,6 +17,7 @@ from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from pickle import dump
 
 _logger = logging.getLogger(__name__)
 
@@ -130,23 +131,30 @@ class SynthesisPass(BasePass):
             model = MachineModel(circuit.get_size())
 
         sub_data = data.copy()
+        structure_list: Sequence[Sequence[int]] = []
 
         # Synthesize operations
         errors: list[float] = []
         points: list[CircuitPoint] = []
         new_ops: list[Operation] = []
-        for cycle, op in ops_to_syn:
-            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
+        num_blocks = len(ops_to_syn)
+
+        for block_num, (cycle, op) in enumerate(ops_to_syn):
+            sub_numbering = {op.location[i]: i for i in range(op.size)}
             sub_data['machine_model'] = MachineModel(
                 len(op.location),
                 model.get_subgraph(op.location, sub_numbering),
             )
+            structure_list.append([op.location[i] for i in range(op.size)])
             syn_circuit = self.synthesize(op.get_unitary(), sub_data)
+            if self.checkpoint_dir is not None:
+                save_checkpoint(syn_circuit, self.checkpoint_dir, block_num)
             if self.replace_filter(syn_circuit, op):
                 # Calculate errors
                 new_utry = syn_circuit.get_unitary()
                 old_utry = op.get_unitary()
-                errors.append(new_utry.get_distance_from(old_utry))
+                error = new_utry.get_distance_from(old_utry)
+                errors.append(error)
                 points.append(CircuitPoint(cycle, op.location[0]))
                 new_ops.append(
                     Operation(
@@ -155,11 +163,18 @@ class SynthesisPass(BasePass):
                         list(syn_circuit.get_params()),  # TODO: RealVector
                     ),
                 )
+                _logger.info(
+                    f'Error in synthesized CircuitGate {block_num+1} of '
+                    f'{num_blocks}: {error}'
+                )
         data['synthesispass_error_sum'] = sum(errors)  # TODO: Might be replaced
         _logger.info(
             'Synthesis pass completed. Upper bound on '
             f"circuit error is {data['synthesispass_error_sum']}",
         )
+        if self.checkpoint_dir is not None:
+            with open(f"{self.checkpoint_dir}/structure.pickle", "wb") as f:
+                dump(structure_list, f)
 
         circuit.batch_replace(points, new_ops)
 
@@ -173,6 +188,7 @@ def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
 
 
 def save_checkpoint(circuit: Circuit, path: str, num: int) -> None:
-    VariableToU3Pass().run(circuit, {})
+    circuit_copy = circuit.copy()
+    VariableToU3Pass().run(circuit_copy, {})
     with open(path + f'/block_{num}', 'w') as f:
-        f.write(OPENQASM2Language().encode(circuit))
+        f.write(OPENQASM2Language().encode(circuit_copy))
