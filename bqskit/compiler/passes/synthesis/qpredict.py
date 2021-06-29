@@ -12,7 +12,7 @@ from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.opt.cost import CostFunctionGenerator
-from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
+from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import pauli_expansion
 from bqskit.utils.math import unitary_log_no_i
@@ -37,7 +37,7 @@ class QPredictDecompositionPass(SynthesisPass):
         success_threshold: float = 1e-6,
         progress_threshold_r: float = 5e-2,
         progress_threshold_a: float = 1e-4,
-        cost: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
+        cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
         instantiate_options: dict[str, Any] = {},
         **kwargs: dict[str, Any],
