@@ -64,7 +64,7 @@ class SaveIntermediatePass(BasePass):
             _logger.warning(
                 f'Path {path_to_save_dir} already exists, '
                 f'saving to {self.pathdir + self.projname} '
-                'instead.'
+                'instead.',
             )
 
         mkdir(self.pathdir + self.projname)
