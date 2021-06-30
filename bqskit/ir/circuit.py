@@ -29,7 +29,7 @@ from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.instantiaters.minimization import Minimization
 from bqskit.ir.opt.instantiaters.qfactor import QFactor
-from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
+from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
@@ -2182,10 +2182,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             cost (CostFunction): The cost function to use when evaluting
                 the circuit's cost.
 
-            method (str): The minimization method to use. If unspecified,
+            minimizer (str): The minimization method to use. If unspecified,
                 attempts to assign best method. (kwarg)
         """
-        self.set_params(LBFGSMinimizer().minimize(cost, self.get_params()))
+        minimizer = kwargs.get('minimizer', CeresMinimizer())
+        self.set_params(minimizer.minimize(cost, self.get_params()))
 
     # endregion
 

@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
-from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
+from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -22,7 +22,7 @@ class Minimization(Instantiater):
 
     def __init__(
         self,
-        cost_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
+        cost_fn_gen: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         minimizer: Minimizer | None = None,
     ) -> None:
         """
@@ -45,6 +45,10 @@ class Minimization(Instantiater):
         if minimizer is not None and not isinstance(minimizer, Minimizer):
             raise TypeError('Expected Minimizer, got %s.' % type(minimizer))
 
+        # Default to the fast CeresMinimizer
+        if minimizer is None:
+            minimizer = CeresMinimizer()
+
         self.cost_fn_gen = cost_fn_gen
         self.minimizer = minimizer
 
@@ -56,11 +60,7 @@ class Minimization(Instantiater):
     ) -> np.ndarray:
         """Instantiate `circuit`, see Instantiater for more info."""
         cost = self.cost_fn_gen.gen_cost(circuit, target)
-
-        if self.minimizer is None:
-            return LBFGSMinimizer().minimize(cost, x0)
-        else:
-            return self.minimizer.minimize(cost, x0)
+        return self.minimizer.minimize(cost, x0)
 
     @staticmethod
     def is_capable(circuit: Circuit) -> bool:
