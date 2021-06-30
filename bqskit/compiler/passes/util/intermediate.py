@@ -58,14 +58,14 @@ class SaveIntermediatePass(BasePass):
 
         enum = 1
         if exists(self.pathdir + self.projname):
-            _logger.warning(
-                f'Path {path_to_save_dir} already exists, '
-                f'saving to {self.pathdir + self.projname}_{enum}',
-                'instead.',
-            )
             while exists(self.pathdir + self.projname + f'_{enum}'):
                 enum += 1
             self.projname += f'_{enum}'
+            _logger.warning(
+                f'Path {path_to_save_dir} already exists, '
+                f'saving to {self.pathdir + self.projname} '
+                'instead.'
+            )
 
         mkdir(self.pathdir + self.projname)
 
