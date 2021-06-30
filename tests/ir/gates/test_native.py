@@ -12,6 +12,9 @@ from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RZGate
+from bqskit.ir.gates import RXXGate
+from bqskit.ir.gates import RYYGate
+from bqskit.ir.gates import RZZGate
 from bqskit.ir.gates import U1Gate
 from bqskit.ir.gates import U2Gate
 from bqskit.ir.gates import U3Gate
@@ -23,6 +26,9 @@ NATIVE_GATES: list[Gate] = [
     RXGate(),
     RYGate(),
     RZGate(),
+    RXXGate(),
+    RYYGate(),
+    RZZGate(),
     CNOTGate(),
     U1Gate(),
     U2Gate(),
