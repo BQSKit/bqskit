@@ -10,10 +10,10 @@ from bqskit.ir import Circuit as Circ
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RXGate
-from bqskit.ir.gates import RYGate
-from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import RXXGate
+from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RYYGate
+from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import RZZGate
 from bqskit.ir.gates import U1Gate
 from bqskit.ir.gates import U2Gate

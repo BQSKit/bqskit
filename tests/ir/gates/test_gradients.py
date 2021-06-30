@@ -1,8 +1,11 @@
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.ir.circuit import Circuit
-from bqskitrs import Circuit as Circ
+from __future__ import annotations
 
 import numpy as np
+from bqskitrs import Circuit as Circ
+
+from bqskit.ir.circuit import Circuit
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
 
 def check_gradient(circ: Circuit, num_params: int) -> None:
     totaldiff = [0] * num_params
@@ -16,13 +19,17 @@ def check_gradient(circ: Circuit, num_params: int) -> None:
             v2[i] = v[i] + eps
             U1 = circ.get_unitary(v2)
             if isinstance(U1, UnitaryMatrix):
-                U1 = U1.get_numpy()
+                utry1 = U1.get_numpy()
+            else:
+                utry1 = U1
             v2[i] = v[i] - eps
             U2 = circ.get_unitary(v2)
             if isinstance(U2, UnitaryMatrix):
-                U2 = U2.get_numpy()
+                utry2 = U2.get_numpy()
+            else:
+                utry2 = U2
 
-            FD = (U1 - U2) / (2*eps)
+            FD = (utry1 - utry2) / (2 * eps)
 
             diffs = np.sum(np.abs(FD - Js[i]))
             totaldiff[i] += diffs

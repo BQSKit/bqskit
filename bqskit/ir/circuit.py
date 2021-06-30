@@ -1,7 +1,5 @@
 """This module implements the Circuit class."""
 from __future__ import annotations
-from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
-from bqskit.ir.opt.minimizer import Minimizer
 
 import copy
 import logging
@@ -27,6 +25,7 @@ from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.instantiaters.minimization import Minimization
 from bqskit.ir.opt.instantiaters.qfactor import QFactor
+from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.qis.permutation import PermutationMatrix

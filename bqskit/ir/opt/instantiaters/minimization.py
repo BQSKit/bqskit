@@ -1,6 +1,5 @@
 """This module implements the Minimization class."""
 from __future__ import annotations
-from bqskit.ir.opt.cost.residual import ResidualsFunction
 
 from typing import TYPE_CHECKING
 
