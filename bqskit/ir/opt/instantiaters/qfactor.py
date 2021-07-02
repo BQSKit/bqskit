@@ -28,10 +28,10 @@ class QFactor(Instantiater):
     def __init__(
         self,
         diff_tol_a: float = 1e-12,
-        diff_tol_r: float = 1e-6,
+        diff_tol_r: float = 1e-4,
         dist_tol: float = 1e-10,
-        max_iters: int = 100000,
-        min_iters: int = 1000,
+        max_iters: int = 1000,
+        min_iters: int = 0,
         slowdown_factor: float = 0.0,
         reinit_delay: int = 40,
         log_delay: int = 100,
