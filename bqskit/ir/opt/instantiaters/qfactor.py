@@ -225,7 +225,7 @@ class QFactor(Instantiater):
                 return circuit.get_params()
 
             if it % self.log_delay == 0:
-                _logger.info(f'iteration: {it}, cost: {c1}')
+                _logger.debug(f'iteration: {it}, cost: {c1}')
 
             if it % self.reinit_delay == 0:
                 ct = self.initialize_circuit_tensor(circuit, typed_target)
