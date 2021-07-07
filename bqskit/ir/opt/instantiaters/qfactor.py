@@ -34,6 +34,7 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
         target: UnitaryMatrix | StateVector,
         x0: np.ndarray,
     ) -> np.ndarray:
+        """Instantiate `circuit`, see Instantiater for more info."""
         return super().instantiate(circuit, target, x0)
 
     @staticmethod
