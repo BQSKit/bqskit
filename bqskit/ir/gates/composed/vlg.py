@@ -86,7 +86,7 @@ class VariableLocationGate(Gate):
                             ' due to radix mismatch.',
                         )
 
-            self.radixes = tuple(radix_map.values())  # type: ignore
+            self.radixes = tuple(radix_map.values())
         else:
             for l in locations:
                 for radix, qudit_index in zip(gate.get_radixes(), l):

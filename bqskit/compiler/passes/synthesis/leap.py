@@ -154,7 +154,7 @@ class LEAPSynthesisPass(SynthesisPass):
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(
             utry,
-            **self.instantiate_options,  # type: ignore
+            **self.instantiate_options,
         )
         frontier.add(initial_layer, 0)
 

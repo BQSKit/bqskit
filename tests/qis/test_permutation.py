@@ -127,8 +127,8 @@ class TestFromQubitLocation:
 
     def test_calc_permutation_matrix_invalid(self) -> None:
         with pytest.raises(TypeError):
-            PermutationMatrix.from_qubit_location(4, 'a')  # type: ignore
+            PermutationMatrix.from_qubit_location(4, 'a')
         with pytest.raises(TypeError):
-            PermutationMatrix.from_qubit_location(4, ('a'))  # type: ignore
+            PermutationMatrix.from_qubit_location(4, ('a'))
         with pytest.raises(TypeError):
-            PermutationMatrix.from_qubit_location('a', (0, 1))  # type: ignore
+            PermutationMatrix.from_qubit_location('a', (0, 1))

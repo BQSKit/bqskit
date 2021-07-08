@@ -229,4 +229,4 @@ class UnitaryBuilder(Unitary):
                 2 ** len(location),
             ),
         )
-        return np.trace(a)  # type: ignore
+        return np.trace(a)

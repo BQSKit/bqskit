@@ -82,7 +82,7 @@ class ForEachBlockPass(BasePass):
 
         # Perform work
         for cycle, op in blocks:
-            gate: CircuitGate = op.gate  # type: ignore
+            gate: CircuitGate = op.gate
             circuit = gate._circuit.copy()
             circuit.set_params(op.params)
 
