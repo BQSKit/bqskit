@@ -139,14 +139,15 @@ class RestoreIntermediatePass(BasePass):
             )
         if not exists(self.proj_dir + '/structure.pickle'):
             raise TypeError(
-                f'Project directory `{self.proj_dir}` does not contain `structure.pickle`.',
+                f'Project directory `{self.proj_dir}` does not '
+                'contain `structure.pickle`.',
             )
 
         with open(self.proj_dir + '/structure.pickle', 'rb') as f:
             self.structure = pickle.load(f)
 
         if not isinstance(self.structure, list):
-            raise TypeError(f'The provided `structure.pickle` is not a list.')
+            raise TypeError('The provided `structure.pickle` is not a list.')
 
         self.block_list: list[str] = []
         if load_blocks:
@@ -158,7 +159,8 @@ class RestoreIntermediatePass(BasePass):
         `proj_dir`.
 
         Raises:
-            ValueError: if there are more block files than indices in the `structure.pickle`.
+            ValueError: if there are more block files than indices in the
+            `structure.pickle`.
         """
         files = listdir(self.proj_dir)
         self.block_list = [f for f in files if 'block_' in f]
@@ -186,7 +188,8 @@ class RestoreIntermediatePass(BasePass):
                 block_location = self.structure[block_num]
                 if block_circ.get_size() != len(block_location):
                     raise ValueError(
-                        f'{block} and `structure.pickle` locations are different sizes.',
+                        f'{block} and `structure.pickle` locations are '
+                        'different sizes.',
                     )
                 # Append to circuit
                 circuit.append_circuit(block_circ, block_location)
