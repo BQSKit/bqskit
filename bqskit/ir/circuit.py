@@ -20,12 +20,12 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtCost
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.instantiaters.minimization import Minimization
 from bqskit.ir.opt.instantiaters.qfactor import QFactor
-from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
+from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.qis.permutation import PermutationMatrix
@@ -1565,7 +1565,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for start in starts:
             params.append(instantiater.instantiate(self, typed_target, start))
 
-        cost_fn = HilbertSchmidtCost(self, typed_target)
+        cost_fn = HilbertSchmidtCost(self, typed_target.get_numpy())
         self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
@@ -1579,10 +1579,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             cost (CostFunction): The cost function to use when evaluting
                 the circuit's cost.
 
-            method (str): The minimization method to use. If unspecified,
+            minimizer (str): The minimization method to use. If unspecified,
                 attempts to assign best method. (kwarg)
         """
-        self.set_params(LBFGSMinimizer().minimize(cost, self.get_params()))
+        minimizer = kwargs.get('minimizer', CeresMinimizer())
+        self.set_params(minimizer.minimize(cost, self.get_params()))
 
     # endregion
 

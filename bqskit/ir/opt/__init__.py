@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
-from bqskit.ir.opt.cost.functions import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResiduals
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import Minimization
@@ -21,5 +23,7 @@ __all__ = [
     'CostFunction',
     'CostFunctionGenerator',
     'HilbertSchmidtCost',
-    'HilbertSchmidtGenerator',
+    'HilbertSchmidtCostGenerator',
+    'HilbertSchmidtResiduals',
+    'HilbertSchmidtResidualsGenerator',
 ]

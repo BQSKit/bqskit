@@ -5,6 +5,7 @@ import numpy as np
 from scipy.stats import unitary_group
 
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.parameterized import RXGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.opt.instantiaters.qfactor import QFactor
 
@@ -45,11 +46,14 @@ class TestQFactorEndToEnd:
     def test_2_gate(self) -> None:
         g1 = VariableUnitaryGate(2)
         g2 = VariableUnitaryGate(3)
+        g3 = RXGate()
         circuit = Circuit(4)
         circuit.append_gate(g1, [0, 1])
         circuit.append_gate(g2, [1, 2, 3])
+        circuit.append_gate(g3, [1])
         utry = circuit.get_unitary(np.random.random(circuit.get_num_params()))
         params = QFactor().instantiate(circuit, utry, circuit.get_params())
+
         circuit.set_params(params)
 
         assert np.allclose(

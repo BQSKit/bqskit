@@ -161,3 +161,6 @@ class VariableLocationGate(Gate):
         dP = np.array([10 * x * y for x, y in zip(l, dP)])
         U = UnitaryMatrix.closest_to(PGPT, self.get_radixes())
         return U, np.concatenate([dG, dP])
+
+    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+        raise NotImplementedError()

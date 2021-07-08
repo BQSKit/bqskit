@@ -7,7 +7,7 @@ import numpy as np
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
-from bqskit.ir.opt.cost import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 from bqskit.qis.unitary import UnitaryMatrix
 # The next two lines start bqskits's logger.
 logging.getLogger('bqskit').setLevel(logging.INFO)
@@ -47,7 +47,7 @@ circuit.instantiate(
 )
 
 # Calculate and print final distance
-dist = HilbertSchmidtGenerator().calc_cost(circuit, toffoli)
+dist = HilbertSchmidtCostGenerator().calc_cost(circuit, toffoli)
 print('Final Distance: ', dist)
 
 # If you would like to convert the unitary operations to native gates,

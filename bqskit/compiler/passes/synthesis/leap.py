@@ -14,7 +14,7 @@ from bqskit.compiler.search.generators import SimpleLayerGenerator
 from bqskit.compiler.search.heuristic import HeuristicFunction
 from bqskit.compiler.search.heuristics import AStarHeuristic
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.opt.cost.functions.hilbertschmidt import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.utils.typing import is_integer
@@ -39,7 +39,7 @@ class LEAPSynthesisPass(SynthesisPass):
         heuristic_function: HeuristicFunction = AStarHeuristic(),
         layer_generator: LayerGenerator = SimpleLayerGenerator(),
         success_threshold: float = 1e-10,
-        cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
+        cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
         min_prefix_size: int = 3,
         instantiate_options: dict[str, Any] = {},
