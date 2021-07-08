@@ -73,7 +73,7 @@ repos:
     rev: v0.901
     hooks:
     - id: mypy
-      additional_dependencies: [numpy==1.20.3]
+      additional_dependencies: ["numpy>=1.20,<1.21"] 
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
