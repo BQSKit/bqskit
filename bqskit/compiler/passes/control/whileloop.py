@@ -35,6 +35,9 @@ class WhileLoopPass(BasePass):
 
             loop_body (BasePass | Sequence[BasePass]): The pass or passes
                 to execute while `condition` is true.
+
+        Raises:
+            ValueError: If a Sequence[BasePass] is given, but it is empty.
         """
 
         if not isinstance(condition, PassPredicate):
@@ -53,6 +56,8 @@ class WhileLoopPass(BasePass):
                     'Expected Pass or sequence of Passes, got %s.'
                     % type(loop_body[truth_list.index(False)]),
                 )
+            if len(loop_body) == 0:
+                raise ValueError('Expected at least one pass.')
 
         self.condition = condition
         self.loop_body = loop_body

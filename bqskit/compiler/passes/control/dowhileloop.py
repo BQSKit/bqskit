@@ -36,6 +36,9 @@ class DoWhileLoopPass(BasePass):
 
             loop_body (BasePass | Sequence[BasePass]): The pass or passes
                 to execute while `condition` is true.
+
+        Raises:
+            ValueError: If a Sequence[BasePass] is given, but it is empty.
         """
 
         if not isinstance(condition, PassPredicate):
@@ -54,9 +57,11 @@ class DoWhileLoopPass(BasePass):
                     'Expected Pass or sequence of Passes, got %s.'
                     % type(loop_body[truth_list.index(False)]),
                 )
+            if len(loop_body) == 0:
+                raise ValueError('Expected at least one pass.')
 
         self.condition = condition
-        self.loop_body = loop_body
+        self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
@@ -64,8 +69,5 @@ class DoWhileLoopPass(BasePass):
 
         while self.condition(circuit, data):
             _logger.debug('Loop body executing...')
-            if is_sequence(self.loop_body):
-                for loop_pass in self.loop_body:
-                    loop_pass.run(circuit, data)
-            else:
-                self.loop_body.run(circuit, data)
+            for loop_pass in self.loop_body:
+                loop_pass.run(circuit, data)

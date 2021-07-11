@@ -45,6 +45,9 @@ class ForEachBlockPass(BasePass):
                 and the original operation. If this returns true, the
                 operation will be replaced with the new circuit.
                 Defaults to always replace.
+
+        Raises:
+            ValueError: If a Sequence[BasePass] is given, but it is empty.
         """
 
         if not is_sequence(loop_body) and not isinstance(loop_body, BasePass):
@@ -60,8 +63,10 @@ class ForEachBlockPass(BasePass):
                     'Expected Pass or sequence of Passes, got %s.'
                     % type(loop_body[truth_list.index(False)]),
                 )
+            if len(loop_body) == 0:
+                raise ValueError('Expected at least one pass.')
 
-        self.loop_body = loop_body
+        self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
         self.replace_filter = replace_filter or default_replace_filter
 
         if not callable(self.replace_filter):
@@ -86,13 +91,9 @@ class ForEachBlockPass(BasePass):
             subcircuit = gate._circuit.copy()
             subcircuit.set_params(op.params)
 
-            if is_sequence(self.loop_body):
-                for loop_pass in self.loop_body:
-                    # TODO: Pass only subtopology when topology avail
-                    loop_pass.run(subcircuit, data)
-            else:
+            for loop_pass in self.loop_body:
                 # TODO: Pass only subtopology when topology avail
-                self.loop_body.run(subcircuit, data)
+                loop_pass.run(subcircuit, data)
 
             if self.replace_filter(subcircuit, op):
                 subcircuit.replace_gate(
