@@ -203,9 +203,9 @@ class GreedyPartitioner(BasePass):
 
             if perform_assign:
                 block_id += 1
-                block_start = max_blocks[-1][1]  # type: ignore
-                block_ends = max_blocks[-1][2]  # type: ignore
-                q_group_index = max_blocks[-1][3]  # type: ignore
+                block_start = max_blocks[-1][1]
+                block_ends = max_blocks[-1][2]
+                q_group_index = max_blocks[-1][3]
                 prev_status = None
                 for cycle in range(block_start, max(block_ends)):
                     status = [
@@ -234,7 +234,7 @@ class GreedyPartitioner(BasePass):
         for cycle in range(num_cycles):
             if not cycle or block_map[cycle] == block_map[cycle - 1]:
                 continue
-            indices = [{}, {}]  # type: ignore
+            indices = [{}, {}]
             for i in range(2):
                 for qudit in range(circuit.get_size()):
                     block = block_map[cycle - i][qudit]
@@ -247,7 +247,7 @@ class GreedyPartitioner(BasePass):
                         for qudit in current_qudits:
                             block_map[cycle][qudit] = prev_blocks
 
-        blocks = {}  # type: ignore
+        blocks = {}
         for cycle in range(num_cycles):
             for qudit in range(circuit.get_size()):
                 if block_map[cycle][qudit] not in blocks:
@@ -257,7 +257,7 @@ class GreedyPartitioner(BasePass):
 
         block_order = []
         for block in blocks.values():
-            block_order.append([block, block[-1]])  # type: ignore
+            block_order.append([block, block[-1]])
         block_order.sort(reverse=True, key=lambda x: x[1])
 
         for block, start_cycle in block_order:
@@ -265,9 +265,9 @@ class GreedyPartitioner(BasePass):
             for cycle, op in circuit.operations_with_cycles():
                 qudit = op.location[0]
                 if (
-                    qudit in block  # type: ignore
+                    qudit in block
                     and cycle >= start_cycle
-                    and cycle <= block[qudit]  # type: ignore
+                    and cycle <= block[qudit]
                 ):
                     points_in_block.append((cycle, qudit))
 

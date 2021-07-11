@@ -263,8 +263,8 @@ class CircuitRegion(Mapping[int, QuditBounds]):
     def overlaps(self, other: CircuitPointLike | CircuitRegionLike) -> bool:
         """Return true if `other` overlaps this region."""
 
-        if CircuitPoint.is_point(other):  # TODO: Typeguard
-            other = CircuitPoint(*other)  # type: ignore
+        if CircuitPoint.is_point(other):
+            other = CircuitPoint(*other)
 
             if other.qudit not in self:
                 return False
