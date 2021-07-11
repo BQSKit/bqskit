@@ -10,70 +10,12 @@ from functools import lru_cache
 from typing import Sequence
 
 import numpy as np
-import sympy.combinatorics as cb
+from bqskitrs import calc_permutation_matrix
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_permutation
-
-
-def swap_bit(i: int, j: int, b: int) -> int:
-    """
-    Swaps bits i and j in b.
-
-    Args:
-        i (int): Bit index 1
-
-        j (int): Bit index 2
-
-        b (int): Input number
-
-    Returns:
-        (int): The number b with the bits in index 1 and 2 swapped.
-    """
-
-    if i == j:
-        return b
-
-    b_i = (b >> i) & 1
-    b_j = (b >> j) & 1
-
-    if b_i != b_j:
-        b &= ~((1 << i) | (1 << j))
-        b |= (b_i << j) | (b_j << i)
-
-    return b
-
-
-def swap(x: int, y: int, n: int) -> cb.Permutation:
-    """
-    Returns a permutation for the swap between qubits x and y.
-
-    Args:
-        x (int): Qubit index 1
-
-        y (int): Qubit index 2
-
-        n (int): Total number of qubits
-
-    Returns:
-        (cb.Permutation): The permutation that swaps qubits x and y.
-
-    Raises:
-        ValueError: If x or y is an invalid qubit index.
-    """
-
-    if x < 0 or x > n or y < 0 or y > n:
-        raise ValueError('Invalid qubit index.')
-
-    if x == y:
-        return cb.Permutation(2 ** n)
-
-    return cb.Permutation([
-        swap_bit(n - 1 - x, n - 1 - y, b)
-        for b in range(2 ** n)
-    ])
 
 
 class PermutationMatrix(UnitaryMatrix):
@@ -149,29 +91,5 @@ class PermutationMatrix(UnitaryMatrix):
         if not CircuitLocation.is_location(location, num_qubits):
             raise TypeError('Invalid location.')
 
-        max_qubit = np.max(location)
-        num_core_qubits = max_qubit + 1
-        num_gate_qubits = len(location)
-
-        perm = cb.Permutation(2**num_core_qubits)
-        temp_pos = list(range(num_gate_qubits))
-
-        for q in range(num_gate_qubits):
-            perm *= swap(temp_pos[q], location[q], num_core_qubits)
-
-            if location[q] < num_gate_qubits:
-                temp_pos[location[q]] = temp_pos[q]
-
-        matrix = np.identity(2 ** num_core_qubits)
-
-        for transpos in reversed(perm.transpositions()):
-            matrix[list(transpos), :] = matrix[list(reversed(transpos)), :]
-
-        if num_qubits - num_core_qubits > 0:
-            matrix = np.kron(
-                matrix, np.identity(
-                    2 ** (num_qubits - num_core_qubits),
-                ),
-            )
-
+        matrix = calc_permutation_matrix(num_qubits, location)
         return PermutationMatrix(matrix)

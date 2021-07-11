@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from scipy.stats import unitary_group
+import numpy as np
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
@@ -13,11 +13,25 @@ from bqskit.ir import Circuit
 # Enable logging
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
 
-# Let's create a random 3-qubit unitary to synthesize and add it to a circuit.
-circuit = Circuit.from_unitary(unitary_group.rvs(8))
+# Let's create a 3-qubit toffoi unitary to synthesize and add it to a circuit.
+toffoli = np.array(
+    [
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0, 1, 0],
+    ],
+    dtype='complex128',
+)
+
+circuit = Circuit.from_unitary(toffoli)
 
 # We will now define the CompilationTask we want to run.
-task = CompilationTask(circuit, [QSearchSynthesisPass()])
+task = CompilationTask(circuit, [QSearchSynthesisPass(success_threshold=1e-9)])
 
 # Finally let's create create the compiler and execute the CompilationTask.
 compiler = Compiler()

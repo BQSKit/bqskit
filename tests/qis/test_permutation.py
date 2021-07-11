@@ -3,38 +3,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import scipy as sp
+from bqskitrs import swap_bit
 
 from bqskit.qis.permutation import PermutationMatrix
-from bqskit.qis.permutation import swap
-from bqskit.qis.permutation import swap_bit
-
-
-class TestSwap:
-
-    def test_swap(self) -> None:
-        perm = swap(0, 1, 2).list()
-        assert perm[0] == 0
-        assert perm[1] == 2
-        assert perm[2] == 1
-        assert perm[3] == 3
-        assert len(perm) == 4
-
-    def test_swap_invalid1(self) -> None:
-        with pytest.raises(TypeError):
-            swap('a', 1, 0)  # type: ignore
-
-        with pytest.raises(TypeError):
-            swap(0, 'a', 0)  # type: ignore
-
-        with pytest.raises(TypeError):
-            swap(0, 1, 'a')  # type: ignore
-
-    def test_swap_invalid2(self) -> None:
-        with pytest.raises(ValueError):
-            swap(0, 1, 0)
-
-        with pytest.raises(ValueError):
-            swap(1, 2, 1)
 
 
 class TestSwapBit:
@@ -68,13 +39,13 @@ class TestSwapBit:
 
     def test_swap_bit_invalid(self) -> None:
         with pytest.raises(TypeError):
-            swap_bit('a', 1, 0)  # type: ignore
+            swap_bit('a', 1, 0)
 
         with pytest.raises(TypeError):
-            swap_bit(0, 'a', 0)  # type: ignore
+            swap_bit(0, 'a', 0)
 
         with pytest.raises(TypeError):
-            swap_bit(0, 1, 'a')  # type: ignore
+            swap_bit(0, 1, 'a')
 
 
 class TestFromQubitLocation:

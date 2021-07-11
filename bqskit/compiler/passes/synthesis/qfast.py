@@ -15,7 +15,7 @@ from bqskit.ir.gates.composed.vlg import VariableLocationGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import CostFunctionGenerator
-from bqskit.ir.opt.cost import HilbertSchmidtGenerator
+from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -36,7 +36,7 @@ class QFASTDecompositionPass(SynthesisPass):
         gate: Gate = PauliGate(2),
         success_threshold: float = 1e-6,
         progress_threshold: float = 5e-3,
-        cost: CostFunctionGenerator = HilbertSchmidtGenerator(),
+        cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
         **kwargs: dict[str, Any],
     ) -> None:
