@@ -146,6 +146,16 @@ class ScanPartitioner(BasePass):
                                 'Skipping gate larger than block size.',
                             )
 
+            if len(qudits_to_increment) > 0:
+                regions.append(
+                    CircuitRegion(
+                        {
+                            qudit: (divider[qudit], divider[qudit])
+                            for qudit in qudits_to_increment
+                        },
+                    ),
+                )
+
             for qudit in qudits_to_increment:
                 divider[qudit] += 1
 
@@ -218,10 +228,13 @@ class ScanPartitioner(BasePass):
         folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
         for region in regions:
             region = circuit.downsize_region(region)
-            cgc = circuit.get_slice(region.points)
-            folded_circuit.append_gate(
-                CircuitGate(cgc, True),
-                sorted(list(region.keys())),
-                list(cgc.get_params()),
-            )
+            if 0 < len(region) <= self.block_size:
+                cgc = circuit.get_slice(region.points)
+                folded_circuit.append_gate(
+                    CircuitGate(cgc, True),
+                    sorted(list(region.keys())),
+                    list(cgc.get_params()),
+                )
+            else:
+                folded_circuit.extend(circuit[region])
         circuit.become(folded_circuit)
