@@ -86,6 +86,8 @@ class ForEachBlockPass(BasePass):
                 blocks.append((cycle, op))
 
         # Perform work
+        points: list[CircuitPoint] = []
+        ops: list[Operation] = []
         for cycle, op in blocks:
             gate: CircuitGate = op.gate
             subcircuit = gate._circuit.copy()
@@ -96,12 +98,16 @@ class ForEachBlockPass(BasePass):
                 loop_pass.run(subcircuit, data)
 
             if self.replace_filter(subcircuit, op):
-                subcircuit.replace_gate(
-                    (cycle, op.location[0]),
-                    CircuitGate(subcircuit, True),
-                    op.location,
-                    subcircuit.get_params(),
+                points.append(CircuitPoint(cycle, op.location[0]))
+                ops.append(
+                    Operation(
+                        CircuitGate(subcircuit, True),
+                        op.location,
+                        subcircuit.get_params(),
+                    ),
                 )
+
+        circuit.batch_replace(points, ops)
 
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
