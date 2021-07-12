@@ -114,8 +114,9 @@ class UnitaryMatrix(Unitary, StateVectorMap):
         """Returns the conjugate transpose of the unitary matrix."""
         return UnitaryMatrix(self.utry.conj().T, self.get_radixes(), False)
 
-    def get_distance_from(self, other: UnitaryMatrix) -> float:
+    def get_distance_from(self, other: UnitaryLike) -> float:
         """Returns the distance to `other`."""
+        other = UnitaryMatrix(other)
         num = np.abs(np.trace(other.get_numpy().conj().T @ self.get_numpy()))
         dem = self.get_dim()
         dist = 1 - (num / dem)
