@@ -11,7 +11,8 @@ from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
+from bqskit.compiler.passes.util.converttou3 import PauliToU3Pass
+from bqskit.compiler.passes.util.converttou3 import VariableToU3Pass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
@@ -191,5 +192,6 @@ def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
 def save_checkpoint(circuit: Circuit, path: str, num: int) -> None:
     circuit_copy = circuit.copy()
     VariableToU3Pass().run(circuit_copy, {})
+    PauliToU3Pass().run(circuit_copy, {})
     with open(path + f'/block_{num}', 'w') as f:
         f.write(OPENQASM2Language().encode(circuit_copy))

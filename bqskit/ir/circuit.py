@@ -1561,14 +1561,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if init_op.get_size() > size:
             raise ValueError('Gate at point is too large for size.')
 
-        HalfWire = tuple[CircuitPoint, str]
+        HalfWire : tuple[CircuitPoint, str]
         """
         A HalfWire is a point in the circuit and a direction. This
         represents a point to start exploring from and a direction to
         explore in.
         """
 
-        Node = tuple[
+        Node : tuple[
             list[HalfWire],
             set[tuple[int, Operation]],
             CircuitLocation,
