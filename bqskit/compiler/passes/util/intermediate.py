@@ -10,8 +10,8 @@ from re import findall
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.compiler.passes.util.converttou3 import VariableToU3Pass
 from bqskit.compiler.passes.util.converttou3 import PauliToU3Pass
+from bqskit.compiler.passes.util.converttou3 import VariableToU3Pass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language

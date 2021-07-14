@@ -237,7 +237,7 @@ class ScanPartitioner(BasePass):
         # Fold the circuit
         folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
         # Option to keep a block's idle qudits as part of the CircuitGate
-        if "full_qudit_groups" in data and data["full_qudit_groups"] == True:
+        if 'keep_idle_qudits' in data and data['keep_idle_qudits'] == True:
             for region in regions:
                 small_region = circuit.downsize_region(region)
                 cgc = circuit.get_slice(small_region.points)

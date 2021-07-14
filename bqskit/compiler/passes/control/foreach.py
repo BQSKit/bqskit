@@ -107,7 +107,7 @@ class ForEachBlockPass(BasePass):
         points: list[CircuitPoint] = []
         ops: list[Operation] = []
         for cycle, op in blocks:
-            gate: CircuitGate = op.gate  # type: ignore
+            gate: CircuitGate = op.gate
             sub_circuit = gate._circuit.copy()
             sub_circuit.set_params(op.params)
 

@@ -8,8 +8,11 @@ from typing import Any
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
+from typing import List
 from typing import overload
 from typing import Sequence
+from typing import Set
+from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -1561,18 +1564,18 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if init_op.get_size() > size:
             raise ValueError('Gate at point is too large for size.')
 
-        HalfWire : tuple[CircuitPoint, str]
+        HalfWire = Tuple[CircuitPoint, str]
         """
         A HalfWire is a point in the circuit and a direction. This
         represents a point to start exploring from and a direction to
         explore in.
         """
 
-        Node : tuple[
-            list[HalfWire],
-            set[tuple[int, Operation]],
+        Node = Tuple[
+            List[HalfWire],
+            Set[Tuple[int, Operation]],
             CircuitLocation,
-            set[CircuitPoint],
+            Set[CircuitPoint],
         ]
         """
         A Node in the search tree.

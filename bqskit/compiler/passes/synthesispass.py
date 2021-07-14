@@ -23,6 +23,8 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 _logger = logging.getLogger(__name__)
 
+# TODO: Add support for checkpointing other than in QASM format.
+
 
 class SynthesisPass(BasePass):
     """
