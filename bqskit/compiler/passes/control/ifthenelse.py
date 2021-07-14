@@ -39,6 +39,9 @@ class IfThenElsePass(BasePass):
 
             on_false (BasePass | Sequence[BasePass] | None): If specified,
                 the pass or passes to execute if `condition` is false.
+
+        Raises:
+            ValueError: If a Sequence[BasePass] is given, but it is empty.
         """
 
         if not isinstance(condition, PassPredicate):
@@ -56,6 +59,8 @@ class IfThenElsePass(BasePass):
                     'Expected Pass or sequence of Passes, got %s.'
                     % type(on_true[truth_list.index(False)]),
                 )
+            if len(on_true) == 0:
+                raise ValueError('Expected at least one pass for true branch.')
 
         if on_false is not None:
             if not is_sequence(on_false) and not isinstance(on_false, BasePass):
@@ -71,10 +76,14 @@ class IfThenElsePass(BasePass):
                         'Expected Pass or sequence of Passes, got %s.'
                         % type(on_false[truth_list.index(False)]),
                     )
+                if len(on_false) == 0:
+                    raise ValueError(
+                        'Expected at least one pass for false branch.',
+                    )
 
         self.condition = condition
-        self.on_true = on_true
-        self.on_false = on_false
+        self.on_true = on_true if is_sequence(on_true) else [on_true]
+        self.on_false = on_false if is_sequence(on_false) else [on_false]
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""

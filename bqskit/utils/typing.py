@@ -274,11 +274,11 @@ def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
     if not is_unitary(P, tol):
         return False
 
-    if not all(s == 1 for s in P.sum(0)):  # type: ignore
+    if not all(s == 1 for s in P.sum(0)):
         _logger.debug('Not all rows sum to 1.')
         return False
 
-    if not all(s == 1 for s in P.sum(1)):  # type: ignore
+    if not all(s == 1 for s in P.sum(1)):
         _logger.debug('Not all columns sum to 1.')
         return False
 

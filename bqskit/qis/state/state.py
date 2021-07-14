@@ -89,6 +89,9 @@ class StateVector:
     def get_radixes(self) -> tuple[int, ...]:
         return self.radixes
 
+    def get_probs(self) -> tuple[float, ...]:
+        return tuple(np.abs(elem)**2 for elem in self.vec)
+
     @staticmethod
     def is_pure_state(V: Any, tol: float = 1e-8) -> bool:
         """Return true if V is a pure state vector."""
@@ -98,7 +101,7 @@ class StateVector:
         if not is_vector(V):
             return False
 
-        if not np.allclose(np.sum(np.abs(V)), 1, rtol=0, atol=tol):
+        if not np.allclose(np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol):
             _logger.debug('Failed pure state criteria.')
             return False
 

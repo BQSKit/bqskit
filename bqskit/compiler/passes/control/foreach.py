@@ -46,6 +46,9 @@ class ForEachBlockPass(BasePass):
                 and the original operation. If this returns true, the
                 operation will be replaced with the new circuit.
                 Defaults to always replace.
+
+        Raises:
+            ValueError: If a Sequence[BasePass] is given, but it is empty.
         """
 
         if not is_sequence(loop_body) and not isinstance(loop_body, BasePass):
@@ -61,8 +64,10 @@ class ForEachBlockPass(BasePass):
                     'Expected Pass or sequence of Passes, got %s.'
                     % type(loop_body[truth_list.index(False)]),
                 )
+            if len(loop_body) == 0:
+                raise ValueError('Expected at least one pass.')
 
-        self.loop_body = loop_body
+        self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
         self.replace_filter = replace_filter or default_replace_filter
 
         if not callable(self.replace_filter):
@@ -99,6 +104,8 @@ class ForEachBlockPass(BasePass):
         sub_data = data.copy()
 
         # Perform work
+        points: list[CircuitPoint] = []
+        ops: list[Operation] = []
         for cycle, op in blocks:
             gate: CircuitGate = op.gate  # type: ignore
             sub_circuit = gate._circuit.copy()
@@ -123,6 +130,8 @@ class ForEachBlockPass(BasePass):
                     op.location,
                     circuit.get_params(),
                 )
+
+        circuit.batch_replace(points, ops)
 
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
