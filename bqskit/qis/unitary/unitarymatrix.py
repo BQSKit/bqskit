@@ -119,7 +119,7 @@ class UnitaryMatrix(Unitary, StateVectorMap):
         other = UnitaryMatrix(other)
         num = np.abs(np.trace(other.get_numpy().conj().T @ self.get_numpy()))
         dem = self.get_dim()
-        dist = 1 - (num / dem)
+        dist = np.sqrt(1 - ((num / dem) ** 2))
         return dist if dist > 0.0 else 0.0
 
     def get_statevector(self, in_state: StateLike) -> StateVector:

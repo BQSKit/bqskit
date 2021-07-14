@@ -3,12 +3,16 @@ from __future__ import annotations
 
 import copy
 import logging
+import pickle
 from typing import Any
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
+from typing import List
 from typing import overload
 from typing import Sequence
+from typing import Set
+from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -1560,18 +1564,18 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if init_op.get_size() > size:
             raise ValueError('Gate at point is too large for size.')
 
-        HalfWire = tuple[CircuitPoint, str]
+        HalfWire = Tuple[CircuitPoint, str]
         """
         A HalfWire is a point in the circuit and a direction. This
         represents a point to start exploring from and a direction to
         explore in.
         """
 
-        Node = tuple[
-            list[HalfWire],
-            set[tuple[int, Operation]],
+        Node = Tuple[
+            List[HalfWire],
+            Set[Tuple[int, Operation]],
             CircuitLocation,
-            set[CircuitPoint],
+            Set[CircuitPoint],
         ]
         """
         A Node in the search tree.
@@ -2532,15 +2536,23 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         pass  # TODO
 
     def save(self, filename: str) -> None:
-        pass  # TODO
+        if filename.endswith('.pickle'):
+            with open(filename, 'wb') as f:
+                pickle.dump(self, f)
 
     @staticmethod
-    def from_file(filename: str) -> Circuit:
-        pass  # TODO
+    def from_file(filename: str) -> Circuit | None:
+        if filename.endswith('.pickle'):
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+        else:
+            return None
 
     @staticmethod
-    def from_str(str: str) -> Circuit:
-        pass  # TODO
+    def from_str(input_str: str) -> Circuit:
+        # if input_str.endswith('.qasm'):
+        #    return OPENQASM2Language().decode(input_str)
+        pass
 
     @staticmethod
     def from_unitary(utry: UnitaryLike) -> Circuit:

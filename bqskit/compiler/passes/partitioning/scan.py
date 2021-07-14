@@ -118,6 +118,14 @@ class ScanPartitioner(BasePass):
         # Find all connected, `block_size`-sized groups of qudits
         # NOTE: This assumes circuit and topology qudit numbers are equal
         qudit_groups = model.get_locations(self.block_size)
+        # Prune unused qudit groups
+        used_qudits = [
+            q for q in range(circuit.get_size())
+            if not circuit.is_qudit_idle(q)
+        ]
+        for qudit_group in qudit_groups:
+            if all([q not in used_qudits for q in qudit_group]):
+                qudit_groups.remove(qudit_group)
 
         # divider splits the circuit into partitioned and unpartitioned spaces.
         active_qudits = circuit.get_active_qudits()
@@ -208,16 +216,18 @@ class ScanPartitioner(BasePass):
                     best_region = CircuitRegion({
                         qudit: (
                             divider[qudit],
+                            # Might have errors if below is removed
                             stopped_cycles[qudit] - 1,
                         )
                         for qudit in qudit_group
-                        if stopped_cycles[qudit] - 1 >= divider[qudit]
+                        # This statement
+                        # if stopped_cycles[qudit] - 1 >= divider[qudit]
                     })
 
             if best_score is None or best_region is None:
                 raise RuntimeError('No valid block found.')
 
-            _logger.info('Found block with score: {best_score}.')
+            _logger.info('Found block with score: %d.' % (best_score))
             regions.append(best_region)
 
             # Update divider
@@ -226,15 +236,30 @@ class ScanPartitioner(BasePass):
 
         # Fold the circuit
         folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
-        for region in regions:
-            region = circuit.downsize_region(region)
-            if 0 < len(region) <= self.block_size:
-                cgc = circuit.get_slice(region.points)
+        # Option to keep a block's idle qudits as part of the CircuitGate
+        if 'keep_idle_qudits' in data and data['keep_idle_qudits'] is True:
+            for region in regions:
+                small_region = circuit.downsize_region(region)
+                cgc = circuit.get_slice(small_region.points)
+                if len(region.location) > len(small_region.location):
+                    for i in range(len(region.location)):
+                        if region.location[i] not in small_region.location:
+                            cgc.insert_qudit(i)
                 folded_circuit.append_gate(
                     CircuitGate(cgc, True),
                     sorted(list(region.keys())),
                     list(cgc.get_params()),
                 )
-            else:
-                folded_circuit.extend(circuit[region])
+        else:
+            for region in regions:
+                region = circuit.downsize_region(region)
+                if 0 < len(region) <= self.block_size:
+                    cgc = circuit.get_slice(region.points)
+                    folded_circuit.append_gate(
+                        CircuitGate(cgc, True),
+                        sorted(list(region.keys())),
+                        list(cgc.get_params()),
+                    )
+                else:
+                    folded_circuit.extend(circuit[region])
         circuit.become(folded_circuit)

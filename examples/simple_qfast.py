@@ -10,17 +10,19 @@ from bqskit.compiler import Compiler
 from bqskit.compiler.passes.synthesis import QFASTDecompositionPass
 from bqskit.ir import Circuit
 
-# Enable logging
-logging.getLogger('bqskit').setLevel(logging.DEBUG)
+if __name__ == '__main__':
+    # Enable logging
+    logging.getLogger('bqskit').setLevel(logging.DEBUG)
 
-# Let's create a random 3-qubit unitary to synthesize and add it to a circuit.
-circuit = Circuit.from_unitary(unitary_group.rvs(8))
+    # Let's create a random 3-qubit unitary to synthesize and add it to a
+    # circuit.
+    circuit = Circuit.from_unitary(unitary_group.rvs(8))
 
-# We will now define the CompilationTask we want to run.
-task = CompilationTask(circuit, [QFASTDecompositionPass()])
+    # We will now define the CompilationTask we want to run.
+    task = CompilationTask(circuit, [QFASTDecompositionPass()])
 
-# Finally let's create create the compiler and execute the CompilationTask.
-with Compiler() as compiler:
-    compiled_circuit = compiler.compile(task)
-    for op in compiled_circuit:
-        print(op)
+    # Finally let's create create the compiler and execute the CompilationTask.
+    with Compiler() as compiler:
+        compiled_circuit = compiler.compile(task)
+        for op in compiled_circuit:
+            print(op)

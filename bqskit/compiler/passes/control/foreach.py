@@ -9,6 +9,7 @@ from typing import Callable
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
@@ -85,26 +86,49 @@ class ForEachBlockPass(BasePass):
             if isinstance(op.gate, CircuitGate):
                 blocks.append((cycle, op))
 
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+        if 'machine_model' in data:
+            model = data['machine_model']
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
+
+        sub_data = data.copy()
+
         # Perform work
         points: list[CircuitPoint] = []
         ops: list[Operation] = []
         for cycle, op in blocks:
             gate: CircuitGate = op.gate
-            subcircuit = gate._circuit.copy()
-            subcircuit.set_params(op.params)
+            sub_circuit = gate._circuit.copy()
+            sub_circuit.set_params(op.params)
 
-            for loop_pass in self.loop_body:
-                # TODO: Pass only subtopology when topology avail
-                loop_pass.run(subcircuit, data)
+            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
+            sub_data['machine_model'] = MachineModel(
+                len(op.location),
+                model.get_subgraph(op.location, sub_numbering),
+            )
 
-            if self.replace_filter(subcircuit, op):
-                points.append(CircuitPoint(cycle, op.location[0]))
-                ops.append(
-                    Operation(
-                        CircuitGate(subcircuit, True),
-                        op.location,
-                        subcircuit.get_params(),
-                    ),
+            if is_sequence(self.loop_body):
+                for loop_pass in self.loop_body:
+                    loop_pass.run(circuit, sub_data)
+            else:
+                self.loop_body.run(circuit, sub_data)
+
+            if self.replace_filter(circuit, op):
+                circuit.replace_gate(
+                    (cycle, op.location[0]),
+                    CircuitGate(circuit, True),
+                    op.location,
+                    circuit.get_params(),
                 )
 
         circuit.batch_replace(points, ops)

@@ -168,7 +168,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
     @property
     def location(self) -> CircuitLocation:
-        return CircuitLocation(self.keys())
+        return CircuitLocation(sorted(self.keys()))
 
     @property
     def points(self) -> list[CircuitPoint]:
