@@ -109,9 +109,9 @@ class SaveIntermediatePass(BasePass):
                 with open(block_skeleton + f'{enum}.qasm', 'w') as f:
                     f.write(OPENQASM2Language().encode(subcircuit))
             else:
-                with open(
+                with open(  # type: ignore
                     f'{block_skeleton}{enum}.pickle', 'wb',
-                ) as f:  # type: ignore
+                ) as f:
                     pickle.dump(subcircuit, f)  # type: ignore
 
         with open(structure_file, 'wb') as f:  # type: ignore
