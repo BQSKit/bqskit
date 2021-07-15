@@ -181,14 +181,14 @@ class LEAPSynthesisPass(SynthesisPass):
 
                 dist = self.cost.calc_cost(circuit, utry)
 
-                if dist < best_dist:
+                if self.check_new_best(layer + 1, dist, best_layer, best_dist):
                     _logger.info(
                         'New best circuit found with %d layer%s and cost: %e.'
                         % (layer + 1, '' if layer == 0 else 's', dist),
                     )
                     best_dist = dist
                     best_circ = circuit
-                    best_layer = layer
+                    best_layer = layer + 1
 
                     if self.check_leap_condition(
                         layer + 1,
@@ -220,7 +220,32 @@ class LEAPSynthesisPass(SynthesisPass):
             % (best_layer, '' if best_layer == 1 else 's', best_dist),
         )
 
-        return best_circ
+        return best_circ                
+
+    def check_new_best(
+        self,
+        layer: int,
+        dist: float,
+        best_layer: int,
+        best_dist: float,
+    ) -> bool:
+        """
+        Check if the new layer depth and dist are a new best node.
+
+        Args:
+            layer (int): The current layer in search.
+
+            dist (float): The current distance in search.
+
+            best_layer (int): The current best layer in the search tree.
+
+            best_dist (float): The current best distance in search.
+        """
+        better_layer =  (dist < best_dist
+                         and (best_dist >= self.success_threshold
+                              or layer <= best_layer))
+        better_dist_and_layer = (dist < self.success_threshold and layer < best_layer)
+        return better_layer or better_dist_and_layer
 
     def check_leap_condition(
         self,
