@@ -220,7 +220,7 @@ class LEAPSynthesisPass(SynthesisPass):
             % (best_layer, '' if best_layer == 1 else 's', best_dist),
         )
 
-        return best_circ                
+        return best_circ
 
     def check_new_best(
         self,
@@ -241,10 +241,16 @@ class LEAPSynthesisPass(SynthesisPass):
 
             best_dist (float): The current best distance in search.
         """
-        better_layer =  (dist < best_dist
-                         and (best_dist >= self.success_threshold
-                              or layer <= best_layer))
-        better_dist_and_layer = (dist < self.success_threshold and layer < best_layer)
+        better_layer = (
+            dist < best_dist
+            and (
+                best_dist >= self.success_threshold
+                or layer <= best_layer
+            )
+        )
+        better_dist_and_layer = (
+            dist < self.success_threshold and layer < best_layer
+        )
         return better_layer or better_dist_and_layer
 
     def check_leap_condition(
