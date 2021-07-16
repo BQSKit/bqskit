@@ -1,8 +1,10 @@
 """This module defines the ScanPartitioner pass."""
 from __future__ import annotations
 
+import heapq
 import logging
 from typing import Any
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -16,10 +18,12 @@ _logger = logging.getLogger(__name__)
 
 class ScanPartitioner(BasePass):
     """
-    The ScanPartitioner Pass.
+    The HeapScanPartitioner Pass.
 
-    This pass forms partitions in the circuit by scanning from left
-    to right. This is based on the partitioner from QGo.
+    This pass forms partitions in the circuit by scanning from left to right.
+    This is based on the partitioner from QGo. Improves upon the ScanPart-
+    tioner by using a heap to keep track of scores, and only rescores blocks
+    if they were changed in the last iteration.
 
     References:
         Wu, Xin-Chuan, et al. "QGo: Scalable Quantum Circuit Optimization
@@ -76,6 +80,87 @@ class ScanPartitioner(BasePass):
         self.block_size = block_size
         self.single_gate_score = single_gate_score
         self.multi_gate_score = multi_gate_score
+
+    def _form_region_and_score(
+        self,
+        qudit_group: Sequence[int],
+        divider: Sequence[int],
+        circuit: Circuit,
+    ) -> tuple[CircuitRegion, int]:
+        """
+        Find the region for the given qudit group and its score.
+
+        Args:
+            qudit_group (Sequence[int]): The qudit_group to score.
+
+            num_cycles (int): number of cycles in the circuit.
+
+            ops_and_cycles (Sequence): all operations and cycles in the circuit.
+
+            divider (Sequence): maintains state of partitioning.
+
+        Returns:
+            region (CircuitRegion): region for the given qudit_group.
+
+            score (int): score for the region.
+        """
+        num_cycles = circuit.get_num_cycles()
+
+        # Move past/skip any gates that are larger than the block size
+        qudits_to_increment: list[int] = []
+        for qudit, cycle in enumerate(divider):
+            if qudit in qudits_to_increment or cycle >= num_cycles:
+                continue
+
+            if not circuit.is_point_idle((cycle, qudit)):
+                op = circuit[cycle, qudit]
+                if len(op.location) > self.block_size:
+                    if all(divider[q] == cycle for q in op.location):
+                        qudits_to_increment.extend(op.location)
+                        _logger.warning(
+                            'Skipping gate larger than block size.',
+                        )
+
+        # Make sure the too-large region will be chosen
+        if len(qudits_to_increment) > 0:
+            region = CircuitRegion({
+                qudit: (divider[qudit], divider[qudit])
+                for qudit in qudits_to_increment
+            })
+            score = self.multi_gate_score * len(qudits_to_increment)
+            score *= num_cycles
+
+            return (region, score)
+
+        ops_and_cycles = circuit.operations_with_cycles(
+            qudits_or_region=CircuitRegion({
+                qudit_index: (divider[qudit_index], num_cycles)
+                for qudit_index in qudit_group
+            }),
+        )
+
+        in_qudits = list(q for q in qudit_group)
+        stopped_cycles = {q: num_cycles for q in qudit_group}
+        score = 0
+
+        for cycle, op in ops_and_cycles:
+            if len(op.location.union(in_qudits)) != len(in_qudits):
+                for qudit_index in op.location.intersection(in_qudits):
+                    stopped_cycles[qudit_index] = cycle
+                    in_qudits.remove(qudit_index)
+            else:
+                if len(op.location) > 1:
+                    score += self.multi_gate_score
+                else:
+                    score += self.single_gate_score
+            if len(in_qudits) == 0:
+                break
+        region = CircuitRegion({
+            qudit: (divider[qudit], stopped_cycles[qudit] - 1)
+            for qudit in qudit_group
+        })
+
+        return (region, score)
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
@@ -135,38 +220,38 @@ class ScanPartitioner(BasePass):
             for q in range(circuit.get_size())
         ]
 
+        # Create the block_list, member_dict, and score_heap
+        # `block_list` maintains the current region and score fore each
+        # `qudit_group`.
+        block_list: list[Block]
+        block_list = []
+        # `member_dict` has key: an qudit in the Circuit and value: a list of
+        # indices into the `block_list` whose `qudit_group` contains the qudit
+        # key.
+        member_dict: dict[int, list[int]]
+        member_dict = {q: [] for q in range(circuit.size)}
+        # `score_heap` is a "max" heap that keeps track of the best scores, and
+        # the index into the `block_list` that has that score.
+        score_heap: list[tuple[int, int]]
+        score_heap = []
+
+        # TODO: Support avoiding operations that are too big to partition.
+        for group_index, qudit_group in enumerate(qudit_groups):
+            # Find the region and the score
+            (region, score) = self._form_region_and_score(
+                qudit_group, divider, circuit,
+            )
+
+            # Update the data structures
+            block_list.append(Block(qudit_group, region, score))
+            heapq.heappush(score_heap, (-1 * score, group_index))
+            # Use the region's keys incase there is a too-large gate
+            for qudit in region.keys():
+                member_dict[qudit].append(group_index)
+
         # Form regions until there are no more gates to partition
         regions: list[CircuitRegion] = []
         while any(cycle < num_cycles for cycle in divider):
-
-            # Move past/skip any gates that are larger than block size
-            qudits_to_increment: list[int] = []
-            for qudit, cycle in enumerate(divider):
-                if qudit in qudits_to_increment or cycle >= num_cycles:
-                    continue
-
-                if not circuit.is_point_idle((cycle, qudit)):
-                    op = circuit[cycle, qudit]
-                    if len(op.location) > self.block_size:
-                        if all(divider[q] == cycle for q in op.location):
-                            qudits_to_increment.extend(op.location)
-                            _logger.warning(
-                                'Skipping gate larger than block size.',
-                            )
-
-            if len(qudits_to_increment) > 0:
-                regions.append(
-                    CircuitRegion(
-                        {
-                            qudit: (divider[qudit], divider[qudit])
-                            for qudit in qudits_to_increment
-                        },
-                    ),
-                )
-
-            for qudit in qudits_to_increment:
-                divider[qudit] += 1
-
             # Skip any idle qudit-cycles
             amount_to_add_to_each_qudit = [0 for _ in range(circuit.get_size())]
             for qudit, cycle in enumerate(divider):
@@ -180,49 +265,14 @@ class ScanPartitioner(BasePass):
             for qudit, amount in enumerate(amount_to_add_to_each_qudit):
                 divider[qudit] += amount
 
-            # Find the scores of the qudit groups.
-            best_score = None
-            best_region = None
-
-            for qudit_group in qudit_groups:
-
-                ops_and_cycles = circuit.operations_with_cycles(
-                    qudits_or_region=CircuitRegion({
-                        qudit_index: (divider[qudit_index], num_cycles)
-                        for qudit_index in qudit_group
-                    }),
-                )
-
-                in_qudits = list(q for q in qudit_group)
-                stopped_cycles = {q: num_cycles for q in qudit_group}
-                score = 0
-
-                for cycle, op in ops_and_cycles:
-                    if len(op.location.union(in_qudits)) != len(in_qudits):
-                        for qudit_index in op.location.intersection(in_qudits):
-                            stopped_cycles[qudit_index] = cycle
-                            in_qudits.remove(qudit_index)
-                    else:
-                        if len(op.location) > 1:
-                            score += self.multi_gate_score
-                        else:
-                            score += self.single_gate_score
-
-                    if len(in_qudits) == 0:
-                        break
-
-                if best_score is None or score > best_score:
-                    best_score = score
-                    best_region = CircuitRegion({
-                        qudit: (
-                            divider[qudit],
-                            # Might have errors if below is removed
-                            stopped_cycles[qudit] - 1,
-                        )
-                        for qudit in qudit_group
-                        # This statement
-                        # if stopped_cycles[qudit] - 1 >= divider[qudit]
-                    })
+            # Heap partitioning
+            # Get best (up to date) block
+            while len(score_heap) > 0:
+                (best_score, group_index) = heapq.heappop(score_heap)
+                best_score *= -1
+                if best_score == block_list[group_index].score:
+                    best_region = block_list[group_index].region
+                    break
 
             if best_score is None or best_region is None:
                 raise RuntimeError('No valid block found.')
@@ -230,9 +280,26 @@ class ScanPartitioner(BasePass):
             _logger.info('Found block with score: %d.' % (best_score))
             regions.append(best_region)
 
-            # Update divider
+            # Update divider, find blocks to rescore
+            rescore_set = []
             for qudit_index in best_region:
                 divider[qudit_index] = best_region[qudit_index].upper + 1
+                rescore_set.extend(member_dict[qudit_index])
+
+            rescore_set = list(set(rescore_set))
+
+            for group_index in rescore_set:
+                # Find the new region and score
+                (new_region, new_score) = self._form_region_and_score(
+                    block_list[group_index].qudit_group,
+                    divider,
+                    circuit,
+                )
+                # Update the block_list
+                block_list[group_index].region = new_region
+                block_list[group_index].score = new_score
+                # push to heap
+                heapq.heappush(score_heap, (-1 * new_score, group_index))
 
         # Fold the circuit
         folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
@@ -263,3 +330,15 @@ class ScanPartitioner(BasePass):
                 else:
                     folded_circuit.extend(circuit[region])
         circuit.become(folded_circuit)
+
+
+class Block:
+    def __init__(
+        self,
+        qudit_group: Sequence[int],
+        region: CircuitRegion,
+        score: int,
+    ) -> None:
+        self.qudit_group = qudit_group
+        self.region = region
+        self.score = score
