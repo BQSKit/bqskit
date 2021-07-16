@@ -57,7 +57,6 @@ class TestHeapScanPartitioner:
             or not op.gate.tag != '__fold_placeholder__'
             for op in r6_qudit_circuit
         )
-        print(utry.get_distance_from(r6_qudit_circuit.get_unitary()))
         assert r6_qudit_circuit.get_unitary() == utry
         for cycle_index in range(r6_qudit_circuit.get_num_cycles()):
             assert not r6_qudit_circuit._is_cycle_idle(cycle_index)

@@ -1,9 +1,10 @@
 """This module defines the ScanPartitioner pass."""
 from __future__ import annotations
 
-import logging
-from typing import Any, Sequence
 import heapq
+import logging
+from typing import Any
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -81,23 +82,23 @@ class HeapScanPartitioner(BasePass):
         self.multi_gate_score = multi_gate_score
 
     def _form_region_and_score(
-        self, 
-        qudit_group : Sequence[int],
-        divider : Sequence,
-        circuit : Circuit,
+        self,
+        qudit_group: Sequence[int],
+        divider: Sequence[int],
+        circuit: Circuit,
     ) -> tuple[CircuitRegion, int]:
         """
         Find the region for the given qudit group and its score.
 
         Args:
             qudit_group (Sequence[int]): The qudit_group to score.
-        
+
             num_cycles (int): number of cycles in the circuit.
 
             ops_and_cycles (Sequence): all operations and cycles in the circuit.
 
             divider (Sequence): maintains state of partitioning.
-        
+
         Returns:
             region (CircuitRegion): region for the given qudit_group.
 
@@ -120,7 +121,6 @@ class HeapScanPartitioner(BasePass):
                             'Skipping gate larger than block size.',
                         )
 
-
         # Make sure the too-large region will be chosen
         if len(qudits_to_increment) > 0:
             region = CircuitRegion({
@@ -131,7 +131,6 @@ class HeapScanPartitioner(BasePass):
             score *= num_cycles
 
             return (region, score)
-
 
         ops_and_cycles = circuit.operations_with_cycles(
             qudits_or_region=CircuitRegion({
@@ -157,34 +156,11 @@ class HeapScanPartitioner(BasePass):
             if len(in_qudits) == 0:
                 break
         region = CircuitRegion({
-            qudit: ( divider[qudit], stopped_cycles[qudit] - 1, )
+            qudit: (divider[qudit], stopped_cycles[qudit] - 1)
             for qudit in qudit_group
         })
 
         return (region, score)
-    
-    def _check_regions(
-        self,
-        region_a : CircuitRegion,
-        region_b : CircuitRegion,
-    ) -> bool:
-        """Return True if two regions match"""
-        qudits_a = region_a.keys()
-        qudits_b = region_b.keys()
-        if qudits_a != qudits_b:
-            return False
-        for q in qudits_a:
-            lower_a = region_a[q].lower
-            lower_b = region_b[q].lower
-            if lower_a != lower_b:
-                return False
-            upper_a = region_a[q].upper
-            upper_b = region_b[q].upper
-            if upper_a != upper_b:
-                return False
-
-        return True
-    
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
@@ -245,25 +221,25 @@ class HeapScanPartitioner(BasePass):
         ]
 
         # Create the block_list, member_dict, and score_heap
-        # `block_list` maintains the current region and score fore each 
-        # `qudit_group`. 
-        block_list  : list[Block]
+        # `block_list` maintains the current region and score fore each
+        # `qudit_group`.
+        block_list: list[Block]
         block_list = []
         # `member_dict` has key: an qudit in the Circuit and value: a list of
         # indices into the `block_list` whose `qudit_group` contains the qudit
         # key.
-        member_dict : dict[int, Sequence[int]]
-        member_dict = {q:[] for q in range(circuit.size)}
+        member_dict: dict[int, list[int]]
+        member_dict = {q: [] for q in range(circuit.size)}
         # `score_heap` is a "max" heap that keeps track of the best scores, and
         # the index into the `block_list` that has that score.
-        score_heap  : list[tuple[int, int]]
+        score_heap: list[tuple[int, int]]
         score_heap = []
 
         # TODO: Support avoiding operations that are too big to partition.
         for group_index, qudit_group in enumerate(qudit_groups):
             # Find the region and the score
             (region, score) = self._form_region_and_score(
-                qudit_group, divider, circuit
+                qudit_group, divider, circuit,
             )
 
             # Update the data structures
@@ -289,7 +265,7 @@ class HeapScanPartitioner(BasePass):
             for qudit, amount in enumerate(amount_to_add_to_each_qudit):
                 divider[qudit] += amount
 
-            ## Heap partitioning
+            # Heap partitioning
             # Get best (up to date) block
             while len(score_heap) > 0:
                 (best_score, group_index) = heapq.heappop(score_heap)
@@ -311,11 +287,7 @@ class HeapScanPartitioner(BasePass):
                 rescore_set.extend(member_dict[qudit_index])
 
             rescore_set = list(set(rescore_set))
-            #rescore_set = set(rescore_set)
-            #score_heap = filter(lambda x: x[1] not in rescore_set, score_heap)
-            #score_heap = list(score_heap)
-            #rescore_set = list(rescore_set)
-            
+
             for group_index in rescore_set:
                 # Find the new region and score
                 (new_region, new_score) = self._form_region_and_score(
@@ -325,7 +297,7 @@ class HeapScanPartitioner(BasePass):
                 )
                 # Update the block_list
                 block_list[group_index].region = new_region
-                block_list[group_index].score  = new_score
+                block_list[group_index].score = new_score
                 # push to heap
                 heapq.heappush(score_heap, (-1 * new_score, group_index))
 
@@ -359,12 +331,13 @@ class HeapScanPartitioner(BasePass):
                     folded_circuit.extend(circuit[region])
         circuit.become(folded_circuit)
 
+
 class Block:
     def __init__(
         self,
-        qudit_group : Sequence[int],
-        region : CircuitRegion,
-        score : int,
+        qudit_group: Sequence[int],
+        region: CircuitRegion,
+        score: int,
     ) -> None:
         self.qudit_group = qudit_group
         self.region = region
