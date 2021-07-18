@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import itertools as it
+
 import pytest
 
 from bqskit.compiler.machine import MachineModel
@@ -96,6 +98,14 @@ class TestMachineGetLocations:
 
         with pytest.raises(TypeError):
             model.get_locations('a')
+
+    def test_10_3(self) -> None:
+        model = MachineModel(10)
+        l = model.get_locations(3)
+
+        assert len(l) == 10 * 9 * 8 / 6
+        for location in it.combinations(list(range(10)), 3):
+            assert location in l
 
 
 class TestMachineGetSubgraph:
