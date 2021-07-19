@@ -83,15 +83,27 @@ class ClusteringPartitioner(BasePass):
             return
 
         for i in range(self.num_points):
-            # Randomly select a point
-            # TODO: Tile and pick points better
-            cycle = 0
-            qudit = 0
-            while True:
-                cycle = np.random.randint(circuit.get_num_cycles())
-                qudit = np.random.randint(circuit.get_size())
-                if not circuit.is_point_idle((cycle, qudit)):
-                    break
+            # Pick best region of 4 random points
+            best_region = None
+            best_gates = 0
 
-            region = circuit.surround((cycle, qudit), self.block_size)
-            circuit.fold(region)
+            for _ in range(4):
+                cycle = 0
+                qudit = 0
+                while True:
+                    cycle = np.random.randint(circuit.get_num_cycles())
+                    qudit = np.random.randint(circuit.get_size())
+                    if not circuit.is_point_idle((cycle, qudit)):
+                        break
+
+                region = circuit.surround((cycle, qudit), self.block_size)
+                num_gates = len(circuit[region])
+
+                if num_gates > best_gates:
+                    best_gates = num_gates
+                    best_region = region
+
+            if best_region is None:
+                raise RuntimeError('Unable to find a region.')
+
+            circuit.fold(best_region)
