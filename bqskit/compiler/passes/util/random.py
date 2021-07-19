@@ -22,7 +22,7 @@ class SetRandomSeedPass(BasePass):
     The SetRandomSeedPass sets the random seed.
     """
 
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int = 0) -> None:
         """
         Construct a SetRandomSeedPass.
 
