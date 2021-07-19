@@ -825,8 +825,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             if cycle_index < -self.get_num_cycles():
                 cycle_index = 0
             else:
-                self.append(op)
-                return
+                cycle_index = self.get_num_cycles() - 1
 
         if op.gate not in self._gate_info:
             self._gate_info[op.gate] = 0
@@ -1524,6 +1523,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 if isinstance(op.gate, CircuitGate):
                     self.unfold((cycle, op.location[0]))
                     break
+            print()
+            print('Unfolded!!!!!!!!!!!!!!!!')
+            for cycle in self._circuit:
+                print(cycle)
+            print()
 
     def surround(self, point: CircuitPointLike, size: int) -> CircuitRegion:
         """
