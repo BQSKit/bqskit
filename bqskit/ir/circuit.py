@@ -1254,21 +1254,25 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             for other_qudit_index, other_qudit_bounds in region.items():
                 if qudit_bounds.overlaps(other_qudit_bounds):
                     continue
+                involved_qudits = {qudit_index}
                 min_index = min(qudit_bounds.upper, other_qudit_bounds.upper)
                 max_index = max(qudit_bounds.lower, other_qudit_bounds.lower)
                 for cycle_index in range(min_index + 1, max_index):
                     try:
-                        op = self[cycle_index, qudit_index]
+                        ops = self[cycle_index, involved_qudits]
                     except IndexError:
                         continue
 
                     if strict:
                         raise ValueError('Disconnect detected in region.')
 
-                    if other_qudit_index in op.location:
+                    if any(other_qudit_index in op.location for op in ops):
                         raise ValueError(
                             'Disconnected region has excluded gate in middle.',
                         )
+
+                    for op in ops:
+                        involved_qudits.update(op.location)
 
     def straighten(
         self,
@@ -1815,9 +1819,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # All operations in the region must be getting folded
         if len(ops_and_cycles) != len(ops_in_region):
             raise ValueError(
-                'Operations cannot be folded due to'
+                'Operations cannot be grouped in a region due to'
                 ' another operation in the middle.',
             )
+
+        self.check_region(region)
 
         return CircuitRegion(region)
 
