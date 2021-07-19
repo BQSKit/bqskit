@@ -825,7 +825,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             if cycle_index < -self.get_num_cycles():
                 cycle_index = 0
             else:
-                cycle_index = self.get_num_cycles() - 1
+                cycle_index = self.get_num_cycles()
+                self._append_cycle()
 
         if op.gate not in self._gate_info:
             self._gate_info[op.gate] = 0
