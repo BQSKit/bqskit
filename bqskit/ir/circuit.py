@@ -2365,18 +2365,18 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             elif isinstance(qudit_indices, slice):
                 start, stop, step = qudit_indices.indices(self.get_size())
-                cycles = list(range(start, stop, step))
+                qudits = list(range(start, stop, step))
 
             elif is_iterable(qudit_indices):
                 if all(is_integer(index) for index in qudit_indices):
                     qudits = list(qudit_indices)
 
             if cycles is not None and qudits is not None:
-                return self[(
+                return self[[
                     CircuitPoint(cycle, qudit)
                     for cycle in cycles
                     for qudit in qudits
-                )]
+                ]]
 
         raise TypeError(
             'Invalid index type. Expected point'
