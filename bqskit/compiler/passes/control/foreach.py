@@ -101,35 +101,36 @@ class ForEachBlockPass(BasePass):
             )
             model = MachineModel(circuit.get_size())
 
-        sub_data = data.copy()
+        subdata = data.copy()
 
         # Perform work
         points: list[CircuitPoint] = []
         ops: list[Operation] = []
         for cycle, op in blocks:
             gate: CircuitGate = op.gate
-            sub_circuit = gate._circuit.copy()
-            sub_circuit.set_params(op.params)
+            subcircuit = gate._circuit.copy()
+            subcircuit.set_params(op.params)
 
-            sub_numbering = {op.location[i]: i for i in range(len(op.location))}
-            sub_data['machine_model'] = MachineModel(
+            subnumbering = {op.location[i]: i for i in range(len(op.location))}
+            subdata['machine_model'] = MachineModel(
                 len(op.location),
-                model.get_subgraph(op.location, sub_numbering),
+                model.get_subgraph(op.location, subnumbering),
             )
 
-            if is_sequence(self.loop_body):
-                for loop_pass in self.loop_body:
-                    loop_pass.run(circuit, sub_data)
-            else:
-                self.loop_body.run(circuit, sub_data)
+            for loop_pass in self.loop_body:
+                loop_pass.run(circuit, subdata)
 
-            if self.replace_filter(circuit, op):
-                circuit.replace_gate(
-                    (cycle, op.location[0]),
-                    CircuitGate(circuit, True),
-                    op.location,
-                    circuit.get_params(),
+            if self.replace_filter(subcircuit, op):
+                points.append(CircuitPoint(cycle, op.location[0]))
+                ops.append(
+                    Operation(
+                        CircuitGate(subcircuit, True),
+                        op.location,
+                        subcircuit.get_params(),
+                    ),
                 )
+
+            # TODO: Load freshly written data from subdata into data
 
         circuit.batch_replace(points, ops)
 
