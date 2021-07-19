@@ -21,7 +21,6 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composed.tagged import TaggedGate
-from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.location import CircuitLocation
@@ -1409,104 +1408,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             sorted(list(region.keys())),
             list(circuit.get_params()),
         )
-
-    def batch_fold(self, regions: Iterable[CircuitRegionLike]) -> None:
-        """Fold all `regions` at once."""
-        regions = [
-            CircuitRegion(region)
-            for region in regions
-            if len(region) > 0
-        ]
-        _logger.debug('Batch folding regions:')
-        for region in regions:
-            _logger.debug(region)
-
-        # Regions that contain empty cycles can cause problems later
-        # Remove empty cycles in regions by inserting tagged gates
-        # Fold operation will later remove when safe to do so
-        placeholder_gates = {
-            radix: TaggedGate(IdentityGate(1, [radix]), '__fold_placeholder__')
-            for radix in set(self.get_radixes())
-        }
-
-        for region in regions:
-            for cycle, qudits in sorted(region.transpose().items()):
-                if all(self.is_point_idle((cycle, qudit)) for qudit in qudits):
-                    self.insert_gate(
-                        cycle,
-                        placeholder_gates[self.get_radixes()[qudits[0]]],
-                        qudits[0],
-                    )
-
-        # Check for invalid input
-        for i, region1 in enumerate(regions):
-            # check regions to be valid
-            self.check_region(region1)
-
-            # Ensure no two regions overlap
-            for j, region2 in enumerate(regions):
-                if i == j:
-                    continue
-
-                if region1.overlaps(region2):
-                    raise ValueError('Cannot batch fold overlapping regions.')
-
-        # Sort and straighten regions, adjusting them as we go
-        straighten_regions: list[CircuitRegion] = []
-        adjustments_made: list[tuple[int, CircuitRegion]] = []
-        for region in sorted(
-            regions,
-            key=lambda x: (x.max_min_cycle, -x.min_cycle),
-            reverse=True,
-        ):
-            _logger.debug(f'Adjusting region: {region}')
-            for adjustment in adjustments_made:
-                _logger.debug(adjustment)
-                region = region.adjust(*adjustment)
-            _logger.debug(f'Adjusted: {region}')
-            straighten_region, added_cycles, shadow = self.straighten(region)
-            for i in range(len(straighten_regions)):
-                new_region = straighten_regions[i].adjust(added_cycles, shadow)
-                if new_region != straighten_regions[i]:
-                    straighten_regions[i] = new_region
-                    for cycle, qudits in sorted(new_region.transpose().items()):
-                        if all(
-                            self.is_point_idle((cycle, qudit))
-                            for qudit in qudits
-                        ):
-                            p = placeholder_gates[self.get_radixes()[qudits[0]]]
-                            self.insert_gate(cycle, p, qudits[0])
-            _logger.debug(f'Straightened: {straighten_region}')
-            _logger.debug('Adjustments recorded:')
-            _logger.debug(f'Cycles added: {added_cycles}; Shadow: {shadow}\n')
-
-            straighten_regions.append(straighten_region)
-            adjustments_made.append((added_cycles, shadow))
-
-        for region in straighten_regions:
-            for cycle, qudits in sorted(region.transpose().items()):
-                if all(self.is_point_idle((cycle, qudit)) for qudit in qudits):
-                    self.insert_gate(
-                        cycle,
-                        placeholder_gates[self.get_radixes()[qudits[0]]],
-                        qudits[0],
-                    )
-
-            for qudit in region:
-                if self.is_point_idle((region[qudit].lower, qudit)):
-                    self.insert_gate(
-                        region[qudit].lower,
-                        placeholder_gates[self.get_radixes()[qudit]],
-                        qudit,
-                    )
-
-        # sort and fold regions, tracking cycle changes
-        num_cycles = self.get_num_cycles()
-        for region in sorted(
-            straighten_regions,
-            key=lambda x: (x.max_cycle, x.min_cycle),
-        ):
-            self.fold(region.shift_left(num_cycles - self.get_num_cycles()))
 
     def unfold(self, point: CircuitPointLike) -> None:
         """Unfold the CircuitGate at `point` into the circuit."""

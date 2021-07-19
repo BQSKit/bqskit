@@ -216,50 +216,6 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             for qudit_index, bound in self._bounds.items()
         })
 
-    def adjust(self, cycles_added: int, shadow: CircuitRegion) -> CircuitRegion:
-        """Adjust this region after another one was straightened."""
-        if self.min_cycle == self.max_min_cycle:
-            if any(
-                (bounds.lower, qudit_index) in shadow
-                or bounds.lower < shadow.min_cycle
-                for qudit_index, bounds in self.items()
-            ):
-                lower_bound = self.min_cycle
-            else:
-                lower_bound = self.min_cycle + cycles_added
-
-            return CircuitRegion({
-                qudit_index: (
-                    lower_bound,
-                    bounds.upper
-                    if (
-                        (bounds.upper, qudit_index) in shadow
-                        or bounds.upper < shadow.min_cycle
-                    )
-                    else bounds.upper + cycles_added,
-                )
-                for qudit_index, bounds in self.items()
-            })
-
-        return CircuitRegion({
-            qudit_index: (
-                bounds.lower
-                if (
-                    (bounds.lower, qudit_index) in shadow
-                    or bounds.lower < shadow.min_cycle
-                )
-                else bounds.lower + cycles_added,
-
-                bounds.upper
-                if (
-                    (bounds.upper, qudit_index) in shadow
-                    or bounds.upper < shadow.min_cycle
-                )
-                else bounds.upper + cycles_added,
-            )
-            for qudit_index, bounds in self.items()
-        })
-
     def overlaps(self, other: CircuitPointLike | CircuitRegionLike) -> bool:
         """Return true if `other` overlaps this region."""
 
