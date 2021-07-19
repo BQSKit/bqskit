@@ -1523,11 +1523,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 if isinstance(op.gate, CircuitGate):
                     self.unfold((cycle, op.location[0]))
                     break
-            print()
-            print('Unfolded!!!!!!!!!!!!!!!!')
-            for cycle in self._circuit:
-                print(cycle)
-            print()
 
     def surround(self, point: CircuitPointLike, size: int) -> CircuitRegion:
         """
