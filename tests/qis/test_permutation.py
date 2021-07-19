@@ -39,13 +39,13 @@ class TestSwapBit:
 
     def test_swap_bit_invalid(self) -> None:
         with pytest.raises(TypeError):
-            swap_bit('a', 1, 0)  # type: ignore
+            swap_bit('a', 1, 0)
 
         with pytest.raises(TypeError):
-            swap_bit(0, 'a', 0)  # type: ignore
+            swap_bit(0, 'a', 0)
 
         with pytest.raises(TypeError):
-            swap_bit(0, 1, 'a')  # type: ignore
+            swap_bit(0, 1, 'a')
 
 
 class TestFromQubitLocation:
@@ -98,8 +98,8 @@ class TestFromQubitLocation:
 
     def test_calc_permutation_matrix_invalid(self) -> None:
         with pytest.raises(TypeError):
-            PermutationMatrix.from_qubit_location(4, 'a')  # type: ignore
+            PermutationMatrix.from_qubit_location(4, 'a')
         with pytest.raises(TypeError):
-            PermutationMatrix.from_qubit_location(4, ('a'))  # type: ignore
+            PermutationMatrix.from_qubit_location(4, ('a'))
         with pytest.raises(TypeError):
-            PermutationMatrix.from_qubit_location('a', (0, 1))  # type: ignore
+            PermutationMatrix.from_qubit_location('a', (0, 1))

@@ -11,6 +11,7 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passes.synthesispass import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
+from bqskit.ir.location import CircuitLocation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -208,7 +209,7 @@ class QPredictDecompositionPass(SynthesisPass):
         # TODO: Look for topology info in `data`, use all-to-all otherwise.
         model = MachineModel(utry.get_size())
         locations = [
-            model.get_valid_locations(i)
+            model.get_locations(i)
             for i in range(self.block_size_start, block_size_end + 1)
         ]
 
@@ -256,25 +257,25 @@ class QPredictDecompositionPass(SynthesisPass):
     def analyze_remainder(
         self,
         R: UnitaryMatrix,
-        locations: Sequence[Sequence[tuple[int, ...]]],
-    ) -> list[tuple[int, ...]]:
+        locations: Sequence[Sequence[CircuitLocation]],
+    ) -> list[CircuitLocation]:
         """
         Perform remainder analysis on `R` to sort `locations`.
 
         Args:
             R (UnitaryMatrix): The remainder to analyze.
 
-            locations (Sequence[Sequence[tuple[int, ...]]]): List of locations
+            locations (Sequence[Sequence[CircuitLocation]]): List of locations
                 grouped by block size.
 
         Returns:
-            (list[tuple[int, ...]]): Sorted list of locations for next block
+            (list[CircuitLocation]): Sorted list of locations for next block
                 based on remainder analysis.
         """
         _logger.info('Performing remainder analysis.')
         pauli_coefs = pauli_expansion(unitary_log_no_i(R.get_numpy()))
 
-        locations_by_index: dict[int, set[tuple[int, ...]]] = {}
+        locations_by_index: dict[int, set[CircuitLocation]] = {}
         for location_group in locations:
             for loc in location_group:
                 for qudit_index in loc:
@@ -283,7 +284,7 @@ class QPredictDecompositionPass(SynthesisPass):
 
                     locations_by_index[qudit_index].add(loc)
 
-        location_scores_by_size: dict[int, dict[tuple[int, ...], float]] = {}
+        location_scores_by_size: dict[int, dict[CircuitLocation, float]] = {}
         for location_group in locations:
             for loc in location_group:
                 if len(loc) not in location_scores_by_size:
@@ -295,7 +296,7 @@ class QPredictDecompositionPass(SynthesisPass):
                 for loc in locations_by_index[qudit_index]:
                     location_scores_by_size[len(loc)][loc] += np.abs(coef)
 
-        sorted_locations_by_size: dict[int, list[tuple[int, ...]]] = {
+        sorted_locations_by_size: dict[int, list[CircuitLocation]] = {
             size:
             sorted(
                 list(location_scores.keys()),
@@ -315,7 +316,7 @@ class QPredictDecompositionPass(SynthesisPass):
             key=lambda x: x[0],
         )
 
-        sorted_locations: list[tuple[int, ...]] = []
+        sorted_locations: list[CircuitLocation] = []
         for size, locations in sorted_locations_by_sorted_size:
             for i in range(self.fail_limit):
                 if i < sorted_locations_length[size]:

@@ -1,6 +1,7 @@
 """This module implements the Minimization class."""
 from __future__ import annotations
 
+from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -24,6 +25,7 @@ class Minimization(Instantiater):
         self,
         cost_fn_gen: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         minimizer: Minimizer | None = None,
+        **kwargs: dict[str, Any],  # TODO: handle dist_tol and other options
     ) -> None:
         """
         Construct and configure a Minimization Instantiater.

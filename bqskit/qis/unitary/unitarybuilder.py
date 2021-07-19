@@ -6,10 +6,10 @@ from typing import Sequence
 
 import numpy as np
 
+from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_valid_location
 from bqskit.utils.typing import is_valid_radixes
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ class UnitaryBuilder(Unitary):
         if not isinstance(utry, UnitaryMatrix):
             raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
 
-        if not is_valid_location(location, self.get_size()):
+        if not CircuitLocation.is_location(location, self.get_size()):
             raise TypeError('Invalid location.')
 
         if len(location) != utry.get_size():
@@ -164,7 +164,7 @@ class UnitaryBuilder(Unitary):
         if not isinstance(utry, UnitaryMatrix):
             raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
 
-        if not is_valid_location(location, self.get_size()):
+        if not CircuitLocation.is_location(location, self.get_size()):
             raise TypeError('Invalid location.')
 
         if len(location) != utry.get_size():
@@ -229,4 +229,4 @@ class UnitaryBuilder(Unitary):
                 2 ** len(location),
             ),
         )
-        return np.trace(a)  # type: ignore
+        return np.trace(a)

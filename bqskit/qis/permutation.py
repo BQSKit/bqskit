@@ -12,10 +12,10 @@ from typing import Sequence
 import numpy as np
 from bqskitrs import calc_permutation_matrix
 
+from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_permutation
-from bqskit.utils.typing import is_valid_location
 
 
 class PermutationMatrix(UnitaryMatrix):
@@ -88,7 +88,7 @@ class PermutationMatrix(UnitaryMatrix):
                 ', got %d.' % num_qubits,
             )
 
-        if not is_valid_location(location, num_qubits):
+        if not CircuitLocation.is_location(location, num_qubits):
             raise TypeError('Invalid location.')
 
         matrix = calc_permutation_matrix(num_qubits, location)

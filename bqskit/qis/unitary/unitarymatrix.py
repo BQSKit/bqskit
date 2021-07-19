@@ -13,6 +13,9 @@ import numpy as np
 import scipy as sp
 from scipy.stats import unitary_group
 
+from bqskit.qis.state.state import StateLike
+from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.statemap import StateVectorMap
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
@@ -20,7 +23,7 @@ from bqskit.utils.typing import is_unitary
 from bqskit.utils.typing import is_valid_radixes
 
 
-class UnitaryMatrix(Unitary):
+class UnitaryMatrix(Unitary, StateVectorMap):
     """The UnitaryMatrix Class."""
 
     def __init__(
@@ -111,12 +114,30 @@ class UnitaryMatrix(Unitary):
         """Returns the conjugate transpose of the unitary matrix."""
         return UnitaryMatrix(self.utry.conj().T, self.get_radixes(), False)
 
-    def get_distance_from(self, other: UnitaryMatrix) -> float:
+    def get_distance_from(self, other: UnitaryLike) -> float:
         """Returns the distance to `other`."""
+        other = UnitaryMatrix(other)
         num = np.abs(np.trace(other.get_numpy().conj().T @ self.get_numpy()))
         dem = self.get_dim()
-        dist = 1 - (num / dem)
+        dist = np.sqrt(1 - ((num / dem) ** 2))
         return dist if dist > 0.0 else 0.0
+
+    def get_statevector(self, in_state: StateLike) -> StateVector:
+        """Calculate the output state given the `in_state` input state."""
+        if not StateVector.is_pure_state(in_state):
+            raise TypeError(f'Expected StateVector, got {type(in_state)}.')
+
+        in_state = StateVector(in_state)
+
+        if in_state.get_dim() != self.get_dim():
+            raise ValueError(
+                'State unitary dimension mismatch; '
+                f'expected {self.get_dim()}, got {in_state.get_dim()}.',
+            )
+
+        vec = in_state.get_numpy()[:, None]
+        out_vec = self.utry @ vec
+        return StateVector(out_vec.reshape((-1,)))
 
     @staticmethod
     def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:

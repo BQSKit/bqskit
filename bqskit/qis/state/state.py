@@ -1,14 +1,18 @@
 """This module implements the StateVector class."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 from typing import Sequence
 from typing import Union
 
 import numpy as np
 
-from bqskit.utils.typing import is_pure_state
 from bqskit.utils.typing import is_valid_radixes
+from bqskit.utils.typing import is_vector
+
+
+_logger = logging.getLogger(__name__)
 
 
 class StateVector:
@@ -41,7 +45,7 @@ class StateVector:
 
         np_vec = np.array(vec, dtype=np.complex128)
 
-        if not is_pure_state(np_vec):
+        if not StateVector.is_pure_state(np_vec):
             raise TypeError('Expected valid state vector.')
 
         self.vec = np_vec
@@ -84,6 +88,24 @@ class StateVector:
 
     def get_radixes(self) -> tuple[int, ...]:
         return self.radixes
+
+    def get_probs(self) -> tuple[float, ...]:
+        return tuple(np.abs(elem)**2 for elem in self.vec)
+
+    @staticmethod
+    def is_pure_state(V: Any, tol: float = 1e-8) -> bool:
+        """Return true if V is a pure state vector."""
+        if isinstance(V, StateVector):
+            return True
+
+        if not is_vector(V):
+            return False
+
+        if not np.allclose(np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol):
+            _logger.debug('Failed pure state criteria.')
+            return False
+
+        return True
 
 
 StateLike = Union[StateVector, np.ndarray, Sequence[Any]]

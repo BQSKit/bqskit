@@ -8,10 +8,11 @@ import numpy as np
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import FrozenParameterGate
+from bqskit.ir.location import CircuitLocation
+from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_valid_location
 
 
 class Operation(DifferentiableUnitary):
@@ -23,7 +24,7 @@ class Operation(DifferentiableUnitary):
 
     def __init__(
         self, gate: Gate,
-        location: Sequence[int],
+        location: CircuitLocationLike,
         params: Sequence[float] = [],
     ) -> None:
         """
@@ -32,7 +33,8 @@ s
         Args:
             gate (Gate): The cell's gate.
 
-            location (Sequence[int]):  The set of qudits this gate affects.
+            location (CircuitLocationLike):  The set of qudits this gate
+                affects.
 
             params (Sequence[float]): The parameters for the gate.
 
@@ -45,8 +47,10 @@ s
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate, got %s.' % type(gate))
 
-        if not is_valid_location(location):
+        if not CircuitLocation.is_location(location):
             raise TypeError('Invalid location.')
+
+        location = CircuitLocation(location)
 
         if len(location) != gate.get_size():
             raise ValueError('Gate and location size mismatch.')
@@ -61,7 +65,7 @@ s
         self.check_parameters(params)
 
         self._gate = gate
-        self._location = tuple(location)
+        self._location = location
         self._params = list(params)
 
     @property
@@ -69,7 +73,7 @@ s
         return self._gate
 
     @property
-    def location(self) -> tuple[int, ...]:
+    def location(self) -> CircuitLocation:
         return self._location
 
     @property

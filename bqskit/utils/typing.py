@@ -5,10 +5,9 @@ import logging
 import numbers
 from collections.abc import Sequence
 from typing import Any
+from typing import Mapping
 
 import numpy as np
-
-from bqskit.ir.point import CircuitPoint
 
 
 _logger = logging.getLogger(__name__)
@@ -20,17 +19,17 @@ def is_iterable(test_variable: Any) -> bool:
         iterator = iter(test_variable)  # noqa: F841
         return True
     except TypeError:
-        _logger.debug('Invalid iterable.')
         return False
 
 
 def is_sequence(test_variable: Any) -> bool:
     """Returns true if test_variable is a sequence."""
-    if isinstance(test_variable, (Sequence, np.ndarray)):
-        return True
-    else:
-        _logger.debug('Invalid sequence.')
-        return False
+    return isinstance(test_variable, (Sequence, np.ndarray))
+
+
+def is_mapping(test_variable: Any) -> bool:
+    """Returns true if test_variable is a mapping."""
+    return isinstance(test_variable, Mapping)
 
 
 def is_numeric(test_variable: Any) -> bool:
@@ -60,48 +59,6 @@ def is_integer(test_variable: Any) -> bool:
         isinstance(test_variable, (int, np.integer))
         and not isinstance(test_variable, bool)
     )
-
-
-def is_valid_location(
-    location: Sequence[int],
-    num_qudits: int | None = None,
-) -> bool:
-    """
-    Determines if the sequence of qudits form a valid location. A valid location
-    is a set of qubit indices (integers) that are greater than or equal to zero,
-    and if num_qudits is specified, less than num_qudits.
-
-    Args:
-        location (Sequence[int]): The location to check.
-
-        num_qudits (int | None): The total number of qudits.
-            All qudit indices should be less than this. If None,
-            don't check.
-
-    Returns:
-        (bool): True if the location is valid.
-    """
-    if not is_iterable(location):
-        return False
-
-    if not all([is_integer(qudit) for qudit in location]):
-        _logger.debug('Location is not an iterable of ints.')
-        return False
-
-    if len(location) != len(set(location)):
-        _logger.debug('Location has duplicates.')
-        return False
-
-    if not all([qudit >= 0 for qudit in location]):
-        _logger.debug('Location invalid; qudit indices must be nonnegative.')
-        return False
-
-    if num_qudits is not None:
-        if not all([qudit < num_qudits for qudit in location]):
-            _logger.debug('Location has an erroneously large qudit.')
-            return False
-
-    return True
 
 
 def is_valid_radixes(
@@ -148,15 +105,14 @@ def is_valid_radixes(
 
 
 def is_valid_coupling_graph(
-    coupling_graph: set[tuple[int, int]],
+    coupling_graph: Any,
     num_qudits: int | None = None,
 ) -> bool:
     """
     Checks if the coupling graph is valid.
 
     Args:
-        coupling_graph (set[tuple[int, int]]): The coupling graph
-            to check.
+        coupling_graph (Any): The coupling graph to check.
 
         num_qudits (int | None): The total number of qudits. All qudits
             should be less than this. If None, don't check.
@@ -165,8 +121,8 @@ def is_valid_coupling_graph(
         (bool): Valid or not
     """
 
-    if not isinstance(coupling_graph, set):
-        _logger.debug('Coupling graph is not a set.')
+    if not is_iterable(coupling_graph):
+        _logger.debug('Coupling graph is not iterable.')
         return False
 
     if len(coupling_graph) == 0:
@@ -318,61 +274,16 @@ def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
     if not is_unitary(P, tol):
         return False
 
-    if not all(s == 1 for s in P.sum(0)):  # type: ignore
+    if not all(s == 1 for s in P.sum(0)):
         _logger.debug('Not all rows sum to 1.')
         return False
 
-    if not all(s == 1 for s in P.sum(1)):  # type: ignore
+    if not all(s == 1 for s in P.sum(1)):
         _logger.debug('Not all columns sum to 1.')
         return False
 
     if not all(e == 1 or e == 0 for row in P for e in row):
         _logger.debug('Not all elements are 0 or 1.')
-        return False
-
-    return True
-
-
-def is_pure_state(V: np.ndarray, tol: float = 1e-8) -> bool:
-    """Return true if V is a pure state vector."""
-    if not is_vector(V):
-        return False
-
-    if not np.allclose(
-        np.sum(np.abs([elem for elem in V])),
-        1, rtol=0, atol=tol,
-    ):
-        _logger.debug('Failed pure state criteria.')
-        return False
-
-    return True
-
-
-def is_point(point: Any) -> bool:
-    """Return true is point is a CircuitPointLike."""
-    if isinstance(point, CircuitPoint):
-        return True
-
-    if not isinstance(point, tuple):
-        _logger.debug('Point is not a tuple.')
-        return False
-
-    if len(point) != 2:
-        _logger.debug(
-            'Expected point to contain two values, got %d.' % len(point),
-        )
-        return False
-
-    if not is_integer(point[0]):
-        _logger.debug(
-            'Expected integer values in point, got %s.' % type(point[0]),
-        )
-        return False
-
-    if not is_integer(point[1]):
-        _logger.debug(
-            'Expected integer values in point, got %s.' % type(point[1]),
-        )
         return False
 
     return True
