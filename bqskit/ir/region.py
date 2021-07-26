@@ -244,8 +244,8 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
             for qudit in qudit_intersection:
                 if (
-                    self[qudit].lower < other[qudit].upper
-                    and self[qudit].upper > other[qudit].lower
+                    self[qudit].lower <= other[qudit].upper
+                    and self[qudit].upper >= other[qudit].lower
                 ):
                     return True
 
@@ -326,6 +326,18 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
         return CircuitRegion(region)
 
+    def depends_on(self, other: CircuitRegionLike) -> bool:
+        """Return true if self depends on other."""
+        if not isinstance(other, CircuitRegion):
+            other = CircuitRegion(other)
+
+        if len(self.location.intersection(other.location)) != 0:
+            for qudit in self.location.intersection(other.location):
+                if self[qudit] < other[qudit]:
+                    return True
+
+        return False
+
     def __eq__(self, other: object) -> bool:
         if CircuitRegion.is_region(other):  # TODO: TypeGuard
             other = CircuitRegion(other)  # type: ignore
@@ -359,7 +371,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
                 for qudit in self.location.intersection(other.location):
                     if lt is None:
                         lt = self[qudit] < other[qudit]
-                    elif lt != self[qudit] < other[qudit]:
+                    elif lt != (self[qudit] < other[qudit]):
                         raise ValueError('Both regions depend on each other.')
 
                 assert lt is not None

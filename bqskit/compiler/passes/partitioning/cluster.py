@@ -96,7 +96,11 @@ class ClusteringPartitioner(BasePass):
                     if not circuit.is_point_idle((cycle, qudit)):
                         break
 
-                region = circuit.surround((cycle, qudit), self.block_size)
+                region = circuit.surround(
+                    (cycle, qudit),
+                    self.block_size,
+                    fail_quickly=True,
+                )
                 num_gates = len(circuit[region])
 
                 if num_gates > best_gates:
