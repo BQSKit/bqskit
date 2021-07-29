@@ -1430,7 +1430,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     self.unfold((cycle, op.location[0]))
                     break
 
-    def surround(self, point: CircuitPointLike, size: int) -> CircuitRegion:
+    def surround(
+        self,
+        point: CircuitPointLike,
+        size: int,
+        bounding_region: CircuitRegionLike | None = None,
+        fail_quickly: bool = False,
+    ) -> CircuitRegion:
         """
         Retrieve the maximal region in this circuit with `point` included.
 
@@ -1440,12 +1446,22 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             size (int): The number of qudits to include in the region.
 
+            bounding_region (CircuitRegionLike | None): An optional
+                region that bounds the resulting region.
+
+            fail_quickly (bool): If set to true, will not branch on
+                an invalid region. This will lead to a much faster
+                result in some cases at the cost of only approximating
+                the maximal region.
+
         Raises:
             IndexError: If `point` is not a valid index.
 
             ValueError: If `size` is nonpositive.
 
             ValueError: If the operation at `point` is too large for `size`.
+
+            ValueError: If `bounding_region` is invalid.
 
         Notes:
             This algorithm explores outward horizontally as much as possible.
@@ -1461,6 +1477,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if size <= 0:
             raise ValueError(f'Expected a positive integer size, got {size}.')
+
+        if bounding_region is not None:
+            bounding_region = CircuitRegion(bounding_region)
 
         point = self.normalize_point(point)
 
@@ -1538,7 +1557,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
                 # Need to reject bad regions
                 except ValueError:
-                    pass
+                    if fail_quickly:
+                        continue
 
             # Expand node
             absorbed_gates: set[tuple[int, Operation]] = set()
@@ -1557,6 +1577,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     # Stop at edges
                     if cycle_index < 0 or cycle_index >= self.get_num_cycles():
                         break
+
+                    # Stop when outside bounds
+                    if bounding_region is not None:
+                        if (cycle_index, qudit_index) not in bounding_region:
+                            break
 
                     # Stop when exploring previously explored points
                     point = CircuitPoint(cycle_index, qudit_index)
