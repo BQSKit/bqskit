@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.language import Language
 from bqskit.ir.lang.qasm2.parser import parse
-from bqskit.ir.lang.qasm2.visitor import OPENQASMVisitor
+from bqskit.ir.lang.qasm2.visitor import OPENQASMVisitor  # type: ignore
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit

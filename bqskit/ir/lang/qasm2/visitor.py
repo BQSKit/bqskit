@@ -1,3 +1,4 @@
+# type: ignore
 """This module implements a OPENQASM parse tree visitor."""
 from __future__ import annotations
 
