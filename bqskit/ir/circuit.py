@@ -2495,4 +2495,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         )
         return circuit
 
+    @staticmethod
+    def from_operation(op: Operation) -> Circuit:
+        circuit = Circuit(op.get_size(), op.get_radixes())
+        circuit.append_gate(op.gate, list(range(circuit.get_size())), op.params)
+        return circuit
+
     # endregion
