@@ -3,12 +3,11 @@ from __future__ import annotations
 
 import logging
 
-from scipy.stats import unitary_group
-
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.compiler.passes.synthesis import QFASTDecompositionPass
 from bqskit.ir import Circuit
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if __name__ == '__main__':
     # Enable logging
@@ -16,7 +15,7 @@ if __name__ == '__main__':
 
     # Let's create a random 3-qubit unitary to synthesize and add it to a
     # circuit.
-    circuit = Circuit.from_unitary(unitary_group.rvs(8))
+    circuit = Circuit.from_unitary(UnitaryMatrix.random(3))
 
     # We will now define the CompilationTask we want to run.
     task = CompilationTask(circuit, [QFASTDecompositionPass()])
@@ -24,5 +23,3 @@ if __name__ == '__main__':
     # Finally let's create create the compiler and execute the CompilationTask.
     with Compiler() as compiler:
         compiled_circuit = compiler.compile(task)
-        for op in compiled_circuit:
-            print(op)

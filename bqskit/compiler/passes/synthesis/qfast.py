@@ -210,7 +210,10 @@ class QFASTDecompositionPass(SynthesisPass):
 
         circuit.insert(-1, Operation(self.gate, location))
         circuit.pop()
-        # circuit.instantiate(utry)  # TODO
+
+        # TODO: reconsider method arg to instantiate call
+        circuit.instantiate(utry, cost_fn_gen=self.cost, method='minimization')
+
         dist = self.cost.gen_cost(circuit, utry).get_cost(circuit.get_params())
         _logger.info('Final circuit distance: %e.' % dist)
 
