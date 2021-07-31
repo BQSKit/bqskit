@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from scipy.stats import linregress
 
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesispass import SynthesisPass
 from bqskit.compiler.search.frontier import Frontier
 from bqskit.compiler.search.generator import LayerGenerator
 from bqskit.compiler.search.generators import SimpleLayerGenerator

@@ -7,7 +7,7 @@ from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesispass import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
@@ -115,7 +115,7 @@ class QFASTDecompositionPass(SynthesisPass):
         self.progress_threshold = progress_threshold
         self.cost = cost
         self.max_depth = max_depth
-        super().__init__(**kwargs)  # type: ignore
+        super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""

@@ -8,7 +8,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesispass import SynthesisPass
 from bqskit.compiler.search.frontier import Frontier
 from bqskit.compiler.search.generator import LayerGenerator
 from bqskit.compiler.search.generators import SimpleLayerGenerator
