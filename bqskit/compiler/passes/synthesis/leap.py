@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from scipy.stats import linregress
 
-from bqskit.compiler.passes.synthesis.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
 from bqskit.compiler.search.frontier import Frontier
 from bqskit.compiler.search.generator import LayerGenerator
 from bqskit.compiler.search.generators import SimpleLayerGenerator
@@ -43,7 +43,6 @@ class LEAPSynthesisPass(SynthesisPass):
         max_layer: int | None = None,
         min_prefix_size: int = 3,
         instantiate_options: dict[str, Any] = {},
-        **kwargs: Any,
     ) -> None:
         """
         Construct a search-based synthesis pass.
@@ -75,10 +74,6 @@ class LEAPSynthesisPass(SynthesisPass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
-
-            kwargs (dict[str, Any]): Keyword arguments that are passed
-                directly to SynthesisPass's constructor. See SynthesisPass
-                for more info.
 
         Raises:
             ValueError: If `max_depth` or `min_prefix_size` is nonpositive.
@@ -143,7 +138,6 @@ class LEAPSynthesisPass(SynthesisPass):
         self.min_prefix_size = min_prefix_size
         self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
         self.instantiate_options.update(instantiate_options)
-        super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""

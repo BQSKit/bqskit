@@ -41,7 +41,6 @@ class QPredictDecompositionPass(SynthesisPass):
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
         instantiate_options: dict[str, Any] = {},
-        **kwargs: dict[str, Any],
     ) -> None:
         """
         QPredictDecompositionPass Constructor.
@@ -81,10 +80,6 @@ class QPredictDecompositionPass(SynthesisPass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
-
-            kwargs (dict[str, Any]): Keyword arguments that are passed
-                directly to SynthesisPass's constructor. See SynthesisPass
-                for more info.
 
         Raises:
             ValueError: If `block_size_start` is nonpositive.
@@ -185,7 +180,6 @@ class QPredictDecompositionPass(SynthesisPass):
             'diff_tol_r': 1e-4,
         }
         self.instantiate_options.update(instantiate_options)
-        super().__init__(**kwargs)  # type: ignore
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""

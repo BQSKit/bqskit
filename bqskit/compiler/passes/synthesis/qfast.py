@@ -7,7 +7,7 @@ from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.synthesis.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
@@ -38,7 +38,6 @@ class QFASTDecompositionPass(SynthesisPass):
         progress_threshold: float = 5e-3,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
-        **kwargs: dict[str, Any],
     ) -> None:
         """
         QFASTDecompositionPass Constructor.
@@ -68,10 +67,6 @@ class QFASTDecompositionPass(SynthesisPass):
             max_depth (int): The maximum number of gates to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
-
-            kwargs (dict[str, Any]): Keyword arguments that are passed
-                directly to SynthesisPass's constructor. See SynthesisPass
-                for more info.
 
         Raises:
             ValueError: If max_depth is nonpositive.
@@ -115,7 +110,6 @@ class QFASTDecompositionPass(SynthesisPass):
         self.progress_threshold = progress_threshold
         self.cost = cost
         self.max_depth = max_depth
-        super().__init__(**kwargs)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
