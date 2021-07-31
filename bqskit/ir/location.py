@@ -8,13 +8,15 @@ from typing import overload
 from typing import Sequence
 from typing import Union
 
+from typing_extensions import TypeGuard
+
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
-from bqskit.utils.typing import is_sequence
+from bqskit.utils.typing import is_sequence_of_int
 _logger = logging.getLogger(__name__)
 
 
-class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
+class CircuitLocation(Sequence[int]):
     """
     The CircuitLocation class.
 
@@ -35,22 +37,21 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
             ValueError: If there are duplicates in location.
         """
 
-        if is_integer(location):  # TODO: Typeguard
-            location = [location]  # type: ignore
+        if is_integer(location):
+            location = [location]
 
-        assert not isinstance(location, int)  # TODO: Typeguard
-        location = list(location)
+        elif is_iterable(location):
+            location = list(location)
 
-        if not is_iterable(location):
+        else:
             raise TypeError(
-                'Expected iterable of integers for location'
-                f', got {type(location)}.',
+                f'Expected integer(s) for location, got {type(location)}.',
             )
 
-        if not all(is_integer(qudit_index) for qudit_index in location):
-            checks = [is_integer(qudit_index) for qudit_index in location]
+        if not is_sequence_of_int(location):
+            checks = [is_integer(q) for q in location]
             raise TypeError(
-                'Expected iterable of integers for location'
+                'Expected iterable of positive integers for location'
                 f', got atleast one {type(location[checks.index(False)])}.',
             )
 
@@ -80,16 +81,15 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
     ) -> int | tuple[int, ...]:
         """Retrieve one or multiple qudit indices from the location."""
         if is_integer(index):
-            return self._location[index]  # type: ignore  # TODO: TypeGuards
+            return self._location[index]
 
         if isinstance(index, slice):
             return self._location[index]
 
-        if not is_sequence(index):
-            raise TypeError(f'Invalid index type, got {type(index)}.')
+        if is_sequence_of_int(index):
+            return tuple(self._location[idx] for idx in index)
 
-        # TODO: TypeGuards
-        return tuple(self._location[idx] for idx in index)  # type: ignore
+        raise TypeError(f'Invalid index type, got {type(index)}.')
 
     def __len__(self) -> int:
         """Return the number of qudits described by the location."""
@@ -108,7 +108,10 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
         return CircuitLocation([x for x in self if x in other])  # type: ignore
 
     @staticmethod
-    def is_location(location: Any, num_qudits: int | None = None) -> bool:
+    def is_location(
+        location: Any,
+        num_qudits: int | None = None,
+    ) -> TypeGuard[CircuitLocationLike]:
         """
         Determines if the sequence of qudits form a valid location. A valid
         location is a set of qubit indices (integers) that are greater than or
@@ -122,7 +125,7 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
                 don't check.
 
         Returns:
-            (bool): True if the location is valid.
+            (TypeGuard[CircuitLocationLike]): True if the location is valid.
         """
         if isinstance(location, CircuitLocation):
             if num_qudits is not None:
@@ -132,17 +135,19 @@ class CircuitLocation(Sequence[int]):  # TODO: Consider making frozenset[int]
         if is_integer(location):
             location = [location]
 
-        if not is_iterable(location):
+        elif is_iterable(location):
+            location = list(location)
+
+        else:
             _logger.debug(
-                'Expected iterable of integers for location'
-                f', got {type(location)}.',
+                f'Expected integer(s) for location, got {type(location)}.',
             )
             return False
 
-        if not all(is_integer(qudit_index) for qudit_index in location):
-            checks = [is_integer(qudit_index) for qudit_index in location]
+        if not is_sequence_of_int(location):
+            checks = [is_integer(q) for q in location]
             _logger.debug(
-                'Expected iterable of integers for location'
+                'Expected iterable of positive integers for location'
                 f', got atleast one {type(location[checks.index(False)])}.',
             )
             return False

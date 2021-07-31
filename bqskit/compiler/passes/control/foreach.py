@@ -1,5 +1,3 @@
-# type: ignore
-# TODO: Remove type: ignore, when new mypy comes out with TypeGuards
 """This module implements the ForEachBlockPass class."""
 from __future__ import annotations
 
@@ -111,11 +109,11 @@ class ForEachBlockPass(BasePass):
 
         # Make room in data for block data
         if self.key not in data:
-            data[self.key]: list[list[dict[str, Any]]] = []
+            data[self.key] = []
         data[self.key].append([])
 
         # Collect CircuitGate blocks
-        blocks: list[tuple[CircuitPoint, Operation]] = []
+        blocks: list[tuple[int, Operation]] = []
         for cycle, op in circuit.operations_with_cycles():
             if self.collection_filter(op):
                 blocks.append((cycle, op))
@@ -185,7 +183,7 @@ class ForEachBlockPass(BasePass):
                     Operation(
                         CircuitGate(subcircuit, True),
                         op.location,
-                        subcircuit.get_params(),
+                        subcircuit.get_params(),  # type: ignore  # TODO: RealVector  # noqa
                     ),
                 )
                 block_data['replaced'] = True

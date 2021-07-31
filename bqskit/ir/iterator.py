@@ -111,10 +111,10 @@ class CircuitIterator(
                 for qudit in self.qudits
             })
 
-        elif CircuitRegion.is_region(qudits_or_region):  # TODO: Typeguard
+        elif CircuitRegion.is_region(qudits_or_region):
             # iterate through the region in the circuit
-            self.qudits = list(qudits_or_region.keys())  # type: ignore
-            self.region = CircuitRegion(qudits_or_region)  # type: ignore
+            self.qudits = list(qudits_or_region.keys())
+            self.region = CircuitRegion(qudits_or_region)
 
         elif is_sequence(qudits_or_region):
             # iterate through the circuit but only on the specified qudits

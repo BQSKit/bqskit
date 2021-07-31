@@ -155,7 +155,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def get_params(self) -> np.ndarray:
         """Return the stored parameters for the circuit."""
-        return np.array(sum([list(op.params) for op in self], []))
+        return np.array(sum((list(op.params) for op in self), []))
 
     def get_depth(self) -> int:
         """Return the length of the critical path in the circuit."""
@@ -1086,7 +1086,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                                   for point in points[i + 1:]]
 
         # Form new circuit and return
-        qudits = list(set(sum([tuple(op.location) for op in ops], ())))
+        qudits = list(set(sum((tuple(op.location) for op in ops), ())))
         qudits = sorted(qudits)
         radixes = [self.get_radixes()[q] for q in qudits]
         circuit = Circuit(len(radixes), radixes)
@@ -1533,7 +1533,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Track best so far
         def score(node: Node) -> int:
-            return sum([op[1].get_size() for op in node[1]])
+            return sum(op[1].get_size() for op in node[1])
 
         best_score = score(init_node)
         best_region = self.get_region({(point[0], init_op.location[0])})
@@ -1809,7 +1809,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise IndexError('No operations exists at any of the points.')
 
         # Form new circuit and return
-        qudits = list(set(sum([tuple(op.location) for op in ops], ())))
+        qudits = list(set(sum((tuple(op.location) for op in ops), ())))
         qudits = sorted(qudits)
         radixes = [self.get_radixes()[q] for q in qudits]
         circuit = Circuit(len(radixes), radixes)
@@ -2249,23 +2249,20 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             IndexError: If any specified point is invalid or out-of-range.
         """
 
-        if CircuitPoint.is_point(indices):  # TODO: Typeguard
-            return self.get_operation(indices)  # type: ignore
+        if CircuitPoint.is_point(indices):
+            return self.get_operation(indices)
 
-        if is_iterable(indices):  # TODO: Typeguard
-            if all(
-                CircuitPoint.is_point(point)
-                for point in indices  # type: ignore
-            ):
-                return self.get_operations(indices)  # type: ignore
+        if is_iterable(indices):
+            if all(CircuitPoint.is_point(point) for point in indices):
+                return self.get_operations(indices)
 
-        if CircuitRegion.is_region(indices):  # TODO: Typeguard
-            return self[indices.points]  # type: ignore
+        if CircuitRegion.is_region(indices):
+            return self[CircuitRegion(indices).points]
 
-        if is_integer(indices):  # TODO: Typeguard
+        if is_integer(indices):
             return list({
                 op
-                for op in self._circuit[indices]  # type: ignore
+                for op in self._circuit[indices]
                 if op is not None
             })
 

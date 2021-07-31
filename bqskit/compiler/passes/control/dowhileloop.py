@@ -1,5 +1,3 @@
-# type: ignore
-# TODO: Remove type: ignore, when new mypy comes out with TypeGuards
 """This module implements the DoWhileLoopPass class."""
 from __future__ import annotations
 
@@ -65,7 +63,10 @@ class DoWhileLoopPass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
-        self.loop_body.run(circuit, data)
+        # Perform Work
+        _logger.debug('Loop body executing...')
+        for loop_pass in self.loop_body:
+            loop_pass.run(circuit, data)
 
         while self.condition(circuit, data):
             _logger.debug('Loop body executing...')
