@@ -123,8 +123,22 @@ class QFASTDecompositionPass(SynthesisPass):
         circuit = Circuit(utry.get_size(), utry.get_radixes())
 
         # 2. Calculate relevant coupling_graph and create the VLG head.
-        # TODO: Look for topology info in `data`, use all-to-all otherwise.
-        model = MachineModel(utry.get_size())
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+
+        if 'machine_model' in data:
+            model = data['machine_model']
+
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
         locations = model.get_locations(self.gate.get_size())
         circuit.append_gate(
             VariableLocationGate(self.gate, locations, circuit.get_radixes()),

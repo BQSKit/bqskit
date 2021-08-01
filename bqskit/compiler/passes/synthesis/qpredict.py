@@ -200,8 +200,22 @@ class QPredictDecompositionPass(SynthesisPass):
             block_size_end = self.block_size_limit
 
         # 3. Calculate relevant coupling_graphs
-        # TODO: Look for topology info in `data`, use all-to-all otherwise.
-        model = MachineModel(utry.get_size())
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+
+        if 'machine_model' in data:
+            model = data['machine_model']
+
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
         locations = [
             model.get_locations(i)
             for i in range(self.block_size_start, block_size_end + 1)
