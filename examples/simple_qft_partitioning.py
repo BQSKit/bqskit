@@ -138,7 +138,7 @@ circ.append_gate(CNOTGate(), [4, 3])
 
 # Do partitioning
 mach = MachineModel(num_q, coup_map)
-part = ScanPartitioner(mach, 3)
+part = ScanPartitioner(3)
 data = {}  # type: ignore
 
 part.run(circ, data)
