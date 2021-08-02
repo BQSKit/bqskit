@@ -1,5 +1,3 @@
-# type: ignore
-# TODO: Remove type: ignore, when new mypy comes out with TypeGuards
 """This module implements the WhileLoopPass class."""
 from __future__ import annotations
 
@@ -60,14 +58,11 @@ class WhileLoopPass(BasePass):
                 raise ValueError('Expected at least one pass.')
 
         self.condition = condition
-        self.loop_body = loop_body
+        self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
         while self.condition(circuit, data):
             _logger.debug('Loop body executing...')
-            if is_sequence(self.loop_body):
-                for loop_pass in self.loop_body:
-                    loop_pass.run(circuit, data)
-            else:
-                self.loop_body.run(circuit, data)
+            for loop_pass in self.loop_body:
+                loop_pass.run(circuit, data)

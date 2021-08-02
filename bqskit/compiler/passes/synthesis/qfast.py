@@ -7,7 +7,7 @@ from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
@@ -38,7 +38,6 @@ class QFASTDecompositionPass(SynthesisPass):
         progress_threshold: float = 5e-3,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
-        **kwargs: dict[str, Any],
     ) -> None:
         """
         QFASTDecompositionPass Constructor.
@@ -68,10 +67,6 @@ class QFASTDecompositionPass(SynthesisPass):
             max_depth (int): The maximum number of gates to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
-
-            kwargs (dict[str, Any]): Keyword arguments that are passed
-                directly to SynthesisPass's constructor. See SynthesisPass
-                for more info.
 
         Raises:
             ValueError: If max_depth is nonpositive.
@@ -115,7 +110,6 @@ class QFASTDecompositionPass(SynthesisPass):
         self.progress_threshold = progress_threshold
         self.cost = cost
         self.max_depth = max_depth
-        super().__init__(**kwargs)  # type: ignore
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
@@ -129,8 +123,22 @@ class QFASTDecompositionPass(SynthesisPass):
         circuit = Circuit(utry.get_size(), utry.get_radixes())
 
         # 2. Calculate relevant coupling_graph and create the VLG head.
-        # TODO: Look for topology info in `data`, use all-to-all otherwise.
-        model = MachineModel(utry.get_size())
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+
+        if 'machine_model' in data:
+            model = data['machine_model']
+
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
         locations = model.get_locations(self.gate.get_size())
         circuit.append_gate(
             VariableLocationGate(self.gate, locations, circuit.get_radixes()),

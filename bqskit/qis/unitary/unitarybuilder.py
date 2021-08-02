@@ -7,6 +7,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.location import CircuitLocation
+from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
@@ -71,8 +72,10 @@ class UnitaryBuilder(Unitary):
         return UnitaryMatrix(utry, self.get_radixes(), False)
 
     def apply_right(
-        self, utry: UnitaryMatrix,
-        location: Sequence[int], inverse: bool = False,
+        self,
+        utry: UnitaryMatrix,
+        location: CircuitLocationLike,
+        inverse: bool = False,
     ) -> None:
         """
         Apply the specified unitary on the right of this UnitaryBuilder.
@@ -89,7 +92,7 @@ class UnitaryBuilder(Unitary):
         Args:
             utry (UnitaryMatrix): The unitary to apply.
 
-            location (Sequence[int]): The qudits to apply the unitary on.
+            location (CircuitLocationLike): The qudits to apply the unitary on.
 
             inverse (bool): If true, apply the inverse of the unitary.
 
@@ -104,6 +107,8 @@ class UnitaryBuilder(Unitary):
 
         if not CircuitLocation.is_location(location, self.get_size()):
             raise TypeError('Invalid location.')
+
+        location = CircuitLocation(location)
 
         if len(location) != utry.get_size():
             raise ValueError('Unitary and location size mismatch.')
@@ -133,8 +138,10 @@ class UnitaryBuilder(Unitary):
         self.tensor = self.tensor.transpose(inv_perm)
 
     def apply_left(
-        self, utry: UnitaryMatrix,
-        location: Sequence[int], inverse: bool = False,
+        self,
+        utry: UnitaryMatrix,
+        location: CircuitLocationLike,
+        inverse: bool = False,
     ) -> None:
         """
         Apply the specified unitary on the left of this UnitaryBuilder.
@@ -151,7 +158,7 @@ class UnitaryBuilder(Unitary):
         Args:
             utry (UnitaryMatrix): The unitary to apply.
 
-            location (Sequence[int]): The qudits to apply the unitary on.
+            location (CircuitLocationLike): The qudits to apply the unitary on.
 
             inverse (bool): If true, apply the inverse of the unitary.
 
@@ -166,6 +173,8 @@ class UnitaryBuilder(Unitary):
 
         if not CircuitLocation.is_location(location, self.get_size()):
             raise TypeError('Invalid location.')
+
+        location = CircuitLocation(location)
 
         if len(location) != utry.get_size():
             raise ValueError('Unitary and location size mismatch.')

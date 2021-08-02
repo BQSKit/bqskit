@@ -223,7 +223,6 @@ class TestTypedValues:
         assert (
             is_numeric(a_float)
             and not is_integer(a_float)
-            and not is_complex(a_float)
         )
 
     def test_not_a_float(self, not_a_float: Any) -> None:
@@ -235,9 +234,6 @@ class TestTypedValues:
 
     def test_a_complex(self, a_complex: Any) -> None:
         assert is_complex(a_complex)
-
-    def test_not_a_complex(self, not_a_complex: Any) -> None:
-        assert is_sequence(not_a_complex) or not is_complex(not_a_complex)
 
     def test_a_bool(self, a_bool: Any) -> None:
         assert isinstance(a_bool, (bool, np.bool_))
@@ -269,16 +265,6 @@ class TestTypedValues:
             or any(not is_integer(i) for i in not_a_seq_int)
         )
 
-    def test_a_seq_float(self, a_seq_float: Any) -> None:
-        assert is_sequence(a_seq_float)
-        assert len(a_seq_float) >= 0
-        assert all(
-            is_numeric(f)
-            and not is_integer(f)
-            and not is_complex(f)
-            for f in a_seq_float
-        )
-
     def test_not_a_seq_float(self, not_a_seq_float: Any) -> None:
         assert (
             not is_sequence(not_a_seq_float)
@@ -295,13 +281,6 @@ class TestTypedValues:
         assert is_sequence(a_seq_complex)
         assert len(a_seq_complex) >= 0
         assert all(is_complex(c) for c in a_seq_complex)
-
-    def test_not_a_seq_complex(self, not_a_seq_complex: Any) -> None:
-        assert (
-            not is_sequence(not_a_seq_complex)
-            or isinstance(not_a_seq_complex, str)
-            or any(not is_complex(c) for c in not_a_seq_complex)
-        )
 
     def test_a_seq_bool(self, a_seq_bool: Any) -> None:
         assert is_sequence(a_seq_bool)

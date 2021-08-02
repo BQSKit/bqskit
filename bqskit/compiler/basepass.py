@@ -31,6 +31,9 @@ class BasePass (abc.ABC):
                 Can be used to provide auxillary information from
                 previous passes. This function should never error based
                 on what is in this dictionary.
+
+        Note:
+            This function should be self-contained and have no side effects.
         """
 
     # def __getstate__(self) -> Any:

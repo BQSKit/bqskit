@@ -1,5 +1,3 @@
-# type: ignore
-# TODO: Remove type: ignore, when new mypy comes out with TypeGuards
 """This module implements the IfThenElsePass class."""
 from __future__ import annotations
 
@@ -89,16 +87,10 @@ class IfThenElsePass(BasePass):
         """Perform the pass's operation, see BasePass for more info."""
         if self.condition(circuit, data):
             _logger.debug('True branch taken.')
-            if is_sequence(self.on_true):
-                for true_pass in self.on_true:
-                    true_pass.run(circuit, data)
-            else:
-                self.on_true.run(circuit, data)
+            for branch_pass in self.on_true:
+                branch_pass.run(circuit, data)
 
         elif self.on_false is not None:
             _logger.debug('False branch taken.')
-            if is_sequence(self.on_false):
-                for false_pass in self.on_false:
-                    false_pass.run(circuit, data)
-            else:
-                self.on_false.run(circuit, data)
+            for branch_pass in self.on_false:
+                branch_pass.run(circuit, data)

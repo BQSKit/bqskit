@@ -9,7 +9,7 @@ import numpy as np
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passes.synthesis.qsearch import QSearchSynthesisPass
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable

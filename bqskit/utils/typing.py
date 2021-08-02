@@ -5,60 +5,73 @@ import logging
 import numbers
 from collections.abc import Sequence
 from typing import Any
+from typing import Iterable
 from typing import Mapping
+from typing import Sized
 
 import numpy as np
+from typing_extensions import TypeGuard
 
 
 _logger = logging.getLogger(__name__)
 
 
-def is_iterable(test_variable: Any) -> bool:
-    """Returns true if test_variable is an iterable object."""
+def is_iterable(x: Any) -> TypeGuard[Iterable[Any]]:
+    """Returns true if x is an iterable object."""
     try:
-        iterator = iter(test_variable)  # noqa: F841
+        iterator = iter(x)  # noqa: F841
         return True
     except TypeError:
         return False
 
 
-def is_sequence(test_variable: Any) -> bool:
-    """Returns true if test_variable is a sequence."""
-    return isinstance(test_variable, (Sequence, np.ndarray))
+def is_sized(x: Any) -> TypeGuard[Sized]:
+    """Returns true if x is a sized object."""
+    try:
+        length = len(x)  # noqa: F841
+        return True
+    except TypeError:
+        return False
 
 
-def is_mapping(test_variable: Any) -> bool:
-    """Returns true if test_variable is a mapping."""
-    return isinstance(test_variable, Mapping)
+def is_sequence(x: Any) -> TypeGuard[Sequence[Any]]:
+    """Returns true if x is a sequence."""
+    return isinstance(x, (Sequence, np.ndarray))
 
 
-def is_numeric(test_variable: Any) -> bool:
-    """Return true if test_variable is numeric."""
-    return (
-        isinstance(test_variable, numbers.Number)
-        and not isinstance(test_variable, bool)
-    )
+def is_mapping(x: Any) -> TypeGuard[Mapping[Any, Any]]:
+    """Returns true if x is a mapping."""
+    return isinstance(x, Mapping)
 
 
-def is_complex(test_variable: Any) -> bool:
-    """Return true if test_variable is complex."""
-    return (
-        isinstance(test_variable, (complex, np.complex64, np.complex128))
-        or np.iscomplex(test_variable)
-    )
+def is_numeric(x: Any) -> TypeGuard[numbers.Number]:
+    """Return true if x is numeric."""
+    return isinstance(x, numbers.Number) and not isinstance(x, bool)
 
 
-def is_real_number(test_variable: Any) -> bool:
-    """Return true if `test_variable` is a real number."""
-    return is_numeric(test_variable) and not is_complex(test_variable)
+def is_complex(x: Any) -> TypeGuard[complex]:
+    """Return true if x is complex."""
+    return isinstance(x, numbers.Complex)
 
 
-def is_integer(test_variable: Any) -> bool:
-    """Return true if test_variable is an integer."""
-    return (
-        isinstance(test_variable, (int, np.integer))
-        and not isinstance(test_variable, bool)
-    )
+def is_real_number(x: Any) -> TypeGuard[float]:
+    """Return true if `x` is a real number."""
+    return isinstance(x, numbers.Real)
+
+
+def is_integer(x: Any) -> TypeGuard[int]:
+    """Return true if x is an integer."""
+    return isinstance(x, numbers.Integral) and not isinstance(x, bool)
+
+
+def is_bool(x: Any) -> TypeGuard[bool]:
+    """Return true if x is an integer."""
+    return isinstance(x, (bool, np.bool_))
+
+
+def is_sequence_of_int(x: Any) -> TypeGuard[Sequence[int]]:
+    """Return true if x is a sequence of integers."""
+    return is_sequence(x) and all([is_integer(xi) for xi in x])
 
 
 def is_valid_radixes(
@@ -125,7 +138,7 @@ def is_valid_coupling_graph(
         _logger.debug('Coupling graph is not iterable.')
         return False
 
-    if len(coupling_graph) == 0:
+    if len(list(coupling_graph)) == 0:
         return True
 
     if not all(isinstance(pair, tuple) for pair in coupling_graph):

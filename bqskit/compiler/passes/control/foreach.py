@@ -1,8 +1,7 @@
-# type: ignore
-# TODO: Remove type: ignore, when new mypy comes out with TypeGuards
 """This module implements the ForEachBlockPass class."""
 from __future__ import annotations
 
+import copy
 import logging
 from typing import Any
 from typing import Callable
@@ -12,6 +11,8 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_sequence
@@ -27,9 +28,14 @@ class ForEachBlockPass(BasePass):
     in the circuit.
     """
 
+    key = 'ForEachBlockPass_data'
+    """The key in data, where block data will be put."""
+
     def __init__(
         self,
         loop_body: BasePass | Sequence[BasePass],
+        calculate_error_bound: bool = False,
+        collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: Callable[[Circuit, Operation], bool] | None = None,
     ) -> None:
         """
@@ -38,6 +44,19 @@ class ForEachBlockPass(BasePass):
         Args:
             loop_body (BasePass | Sequence[BasePass]): The pass or passes
                 to execute on every block.
+
+            calculate_error_bound (bool): If set to true, will calculate
+                errors on blocks after running `loop_body` on them and
+                use these block errors to calculate an upper bound on the
+                full circuit error. (Default: False)
+
+            collection_filter (Callable[[Operation], bool] | None):
+                A predicate that determines which operations should have
+                `loop_body` called on them. Called with each operation
+                in the circuit. If this returns true, that operation will
+                be formed into an individual circuit and passed through
+                `loop_body`. Defaults to all CircuitGates,
+                ConstantUnitaryGates, and VariableUnitaryGates.
 
             replace_filter (Callable[[Circuit, Operation], bool] | None):
                 A predicate that determines if the resulting circuit, after
@@ -68,7 +87,15 @@ class ForEachBlockPass(BasePass):
                 raise ValueError('Expected at least one pass.')
 
         self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
+        self.calculate_error_bound = calculate_error_bound
+        self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
+
+        if not callable(self.collection_filter):
+            raise TypeError(
+                'Expected callable method that maps Operations to booleans for'
+                ' collection_filter, got %s.' % type(self.collection_filter),
+            )
 
         if not callable(self.replace_filter):
             raise TypeError(
@@ -80,10 +107,15 @@ class ForEachBlockPass(BasePass):
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
 
+        # Make room in data for block data
+        if self.key not in data:
+            data[self.key] = []
+        data[self.key].append([])
+
         # Collect CircuitGate blocks
-        blocks: list[tuple[CircuitPoint, Operation]] = []
+        blocks: list[tuple[int, Operation]] = []
         for cycle, op in circuit.operations_with_cycles():
-            if isinstance(op.gate, CircuitGate):
+            if self.collection_filter(op):
                 blocks.append((cycle, op))
 
         # If a MachineModel is provided in the data dict, it will be used.
@@ -101,38 +133,78 @@ class ForEachBlockPass(BasePass):
             )
             model = MachineModel(circuit.get_size())
 
-        subdata = data.copy()
-
-        # Perform work
+        # Go through the blocks
         points: list[CircuitPoint] = []
         ops: list[Operation] = []
-        for cycle, op in blocks:
-            gate: CircuitGate = op.gate
-            subcircuit = gate._circuit.copy()
-            subcircuit.set_params(op.params)
+        for i, (cycle, op) in enumerate(blocks):
+            block_data: dict[str, Any] = {}
 
+            # Form Subcircuit
+            if isinstance(op.gate, CircuitGate):
+                subcircuit = op.gate._circuit.copy()
+                subcircuit.set_params(op.params)
+            else:
+                subcircuit = Circuit.from_operation(op)
+
+            # Form Subtopology
             subnumbering = {op.location[i]: i for i in range(len(op.location))}
-            subdata['machine_model'] = MachineModel(
-                len(op.location),
-                model.get_subgraph(op.location, subnumbering),
-            )
+            subdata = {
+                'machine_model': MachineModel(
+                    len(op.location),
+                    model.get_subgraph(op.location, subnumbering),
+                ),
+            }
 
+            # Record Data Part 1
+            block_data['op'] = copy.deepcopy(op)
+            block_data['subcircuit_pre'] = subcircuit.copy()
+
+            # Perform Work
             for loop_pass in self.loop_body:
-                loop_pass.run(circuit, subdata)
+                loop_pass.run(subcircuit, subdata)
 
+            # Record Data Part 2
+            block_data['subcircuit_post'] = subcircuit.copy()
+            block_data['loop_body_data'] = subdata
+
+            # Calculate Errors
+            if self.calculate_error_bound:
+                new_utry = subcircuit.get_unitary()
+                old_utry = op.get_unitary()
+                error = new_utry.get_distance_from(old_utry)
+                block_data['error'] = error
+                _logger.info(f'Block {i} has error {error}.')
+
+            # Mark Blocks to be Replaced
             if self.replace_filter(subcircuit, op):
+                _logger.info(f'Replacing block {i}.')
                 points.append(CircuitPoint(cycle, op.location[0]))
                 ops.append(
                     Operation(
                         CircuitGate(subcircuit, True),
                         op.location,
-                        subcircuit.get_params(),
+                        subcircuit.get_params(),  # type: ignore  # TODO: RealVector  # noqa
                     ),
                 )
+                block_data['replaced'] = True
+            else:
+                block_data['replaced'] = False
 
-            # TODO: Load freshly written data from subdata into data
+            # Record block data into pass data
+            data[self.key][-1].append(block_data)
 
+        # Replace blocks
         circuit.batch_replace(points, ops)
+
+
+def default_collection_filter(op: Operation) -> bool:
+    return isinstance(
+        op.gate, (
+            CircuitGate,
+            ConstantUnitaryGate,
+            VariableUnitaryGate,
+        ),
+    )
 
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:

@@ -9,6 +9,8 @@ from typing import NamedTuple
 from typing import Tuple
 from typing import Union
 
+from typing_extensions import TypeGuard
+
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
@@ -80,12 +82,12 @@ class QuditBounds(NamedTuple):
         )
 
     def __lt__(self, other: object) -> bool:
-        if QuditBounds.is_bounds(other):  # TODO: TypeGuard
-            return self.upper < other[0]  # type: ignore
+        if QuditBounds.is_bounds(other):
+            return self.upper < other[0]
         return NotImplemented
 
     @staticmethod
-    def is_bounds(bounds: Any) -> bool:
+    def is_bounds(bounds: Any) -> TypeGuard[QuditBoundsLike]:
         """Return true if bounds is a QuditBoundsLike."""
         if isinstance(bounds, QuditBounds):
             return True
@@ -228,8 +230,8 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             bounds = self[other.qudit]
             return bounds.lower <= other.cycle <= bounds.upper
 
-        if CircuitRegion.is_region(other):  # TODO: Typeguard
-            other = CircuitRegion(other)  # type: ignore
+        if CircuitRegion.is_region(other):
+            other = CircuitRegion(other)
 
             if self.min_cycle > other.max_cycle:
                 return False
@@ -260,11 +262,11 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         if is_integer(other):
             return other in self._bounds.keys()
 
-        if CircuitPoint.is_point(other):  # TODO: TypeGuard
-            return other[1] in self.keys() and other[0] in self[other[1]]  # type: ignore  # noqa
+        if CircuitPoint.is_point(other):
+            return other[1] in self.keys() and other[0] in self[other[1]]
 
-        if CircuitRegion.is_region(other):  # TODO: TypeGuard
-            other = CircuitRegion(other)  # type: ignore
+        if CircuitRegion.is_region(other):
+            other = CircuitRegion(other)
             return (
                 all(qudit in self.keys() for qudit in other.keys())
                 and all(
@@ -339,8 +341,8 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         return False
 
     def __eq__(self, other: object) -> bool:
-        if CircuitRegion.is_region(other):  # TODO: TypeGuard
-            other = CircuitRegion(other)  # type: ignore
+        if CircuitRegion.is_region(other):
+            other = CircuitRegion(other)
             return sorted(self.items()) == sorted(other.items())
 
         return NotImplemented
@@ -355,16 +357,16 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         return repr(self._bounds)
 
     def __lt__(self, other: object) -> bool:
-        if CircuitPoint.is_point(other):  # TODO: TypeGuard
-            other = CircuitPoint(*other)  # type: ignore
+        if CircuitPoint.is_point(other):
+            other = CircuitPoint(*other)
             if other[0] < self.min_cycle:
                 return True
 
             if other[1] in self.keys():
                 return other[0] < self[other[1]].lower
 
-        elif CircuitRegion.is_region(other):  # TODO: TypeGuard
-            other = CircuitRegion(other)  # type: ignore
+        elif CircuitRegion.is_region(other):
+            other = CircuitRegion(other)
 
             if len(self.location.intersection(other.location)) != 0:
                 lt = None
@@ -394,7 +396,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         return NotImplemented
 
     @staticmethod
-    def is_region(region: Any) -> bool:
+    def is_region(region: Any) -> TypeGuard[CircuitRegionLike]:
         """Return true if region is a CircuitRegionLike."""
         if isinstance(region, CircuitRegion):
             return True

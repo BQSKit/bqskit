@@ -8,7 +8,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.synthesispass import SynthesisPass
+from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
@@ -41,7 +41,6 @@ class QPredictDecompositionPass(SynthesisPass):
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
         instantiate_options: dict[str, Any] = {},
-        **kwargs: dict[str, Any],
     ) -> None:
         """
         QPredictDecompositionPass Constructor.
@@ -81,10 +80,6 @@ class QPredictDecompositionPass(SynthesisPass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
-
-            kwargs (dict[str, Any]): Keyword arguments that are passed
-                directly to SynthesisPass's constructor. See SynthesisPass
-                for more info.
 
         Raises:
             ValueError: If `block_size_start` is nonpositive.
@@ -185,7 +180,6 @@ class QPredictDecompositionPass(SynthesisPass):
             'diff_tol_r': 1e-4,
         }
         self.instantiate_options.update(instantiate_options)
-        super().__init__(**kwargs)  # type: ignore
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
@@ -206,8 +200,22 @@ class QPredictDecompositionPass(SynthesisPass):
             block_size_end = self.block_size_limit
 
         # 3. Calculate relevant coupling_graphs
-        # TODO: Look for topology info in `data`, use all-to-all otherwise.
-        model = MachineModel(utry.get_size())
+        # If a MachineModel is provided in the data dict, it will be used.
+        # Otherwise all-to-all connectivity is assumed.
+        model = None
+
+        if 'machine_model' in data:
+            model = data['machine_model']
+
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.get_size()
+        ):
+            _logger.warning(
+                'MachineModel not specified or invalid;'
+                ' defaulting to all-to-all.',
+            )
+            model = MachineModel(circuit.get_size())
         locations = [
             model.get_locations(i)
             for i in range(self.block_size_start, block_size_end + 1)

@@ -7,6 +7,8 @@ from typing import NamedTuple
 from typing import Tuple
 from typing import Union
 
+from typing_extensions import TypeGuard
+
 from bqskit.utils.typing import is_integer
 _logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ class CircuitPoint(NamedTuple):
     #     )
 
     @staticmethod
-    def is_point(point: Any) -> bool:
+    def is_point(point: Any) -> TypeGuard[CircuitPointLike]:
         """Return true if point is a CircuitPointLike."""
         if isinstance(point, CircuitPoint):
             return True
