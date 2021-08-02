@@ -561,6 +561,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if not CircuitPoint.is_point(point):
             raise TypeError(f'Expected CircuitPoint, got {type(point)}.')
 
+        # TODO: is_point_in_range
+
         return self._circuit[point[0]][point[1]] is None
 
     def normalize_point(self, point: CircuitPointLike) -> CircuitPoint:

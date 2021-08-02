@@ -37,7 +37,6 @@ class CircuitGate(Gate):
         self._circuit = circuit if move else circuit.copy()
         self.size = self._circuit.get_size()
         self.radixes = self._circuit.get_radixes()
-        self.utry = self._circuit.get_unitary()
         self.num_params = self._circuit.get_num_params()
         self.name = 'CircuitGate(%s)' % str(self._circuit)
 
