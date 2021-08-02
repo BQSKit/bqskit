@@ -1,47 +1,34 @@
-# type: ignore
-# TODO
 """This module defines the GreedyPartitioner pass."""
 from __future__ import annotations
 
+import bisect
 import logging
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.region import CircuitRegion
+from bqskit.ir.region import QuditBounds
 from bqskit.utils.typing import is_integer
 
 _logger = logging.getLogger(__name__)
 
 
-class GreedyPartitioner(BasePass):
+class GreedyPartitioner(BasePass):  # TODO: Change
     """
     The GreedyPartitioner Pass.
 
-    This pass forms partitions in the circuit greedily by forming the largest
-    blocks possible first.
+    This pass partitions a circuit by forming the largest regions first.
     """
 
-    def __init__(
-        self,
-        block_size: int = 3,
-        single_gate_score: int = 1,
-        multi_gate_score: int = 1000,  # TODO: Pass callable scoring_fn instead
-    ) -> None:
+    def __init__(self, block_size: int = 3) -> None:
         """
         Construct a GreedyPartitioner.
 
         Args:
             block_size (int): Maximum size of partitioned blocks.
                 (Default: 3)
-
-            single_gate_score (int): When evaluating potential blocks,
-                use this number to score included single-qudit gates.
-                (Default: 1)
-
-            multi_gate_score (int): When evaluating potential blocks,
-                use this number to score included multi-qudit gates.
-                (Default: 1000)
 
         Raises:
             ValueError: If `block_size` is less than 2.
@@ -57,21 +44,7 @@ class GreedyPartitioner(BasePass):
                 f'Expected block_size to be greater than 2, got {block_size}.',
             )
 
-        if not is_integer(single_gate_score):
-            raise TypeError(
-                'Expected integer for single_gate_score, '
-                f'got {type(single_gate_score)}.',
-            )
-
-        if not is_integer(multi_gate_score):
-            raise TypeError(
-                'Expected integer for multi_gate_score, '
-                f'got {type(multi_gate_score)}.',
-            )
-
         self.block_size = block_size
-        self.single_gate_score = single_gate_score
-        self.multi_gate_score = multi_gate_score
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
@@ -94,181 +67,162 @@ class GreedyPartitioner(BasePass):
             })
             return
 
-        # If a MachineModel is provided in the data dict, it will be used.
-        # Otherwise all-to-all connectivity is assumed.
-        model = None
-
-        if 'machine_model' in data:
-            model = data['machine_model']
-
-        if (
-            not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.get_size()
-        ):
-            _logger.warning(
-                'MachineModel not specified or invalid;'
-                ' defaulting to all-to-all.',
-            )
-            model = MachineModel(circuit.get_size())
-
-        # Find all connected, `block_size`-sized groups of qudits
-        # NOTE: This assumes circuit and topology qudit numbers are equal
-        qudit_groups = model.get_locations(self.block_size)
-
-        num_cycles = circuit.get_num_cycles()
-        num_qudits_groups = len(qudit_groups)
-
-        op_cycles = [
-            [
-                [0] * self.block_size for q_group in qudit_groups
-            ]
-            for cycle in range(num_cycles)
+        # For each gate, calculate the best region surrounding it
+        total_num_gates = 0
+        regions: list[CircuitRegion] = []
+        all_bounds: list[list[QuditBounds]] = [
+            [] for q in range(circuit.get_size())
         ]
-
+        potential_regions = {}
         for cycle, op in circuit.operations_with_cycles():
-            if len(op.location) > 1:
-                for q_group_index, q_group in enumerate(qudit_groups):
-                    if all([qudit in q_group for qudit in op.location]):
-                        for qudit in op.location:
-                            op_cycles[cycle][q_group_index][
-                                q_group.index(qudit)
-                            ] = self.multi_gate_score
-                    else:
-                        for qudit in op.location:
-                            if qudit in q_group:
-                                op_cycles[cycle][q_group_index][
-                                    q_group.index(qudit)
-                                ] = -1
-            else:
-                qudit = op.location[0]
-                for q_group_index, q_group in enumerate(qudit_groups):
-                    if qudit in q_group:
-                        op_cycles[cycle][q_group_index][
-                            q_group.index(qudit)
-                        ] = self.single_gate_score
-
-        max_blocks = []
-        for q_group_index in range(num_qudits_groups):
-            block_start = 0
-            block_ends = [0] * self.block_size
-            score = 0
-            for cycle in range(num_cycles):
-                if cycle:
-                    for qudit in range(self.block_size):
-                        if (
-                            op_cycles[cycle - 1][q_group_index][qudit] == -1
-                            and op_cycles[cycle][q_group_index][qudit] != -1
-                        ):
-                            max_blocks.append(
-                                [score, block_start, block_ends, q_group_index],
-                            )
-                            score = 0
-                            block_start = cycle
-                            block_ends = [cycle + 1] * self.block_size
-                            break
-                for qudit in range(self.block_size):
-                    if op_cycles[cycle][q_group_index][qudit] != -1:
-                        block_ends[qudit] = cycle + 1
-                        score += op_cycles[cycle][q_group_index][qudit]
-            max_blocks.append([score, block_start, block_ends, q_group_index])
-
-        block_id = -1
-        max_blocks.sort()
-        remaining_assignments = circuit.get_size() * num_cycles
-        block_map = [[-1] * circuit.get_size() for cycle in range(num_cycles)]
-        while remaining_assignments:
-
-            perform_assign = False
-            if len(max_blocks) == 1:
-                perform_assign = True
-            else:
-                block_start = max_blocks[-1][1]
-                block_ends = max_blocks[-1][2]
-                q_group_index = max_blocks[-1][3]
-                score = 0
-                for cycle in range(block_start, max(block_ends)):
-                    for qudit in range(self.block_size):
-                        q = qudit_groups[q_group_index][qudit]
-                        if (
-                            cycle < block_ends[qudit]
-                            and block_map[cycle][q] == -1
-                        ):
-                            score += 1
-
-                if score < max_blocks[-2][0]:
-                    max_blocks[-1][0] = score
-                    max_blocks.sort()
-                else:
-                    perform_assign = True
-
-            if perform_assign:
-                block_id += 1
-                block_start = max_blocks[-1][1]
-                block_ends = max_blocks[-1][2]
-                q_group_index = max_blocks[-1][3]
-                prev_status = None
-                for cycle in range(block_start, max(block_ends)):
-                    status = [
-                        block_map[cycle][qudit_groups[q_group_index][qudit]]
-                        for qudit in range(self.block_size)
-                    ]
-                    if prev_status and len(prev_status) <= len(
-                            status,
-                    ) and status != prev_status:
-                        block_id += 1
-                    for qudit in range(self.block_size):
-                        if (
-                            cycle < block_ends[qudit]
-                            and block_map[cycle][
-                                qudit_groups[q_group_index][qudit]
-                            ] == -1
-                        ):
-                            block_map[cycle][
-                                qudit_groups[q_group_index]
-                                [qudit]
-                            ] = block_id
-                            remaining_assignments -= 1
-                    prev_status = status
-                del max_blocks[-1]
-
-        for cycle in range(num_cycles):
-            if not cycle or block_map[cycle] == block_map[cycle - 1]:
+            point = (cycle, op.location[0])
+            if len(op.location) > self.block_size:
+                regions.append(circuit.get_region([point]))
+                for qudit, bounds in circuit.get_region([point]).items():
+                    bisect.insort(all_bounds[qudit], bounds)
                 continue
-            indices = [{}, {}]
-            for i in range(2):
-                for qudit in range(circuit.get_size()):
-                    block = block_map[cycle - i][qudit]
-                    if block not in indices[i]:
-                        indices[i][block] = []
-                    indices[i][block].append(qudit)
-            for prev_blocks, prev_qudits in indices[1].items():
-                for current_qudits in indices[0].values():
-                    if all([qudit in prev_qudits for qudit in current_qudits]):
-                        for qudit in current_qudits:
-                            block_map[cycle][qudit] = prev_blocks
+            total_num_gates += 1
+            region = circuit.surround(
+                point,
+                self.block_size,
+                fail_quickly=True,
+            )
 
-        blocks = {}
-        for cycle in range(num_cycles):
-            for qudit in range(circuit.get_size()):
-                if block_map[cycle][qudit] not in blocks:
-                    blocks[block_map[cycle][qudit]] = {}
-                    blocks[block_map[cycle][qudit]][-1] = cycle
-                blocks[block_map[cycle][qudit]][qudit] = cycle
+            potential_regions[point] = (len(circuit[region]), region)
 
-        block_order = []
-        for block in blocks.values():
-            block_order.append([block, block[-1]])
-        block_order.sort(reverse=True, key=lambda x: x[1])
+        # Form regions until there are no more gates to partition
+        num_partitioned_gates = 0
+        while num_partitioned_gates < total_num_gates:
 
-        for block, start_cycle in block_order:
-            points_in_block = []
-            for cycle, op in circuit.operations_with_cycles():
-                qudit = op.location[0]
-                if (
-                    qudit in block
-                    and cycle >= start_cycle
-                    and cycle <= block[qudit]
-                ):
-                    points_in_block.append((cycle, qudit))
+            # Pick largest region
+            s = sorted(potential_regions.values(), key=lambda x: x[0])
+            num_gates, best_region = s[0]
+            num_partitioned_gates += num_gates
+            regions.append(best_region)
 
-            circuit.fold(circuit.get_region(points_in_block))
+            # Update all_bounds
+            for qudit, bounds in best_region.items():
+                bisect.insort(all_bounds[qudit], bounds)
+
+            # Update others
+            to_remove = []
+            to_update = []
+            for point, value in potential_regions.items():
+                region = value[1]
+
+                if point in best_region or region == best_region:
+                    to_remove.append(point)
+                    continue
+
+                if best_region.overlaps(region):
+                    to_update.append(point)
+                    continue
+
+            for point in to_remove:
+                potential_regions.pop(point)
+
+            for point in to_update:
+                # Calculate bounding region
+                bounding_region = {}
+                cycle = point[0]
+                for qudit, bounds_list in enumerate(all_bounds):
+                    # find first bound with lower larger than cycle
+                    if len(bounds_list) == 0:
+                        bounding_region[qudit] = (
+                            0, circuit.get_num_cycles() - 1,
+                        )
+                        continue
+
+                    index_of_first_larger = None
+                    for i, bounds in enumerate(bounds_list):
+                        if bounds.lower > cycle:
+                            index_of_first_larger = i
+
+                    if index_of_first_larger is None:
+                        bounding_region[qudit] = (
+                            bounds_list[-1][1] + 1,
+                            circuit.get_num_cycles() - 1,
+                        )
+                    elif index_of_first_larger == 0:
+                        bounding_region[qudit] = (0, bounds_list[0][0] - 1)
+                    else:
+                        bounding_region[qudit] = (
+                            bounds_list[index_of_first_larger - 1][1] + 1,
+                            bounds_list[index_of_first_larger - 1][1] - 1,
+                        )
+
+                bounding_region = CircuitRegion(bounding_region)
+
+                # Recalculate region
+                region = circuit.surround(
+                    point,
+                    self.block_size,
+                    bounding_region,
+                    True,
+                )
+
+                potential_regions[point] = (len(circuit[region]), region)
+
+        # TODO: Merge regions that can be merged together
+
+        # Fold the circuit
+        folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
+        regions = self.topo_sort(regions)
+        # Option to keep a block's idle qudits as part of the CircuitGate
+        if 'keep_idle_qudits' in data and data['keep_idle_qudits'] is True:
+            for region in regions:
+                small_region = circuit.downsize_region(region)
+                cgc = circuit.get_slice(small_region.points)
+                if len(region.location) > len(small_region.location):
+                    for i in range(len(region.location)):
+                        if region.location[i] not in small_region.location:
+                            cgc.insert_qudit(i)
+                folded_circuit.append_gate(
+                    CircuitGate(cgc, True),
+                    sorted(list(region.keys())),
+                    list(cgc.get_params()),
+                )
+        else:
+            for region in regions:
+                region = circuit.downsize_region(region)
+                if 0 < len(region) <= self.block_size:
+                    cgc = circuit.get_slice(region.points)
+                    folded_circuit.append_gate(
+                        CircuitGate(cgc, True),
+                        sorted(list(region.keys())),
+                        list(cgc.get_params()),
+                    )
+                else:
+                    folded_circuit.extend(circuit[region])
+        circuit.become(folded_circuit)
+
+    def topo_sort(self, regions: list[CircuitRegion]) -> list[CircuitRegion]:
+        """Topologically sort regions."""
+        sorted_regions: list[CircuitRegion] = []
+        in_adj_list: list[list[int]] = [[] for _ in range(len(regions))]
+
+        for i, region1 in enumerate(regions):
+            for j, region2 in enumerate(regions):
+                if i == j:
+                    continue
+                if region1.depends_on(region2):
+                    in_adj_list[j].append(i)  # i points to j
+
+        already_selected: list[int] = []
+        while len(already_selected) != len(regions):
+            selected = None
+            for i, in_nodes in enumerate(in_adj_list):
+                if i not in already_selected and len(in_nodes) == 0:
+                    selected = i
+                    break
+
+            if selected is None:
+                raise RuntimeError('Unable to topologically sort regions.')
+
+            sorted_regions.append(regions[selected])
+            already_selected.append(selected)
+            for in_nodes in in_adj_list:
+                if selected in in_nodes:
+                    in_nodes.remove(selected)
+
+        return sorted_regions
