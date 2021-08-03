@@ -9,13 +9,27 @@ exception occurred during execution, it will be reraised as a TaskException.
 """
 from __future__ import annotations
 
+import logging
 import uuid
 from enum import Enum
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passes.control import ForEachBlockPass
+from bqskit.compiler.passes.control.predicates.count import GateCountPredicate
+from bqskit.compiler.passes.control.whileloop import WhileLoopPass
+from bqskit.compiler.passes.partitioning import GreedyPartitioner
+from bqskit.compiler.passes.partitioning.cluster import ClusteringPartitioner
+from bqskit.compiler.passes.processing import ScanningGateRemovalPass
+from bqskit.compiler.passes.processing import WindowOptimizationPass
+from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
+from bqskit.compiler.passes.synthesis import QFASTDecompositionPass
+from bqskit.compiler.passes.util import UnfoldPass
 from bqskit.ir.circuit import Circuit
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+
+_logger = logging.getLogger(__name__)
 
 
 class TaskException(Exception):
@@ -84,13 +98,57 @@ class CompilationTask():
         self.input_circuit = input_circuit
         self.passes = passes
 
+    # TODO: Add rebase abilities to default tasks
     @staticmethod
-    def synthesis(utry: UnitaryMatrix, method: str) -> CompilationTask:
+    def synthesis(utry: UnitaryLike) -> CompilationTask:
         """Produces a standard synthesis task for the given unitary."""
         circuit = Circuit.from_unitary(utry)
-        return CompilationTask(circuit, [])  # TODO
+        num_qudits = circuit.get_size()
+
+        if num_qudits > 8:
+            _logger.warning('Synthesis input size is very large.')
+
+        inner_seq = [
+            LEAPSynthesisPass(),
+            WindowOptimizationPass(),
+            ScanningGateRemovalPass(),
+        ]
+
+        passes: list[BasePass] = []
+        if num_qudits >= 5:
+            passes.append(QFASTDecompositionPass())
+            passes.append(ForEachBlockPass(inner_seq))
+        else:
+            passes.extend(inner_seq)
+
+        return CompilationTask(circuit, passes)
 
     @staticmethod
-    def optimize(circuit: Circuit, method: str) -> CompilationTask:
+    def optimize(circuit: Circuit) -> CompilationTask:
         """Produces a standard optimization task for the given circuit."""
-        return CompilationTask(circuit, [])  # TODO
+        num_qudits = circuit.get_size()
+
+        if num_qudits <= 4:
+            return CompilationTask.synthesis(circuit.get_unitary())
+
+        inner_seq = [
+            LEAPSynthesisPass(),
+            WindowOptimizationPass(),
+            ScanningGateRemovalPass(),
+        ]
+
+        passes: list[BasePass] = []
+        passes.append(GreedyPartitioner(3))
+        passes.append(ForEachBlockPass(inner_seq))
+
+        iterative_reopt = WhileLoopPass(
+            GateCountPredicate(CNOTGate()),
+            [
+                ClusteringPartitioner(3, 4),
+                ForEachBlockPass(inner_seq),
+                UnfoldPass(),
+            ],
+        )
+
+        passes.append(iterative_reopt)
+        return CompilationTask(circuit, passes)
