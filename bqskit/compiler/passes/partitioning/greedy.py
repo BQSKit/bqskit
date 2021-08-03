@@ -96,7 +96,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
 
             # Pick largest region
             s = sorted(potential_regions.values(), key=lambda x: x[0])
-            num_gates, best_region = s[0]
+            num_gates, best_region = s[-1]
             num_partitioned_gates += num_gates
             regions.append(best_region)
 
