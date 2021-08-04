@@ -137,6 +137,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                     for i, bounds in enumerate(bounds_list):
                         if bounds.lower > cycle:
                             index_of_first_larger = i
+                            break
 
                     if index_of_first_larger is None:
                         bounding_region[qudit] = (
@@ -148,7 +149,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                     else:
                         bounding_region[qudit] = (
                             bounds_list[index_of_first_larger - 1][1] + 1,
-                            bounds_list[index_of_first_larger - 1][1] - 1,
+                            bounds_list[index_of_first_larger][0] - 1,
                         )
 
                 bounding_region = CircuitRegion(bounding_region)
