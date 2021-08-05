@@ -10,7 +10,6 @@ from bqskit.ir.gates.constant.cz import CZGate
 from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
-from bqskit.ir.gates.constant.permutation import PermutationGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
@@ -24,6 +23,7 @@ from bqskit.ir.gates.constant.x import XGate
 from bqskit.ir.gates.constant.xx import XXGate
 from bqskit.ir.gates.constant.y import YGate
 from bqskit.ir.gates.constant.z import ZGate
+# from bqskit.ir.gates.constant.permutation import PermutationGate
 
 __all__ = [
     'CHGate',
@@ -36,7 +36,7 @@ __all__ = [
     'HGate',
     'IdentityGate',
     'ISwapGate',
-    'PermutationGate',
+    # 'PermutationGate',
     'SGate',
     'SdgGate',
     'SqrtCNOTGate',

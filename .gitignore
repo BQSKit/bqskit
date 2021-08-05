@@ -3,6 +3,7 @@
 *.unitary
 .tox/
 .env/
+.hypothesis/
 .venv/
 .vscode/
 .mypy_cache/
