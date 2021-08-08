@@ -5,12 +5,12 @@ import logging
 from typing import Any
 from typing import Iterator
 from typing import Mapping
-from typing import NamedTuple
-from typing import Tuple
 from typing import Union
 
 from typing_extensions import TypeGuard
 
+from bqskit.ir.interval import CycleInterval
+from bqskit.ir.interval import IntervalLike
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
@@ -19,109 +19,7 @@ from bqskit.utils.typing import is_mapping
 _logger = logging.getLogger(__name__)
 
 
-# TODO: maybe change to CycleRange(Tuple[int, int])
-class QuditBounds(NamedTuple):
-    """
-    The QuditBounds NamedTuple.
-
-    Contains an inclusive lower and upper cycle bound for a qudit.
-    """
-    lower: int
-    upper: int
-
-    @property
-    def indices(self) -> list[int]:
-        return list(range(self.lower, self.upper + 1))
-
-    def __contains__(self, cycle_index: object) -> bool:
-        """Return true if `cycle_index` is inside this bounds."""
-        if not is_integer(cycle_index):
-            return False
-
-        assert isinstance(cycle_index, int)  # TODO: Typeguards
-
-        return self.lower <= cycle_index <= self.upper
-
-    def overlaps(self, other: QuditBoundsLike) -> bool:
-        """Return true if `other` overlaps with this bounds."""
-        if not QuditBounds.is_bounds(other):
-            raise TypeError(f'Expected QuditBounds, got {type(other)}.')
-
-        other = QuditBounds(*other)
-
-        return self.lower < other.upper and self.upper > other.lower
-
-    def intersection(self, other: QuditBoundsLike) -> QuditBounds:
-        """Return the range defined by both `self` and `other` bounds."""
-        if not QuditBounds.is_bounds(other):
-            raise TypeError(f'Expected QuditBounds, got {type(other)}.')
-
-        other = QuditBounds(*other)
-
-        if not self.overlaps(other):
-            raise ValueError('Empty intersection in bounds.')
-
-        return QuditBounds(
-            max(self.lower, other.lower),
-            min(self.upper, other.upper),
-        )
-
-    def union(self, other: QuditBoundsLike) -> QuditBounds:
-        """Return the range defined by `self` or `other` bounds."""
-        if not QuditBounds.is_bounds(other):
-            raise TypeError(f'Expected QuditBounds, got {type(other)}.')
-
-        other = QuditBounds(*other)
-
-        if not self.overlaps(other):
-            raise ValueError('Union would lead to invalid bounds.')
-
-        return QuditBounds(
-            min(self.lower, other.lower),
-            max(self.upper, other.upper),
-        )
-
-    def __lt__(self, other: object) -> bool:
-        if QuditBounds.is_bounds(other):
-            return self.upper < other[0]
-        return NotImplemented
-
-    @staticmethod
-    def is_bounds(bounds: Any) -> TypeGuard[QuditBoundsLike]:
-        """Return true if bounds is a QuditBoundsLike."""
-        if isinstance(bounds, QuditBounds):
-            return True
-
-        if not isinstance(bounds, tuple):
-            _logger.debug('Bounds is not a tuple.')
-            return False
-
-        if len(bounds) != 2:
-            _logger.debug(
-                'Expected bounds to contain two values, got %d.' % len(bounds),
-            )
-            return False
-
-        if not is_integer(bounds[0]):
-            _logger.debug(
-                'Expected integer values in bounds, got %s.' % type(bounds[0]),
-            )
-            return False
-
-        if not is_integer(bounds[1]):
-            _logger.debug(
-                'Expected integer values in bounds, got %s.' % type(bounds[1]),
-            )
-            return False
-
-        if bounds[1] < bounds[0]:
-            _logger.debug('Upper bound is less than lower bound.')
-            return False
-
-        return True
-
-
-class CircuitRegion(Mapping[int, QuditBounds]):
+class CircuitRegion(Mapping[int, CycleInterval]):
     """
     The CircuitRegion class.
 
@@ -129,13 +27,25 @@ class CircuitRegion(Mapping[int, QuditBounds]):
     map from qudit indices to lower and upper bounds given by cycle indices.
     """
 
-    def __init__(self, bounds: Mapping[int, QuditBoundsLike]) -> None:
+    def __init__(self, bounds: Mapping[int, IntervalLike]) -> None:
+        if not is_mapping(bounds):
+            raise TypeError(
+                f'Expected mapping from int to IntervalLike, got {bounds}.',
+            )
+
+        for qudit, bound in bounds.items():
+            if not is_integer(qudit):
+                raise TypeError(f'Expected integer keys, got {qudit}.')
+
+            if not CycleInterval.is_interval(bound):
+                raise TypeError(f'Expected valid CycleInterval, got {bound}.')
+
         self._bounds = {
-            qudit: QuditBounds(*bound)
+            qudit: CycleInterval(bound)
             for qudit, bound in bounds.items()
         }
 
-    def __getitem__(self, key: int) -> QuditBounds:
+    def __getitem__(self, key: int) -> CycleInterval:
         return self._bounds[key]
 
     def __iter__(self) -> Iterator[int]:
@@ -200,7 +110,10 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
         return CircuitRegion({
             qudit_index:
-            QuditBounds(bound[0] - amount_to_shift, bound[1] - amount_to_shift)
+            CycleInterval(
+                bound[0] - amount_to_shift,
+                bound[1] - amount_to_shift,
+            )
             for qudit_index, bound in self._bounds.items()
         })
 
@@ -214,7 +127,10 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         """
         return CircuitRegion({
             qudit_index:
-            QuditBounds(bound[0] + amount_to_shift, bound[1] + amount_to_shift)
+            CycleInterval(
+                bound[0] + amount_to_shift,
+                bound[1] + amount_to_shift,
+            )
             for qudit_index, bound in self._bounds.items()
         })
 
@@ -301,7 +217,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         other = CircuitRegion(other)
         location = self.location.intersection(other.location)
 
-        region: dict[int, QuditBounds] = {}
+        region: dict[int, CycleInterval] = {}
         for qudit in location:
             if self[qudit].overlaps(other[qudit]):
                 region[qudit] = self[qudit].intersection(other[qudit])
@@ -315,7 +231,7 @@ class CircuitRegion(Mapping[int, QuditBounds]):
         other = CircuitRegion(other)
         location = self.location.union(other.location)
 
-        region: dict[int, QuditBounds] = {}
+        region: dict[int, CycleInterval] = {}
         for qudit in location:
             if qudit in self and qudit in other:
                 region[qudit] = self[qudit].union(other[qudit])
@@ -409,12 +325,11 @@ class CircuitRegion(Mapping[int, QuditBounds]):
             _logger.debug('Region does not have integer keys.')
             return False
 
-        if not all(QuditBounds.is_bounds(val) for val in region.values()):
-            _logger.debug('Region does not have QuditBoundsLike values.')
+        if not all(CycleInterval.is_interval(val) for val in region.values()):
+            _logger.debug('Region does not have IntervalLike values.')
             return False
 
         return True
 
 
-QuditBoundsLike = Union[Tuple[int, int], QuditBounds]
-CircuitRegionLike = Union[Mapping[int, QuditBoundsLike], CircuitRegion]
+CircuitRegionLike = Union[Mapping[int, IntervalLike], CircuitRegion]

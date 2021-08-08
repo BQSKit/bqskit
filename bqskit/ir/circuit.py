@@ -1251,13 +1251,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 f"but region's maximum cycle is {region.max_cycle}.",
             )
 
-        for qudit_index, qudit_bounds in region.items():
-            for other_qudit_index, other_qudit_bounds in region.items():
-                if qudit_bounds.overlaps(other_qudit_bounds):
+        for qudit_index, cycle_intervals in region.items():
+            for other_qudit_index, other_cycle_intervals in region.items():
+                if cycle_intervals.overlaps(other_cycle_intervals):
                     continue
                 involved_qudits = {qudit_index}
-                min_index = min(qudit_bounds.upper, other_qudit_bounds.upper)
-                max_index = max(qudit_bounds.lower, other_qudit_bounds.lower)
+                min_index = min(
+                    cycle_intervals.upper,
+                    other_cycle_intervals.upper,
+                )
+                max_index = max(
+                    cycle_intervals.lower,
+                    other_cycle_intervals.lower,
+                )
                 for cycle_index in range(min_index + 1, max_index):
                     try:
                         ops = self[cycle_index, involved_qudits]
@@ -1373,6 +1379,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         shadow_region = CircuitRegion({
             qudit_index: (shadow_start, shadow_map[qudit_index])
             for qudit_index in shadow_qudits
+            if shadow_start <= shadow_map[qudit_index]
         })
         return region, net_new_cycles, shadow_region
 

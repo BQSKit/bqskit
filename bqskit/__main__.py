@@ -1,25 +1,49 @@
 from __future__ import annotations
 
-import logging
+import argparse
+from array import array
+from ipaddress import ip_address
+from multiprocessing.connection import Client
+from multiprocessing.connection import Listener
 
-from scipy.stats import unitary_group
+description = 'Berkeley Quantum Synthesis Toolkit CLI'
+parser = argparse.ArgumentParser(description=description)
 
-from bqskit import Circuit
-from bqskit import CompilationTask
-from bqskit import Compiler
+parser.add_argument(
+    '--ip',
+    action='store',
+    type=ip_address,
+    help='IP Address of main node.',
+    default=ip_address('0.0.0.0'),
+)
 
-logger = logging.getLogger('bqskit')
-logger.setLevel(logging.INFO)
+parser.add_argument(
+    '--port',
+    action='store',
+    type=int,
+    help='The port the main node runs on.',
+    default=35536,
+)
 
-# Simple Test
-compiler = Compiler()
-task1 = CompilationTask.synthesis(unitary_group.rvs(8), method='qfast')
-compiler.submit(task1)
-print(compiler.status(task1))
-print(compiler.result(task1))
+args = parser.parse_args()
+address = (str(args.ip), args.port)
 
-task2 = CompilationTask(Circuit(2), [])
-print(compiler.compile(task2))
-del compiler
+if str(args.ip) == '0.0.0.0':
+    with Listener(address, authkey=b'secret password') as listener:
+        with listener.accept() as conn:
+            print('connection accepted from', listener.last_accepted)
 
-# Compiler().compile(task.qfast_synthesis(utry)).circuit.to_file("qasm")
+            conn.send([2.25, None, 'junk', float])
+
+            conn.send_bytes(b'hello')
+
+            conn.send_bytes(array('i', [42, 1729]))
+else:
+    with Client(address, authkey=b'secret password') as conn:
+        print(conn.recv())                  # => [2.25, None, 'junk', float]
+
+        print(conn.recv_bytes())            # => 'hello'
+
+        arr = array('i', [0, 0, 0, 0, 0])
+        print(conn.recv_bytes_into(arr))    # => 8
+        print(arr)                          # => array('i', [42, 1729, 0, 0, 0])

@@ -10,12 +10,14 @@ from hypothesis.strategies import composite
 from hypothesis.strategies import deferred
 from hypothesis.strategies import dictionaries
 from hypothesis.strategies import floats
+from hypothesis.strategies import from_type
 from hypothesis.strategies import integers
 from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import text
 from hypothesis.strategies._internal.core import permutations
+from hypothesis.strategies._internal.strategies import SearchStrategy
 
 import bqskit.ir.gates
 from bqskit.ir import Circuit
@@ -26,6 +28,8 @@ from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.interval import CycleInterval
+from bqskit.ir.region import CircuitRegion
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence_of_int
@@ -218,3 +222,46 @@ def circuits(
         circuit.append_gate(gate, gate_location, gate_params)
 
     return circuit
+
+
+@composite
+def cycle_intervals(draw, max_max_cycle: int = 1000):
+    lower = draw(integers(0, 1000))
+    upper = draw(integers(lower, 1000))
+    return CycleInterval(lower, upper)
+
+
+@composite
+def circuit_regions(draw, max_max_cycle: int = 1000):
+    region = draw(dictionaries(integers(0), cycle_intervals(max_max_cycle)))
+    return CircuitRegion(region)
+
+
+def everything_except(
+    excluded_types: type | tuple[type, ...],
+) -> SearchStrategy:
+    """
+    Hypothesis strategy to generate inputs of types not in `excluded_types`.
+
+    References:
+        https://hypothesis.readthedocs.io/en/latest/data.html
+    """
+    if not isinstance(excluded_types, tuple):
+        excluded_types = tuple([excluded_types])
+
+    checked_types = []
+    for excluded_type in excluded_types:
+        try:
+            isinstance(0, excluded_type)
+            checked_types.append(excluded_type)
+        except TypeError:
+            continue
+
+    if len(checked_types) == 0:
+        return from_type(type).flatmap(from_type)
+
+    return (
+        from_type(type)
+        .flatmap(from_type)
+        .filter(lambda x: not isinstance(x, tuple(checked_types)))
+    )

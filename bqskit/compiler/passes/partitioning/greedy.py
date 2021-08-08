@@ -8,8 +8,8 @@ from typing import Any
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.interval import CycleInterval
 from bqskit.ir.region import CircuitRegion
-from bqskit.ir.region import QuditBounds
 from bqskit.utils.typing import is_integer
 
 _logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
         # For each gate, calculate the best region surrounding it
         total_num_gates = 0
         regions: list[CircuitRegion] = []
-        all_bounds: list[list[QuditBounds]] = [
+        all_bounds: list[list[CycleInterval]] = [
             [] for q in range(circuit.get_size())
         ]
         potential_regions = {}
@@ -150,6 +150,9 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                             bounds_list[index_of_first_larger - 1][1] + 1,
                             bounds_list[index_of_first_larger - 1][1] - 1,
                         )
+
+                    if bounding_region[qudit][0] > bounding_region[qudit][1]:
+                        bounding_region.pop(qudit)
 
                 bounding_region = CircuitRegion(bounding_region)
 

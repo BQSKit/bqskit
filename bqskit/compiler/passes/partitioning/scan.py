@@ -216,12 +216,10 @@ class ScanPartitioner(BasePass):
                     best_region = CircuitRegion({
                         qudit: (
                             divider[qudit],
-                            # Might have errors if below is removed
                             stopped_cycles[qudit] - 1,
                         )
                         for qudit in qudit_group
-                        # This statement
-                        # if stopped_cycles[qudit] - 1 >= divider[qudit]
+                        if stopped_cycles[qudit] - 1 >= divider[qudit]
                     })
 
             if best_score is None or best_region is None:

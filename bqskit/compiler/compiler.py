@@ -38,6 +38,18 @@ class Compiler:
             >>> print(compiler.status(task))
             TaskStatus.RUNNING
         """
+        # Create WorkQueue Thread
+        # Maintains lists of tasks
+        # Creates executors and lets them run
+        # Create Local Worker Process
+        # Worker connects to Compiler
+        # waits for work
+        # spawns work in new thread
+        # goes back to waiting for work
+        # Give Local Worker to WorkQueue
+        # Create Listener Thread
+        # accept connections
+        # send to workqueue
 
         self.conn, backend_conn = Pipe()
         self.process = Process(target=WorkQueue.run, args=(backend_conn,))
