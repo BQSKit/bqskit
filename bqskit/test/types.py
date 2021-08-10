@@ -31,15 +31,15 @@ from hypothesis.strategies._internal.core import dictionaries
 from hypothesis.strategies._internal.core import iterables
 from hypothesis.strategies._internal.core import lists
 from hypothesis.strategies._internal.core import sets
-from numpy.lib.function_base import iterable
 
 from bqskit.test.strategy import cycle_intervals
 from bqskit.test.strategy import everything_except
-from bqskit.utils.typing import is_integer
 
 
-def powerset(iterable):
-    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+def powerset(iterable: Iterable[Any]) -> Iterable[Any]:
+    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    https://stackoverflow.com/questions/18035595/powersets-in-python-using-
+    itertools."""
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)))
 
@@ -68,7 +68,7 @@ def split_generic_arguments(args: str) -> list[str]:
 
 
 def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
-    strategies = []
+    strategies: list[SearchStrategy[Any]] = []
     for type_str in annotation.split('|'):
         type_str = type_str.strip()
 
@@ -146,17 +146,17 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
 
 def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
-    strategies = []
-    types_to_avoid = set()
-    tuple_valids = {}
-    tuple_invalids = {}
-    dict_key_valids = set()
-    dict_key_invalids = set()
-    dict_val_valids = set()
-    dict_val_invalids = set()
-    list_invalids = set()
-    set_invalids = set()
-    iterable_invalids = set()
+    strategies: list[SearchStrategy[Any]] = []
+    types_to_avoid: set[type] = set()
+    tuple_valids: dict[int, set[SearchStrategy[Any]]] = {}
+    tuple_invalids: dict[int, set[SearchStrategy[Any]]] = {}
+    dict_key_valids: set[SearchStrategy[Any]] = set()
+    dict_key_invalids: set[SearchStrategy[Any]] = set()
+    dict_val_valids: set[SearchStrategy[Any]] = set()
+    dict_val_invalids: set[SearchStrategy[Any]] = set()
+    list_invalids: set[SearchStrategy[Any]] = set()
+    set_invalids: set[SearchStrategy[Any]] = set()
+    iterable_invalids: set[SearchStrategy[Any]] = set()
     for type_str in annotation.split('|'):
         type_str = type_str.strip()
 
@@ -336,7 +336,9 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
     return one_of(strategies)
 
 
-def invalid_type_test(func_to_test: Callable) -> Callable:
+def invalid_type_test(
+        func_to_test: Callable[..., Any],
+) -> Callable[..., Callable[..., None]]:
     """
     Decorator to generate invalid type tests.
 
@@ -360,7 +362,7 @@ def invalid_type_test(func_to_test: Callable) -> Callable:
     valids = []
     invalids = []
     for id, param in inspect.signature(func_to_test).parameters.items():
-        if param.annotation == inspect._empty:
+        if param.annotation == inspect._empty:  # type: ignore
             raise ValueError(
                 'Need type annotation to generate invalid type tests.',
             )
@@ -378,11 +380,11 @@ def invalid_type_test(func_to_test: Callable) -> Callable:
                 strategy_builder.append(invalids[i])
         strategies.append(tuples(*strategy_builder))
 
-    def inner(f: Callable) -> Callable:
+    def inner(f: Callable[..., Any]) -> Callable[..., None]:
         if 'self' in inspect.signature(f).parameters:
             @pytest.mark.parametrize('strategy', strategies)
             @given(data=data())
-            def invalid_type_test(self, strategy, data):
+            def invalid_type_test(self: Any, strategy: Any, data: Any) -> None:
                 args = data.draw(strategy)
                 with pytest.raises(TypeError):
                     func_to_test(*args)
@@ -391,7 +393,7 @@ def invalid_type_test(func_to_test: Callable) -> Callable:
         else:
             @pytest.mark.parametrize('strategy', strategies)
             @given(data=data())
-            def invalid_type_test(strategy, data):
+            def invalid_type_test(strategy: Any, data: Any) -> None:
                 args = data.draw(strategy)
                 with pytest.raises(TypeError):
                     func_to_test(*args)
@@ -401,7 +403,9 @@ def invalid_type_test(func_to_test: Callable) -> Callable:
     return inner
 
 
-def valid_type_test(func_to_test: Callable) -> Callable:
+def valid_type_test(
+        func_to_test: Callable[..., Any],
+) -> Callable[..., Callable[..., None]]:
     """
     Decorator to generate valid type tests.
 
@@ -424,7 +428,7 @@ def valid_type_test(func_to_test: Callable) -> Callable:
     """
     strategies = []
     for id, param in inspect.signature(func_to_test).parameters.items():
-        if param.annotation == inspect._empty:
+        if param.annotation == inspect._empty:  # type: ignore
             raise ValueError(
                 'Need type annotation to generate invalid type tests.',
             )
@@ -432,10 +436,10 @@ def valid_type_test(func_to_test: Callable) -> Callable:
         strategies.append(type_annotation_to_valid_strategy(param.annotation))
     strategy = tuples(*strategies)
 
-    def inner(f: Callable) -> Callable:
+    def inner(f: Callable[..., Any]) -> Callable[..., None]:
         if 'self' in inspect.signature(f).parameters:
             @given(data=strategy)
-            def valid_type_test(self, data):
+            def valid_type_test(self: Any, data: Any) -> None:
                 try:
                     func_to_test(*data)
                 except TypeError:
@@ -446,7 +450,7 @@ def valid_type_test(func_to_test: Callable) -> Callable:
             return valid_type_test
         else:
             @given(data=strategy)
-            def valid_type_test(data):
+            def valid_type_test(data: Any) -> None:
                 try:
                     func_to_test(*data)
                 except TypeError:

@@ -1,8 +1,8 @@
-# type: ignore
 """This module implements hypothesis strategies for BQSKit."""
 from __future__ import annotations
 
 import inspect
+from typing import Any
 from typing import Sequence
 
 from hypothesis.control import assume
@@ -21,6 +21,7 @@ from hypothesis.strategies._internal.strategies import SearchStrategy
 
 import bqskit.ir.gates
 from bqskit.ir import Circuit
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from bqskit.ir.gates.composed.tagged import TaggedGate
@@ -51,33 +52,48 @@ simple_gates = sampled_from(gate_instances)
 
 
 @composite
-def unitaries(draw, size: int, radixes: Sequence[int] = []):
-    """Hypothesis strategy for generating `UnitaryMatrix`s."""
+def unitaries(
+    draw: Any,
+    size: int,
+    radixes: Sequence[int] = [],
+) -> UnitaryMatrix:
+    """Hypothesis strategy for generating `UnitaryMatrix`'s."""
     return UnitaryMatrix.random(size, radixes)
 
 
 @composite
-def identity_gates(draw, size: int, radixes: Sequence[int] = []):
-    """Hypothesis strategy for generating `IdentityGate`s."""
+def identity_gates(
+    draw: Any,
+    size: int,
+    radixes: Sequence[int] = [],
+) -> IdentityGate:
+    """Hypothesis strategy for generating `IdentityGate`'s."""
     return IdentityGate(size, radixes)
 
 
 @composite
-def constant_unitary_gates(draw, radixes: Sequence[int]):
-    """Hypothesis strategy for generating `ConstantUnitaryGate`s."""
+def constant_unitary_gates(
+    draw: Any,
+    radixes: Sequence[int],
+) -> ConstantUnitaryGate:
+    """Hypothesis strategy for generating `ConstantUnitaryGate`'s."""
     utry = draw(unitaries(len(radixes), radixes))
     return ConstantUnitaryGate(utry, radixes)
 
 
 @composite
-def pauli_gates(draw, size: int):
-    """Hypothesis strategy for generating `PauliGate`s."""
+def pauli_gates(draw: Any, size: int) -> PauliGate:
+    """Hypothesis strategy for generating `PauliGate`'s."""
     return PauliGate(size)
 
 
 @composite
-def variable_unitary_gates(draw, size: int, radixes: Sequence[int] = []):
-    """Hypothesis strategy for generating `VariableUnitaryGate`s."""
+def variable_unitary_gates(
+    draw: Any,
+    size: int,
+    radixes: Sequence[int] = [],
+) -> VariableUnitaryGate:
+    """Hypothesis strategy for generating `VariableUnitaryGate`'s."""
     return VariableUnitaryGate(size, radixes)
 
 
@@ -86,21 +102,21 @@ def variable_unitary_gates(draw, size: int, radixes: Sequence[int] = []):
 
 @composite
 def dagger_gates(
-    draw,
+    draw: Any,
     radixes: Sequence[int] | int | None = None,
     constant: bool | None = None,
-):
-    """Hypothesis strategy for generating `DaggerGate`s."""
+) -> DaggerGate:
+    """Hypothesis strategy for generating `DaggerGate`'s."""
     gate = draw(deferred(lambda: gates(radixes, constant)))
     return DaggerGate(gate)
 
 
 @composite
 def frozen_gates(
-    draw,
+    draw: Any,
     radixes: Sequence[int] | int | None = None,
-):
-    """Hypothesis strategy for generating `FrozenParameterGate`s."""
+) -> FrozenParameterGate:
+    """Hypothesis strategy for generating `FrozenParameterGate`'s."""
     gate = draw(deferred(lambda: gates(radixes, False)))
     max_idx = gate.get_num_params()
     indices = integers(0, max_idx - 1)
@@ -111,11 +127,11 @@ def frozen_gates(
 
 @composite
 def tagged_gates(
-    draw,
+    draw: Any,
     radixes: Sequence[int] | int | None = None,
     constant: bool | None = None,
-):
-    """Hypothesis strategy for generating `TaggedGate`s."""
+) -> TaggedGate:
+    """Hypothesis strategy for generating `TaggedGate`'s."""
     gate = draw(deferred(lambda: gates(radixes, constant)))
     tag = draw(text())
     return TaggedGate(gate, tag)
@@ -126,10 +142,10 @@ def tagged_gates(
 
 @composite
 def gates(
-    draw,
+    draw: Any,
     radixes: Sequence[int] | int | None = None,
     constant: bool | None = None,
-):
+) -> Gate:
     """Hypothesis strategy for generating gates."""
     if radixes is None:
         radixes = 2
@@ -169,12 +185,12 @@ def gates(
 
 @composite
 def circuits(
-    draw,
+    draw: Any,
     radixes: Sequence[int] | int | None = None,
     max_gates: int = 10,
     exact_num_gates: bool = False,
     constant: bool = False,
-):
+) -> Circuit:
     """Hypothesis strategy for generating circuits."""
 
     if not isinstance(max_gates, int):
@@ -225,21 +241,23 @@ def circuits(
 
 
 @composite
-def cycle_intervals(draw, max_max_cycle: int = 1000):
+def cycle_intervals(draw: Any, max_max_cycle: int = 1000) -> CycleInterval:
+    """Hypothesis strategy for generating `CycleInterval`'s."""
     lower = draw(integers(0, 1000))
     upper = draw(integers(lower, 1000))
     return CycleInterval(lower, upper)
 
 
 @composite
-def circuit_regions(draw, max_max_cycle: int = 1000):
+def circuit_regions(draw: Any, max_max_cycle: int = 1000) -> CircuitRegion:
+    """Hypothesis strategy for generating `CircuitRegion`'s."""
     region = draw(dictionaries(integers(0), cycle_intervals(max_max_cycle)))
     return CircuitRegion(region)
 
 
 def everything_except(
     excluded_types: type | tuple[type, ...],
-) -> SearchStrategy:
+) -> SearchStrategy[Any]:
     """
     Hypothesis strategy to generate inputs of types not in `excluded_types`.
 
@@ -263,5 +281,7 @@ def everything_except(
     return (
         from_type(type)
         .flatmap(from_type)
-        .filter(lambda x: not isinstance(x, tuple(checked_types)))
+        .filter(
+            lambda x: not isinstance(x, tuple(checked_types)),  # type: ignore
+        )
     )

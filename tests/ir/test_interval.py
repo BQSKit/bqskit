@@ -5,12 +5,10 @@ from typing import Any
 
 import pytest
 from hypothesis import given
-from hypothesis.core import example
 from hypothesis.strategies import integers
 from hypothesis.strategies import tuples
 
 from bqskit.ir.interval import CycleInterval
-from bqskit.ir.interval import IntervalLike
 from bqskit.test.strategy import cycle_intervals
 from bqskit.test.strategy import everything_except
 from bqskit.test.types import invalid_type_test
@@ -81,10 +79,10 @@ def test_upper(interval: CycleInterval) -> None:
 
 @given(cycle_intervals())
 def test_iter(interval: CycleInterval) -> None:
-    assert is_iterable(interval)
-    assert all(is_integer(idx) for idx in interval)
     assert min(list(interval)) == interval.lower
     assert max(list(interval)) == interval.upper
+    assert is_iterable(interval)
+    assert all(is_integer(idx) for idx in interval)
 
 
 @given(cycle_intervals())
@@ -115,11 +113,11 @@ def test_contains(interval: CycleInterval, other_type: Any) -> None:
 class TestCycleIntervalOverlaps:
 
     @valid_type_test(CycleInterval(0, 0).overlaps)
-    def test_valid_type(self):
+    def test_valid_type(self) -> None:
         pass
 
     @invalid_type_test(CycleInterval(0, 0).overlaps)
-    def test_invalid_type(self):
+    def test_invalid_type(self) -> None:
         pass
 
     @given(cycle_intervals(), cycle_intervals())
@@ -136,11 +134,11 @@ class TestCycleIntervalOverlaps:
 class TestCycleIntervalIntersection:
 
     @valid_type_test(CycleInterval(0, 0).intersection)
-    def test_valid_type(self):
+    def test_valid_type(self) -> None:
         pass
 
     @invalid_type_test(CycleInterval(0, 0).intersection)
-    def test_invalid_type(self):
+    def test_invalid_type(self) -> None:
         pass
 
     @given(
@@ -171,11 +169,11 @@ class TestCycleIntervalIntersection:
 class TestCycleIntervalUnion:
 
     @valid_type_test(CycleInterval(0, 0).union)
-    def test_valid_type(self):
+    def test_valid_type(self) -> None:
         pass
 
     @invalid_type_test(CycleInterval(0, 0).union)
-    def test_invalid_type(self):
+    def test_invalid_type(self) -> None:
         pass
 
     @given(
@@ -226,117 +224,6 @@ class TestCycleIntervalLt:
                 assert all(x < interval2.lower for x in interval1)
             else:
                 assert all(x < interval1.lower for x in interval2)
-
-# class TestCycleIntervalLe:
-
-#     @given(cycle_intervals(), type_annotation_to_invalid_strategy("Tuple[int, int]"))
-#     @example(CycleInterval(0, 0), tuple())
-#     def test_invalid(self, interval: CycleInterval, other: Any) -> None:
-#         with pytest.raises(TypeError):
-#             interval <= other
-#         with pytest.raises(TypeError):
-#             other >= interval
-
-#     @given(cycle_intervals(), cycle_intervals())
-#     def test_valid(self, interval1: CycleInterval, interval2: CycleInterval) -> None:
-#         if interval1.overlaps(interval2):
-#             assert (
-#                 interval1 == interval2
-#                 or not(interval1 <= interval2 or interval2 <= interval1)
-#             )
-#         else:
-#             assert interval1 < interval2 or interval2 < interval1
-#             if interval1 < interval2:
-#                 assert all(x < interval2.lower for x in interval1)
-#             else:
-#                 assert all(x < interval1.lower for x in interval2)
-
-
-# class TestCycleIntervalGt:
-
-#     @given(cycle_intervals(), type_annotation_to_invalid_strategy("Tuple[int, int]"))
-#     @example(CycleInterval(0, 0), tuple())
-#     def test_invalid(self, interval: CycleInterval, other: Any) -> None:
-#         with pytest.raises(TypeError):
-#             interval > other
-#         with pytest.raises(TypeError):
-#             other < interval
-
-#     @given(cycle_intervals(), cycle_intervals())
-#     def test_valid(self, interval1: CycleInterval, interval2: CycleInterval) -> None:
-#         if interval1.overlaps(interval2):
-#             assert not(interval1 > interval2 or interval2 > interval1)
-#         else:
-#             assert interval1 > interval2 or interval2 > interval1
-#             if interval1 > interval2:
-#                 assert all(x > interval2.upper for x in interval1)
-#             else:
-#                 assert all(x > interval1.upper for x in interval2)
-
-# class TestCycleIntervalGe:
-
-#     @given(cycle_intervals(), type_annotation_to_invalid_strategy("Tuple[int, int]"))
-#     @example(CycleInterval(0, 0), tuple())
-#     def test_invalid(self, interval: CycleInterval, other: Any) -> None:
-#         with pytest.raises(TypeError):
-#             interval >= other
-#         with pytest.raises(TypeError):
-#             other <= interval
-
-#     @given(cycle_intervals(), cycle_intervals())
-#     def test_valid(self, interval1: CycleInterval, interval2: CycleInterval) -> None:
-#         if interval1.overlaps(interval2):
-#             assert (
-#                 interval1 == interval2
-#                 or not(interval1 >= interval2 or interval2 >= interval1)
-#             )
-#         else:
-#             assert interval1 > interval2 or interval2 > interval1
-#             if interval1 > interval2:
-#                 assert all(x > interval2.upper for x in interval1)
-#             else:
-#                 assert all(x > interval1.upper for x in interval2)
-
-# class TestCycleIntervalEq:
-
-#     @given(cycle_intervals(), type_annotation_to_invalid_strategy("Tuple[int, int] | None"))
-#     @example(CycleInterval(0, 0), tuple())
-#     def test_invalid(self, interval: CycleInterval, other: Any) -> None:
-#         with pytest.raises(TypeError):
-#             interval == other
-#         with pytest.raises(TypeError):
-#             other == interval
-
-#     @given(cycle_intervals(), cycle_intervals())
-#     def test_valid(self, interval1: CycleInterval, interval2: CycleInterval) -> None:
-#         assert interval1 == interval1
-#         assert interval2 == interval2
-#         assert interval1 == interval2 or interval1 != interval2
-#         if interval1 == interval2:
-#             assert len(interval1) == len(interval2)
-
-
-# class TestCycleIntervalNe:
-
-#     @given(cycle_intervals(), type_annotation_to_invalid_strategy("Tuple[int, int] | None"))
-#     @example(CycleInterval(0, 0), tuple())
-#     def test_invalid(self, interval: CycleInterval, other: Any) -> None:
-#         with pytest.raises(TypeError):
-#             interval != other
-#         with pytest.raises(TypeError):
-#             other != interval
-
-#     @pytest.mark.skip
-#     @given(cycle_intervals(), cycle_intervals())
-#     def test_valid(self, interval1: CycleInterval, interval2: CycleInterval) -> None:
-#         assert interval1 == interval1
-#         assert interval2 == interval2
-#         assert interval1 == interval2 or interval1 != interval2
-#         if interval1 != interval2:
-#             assert (
-#                 len(interval1) != len(interval2)
-#                 or any(x not in interval1 for x in interval2)
-#             )
 
 
 class TestCycleIntervalIsBounds:

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from typing import Iterable
+from typing import Iterator
 from typing import Tuple
 from typing import Union
 
@@ -59,7 +59,7 @@ class CycleInterval(Tuple[int, int]):
                 'Expected positive integers, got {lower} and {upper}.',
             )
 
-        return super().__new__(cls, (lower, upper))
+        return super().__new__(cls, (lower, upper))  # type: ignore
 
     @property
     def lower(self) -> int:
@@ -80,7 +80,7 @@ class CycleInterval(Tuple[int, int]):
 
         return self.lower <= cycle_index <= self.upper
 
-    def __iter__(self) -> Iterable[int]:
+    def __iter__(self) -> Iterator[int]:
         return range(self.lower, self.upper + 1).__iter__()
 
     def __len__(self) -> int:
