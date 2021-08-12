@@ -24,58 +24,78 @@ class CircuitRegion(Mapping[int, CycleInterval]):
     The CircuitRegion class.
 
     A CircuitRegion is an contiguous area in a circuit. It is represented as a
-    map from qudit indices to lower and upper bounds given by cycle indices.
+    map from qudit indices to lower and upper intervals given by cycle indices.
     """
 
-    def __init__(self, bounds: Mapping[int, IntervalLike]) -> None:
-        if not is_mapping(bounds):
+    def __init__(self, intervals: Mapping[int, IntervalLike]) -> None:
+        if not is_mapping(intervals):
             raise TypeError(
-                f'Expected mapping from int to IntervalLike, got {bounds}.',
+                f'Expected mapping from int to IntervalLike, got {intervals}.',
             )
 
-        for qudit, bound in bounds.items():
+        for qudit, interval in intervals.items():
             if not is_integer(qudit):
                 raise TypeError(f'Expected integer keys, got {qudit}.')
 
-            if not CycleInterval.is_interval(bound):
-                raise TypeError(f'Expected valid CycleInterval, got {bound}.')
+            if not CycleInterval.is_interval(interval):
+                raise TypeError(
+                    f'Expected valid CycleInterval, got {interval}.',
+                )
 
-        self._bounds = {
-            qudit: CycleInterval(bound)
-            for qudit, bound in bounds.items()
+        self._intervals = {
+            qudit: CycleInterval(interval)
+            for qudit, interval in intervals.items()
         }
 
     def __getitem__(self, key: int) -> CycleInterval:
-        return self._bounds[key]
+        return self._intervals[key]
 
     def __iter__(self) -> Iterator[int]:
-        return iter(self._bounds)
+        return iter(self._intervals)
 
     def __len__(self) -> int:
-        return len(self._bounds)
+        return len(self._intervals)
 
     @property
     def min_cycle(self) -> int:
-        return min(bound[0] for bound in self.values())
+        if self.empty:
+            raise ValueError('Empty region cannot have minimum cycle.')
+
+        return min(interval.lower for interval in self.values())
 
     @property
     def max_cycle(self) -> int:
-        return max(bound[1] for bound in self.values())
+        if self.empty:
+            raise ValueError('Empty region cannot have maximum cycle.')
+
+        return max(interval.upper for interval in self.values())
 
     @property
     def max_min_cycle(self) -> int:
-        return max(bound[0] for bound in self.values())
+        if self.empty:
+            raise ValueError('Empty region cannot have minimum cycle.')
+
+        return max(interval.lower for interval in self.values())
 
     @property
     def min_max_cycle(self) -> int:
-        return min(bound[1] for bound in self.values())
+        if self.empty:
+            raise ValueError('Empty region cannot have maximum cycle.')
+
+        return min(interval.upper for interval in self.values())
 
     @property
     def min_qudit(self) -> int:
+        if self.empty:
+            raise ValueError('Empty region cannot have minimum qudit.')
+
         return min(self.keys())
 
     @property
     def max_qudit(self) -> int:
+        if self.empty:
+            raise ValueError('Empty region cannot have maximum qudit.')
+
         return max(self.keys())
 
     @property
@@ -87,9 +107,24 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         """Return the points described by this region."""
         return [
             CircuitPoint(cycle_index, qudit_index)
-            for qudit_index, bounds in self.items()
-            for cycle_index in bounds.indices
+            for qudit_index, intervals in self.items()
+            for cycle_index in intervals.indices
         ]
+
+    @property
+    def volume(self) -> int:
+        return sum(len(interval) for interval in self.values())
+
+    @property
+    def width(self) -> int:
+        if self.empty:
+            return 0
+
+        return self.max_cycle - self.min_cycle + 1
+
+    @property
+    def empty(self) -> bool:
+        return len(self) == 0
 
     def shift_left(self, amount_to_shift: int) -> CircuitRegion:
         """
@@ -103,6 +138,14 @@ class CircuitRegion(Mapping[int, CycleInterval]):
             ValueError: If the region would be shifted below zero as a
                 result of performing this operation.
         """
+        if not is_integer(amount_to_shift):
+            raise TypeError(
+                f'Expected integer for shift amount, got {amount_to_shift}.',
+            )
+
+        if self.empty:
+            return CircuitRegion(self._intervals)
+
         if self.min_cycle - amount_to_shift < 0:
             raise ValueError(
                 f'Cannot shift region to the left by {amount_to_shift}.',
@@ -111,10 +154,10 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         return CircuitRegion({
             qudit_index:
             CycleInterval(
-                bound[0] - amount_to_shift,
-                bound[1] - amount_to_shift,
+                interval[0] - amount_to_shift,
+                interval[1] - amount_to_shift,
             )
-            for qudit_index, bound in self._bounds.items()
+            for qudit_index, interval in self._intervals.items()
         })
 
     def shift_right(self, amount_to_shift: int) -> CircuitRegion:
@@ -125,13 +168,24 @@ class CircuitRegion(Mapping[int, CycleInterval]):
             amount_to_shift (int): Add `amount_to_shift` to all
                 cycle indices.
         """
+        if not is_integer(amount_to_shift):
+            raise TypeError(
+                f'Expected integer for shift amount, got {amount_to_shift}.',
+            )
+
+        if self.empty:
+            return CircuitRegion(self._intervals)
+
+        if amount_to_shift < 0:
+            return self.shift_left(-amount_to_shift)
+
         return CircuitRegion({
             qudit_index:
             CycleInterval(
-                bound[0] + amount_to_shift,
-                bound[1] + amount_to_shift,
+                interval[0] + amount_to_shift,
+                interval[1] + amount_to_shift,
             )
-            for qudit_index, bound in self._bounds.items()
+            for qudit_index, interval in self._intervals.items()
         })
 
     def overlaps(self, other: CircuitPointLike | CircuitRegionLike) -> bool:
@@ -143,11 +197,14 @@ class CircuitRegion(Mapping[int, CycleInterval]):
             if other.qudit not in self:
                 return False
 
-            bounds = self[other.qudit]
-            return bounds.lower <= other.cycle <= bounds.upper
+            intervals = self[other.qudit]
+            return intervals.lower <= other.cycle <= intervals.upper
 
         if CircuitRegion.is_region(other):
             other = CircuitRegion(other)
+
+            if other.empty or self.empty:
+                return False
 
             if self.min_cycle > other.max_cycle:
                 return False
@@ -176,22 +233,29 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     def __contains__(self, other: object) -> bool:
         if is_integer(other):
-            return other in self._bounds.keys()
+            return other in self._intervals.keys()
 
         if CircuitPoint.is_point(other):
             return other[1] in self.keys() and other[0] in self[other[1]]
 
         if CircuitRegion.is_region(other):
             other = CircuitRegion(other)
+
+            if other.empty:
+                return True
+
+            if self.empty:
+                return False
+
             return (
                 all(qudit in self.keys() for qudit in other.keys())
                 and all(
                     self[qudit].lower <= other[qudit][0] <= self[qudit].upper
-                    for qudit in self.keys()
+                    for qudit in other.keys()
                 )
                 and all(
                     self[qudit].lower <= other[qudit][1] <= self[qudit].upper
-                    for qudit in self.keys()
+                    for qudit in other.keys()
                 )
             )
 
@@ -199,13 +263,16 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     def transpose(self) -> dict[int, list[int]]:
         """Flip region to map cycle indices to qudit indices."""
+        if self.empty:
+            return {}
+
         qudit_cycles: dict[int, list[int]] = {
             i: []
             for i in range(self.min_cycle, self.max_cycle + 1)
         }
 
-        for qudit_index, bounds in sorted(self.items()):
-            for cycle_index in range(bounds.lower, bounds.upper + 1):
+        for qudit_index, intervals in sorted(self.items()):
+            for cycle_index in range(intervals.lower, intervals.upper + 1):
                 qudit_cycles[cycle_index].append(qudit_index)
 
         return {k: v for k, v in qudit_cycles.items() if len(v) > 0}
@@ -251,7 +318,7 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
         if len(self.location.intersection(other.location)) != 0:
             for qudit in self.location.intersection(other.location):
-                if self[qudit] < other[qudit]:
+                if other[qudit] < self[qudit]:
                     return True
 
         return False
@@ -267,10 +334,10 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         return tuple(sorted(self.items())).__hash__()
 
     def __str__(self) -> str:
-        return str(self._bounds)
+        return str(self._intervals)
 
     def __repr__(self) -> str:
-        return repr(self._bounds)
+        return repr(self._intervals)
 
     def __lt__(self, other: object) -> bool:
         if CircuitPoint.is_point(other):
@@ -295,18 +362,18 @@ class CircuitRegion(Mapping[int, CycleInterval]):
                 assert lt is not None
                 return lt
 
-            lower_bounds = tuple(sorted({x.lower for x in self.values()}))
-            other_lower_bounds = tuple(
+            lower_intervals = tuple(sorted({x.lower for x in self.values()}))
+            other_lower_intervals = tuple(
                 sorted({x.lower for x in other.values()}),
             )
-            upper_bounds = tuple(
+            upper_intervals = tuple(
                 reversed(sorted({x.upper for x in self.values()})),
             )
-            other_upper_bounds = tuple(
+            other_upper_intervals = tuple(
                 reversed(sorted({x.upper for x in other.values()})),
             )
-            return (lower_bounds, upper_bounds) < (
-                other_lower_bounds, other_upper_bounds,
+            return (lower_intervals, upper_intervals) < (
+                other_lower_intervals, other_upper_intervals,
             )
 
         return NotImplemented

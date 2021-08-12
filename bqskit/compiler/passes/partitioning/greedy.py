@@ -209,7 +209,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                 if i == j:
                     continue
                 if region1.depends_on(region2):
-                    in_adj_list[j].append(i)  # i points to j
+                    in_adj_list[i].append(j)  # j points to i
 
         already_selected: list[int] = []
         while len(already_selected) != len(regions):

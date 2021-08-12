@@ -9,8 +9,8 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import tuples
 
 from bqskit.ir.interval import CycleInterval
-from bqskit.test.strategy import cycle_intervals
-from bqskit.test.strategy import everything_except
+from bqskit.test.strategies import cycle_intervals
+from bqskit.test.strategies import everything_except
 from bqskit.test.types import invalid_type_test
 from bqskit.test.types import type_annotation_to_invalid_strategy
 from bqskit.test.types import valid_type_test
@@ -164,6 +164,9 @@ class TestCycleIntervalIntersection:
         inter = interval[0].intersection(interval[1])
         assert isinstance(inter, CycleInterval)
         assert all(x in interval[0] and x in interval[1] for x in inter)
+        inter = interval[1].intersection(interval[0])
+        assert isinstance(inter, CycleInterval)
+        assert all(x in interval[0] and x in interval[1] for x in inter)
 
 
 class TestCycleIntervalUnion:
@@ -179,7 +182,7 @@ class TestCycleIntervalUnion:
     @given(
         tuples(
             cycle_intervals(), cycle_intervals(),
-        ).filter(lambda x: x[0] < x[1]),
+        ).filter(lambda x: x[0] < x[1] and x[0].upper < x[1].lower - 1),
     )
     def test_union_invalid_value(
         self,
@@ -197,6 +200,9 @@ class TestCycleIntervalUnion:
         interval: tuple[CycleInterval, CycleInterval],
     ) -> None:
         union = interval[0].union(interval[1])
+        assert isinstance(union, CycleInterval)
+        assert all(x in interval[0] or x in interval[1] for x in union)
+        union = interval[1].union(interval[0])
         assert isinstance(union, CycleInterval)
         assert all(x in interval[0] or x in interval[1] for x in union)
 

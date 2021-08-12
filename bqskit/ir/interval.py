@@ -117,7 +117,10 @@ class CycleInterval(Tuple[int, int]):
 
         other = CycleInterval(other)
 
-        if not self.overlaps(other):
+        if not self.overlaps(other) and (
+            self.upper + 1 != other[0]
+            and self.lower - 1 != other[1]
+        ):
             raise ValueError('Union would lead to invalid interval.')
 
         return CycleInterval(

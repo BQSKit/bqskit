@@ -32,8 +32,10 @@ from hypothesis.strategies._internal.core import iterables
 from hypothesis.strategies._internal.core import lists
 from hypothesis.strategies._internal.core import sets
 
-from bqskit.test.strategy import cycle_intervals
-from bqskit.test.strategy import everything_except
+from bqskit.test.strategies import circuit_points
+from bqskit.test.strategies import circuit_regions
+from bqskit.test.strategies import cycle_intervals
+from bqskit.test.strategies import everything_except
 
 
 def powerset(iterable: Iterable[Any]) -> Iterable[Any]:
@@ -138,6 +140,22 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
         elif type_str.lower().startswith('cycleinterval'):
             strategies.append(cycle_intervals())
+
+        elif type_str.lower().startswith('circuitpointlike'):
+            strat = type_annotation_to_valid_strategy('Tuple[int, int]')
+            strategies.append(strat)
+            strategies.append(circuit_points())
+
+        elif type_str.lower().startswith('circuitpoint'):
+            strategies.append(circuit_points())
+
+        elif type_str.lower().startswith('circuitregionlike'):
+            strat = type_annotation_to_valid_strategy('dict[int, IntervalLike]')
+            strategies.append(strat)
+            strategies.append(circuit_regions())
+
+        elif type_str.lower().startswith('circuitregion'):
+            strategies.append(circuit_regions())
 
         else:
             raise ValueError(f'Cannot generate strategy for type: {type_str}')
@@ -276,6 +294,18 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
             types_to_avoid.add(tuple)
 
         elif type_str.lower().startswith('cycleinterval'):
+            continue
+
+        elif type_str.lower().startswith('circuitpointlike'):
+            types_to_avoid.add(tuple)
+
+        elif type_str.lower().startswith('circuitpoint'):
+            continue
+
+        elif type_str.lower().startswith('circuitregionlike'):
+            types_to_avoid.add(dict)
+
+        elif type_str.lower().startswith('circuitregion'):
             continue
 
         else:

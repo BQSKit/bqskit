@@ -30,6 +30,7 @@ from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.interval import CycleInterval
+from bqskit.ir.point import CircuitPoint
 from bqskit.ir.region import CircuitRegion
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.utils.typing import is_integer
@@ -241,17 +242,51 @@ def circuits(
 
 
 @composite
-def cycle_intervals(draw: Any, max_max_cycle: int = 1000) -> CycleInterval:
+def circuit_points(
+    draw: Any,
+    max_cycle: int = 1000,
+    max_qudit: int = 1000,
+) -> CircuitPoint:
+    """Hypothesis strategy for generating `CircuitPoint`'s."""
+    cycle = draw(integers(0, max_cycle))
+    qudit = draw(integers(0, max_qudit))
+    return CircuitPoint(cycle, qudit)
+
+
+@composite
+def cycle_intervals(
+    draw: Any,
+    max_max_cycle: int = 1000,
+    max_range: int = 100,
+) -> CycleInterval:
     """Hypothesis strategy for generating `CycleInterval`'s."""
-    lower = draw(integers(0, 1000))
-    upper = draw(integers(lower, 1000))
+    lower = draw(integers(0, max_max_cycle))
+    upper = draw(
+        integers(lower, min(max_max_cycle, lower + max_range)),
+    )
     return CycleInterval(lower, upper)
 
 
 @composite
-def circuit_regions(draw: Any, max_max_cycle: int = 1000) -> CircuitRegion:
+def circuit_regions(
+    draw: Any,
+    max_max_cycle: int = 1000,
+    max_qudits: int = 20,
+    max_volume: int = 200,
+    empty: bool | None = None,
+) -> CircuitRegion:
     """Hypothesis strategy for generating `CircuitRegion`'s."""
-    region = draw(dictionaries(integers(0), cycle_intervals(max_max_cycle)))
+    if empty is True:
+        return CircuitRegion({})
+
+    region = draw(
+        dictionaries(
+            integers(0),
+            cycle_intervals(max_max_cycle, max_volume // max_qudits),
+            min_size=0 if empty is None else 1,
+            max_size=max_qudits,
+        ),
+    )
     return CircuitRegion(region)
 
 

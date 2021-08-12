@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from typing import NamedTuple
 from typing import Tuple
 from typing import Union
 
@@ -13,40 +12,61 @@ from bqskit.utils.typing import is_integer
 _logger = logging.getLogger(__name__)
 
 
-class CircuitPoint(NamedTuple):
+class CircuitPoint(Tuple[int, int]):
     """
     The CircuitPoint NamedTuple class.
 
     A CircuitPoint is a 2d-index into the Circuit data structure.
     """
-    cycle: int
-    qudit: int
 
-    # TODO: Maybe add below code,
-    # so we can do CircuitPoint(point) instead of CircuitPoint(*point)
+    def __new__(
+        cls,
+        cycle_or_tuple: int | tuple[int, int],
+        qudit: int | None = None,
+    ) -> CircuitPoint:
+        if qudit is not None and not is_integer(qudit):
+            raise TypeError(
+                f'Expected int or None for qudit, got {type(qudit)}.',
+            )
 
-    # def __new__(
-    #     cls,
-    #     cycle_or_tuple: int | tuple[int, int],
-    #     qudit: int | None = None
-    # ) -> CircuitPoint:
-    #     if isinstance(cycle_or_tuple, tuple):
-    #         if not CircuitPoint.is_point(cycle_or_tuple):
-    #             raise TypeError("Expected two integer arguments.")
+        if isinstance(cycle_or_tuple, tuple):
+            if not CircuitPoint.is_point(cycle_or_tuple):
+                raise TypeError('Expected two integer arguments.')
 
-    #         qudit = cycle_or_tuple[1]
-    #         cycle_or_tuple = cycle_or_tuple[0]
+            if qudit is not None:
+                raise ValueError('Unable to handle extra argument.')
 
-    #     if not is_integer(cycle_or_tuple) or not is_integer(qudit):
-    #         raise TypeError("Expected two integer arguments.")
+            cycle = cycle_or_tuple[0]
+            qudit = cycle_or_tuple[1]
 
-    #     super().__new__(cls, cycle_or_tuple, qudit)
+        elif is_integer(cycle_or_tuple) and is_integer(qudit):
+            cycle = cycle_or_tuple
 
-    # def convert_to_positive(self, size: int, length: int) -> CircuitPoint:
-    #     """Convert the point's indices to positive values."""
-    #     return CircuitPoint(
-    #         cycle if cycle > 0 else
-    #     )
+        elif is_integer(cycle_or_tuple) and qudit is None:
+            raise ValueError('Expected two integer arguments.')
+
+        else:
+            raise TypeError('Expected two integer arguments.')
+
+        # if cycle < 0:
+        #     raise ValueError(
+        #         'Expected cycle to be >= 0, got {cycle}.',
+        #     )
+
+        # if qudit < 0:
+        #     raise ValueError(
+        #         'Expected qudit to be >= 0, got {qudit}.',
+        #     )
+
+        return super().__new__(cls, (cycle, qudit))  # type: ignore
+
+    @property
+    def cycle(self) -> int:
+        return self[0]
+
+    @property
+    def qudit(self) -> int:
+        return self[1]
 
     @staticmethod
     def is_point(point: Any) -> TypeGuard[CircuitPointLike]:
