@@ -9,3 +9,4 @@
 .mypy_cache/
 .DS_Store
 __pycache__
+docs/_build
