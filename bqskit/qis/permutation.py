@@ -6,7 +6,9 @@ column.
 """
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
+from typing import cast
 from typing import Sequence
 
 import numpy as np
@@ -15,20 +17,30 @@ from bqskitrs import calc_permutation_matrix
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_permutation
+_logger = logging.getLogger(__name__)
 
 
 class PermutationMatrix(UnitaryMatrix):
     """The PermutationMatrix class."""
 
-    def __init__(self, perm: UnitaryLike) -> None:
-        """PermutationMatrix Constructor."""
-        np_perm = np.array(perm, dtype=np.complex128)
+    def __new__(
+        cls,
+        input: UnitaryLike,
+        radixes: Sequence[int] = [],
+        check_arguments: bool = True,
+    ) -> PermutationMatrix:
+        """Constructs a PermutationMatrix with the supplied matrix."""
 
-        if not is_permutation(np_perm):
-            raise TypeError('Invalid permutation matrix.')
+        if isinstance(input, PermutationMatrix):
+            return input
 
-        super().__init__(np_perm)
+        obj = super().__new__(cls, input, radixes, check_arguments)
+        obj = cast(PermutationMatrix, obj)
+
+        if check_arguments and not PermutationMatrix.is_permutation(obj):
+            raise TypeError(f'Expected square matrix, got {type(obj)}.')
+
+        return obj
 
     @staticmethod
     @lru_cache(maxsize=None)
@@ -93,3 +105,24 @@ class PermutationMatrix(UnitaryMatrix):
 
         matrix = calc_permutation_matrix(num_qubits, location)
         return PermutationMatrix(matrix)
+
+    @staticmethod
+    def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
+        """Checks if P is a permutation matrix."""
+
+        if not UnitaryMatrix.is_unitary(P, tol):
+            return False
+
+        if not all(s == 1 for s in P.sum(0)):
+            _logger.debug('Not all rows sum to 1.')
+            return False
+
+        if not all(s == 1 for s in P.sum(1)):
+            _logger.debug('Not all columns sum to 1.')
+            return False
+
+        if not all(e == 1 or e == 0 for row in P for e in row):
+            _logger.debug('Not all elements are 0 or 1.')
+            return False
+
+        return True

@@ -220,31 +220,6 @@ def is_square_matrix(M: np.ndarray) -> bool:
     return True
 
 
-def is_unitary(U: np.ndarray, tol: float = 1e-8) -> bool:
-    """Checks if U is a unitary matrix."""
-
-    if not is_square_matrix(U):
-        return False
-
-    X = U @ U.conj().T
-    Y = U.conj().T @ U
-    I = np.identity(X.shape[0])
-
-    if not np.allclose(X, I, rtol=0, atol=tol):
-        if _logger.isEnabledFor(logging.DEBUG):
-            norm = np.linalg.norm(X - I)
-            _logger.debug('Failed unitary condition, ||UU^d - I|| = %e' % norm)
-        return False
-
-    if not np.allclose(Y, I, rtol=0, atol=tol):
-        if _logger.isEnabledFor(logging.DEBUG):
-            norm = np.linalg.norm(Y - I)
-            _logger.debug('Failed unitary condition, ||U^dU - I|| = %e' % norm)
-        return False
-
-    return True
-
-
 def is_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
     """Checks if H is a hermitian matrix."""
 
@@ -276,27 +251,6 @@ def is_skew_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
                 'Failed skew hermitian condition, ||H - H^d|| = %e'
                 % norm,
             )
-        return False
-
-    return True
-
-
-def is_permutation(P: np.ndarray, tol: float = 1e-8) -> bool:
-    """Checks if P is a permutation matrix."""
-
-    if not is_unitary(P, tol):
-        return False
-
-    if not all(s == 1 for s in P.sum(0)):
-        _logger.debug('Not all rows sum to 1.')
-        return False
-
-    if not all(s == 1 for s in P.sum(1)):
-        _logger.debug('Not all columns sum to 1.')
-        return False
-
-    if not all(e == 1 or e == 0 for row in P for e in row):
-        _logger.debug('Not all elements are 0 or 1.')
         return False
 
     return True

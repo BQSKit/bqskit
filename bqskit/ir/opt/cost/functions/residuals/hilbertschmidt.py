@@ -42,4 +42,4 @@ class HilbertSchmidtResidualsGenerator(CostFunctionGenerator):
         target: UnitaryMatrix | StateVector,
     ) -> CostFunction:
         """Generate a CostFunction, see CostFunctionGenerator for more info."""
-        return HilbertSchmidtResiduals(circuit, target.get_numpy())
+        return HilbertSchmidtResiduals(circuit, target)

@@ -7,8 +7,8 @@ import numpy as np
 import scipy as sp
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_hermitian
-from bqskit.utils.typing import is_unitary
 
 
 def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -122,7 +122,7 @@ def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
         H (np.ndarray): e^{iH} = U.
     """
 
-    if not is_unitary(U, tol):  # TODO: Re-evaluate check
+    if not UnitaryMatrix.is_unitary(U, tol):  # TODO: Re-evaluate check
         raise TypeError('Expected U to be unitary, got %s.' % type(U))
 
     T, Z = sp.linalg.schur(U)

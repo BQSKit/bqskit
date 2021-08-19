@@ -124,7 +124,7 @@ class UnitaryBuilder(Unitary):
         left_dim = int(np.prod([self.get_radixes()[x] for x in left_perm]))
 
         utry = utry.get_dagger() if inverse else utry
-        utry_np = utry.get_numpy()
+        utry_np = utry
 
         perm = left_perm + mid_perm + right_perm
         self.tensor = self.tensor.transpose(perm)
@@ -198,7 +198,7 @@ class UnitaryBuilder(Unitary):
         )
 
         utry = utry.get_dagger() if inverse else utry
-        utry_np = utry.get_numpy()
+        utry_np = utry
 
         perm = left_perm + mid_perm + right_perm
         self.tensor = self.tensor.transpose(perm)

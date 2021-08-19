@@ -115,7 +115,7 @@ class Instantiater(abc.ABC):
     ) -> UnitaryMatrix | StateVector:
         """Check `target` to be valid and return it casted."""
         try:
-            typed_target = StateVector(target)  # type: ignore
+            typed_target = StateVector(target)
         except (ValueError, TypeError):
             try:
                 typed_target = UnitaryMatrix(target)  # type: ignore

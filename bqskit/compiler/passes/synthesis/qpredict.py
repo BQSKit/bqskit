@@ -281,7 +281,7 @@ class QPredictDecompositionPass(SynthesisPass):
                 based on remainder analysis.
         """
         _logger.info('Performing remainder analysis.')
-        pauli_coefs = pauli_expansion(unitary_log_no_i(R.get_numpy()))
+        pauli_coefs = pauli_expansion(unitary_log_no_i(R))
 
         locations_by_index: dict[int, set[CircuitLocation]] = {}
         for location_group in locations:

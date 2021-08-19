@@ -5,6 +5,7 @@ This is a concrete unitary matrix that can be operated on.
 """
 from __future__ import annotations
 
+import logging
 from typing import Any
 from typing import Sequence
 from typing import Union
@@ -19,19 +20,21 @@ from bqskit.qis.state.statemap import StateVectorMap
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
-from bqskit.utils.typing import is_unitary
 from bqskit.utils.typing import is_valid_radixes
+_logger = logging.getLogger(__name__)
 
 
-class UnitaryMatrix(Unitary, StateVectorMap):
+class UnitaryMatrix(np.ndarray, Unitary, StateVectorMap):
     """The UnitaryMatrix Class."""
 
-    def __init__(
-        self,
-        utry: UnitaryLike,
+    # num_params = 0
+
+    def __new__(
+        cls,
+        input: UnitaryLike,
         radixes: Sequence[int] = [],
         check_arguments: bool = True,
-    ) -> None:
+    ) -> UnitaryMatrix:
         """
         Constructs a UnitaryMatrix with the supplied unitary matrix.
 
@@ -57,68 +60,107 @@ class UnitaryMatrix(Unitary, StateVectorMap):
             ... )  # Creates a single-qubit Pauli X unitary matrix.
         """
 
-        # Copy Constructor
-        if isinstance(utry, UnitaryMatrix):
-            self.utry = utry.get_numpy()
-            self.dim = utry.get_dim()
-            self.num_params = utry.get_num_params()
-            self.radixes = utry.get_radixes()
-            self.size = utry.get_size()
-            return
+        if isinstance(input, UnitaryMatrix):
+            return input
 
-        np_utry = np.array(utry, dtype=np.complex128)
+        obj = np.asarray(input).view(cls)
 
-        if check_arguments and not is_unitary(np_utry):
-            raise TypeError('Expected unitary matrix.')
+        if check_arguments and not is_square_matrix(obj):
+            raise TypeError(f'Expected square matrix, got {type(obj)}.')
 
-        self.utry = np_utry
-        self.dim = self.utry.shape[0]
-        self.num_params = 0
+        if check_arguments and not UnitaryMatrix.is_unitary(obj):
+            raise ValueError('Input failed unitary condition.')
 
         if radixes:
-            self.radixes = tuple(radixes)
+            obj.radixes = tuple(radixes)
 
         # Check if unitary dimension is a power of two
-        elif self.dim & (self.dim - 1) == 0:
-            self.radixes = tuple([2] * int(np.round(np.log2(self.dim))))
+        elif obj.get_dim() & (obj.get_dim() - 1) == 0:
+            obj.radixes = tuple([2] * int(np.round(np.log2(obj.get_dim()))))
 
         # Check if unitary dimension is a power of three
-        elif 3 ** int(np.round(np.log(self.dim) / np.log(3))) == self.dim:
-            radixes = [3] * int(np.round(np.log(self.dim) / np.log(3)))
-            self.radixes = tuple(radixes)
+        elif 3 ** int(np.round(np.log(obj.get_dim()) / np.log(3))) == obj.get_dim():  # noqa
+            radixes = [3] * int(np.round(np.log(obj.get_dim()) / np.log(3)))
+            obj.radixes = tuple(radixes)
 
         else:
-            raise TypeError(
+            raise RuntimeError(
                 'Unable to determine radixes'
-                ' for UnitaryMatrix with dim %d.' % self.dim,
+                ' for UnitaryMatrix with dim %d.' % obj.get_dim(),
             )
 
-        if check_arguments and not is_valid_radixes(self.radixes):
+        if check_arguments and not is_valid_radixes(obj.radixes):
             raise TypeError('Invalid qudit radixes.')
 
-        if check_arguments and np.prod(self.radixes) != self.dim:
+        if check_arguments and np.prod(obj.radixes) != obj.get_dim():
             raise ValueError('Qudit radixes mismatch with dimension.')
 
-        self.size = len(self.radixes)
+        return obj
 
-    def get_numpy(self) -> np.ndarray:
-        return self.utry
+    def __array_finalize__(
+        self,
+        obj: UnitaryMatrix | np.ndarray | None,
+    ) -> None:
+        if isinstance(obj, UnitaryMatrix):
+            self.radixes = getattr(obj, 'radixes', None)
+            return
+
+        if obj is None:
+            return
+
+        if not is_square_matrix(obj):
+            raise TypeError(f'Expected square matrix, got {type(obj)}.')
+
+        if not UnitaryMatrix.is_unitary(obj):
+            raise ValueError('Input failed unitary condition.')
+
+        dim = obj.shape[0]
+
+        # Check if unitary dimension is a power of two
+        if dim & (dim - 1) == 0:
+            self.radixes = tuple([2] * int(np.round(np.log2(dim))))
+
+        # Check if unitary dimension is a power of three
+        elif 3 ** int(np.round(np.log(dim) / np.log(3))) == dim:
+            self.radixes = tuple([3] * int(np.round(np.log(dim) / np.log(3))))
+
+        else:
+            raise RuntimeError(
+                'Unable to determine radixes'
+                ' for UnitaryMatrix with dim %d.' % dim,
+            )
 
     def get_shape(self) -> tuple[int, int]:
         return self.utry.shape  # type: ignore
+
+    def get_dim(self) -> int:
+        return self.shape[0]
+
+    def get_num_params(self) -> int:
+        return 0
+
+    def get_radixes(self) -> tuple[int, ...]:
+        return self.radixes
+
+    def get_size(self) -> int:
+        return len(self.radixes)
+
+    @property
+    def dagger(self) -> UnitaryMatrix:
+        return self.conj().T
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         return self
 
     def get_dagger(self) -> UnitaryMatrix:
         """Returns the conjugate transpose of the unitary matrix."""
-        return UnitaryMatrix(self.utry.conj().T, self.get_radixes(), False)
+        return self.conj().T
 
     def get_distance_from(self, other: UnitaryLike) -> float:
         """Returns the distance to `other`."""
         other = UnitaryMatrix(other)
-        num = np.abs(np.trace(other.get_numpy().conj().T @ self.get_numpy()))
-        dem = self.get_dim()
+        num = np.abs(np.trace(other.conj().T @ self))
+        dem = self.dim
         dist = np.sqrt(1 - ((num / dem) ** 2))
         return dist if dist > 0.0 else 0.0
 
@@ -129,14 +171,14 @@ class UnitaryMatrix(Unitary, StateVectorMap):
 
         in_state = StateVector(in_state)
 
-        if in_state.get_dim() != self.get_dim():
+        if in_state.get_dim() != self.dim:
             raise ValueError(
                 'State unitary dimension mismatch; '
-                f'expected {self.get_dim()}, got {in_state.get_dim()}.',
+                f'expected {self.dim}, got {in_state.get_dim()}.',
             )
 
-        vec = in_state.get_numpy()[:, None]
-        out_vec = self.utry @ vec
+        vec = in_state[:, None]
+        out_vec = self @ vec
         return StateVector(out_vec.reshape((-1,)))
 
     @staticmethod
@@ -210,32 +252,125 @@ class UnitaryMatrix(Unitary, StateVectorMap):
         U = unitary_group.rvs(int(np.prod(radixes)))
         return UnitaryMatrix(U, radixes, False)
 
-    def __matmul__(self, rhs: object) -> UnitaryMatrix:
-        if isinstance(rhs, UnitaryMatrix):
-            rhs = rhs.get_numpy()
-        res: np.ndarray = self.get_numpy() @ rhs  # type: ignore
-        return UnitaryMatrix(res, self.get_radixes())
-
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Unitary):
-            return np.allclose(
-                self.get_numpy(),
-                other.get_unitary().get_numpy(),
-            )
+            return np.allclose(self, other.get_unitary())
 
         if isinstance(other, np.ndarray):
-            return np.allclose(self.get_numpy(), other)
+            return np.allclose(self, other)
 
         raise NotImplemented
 
     def save(self, filename: str) -> None:
         """Saves the unitary to a file."""
-        np.savetxt(filename, self.utry)
+        np.savetxt(filename, self)
 
     @staticmethod
     def from_file(filename: str) -> UnitaryMatrix:
         """Loads a unitary from a file."""
         return UnitaryMatrix(np.loadtxt(filename, dtype=np.complex128))
+
+    @staticmethod
+    def is_unitary(U: np.ndarray, tol: float = 1e-8) -> bool:
+        """Checks if U is a unitary matrix."""
+
+        if isinstance(U, UnitaryMatrix):
+            return True
+
+        if not is_square_matrix(U):
+            return False
+
+        X = U @ U.conj().T
+        Y = U.conj().T @ U
+        I = np.identity(X.shape[0])
+
+        if not np.allclose(X, I, rtol=0, atol=tol):
+            if _logger.isEnabledFor(logging.DEBUG):
+                norm = np.linalg.norm(X - I)
+                _logger.debug(
+                    'Failed unitary condition, ||UU^d - I|| = %e' %
+                    norm,
+                )
+            return False
+
+        if not np.allclose(Y, I, rtol=0, atol=tol):
+            if _logger.isEnabledFor(logging.DEBUG):
+                norm = np.linalg.norm(Y - I)
+                _logger.debug(
+                    'Failed unitary condition, ||U^dU - I|| = %e' %
+                    norm,
+                )
+            return False
+
+        return True
+
+    def __array_ufunc__(
+        self,
+        ufunc: np.ufunc,
+        method: str,
+        *inputs: Sequence[np.ndarray],
+        out: None | Sequence[np.ndarray] = None,
+        **kwargs: Any,
+    ) -> tuple[np.ndarray] | np.ndarray | None:
+        non_unitary_involved = False
+        args = []
+        for i, input in enumerate(inputs):
+            if isinstance(input, UnitaryMatrix):
+                args.append(input.view(np.ndarray))
+            else:
+                args.append(input)
+                non_unitary_involved = True
+
+        outputs: None | Sequence[np.ndarray] | Sequence[None] = out
+        if outputs:
+            out_args = []
+            for j, output in enumerate(outputs):
+                if isinstance(output, UnitaryMatrix):
+                    out_args.append(output.view(np.ndarray))
+                else:
+                    out_args.append(output)
+            kwargs['out'] = tuple(out_args)
+        else:
+            outputs = (None,) * ufunc.nout
+
+        results = super().__array_ufunc__(  # type: ignore
+            ufunc, method, *args, **kwargs,
+        )
+
+        if results is NotImplemented:
+            return NotImplemented
+
+        if method == 'at':
+            return None
+
+        if ufunc.nout == 1:
+            results = (results,)
+
+        # The results are unitary
+        # if only unitaries are involved
+        # and unitaries are closed under the specific operation.
+        convert_back = not non_unitary_involved and (
+            ufunc.__name__ == 'conjugate'
+            or ufunc.__name__ == 'matmul'
+            or ufunc.__name__ == 'negative'
+            or ufunc.__name__ == 'positive'
+        )
+
+        if convert_back:
+            results = tuple(
+                (
+                    np.asarray(result).view(UnitaryMatrix)
+                    if output is None else output
+                )
+                for result, output in zip(results, outputs)
+            )
+        else:
+            results = tuple(
+                (result if output is None else output)
+                for result, output in zip(results, outputs)
+            )
+
+        return results[0] if len(results) == 1 else results
 
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]

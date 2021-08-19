@@ -474,7 +474,7 @@ def valid_type_test(
                     func_to_test(*data)
                 except TypeError:
                     assert False, 'Valid types caused TypeError.'
-                except BaseException:
+                except Exception:
                     pass
 
             return valid_type_test
@@ -485,7 +485,7 @@ def valid_type_test(
                     func_to_test(*data)
                 except TypeError:
                     assert False, 'Valid types caused TypeError.'
-                except BaseException:
+                except Exception:
                     pass
 
             return valid_type_test

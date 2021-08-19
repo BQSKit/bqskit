@@ -2038,13 +2038,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         for M, dM, loc in zip(matrices, grads, locations):
             perm = PermutationMatrix.from_qubit_location(self.get_size(), loc)
-            perm = perm.get_numpy()
             permT = perm.T
             iden = np.identity(2 ** (self.get_size() - len(loc)))
 
             right.apply_left(M, loc, inverse=True)
-            right_utry = right.get_unitary().get_numpy()
-            left_utry = left.get_unitary().get_numpy()
+            right_utry = right.get_unitary()
+            left_utry = left.get_unitary()
             for grad in dM:
                 # TODO: use tensor contractions here instead of mm
                 # Should work fine with non unitary gradients
@@ -2137,7 +2136,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Check Target
         try:
-            typed_target = StateVector(target)  # type: ignore
+            typed_target = StateVector(target)
         except (ValueError, TypeError):
             try:
                 typed_target = UnitaryMatrix(target)  # type: ignore
@@ -2162,7 +2161,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for start in starts:
             params.append(instantiater.instantiate(self, typed_target, start))
 
-        cost_fn = HilbertSchmidtCost(self, typed_target.get_numpy())
+        cost_fn = HilbertSchmidtCost(self, typed_target)
         self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:

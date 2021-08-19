@@ -132,8 +132,8 @@ class VariableLocationGate(Gate):
         P = np.sum([a * s.get_numpy() for a, s in zip(l, self.perms)], 0)
         G = self.gate.get_unitary(a)  # type: ignore
         # TODO: Change get_unitary params to be union with np.ndarray
-        PGPT = P @ np.kron(G.get_numpy(), self.I) @ P.T
-        return UnitaryMatrix.closest_to(PGPT, self.get_radixes())
+        PGPT = P @ np.kron(G, self.I) @ P.T
+        return UnitaryMatrix.closest_to(PGPT, self.radixes)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Returns the gradient for this gate, see Unitary for more info."""
@@ -148,8 +148,8 @@ class VariableLocationGate(Gate):
         a, l = self.split_params(params)
         l = softmax(l, 10)
 
-        P = np.sum([a * s.get_numpy() for a, s in zip(l, self.perms)], 0)
-        G = self.gate.get_unitary(a).get_numpy()  # type: ignore
+        P = np.sum([a * s for a, s in zip(l, self.perms)], 0)
+        G = self.gate.get_unitary(a)  # type: ignore
         G = np.kron(G, self.I)
         PG = P @ G
         GPT = G @ P.T
@@ -159,7 +159,7 @@ class VariableLocationGate(Gate):
         dG = np.kron(dG, self.I)
         dG = P @ dG @ P.T
 
-        perm_array = np.array([perm.get_numpy() for perm in self.perms])
+        perm_array = np.array([perm for perm in self.perms])
         dP = perm_array @ GPT + PG @ perm_array.transpose((0, 2, 1)) - 2 * PGPT
         dP = np.array([10 * x * y for x, y in zip(l, dP)])
         U = UnitaryMatrix.closest_to(PGPT, self.get_radixes())

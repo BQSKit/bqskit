@@ -17,5 +17,5 @@ class ConstantUnitaryGate(ConstantGate):
         radixes: Sequence[int] = [],
     ) -> None:
         self.utry = UnitaryMatrix(utry, radixes)
-        self.size = self.utry.get_size()
-        self.radixes = self.utry.get_radixes()
+        self.size = self.utry.size
+        self.radixes = self.utry.radixes

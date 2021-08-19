@@ -17,7 +17,7 @@ class CycleInterval(Tuple[int, int]):
     """
     The CycleInterval class.
 
-    Contains an inclusive lower and upper cycle bound for a qudit.
+    Represents an inclusive range of cycles in a given circuit.
     """
 
     def __new__(
@@ -25,6 +25,36 @@ class CycleInterval(Tuple[int, int]):
         lower_or_tuple: int | tuple[int, int],
         upper: int | None = None,
     ) -> CycleInterval:
+        """
+        CycleInterval Constructor.
+
+        Allows constructing a CycleInterval with either a tuple of ints
+        or two ints.
+
+        Args:
+            lower_or_tuple (int | tuple[int, int]): Either the lower
+                bound for the interval or the tuple of lower and upper
+                bounds.
+
+            upper (int | None): The upper bound for the interval. If a
+                tuple is passed in for `lower_or_tuple` then this should
+                be None.
+
+        Returns:
+            (CycleInterval): The constructed CycleInterval.
+
+        Raises:
+            ValueError: If `lower_or_tuple` is a tuple and 'upper' is
+                not None, or if `lower_or_tuple` is an integer and
+                `upper` is None.
+
+            ValueError: If the lower bound is greater than the upper bound.
+
+            ValueError: If either bound is negative.
+
+        Notes:
+            The lower and upper bounds are inclusive.
+        """
         if upper is not None and not is_integer(upper):
             raise TypeError(
                 f'Expected int or None for upper, got {type(upper)}.',
@@ -63,14 +93,17 @@ class CycleInterval(Tuple[int, int]):
 
     @property
     def lower(self) -> int:
+        """The interval's inclusive lower bound."""
         return self[0]
 
     @property
     def upper(self) -> int:
+        """The interval's inclusive upper bound."""
         return self[1]
 
     @property
     def indices(self) -> list[int]:
+        """The indices contained within the interval."""
         return list(range(self.lower, self.upper + 1))
 
     def __contains__(self, cycle_index: object) -> bool:
@@ -81,9 +114,11 @@ class CycleInterval(Tuple[int, int]):
         return self.lower <= cycle_index <= self.upper
 
     def __iter__(self) -> Iterator[int]:
+        """Return an iterator for all indices contained in the interval."""
         return range(self.lower, self.upper + 1).__iter__()
 
     def __len__(self) -> int:
+        """The length of the interval."""
         return self.upper - self.lower + 1
 
     def overlaps(self, other: IntervalLike) -> bool:
@@ -129,64 +164,15 @@ class CycleInterval(Tuple[int, int]):
         )
 
     def __lt__(self, other: tuple[int, ...]) -> bool:
-        """Defines Partial Ordering."""
+        """
+        Return true if `self` comes before `other`.
+
+        The less than operator defines a partial ordering.
+        """
         if CycleInterval.is_interval(other):
             return self.upper < other[0]
 
-        # if isinstance(other, tuple):
-        #     raise TypeError(f"Cannot compare {other} to CycleInterval.")
-
         return NotImplemented
-
-    # def __le__(self, other: Tuple[int, ...]) -> bool:
-    #     """Defines Partial Ordering"""
-    #     if CycleInterval.is_interval(other):
-    #         return self.upper < other[0] or self == other
-
-    #     if isinstance(other, tuple):
-    #         raise TypeError(f"Cannot compare {other} to CycleInterval.")
-
-    #     return NotImplemented
-
-    # def __gt__(self, other: Tuple[int, ...]) -> bool:
-    #     """Defines Partial Ordering"""
-    #     if CycleInterval.is_interval(other):
-    #         return self.lower > other[1]
-
-    #     if isinstance(other, tuple):
-    #         raise TypeError(f"Cannot compare {other} to CycleInterval.")
-
-    #     return NotImplemented
-
-    # def __ge__(self, other: Tuple[int, ...]) -> bool:
-    #     """Defines Partial Ordering"""
-    #     if CycleInterval.is_interval(other):
-    #         return self.lower > other[1] or self == other
-
-    #     if isinstance(other, tuple):
-    #         raise TypeError(f"Cannot compare {other} to CycleInterval.")
-
-    #     return NotImplemented
-
-    # def __eq__(self, other: Tuple[int, ...]) -> bool:
-    #     """Defines Partial Ordering"""
-    #     if CycleInterval.is_interval(other):
-    #         return self.lower == other[0] and self.upper == other[1]
-
-    #     if isinstance(other, tuple):
-    #         raise TypeError(f"Cannot compare {other} to CycleInterval.")
-
-    #     return NotImplemented
-
-    # def __ne__(self, other: Tuple[int, ...]) -> bool:
-    #     """Defines Partial Ordering"""
-    #     if CycleInterval.is_interval(other):
-    #         return self.lower != other[0] or self.upper != other[1]
-
-    #     if isinstance(other, tuple):
-    #         raise TypeError(f"Cannot compare {other} to CycleInterval.")
-
-    #     return NotImplemented
 
     @staticmethod
     def is_interval(interval: Any) -> TypeGuard[IntervalLike]:
@@ -200,31 +186,29 @@ class CycleInterval(Tuple[int, int]):
 
         if len(interval) != 2:
             _logger.debug(
-                'Expected interval to contain two values, got %d.' % len(
-                    interval,
-                ),
+                'Expected interval to contain two values'
+                f', got {len(interval)}.',
             )
             return False
 
         if not is_integer(interval[0]):
             _logger.debug(
-                'Expected integer values in interval, got %s.' % type(
-                    interval[0],
-                ),
+                'Expected integer values in interval'
+                f', got {type(interval[0])}.',
             )
             return False
 
         if not is_integer(interval[1]):
             _logger.debug(
-                'Expected integer values in interval, got %s.' % type(
-                    interval[1],
-                ),
+                'Expected integer values in interval'
+                f', got {type(interval[1])}.',
             )
             return False
 
         return True
 
     def __repr__(self) -> str:
+        """Return a string representation of the interval."""
         return f'Interval(lower={self.lower}, upper={self.upper})'
 
 

@@ -43,4 +43,4 @@ class HilbertSchmidtCostGenerator(CostFunctionGenerator):
         target: UnitaryMatrix | StateVector,
     ) -> CostFunction:
         """Generate a CostFunction, see CostFunctionGenerator for more info."""
-        return HilbertSchmidtCost(circuit, target.get_numpy())
+        return HilbertSchmidtCost(circuit, target)

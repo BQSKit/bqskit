@@ -23,11 +23,24 @@ class CircuitRegion(Mapping[int, CycleInterval]):
     """
     The CircuitRegion class.
 
-    A CircuitRegion is an contiguous area in a circuit. It is represented as a
-    map from qudit indices to lower and upper intervals given by cycle indices.
+    A CircuitRegion is an contiguous, convex area in a circuit. It is
+    represented as a map from qudit indices to cycle intervals.
     """
 
     def __init__(self, intervals: Mapping[int, IntervalLike]) -> None:
+        """
+        CircuitRegion Initializer.
+
+        Args:
+            intervals (Mapping[int, IntervalLike]): A map from qudit
+                indices to cycle intervals. The cycle intervals can
+                be given as either a CycleInterval object or a tuple
+                of two ints that represent the lower and upper bound
+                of the inclusive interval.
+
+        Notes:
+            All cycle intervals are inclusive.
+        """
         if not is_mapping(intervals):
             raise TypeError(
                 f'Expected mapping from int to IntervalLike, got {intervals}.',
@@ -48,16 +61,30 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         }
 
     def __getitem__(self, key: int) -> CycleInterval:
+        """
+        Return the interval given by the qudit `key`.
+
+        Raises:
+            IndexError: If `key` is not in this region.
+        """
         return self._intervals[key]
 
     def __iter__(self) -> Iterator[int]:
+        """Return an iterator for all qudits contained in the region."""
         return iter(self._intervals)
 
     def __len__(self) -> int:
+        """Return the number of qudits in the region."""
         return len(self._intervals)
 
     @property
     def min_cycle(self) -> int:
+        """
+        Return the smallest cycle index for any qudit.
+
+        Raises:
+            ValueError: If `self` is empty.
+        """
         if self.empty:
             raise ValueError('Empty region cannot have minimum cycle.')
 
@@ -65,6 +92,12 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def max_cycle(self) -> int:
+        """
+        Return the largest cycle index for any qudit.
+
+        Raises:
+            ValueError: If `self` is empty.
+        """
         if self.empty:
             raise ValueError('Empty region cannot have maximum cycle.')
 
@@ -72,6 +105,12 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def max_min_cycle(self) -> int:
+        """
+        Return the largest cycle index for any lower bound.
+
+        Raises:
+            ValueError: If `self` is empty.
+        """
         if self.empty:
             raise ValueError('Empty region cannot have minimum cycle.')
 
@@ -79,6 +118,12 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def min_max_cycle(self) -> int:
+        """
+        Return the smallest cycle index for any upper bound.
+
+        Raises:
+            ValueError: If `self` is empty.
+        """
         if self.empty:
             raise ValueError('Empty region cannot have maximum cycle.')
 
@@ -86,6 +131,12 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def min_qudit(self) -> int:
+        """
+        Return the smallest qudit index.
+
+        Raises:
+            ValueError: If `self` is empty.
+        """
         if self.empty:
             raise ValueError('Empty region cannot have minimum qudit.')
 
@@ -93,6 +144,12 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def max_qudit(self) -> int:
+        """
+        Return the largest qudit index.
+
+        Raises:
+            ValueError: If `self` is empty.
+        """
         if self.empty:
             raise ValueError('Empty region cannot have maximum qudit.')
 
@@ -100,6 +157,7 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def location(self) -> CircuitLocation:
+        """Return the qudits this region includes as a CircuitLocation."""
         return CircuitLocation(sorted(self.keys()))
 
     @property
@@ -113,10 +171,12 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def volume(self) -> int:
+        """Return the volume of this region measured in qudit-cycles."""
         return sum(len(interval) for interval in self.values())
 
     @property
     def width(self) -> int:
+        """Return the number of cycles this region participates in."""
         if self.empty:
             return 0
 
@@ -124,6 +184,7 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     @property
     def empty(self) -> bool:
+        """Return true if this region is empty."""
         return len(self) == 0
 
     def shift_left(self, amount_to_shift: int) -> CircuitRegion:

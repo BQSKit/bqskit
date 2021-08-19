@@ -122,7 +122,8 @@ class TestCycleIntervalOverlaps:
 
     @given(cycle_intervals(), cycle_intervals())
     def test_overlaps(
-        self, interval1: CycleInterval,
+        self,
+        interval1: CycleInterval,
         interval2: CycleInterval,
     ) -> None:
         if interval1.overlaps(interval2):
@@ -142,11 +143,10 @@ class TestCycleIntervalIntersection:
         pass
 
     @given(
-        tuples(
-            cycle_intervals(), cycle_intervals(),
-        ).filter(lambda x: x[0] < x[1]),
+        tuples(cycle_intervals(), cycle_intervals())
+        .filter(lambda x: x[0] < x[1]),
     )
-    def test_intersection_invalid_value(
+    def test_invalid_value(
         self,
         interval: tuple[CycleInterval, CycleInterval],
     ) -> None:
@@ -157,7 +157,7 @@ class TestCycleIntervalIntersection:
         tuples(cycle_intervals(), cycle_intervals())
         .filter(lambda x: x[0].overlaps(x[1])),
     )
-    def test_intersection(
+    def test_valid(
         self,
         interval: tuple[CycleInterval, CycleInterval],
     ) -> None:
@@ -180,11 +180,10 @@ class TestCycleIntervalUnion:
         pass
 
     @given(
-        tuples(
-            cycle_intervals(), cycle_intervals(),
-        ).filter(lambda x: x[0] < x[1] and x[0].upper < x[1].lower - 1),
+        tuples(cycle_intervals(), cycle_intervals())
+        .filter(lambda x: x[0] < x[1] and x[0].upper < x[1].lower - 1),
     )
-    def test_union_invalid_value(
+    def test_invalid(
         self,
         interval: tuple[CycleInterval, CycleInterval],
     ) -> None:
@@ -195,7 +194,7 @@ class TestCycleIntervalUnion:
         tuples(cycle_intervals(), cycle_intervals())
         .filter(lambda x: x[0].overlaps(x[1])),
     )
-    def test_union(
+    def test_valid(
         self,
         interval: tuple[CycleInterval, CycleInterval],
     ) -> None:
@@ -219,7 +218,8 @@ class TestCycleIntervalLt:
 
     @given(cycle_intervals(), cycle_intervals())
     def test_valid(
-        self, interval1: CycleInterval,
+        self,
+        interval1: CycleInterval,
         interval2: CycleInterval,
     ) -> None:
         if interval1.overlaps(interval2):
