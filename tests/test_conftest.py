@@ -44,11 +44,11 @@ from typing import Any
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
+from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.utils.typing import is_complex
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
-from bqskit.utils.typing import is_unitary
 
 
 class TestGenRandomUtryNp:
@@ -74,13 +74,13 @@ class TestGenRandomUtryNp:
         utry = gen_random_utry_np(8)
         assert isinstance(utry, np.ndarray)
         assert utry.shape == (8, 8)
-        assert is_unitary(utry)
+        assert UnitaryMatrix.is_unitary(utry)
 
     def test_valid_multi_dim(self, gen_random_utry_np: Any) -> None:
         utry = gen_random_utry_np([4, 8])
         assert isinstance(utry, np.ndarray)
         assert utry.shape == (8, 8) or utry.shape == (4, 4)
-        assert is_unitary(utry)
+        assert UnitaryMatrix.is_unitary(utry)
 
 
 class TestGenInvalidUtryNp:
@@ -106,13 +106,13 @@ class TestGenInvalidUtryNp:
         iutry = gen_invalid_utry_np(8)
         assert isinstance(iutry, np.ndarray)
         assert iutry.shape == (8, 8)
-        assert not is_unitary(iutry)
+        assert not UnitaryMatrix.is_unitary(iutry)
 
     def test_valid_multi_dim(self, gen_invalid_utry_np: Any) -> None:
         iutry = gen_invalid_utry_np([4, 8])
         assert isinstance(iutry, np.ndarray)
         assert iutry.shape == (8, 8) or iutry.shape == (4, 4)
-        assert not is_unitary(iutry)
+        assert not UnitaryMatrix.is_unitary(iutry)
 
 
 class TestGenRandomCircuit:

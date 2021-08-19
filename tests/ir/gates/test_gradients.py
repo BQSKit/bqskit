@@ -19,13 +19,13 @@ def check_gradient(circ: Circuit, num_params: int) -> None:
             v2[i] = v[i] + eps
             U1 = circ.get_unitary(v2)
             if isinstance(U1, UnitaryMatrix):
-                utry1 = U1.get_numpy()
+                utry1 = U1
             else:
                 utry1 = U1
             v2[i] = v[i] - eps
             U2 = circ.get_unitary(v2)
             if isinstance(U2, UnitaryMatrix):
-                utry2 = U2.get_numpy()
+                utry2 = U2
             else:
                 utry2 = U2
 

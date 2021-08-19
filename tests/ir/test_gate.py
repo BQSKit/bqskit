@@ -91,7 +91,7 @@ class TestBasicGate:
     #     utry1 = gate.get_unitary(params)
     #     utry2, grad2 = gate.get_unitary_and_grad(params)
     #     assert np.allclose(grad1, grad2)
-    #     assert np.allclose(utry1.get_numpy(), utry2.get_numpy())
+    #     assert np.allclose(utry1, utry2)
 
     # def test_optimize_valid(self, gate: Gate) -> None:
     #     try:

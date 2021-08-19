@@ -78,23 +78,23 @@ if __name__ == '__main__':
         compiled_circuit = compiler.compile(task)
         for cycle, op in compiled_circuit.operations_with_cycles():
             if isinstance(op.gate, VariableUnitaryGate):
-                utry = op.get_unitary().get_numpy()
+                utry = op.get_unitary()
                 params = OneQubitEulerDecomposer('U3').angles(utry)
 
                 new_op = Operation(U3Gate(), op.location, list(params))
-                new_utry = new_op.get_unitary().get_numpy()
+                new_utry = new_op.get_unitary()
                 new_params = OneQubitEulerDecomposer('U3').angles(new_utry)
 
                 u1 = Operation(
                     U3Gate(), op.location, list(
                         params,
                     ),
-                ).get_unitary().get_numpy()
+                ).get_unitary()
                 u2 = Operation(
                     U3Gate(), op.location, list(
                         new_params,
                     ),
-                ).get_unitary().get_numpy()
+                ).get_unitary()
 
                 print(norm(u1 - u2))
                 print(params)

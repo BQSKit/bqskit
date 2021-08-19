@@ -24,7 +24,7 @@ from bqskit.utils.typing import is_valid_radixes
 _logger = logging.getLogger(__name__)
 
 
-class UnitaryMatrix(np.ndarray, Unitary, StateVectorMap):
+class UnitaryMatrix(np.ndarray, Unitary, StateVectorMap):  # type: ignore
     """The UnitaryMatrix Class."""
 
     # num_params = 0

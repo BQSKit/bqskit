@@ -27,7 +27,7 @@ class VariableToU3Pass(BasePass):
                     op.location,
             ) == 1:
                 # Convert to SU(2)
-                unitary = op.get_unitary().get_numpy()
+                unitary = op.get_unitary()
                 mag = np.linalg.det(unitary) ** (-1 / 2)
                 special_unitary = mag * unitary
                 a = np.angle(special_unitary[1, 1])
@@ -60,7 +60,7 @@ class PauliToU3Pass(BasePass):
                     op.location,
             ) == 1:
                 # Convert to SU(2)
-                unitary = op.get_unitary().get_numpy()
+                unitary = op.get_unitary()
                 mag = np.linalg.det(unitary) ** (-1 / 2)
                 special_unitary = mag * unitary
                 a = np.angle(special_unitary[1, 1])

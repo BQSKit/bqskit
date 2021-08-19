@@ -16,7 +16,7 @@ def test_minimize_bfgs() -> None:
     xgate = XGate()
     xutry = xgate.get_unitary()
     cost = HilbertSchmidtCostGenerator().gen_cost(
-        circ, UnitaryMatrix(-1j * xutry.get_numpy()),
+        circ, UnitaryMatrix(-1j * xutry),
     )
     minimizer = LBFGSMinimizer()
     x = minimizer.minimize(cost, np.array([np.pi / 2]))

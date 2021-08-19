@@ -147,5 +147,5 @@ circ_iter = CircuitIterator(circ)
 count = 0
 for op in circ_iter:
     print('unitary %d' % (count))
-    print(op.get_unitary().get_numpy())  # type: ignore
+    print(op.get_unitary())  # type: ignore
     count += 1

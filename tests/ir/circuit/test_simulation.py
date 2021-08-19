@@ -18,4 +18,4 @@ def test_toffoli_simulation(
 def test_fuzz_simulation(r6_qudit_circuit: Circuit) -> None:
     utry = (r6_qudit_circuit + r6_qudit_circuit.get_dagger()).get_unitary()
     identity = np.identity(r6_qudit_circuit.get_dim())
-    assert np.allclose(utry.get_numpy(), identity)
+    assert np.allclose(utry, identity)

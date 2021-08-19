@@ -171,7 +171,7 @@ class TestFold:
             assert isinstance(inner_gate2._circuit[1, q].gate, IdentityGate)
 
         check_no_idle_cycles(circuit)
-        assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
+        assert np.allclose(utry, circuit.get_unitary())
 
     def test_correctness_2(self) -> None:
         circuit = Circuit(3)
@@ -193,7 +193,7 @@ class TestFold:
         assert test_gate._circuit[1, 1].gate is wide_gate
         assert test_gate._circuit[1, 2].gate is wide_gate
         check_no_idle_cycles(circuit)
-        assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
+        assert np.allclose(utry, circuit.get_unitary())
 
     def test_correctness_3(self) -> None:
         circuit = Circuit(5)
@@ -224,7 +224,7 @@ class TestFold:
         assert test_gate._circuit[1, 1].gate is wide_gate
         assert test_gate._circuit[1, 2].gate is wide_gate
         check_no_idle_cycles(circuit)
-        assert np.allclose(utry.get_numpy(), circuit.get_unitary().get_numpy())
+        assert np.allclose(utry, circuit.get_unitary())
 
     def test_parameters(self) -> None:
         circ = Circuit(2)

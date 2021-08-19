@@ -54,7 +54,7 @@ class TestConstructor:
                 assert radix1 == radix2
         assert ub.get_dim() == int(np.prod(ub.get_radixes()))
         assert np.allclose(
-            ub.get_unitary().get_numpy(),
+            ub.get_unitary(),
             np.identity(ub.get_dim()),
         )
 
@@ -76,7 +76,7 @@ class TestApplyLeft:
         ub.apply_left(u1, [0, 1, 2])
         assert ub.get_unitary() == u1
         ub.apply_left(u2, [0, 1])
-        prod = u1 @ np.kron(u2.get_numpy(), np.identity(2))
+        prod = u1 @ np.kron(u2, np.identity(2))
         assert ub.get_unitary() == prod
 
     def test_valid_3(self) -> None:
@@ -87,7 +87,7 @@ class TestApplyLeft:
         ub.apply_left(u1, [0, 1, 2])
         assert ub.get_unitary() == u1
         ub.apply_left(u2, [1, 2])
-        prod = u1 @ np.kron(np.identity(2), u2.get_numpy())
+        prod = u1 @ np.kron(np.identity(2), u2)
         assert ub.get_unitary() == prod
 
 
@@ -108,7 +108,7 @@ class TestApplyRight:
         ub.apply_right(u1, [0, 1, 2])
         assert ub.get_unitary() == u1
         ub.apply_right(u2, [0, 1])
-        prod = np.kron(u2.get_numpy(), np.identity(2)) @ u1.get_numpy()
+        prod = np.kron(u2, np.identity(2)) @ u1
         assert ub.get_unitary() == prod
 
     def test_valid_3(self) -> None:
@@ -119,7 +119,7 @@ class TestApplyRight:
         ub.apply_right(u1, [0, 1, 2])
         assert ub.get_unitary() == u1
         ub.apply_right(u2, [1, 2])
-        prod = np.kron(np.identity(2), u2.get_numpy()) @ u1.get_numpy()
+        prod = np.kron(np.identity(2), u2) @ u1
         assert ub.get_unitary() == prod
 
 

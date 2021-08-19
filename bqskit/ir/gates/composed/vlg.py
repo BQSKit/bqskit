@@ -129,7 +129,7 @@ class VariableLocationGate(Gate):
         a, l = self.split_params(params)
         l = softmax(l, 10)
 
-        P = np.sum([a * s.get_numpy() for a, s in zip(l, self.perms)], 0)
+        P = np.sum([a * s for a, s in zip(l, self.perms)], 0)
         G = self.gate.get_unitary(a)  # type: ignore
         # TODO: Change get_unitary params to be union with np.ndarray
         PGPT = P @ np.kron(G, self.I) @ P.T

@@ -23,8 +23,8 @@ class TestQFactorEndToEnd:
         utry_after = circuit.get_unitary()
 
         assert np.allclose(
-            utry_before.get_numpy(),
-            utry_after.get_numpy(),
+            utry_before,
+            utry_after,
         )
 
     def test_1_gate(self) -> None:
@@ -39,8 +39,8 @@ class TestQFactorEndToEnd:
         g1_params = list(np.real(g1_params)) + list(np.imag(g1_params))
 
         assert np.allclose(
-            circuit.get_unitary().get_numpy(),
-            g1.get_unitary(g1_params).get_numpy(),
+            circuit.get_unitary(),
+            g1.get_unitary(g1_params),
         )
 
     def test_2_gate(self) -> None:
@@ -57,6 +57,6 @@ class TestQFactorEndToEnd:
         circuit.set_params(params)
 
         assert np.allclose(
-            circuit.get_unitary().get_numpy(),
-            utry.get_numpy(),
+            circuit.get_unitary(),
+            utry,
         )

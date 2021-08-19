@@ -57,7 +57,7 @@ def test_get_unitary(gate: Gate) -> None:
     num_params = circ.get_num_params()
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
-    assert np.allclose(circ.get_unitary(x).get_numpy(), circuit.get_unitary(x))
+    assert np.allclose(circ.get_unitary(x), circuit.get_unitary(x))
 
 
 @pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
@@ -84,7 +84,7 @@ def test_get_unitary_and_grad(gate: Gate) -> None:
     circuit = Circuit(circ)
     utry_python, grad_python = circ.get_unitary_and_grad(x)
     utry_rust, grad_rust = circuit.get_unitary_and_grad(x)
-    assert np.allclose(utry_python.get_numpy(), utry_rust)
+    assert np.allclose(utry_python, utry_rust)
     for i, (py, rs) in enumerate(zip(grad_python, grad_rust)):
         assert np.allclose(py, rs)
 
@@ -97,7 +97,7 @@ def test_random_circuit_only_native(
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
     assert np.allclose(
-        circ.get_unitary(x).get_numpy(),
+        circ.get_unitary(x),
         circuit.get_unitary(x),
     ), circ._circuit
 
@@ -110,7 +110,7 @@ def test_random_circuit_qubit_gates(qubit_gate: Gate) -> None:
         assert num_params == 0
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
-    py = circ.get_unitary(x).get_numpy()
+    py = circ.get_unitary(x)
     rs = circuit.get_unitary(x)
     assert py.shape == rs.shape
     assert py.dtype is rs.dtype
@@ -126,7 +126,7 @@ def test_random_circuit_qutrit_gates(qutrit_gate: Gate) -> None:
         assert num_params == 0
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
-    py = circ.get_unitary(x).get_numpy()
+    py = circ.get_unitary(x)
     rs = circuit.get_unitary(x)
     assert py.shape == rs.shape
     assert py.dtype is rs.dtype
