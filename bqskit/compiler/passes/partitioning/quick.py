@@ -1,6 +1,7 @@
 """This module defines the QuickPartitioner pass."""
 from __future__ import annotations
 
+import heapq
 import logging
 from typing import Any
 
@@ -49,9 +50,179 @@ class QuickPartitioner(BasePass):
 
         self.block_size = block_size
 
-    def add_final_blocks(self, block, qudits, active_blocks, all_blocks):
+    def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """
-        Add blocks with all inactive qudits to the all_blocks list and
+        Partition gates in a circuit into a series of CircuitGates.
+
+        Args:
+            circuit (Circuit): Circuit to be partitioned.
+
+            data (dict[str,Any]): Optional data unique to specific run.
+        """
+
+        # Number of qudits in the circuit
+        num_qudits = circuit.get_size()
+
+        # If block size > circuit size, return the circuit as a block
+        if self.block_size > num_qudits:
+            _logger.warning(
+                'Configured block size is greater than circuit size; '
+                'blocking entire circuit.',
+            )
+            circuit.fold({
+                qudit_index: (0, circuit.get_num_cycles())
+                for qudit_index in range(circuit.get_size())
+            })
+            return
+
+        # List to hold the active blocks
+        active_blocks = []
+
+        # List to hold the finished blocks
+        finished_blocks = {}
+        block_id = 0
+
+        # Active qudit cycles and block-qudit dependencies
+        qudit_actives = [{} for _ in range(num_qudits)]
+        qudit_dependencies = [[] for _ in range(num_qudits)]
+
+        # The partitioned circuit
+        partitioned_circuit = Circuit(num_qudits, circuit.get_radixes())
+
+        # For each cycle, operation in topological order
+        for cycle, op in circuit.operations_with_cycles():
+            
+            # Get the qudits of the operation
+            qudits = op.location._location
+
+            # Update the active locations of the qudits
+            for qudit in qudits:
+                qudit_actives[qudit][cycle] = None
+
+            # Compile a list of admissible blocks out of the
+            # active blocks for the operation
+            admissible_blocks = []
+            for index, block in enumerate(active_blocks):
+                if all([qudit not in block[-1] for qudit in qudits]):
+                    admissible_blocks.append(index)
+
+            # Boolean indicator to capture if an active block
+            # has been found for the operation
+            found = False
+
+            # For all admissible blocks, check if all operation
+            # qudits are in the block. If such a block is found,
+            # update the upper region bound for the corresponding
+            # qudits, and raise the found boolean
+            for block in [active_blocks[index] for index in admissible_blocks]:
+                if all([qudit in block for qudit in qudits]):
+                    for qudit in qudits:
+                        block[qudit][1] = cycle
+                    found = True
+                    break
+
+            updated_qudits = set()
+
+            # If such a block is not found
+            if not found:
+
+                # For all admissible blocks, check if the operation
+                # qudits can be added to the block without breaching
+                # the size limit. If such a block is found, add the
+                # new qudits, update the region bounds, check if any
+                # blocks are finished, and raise the found boolean
+                for block in [active_blocks[index] for index in admissible_blocks]:
+                    if len(set(list(qudits) + list(block.keys()))) - 1 <= self.block_size:
+                        for qudit in qudits:
+                            if qudit not in block:
+                                block[qudit] = [cycle, cycle]
+                            else:
+                                block[qudit][1] = cycle
+                        block_id, updated_qudits = self.compute_finished_blocks(block, qudits, active_blocks,
+                                                        finished_blocks, block_id, qudit_dependencies)
+                        found = True
+                        break
+
+            # If a block is still not found, check if any blocks are finished
+            # with the new operation qudits, create a new block, and add it
+            # to the list of active blocks
+            if not found:
+                block_id, updated_qudits = self.compute_finished_blocks(None, qudits, active_blocks,
+                                                finished_blocks, block_id, qudit_dependencies)
+                block = {qudit: [cycle, cycle] for qudit in qudits}
+                block[-1] = set()
+                active_blocks.append(block)
+
+            # Where the active qudit cycles keep getting updated
+            while updated_qudits:
+
+                # Check if any blocks corresponding to updated qudits
+                # are eligible to be added to the circuit. If eligible,
+                # update actives, dependencies, and updated qudits.
+                final_regions = []
+                new_updated_qudits = set()
+                for qudit in updated_qudits:
+                    for blk_id in qudit_dependencies[qudit]:
+                        num_passed = 0
+                        for qdt, bounds in finished_blocks[blk_id].items():
+                            if len(qudit_actives[qdt]) == 0:
+                                num_passed += 1
+                            elif next(iter(qudit_actives[qdt])) == bounds[0]:
+                                num_passed += 1
+                        if num_passed == len(finished_blocks[blk_id]):
+                            for qdt, bounds in finished_blocks[blk_id].items():
+                                for cycle in range(bounds[0], bounds[1]+1):
+                                    if cycle in qudit_actives[qdt]:
+                                        del qudit_actives[qdt][cycle]
+                                qudit_dependencies[qdt].remove(blk_id)
+                                new_updated_qudits.add(qdt)
+                            final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in finished_blocks[blk_id].items()}))
+                            del finished_blocks[blk_id]
+
+                # If there are any regions
+                if final_regions:
+
+                    # Sort the regions if multiple exist
+                    if len(final_regions) > 1:
+                        final_regions = self.topo_sort(final_regions)
+
+                    # Fold the final regions into a partitioned circuit
+                    for region in final_regions:
+                        region = circuit.downsize_region(region)
+                        cgc = circuit.get_slice(region.points)
+                        partitioned_circuit.append_gate(CircuitGate(cgc, True), sorted(list(region.keys())), list(cgc.get_params()))
+
+                updated_qudits = new_updated_qudits
+
+        # Convert all remaining finished blocks and active blocks
+        # into circuit regions
+        final_regions = []
+        for block in finished_blocks.values():
+            final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()}))
+        for block in active_blocks:
+            del block[-1]
+            final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()}))
+                
+        # If there are any regions
+        if final_regions:
+
+            # Sort the regions if multiple exist
+            if len(final_regions) > 1:
+                final_regions = self.topo_sort(final_regions)
+
+            # Fold the final regions into a partitioned circuit
+            for region in final_regions:
+                region = circuit.downsize_region(region)
+                cgc = circuit.get_slice(region.points)
+                partitioned_circuit.append_gate(CircuitGate(cgc, True), sorted(list(region.keys())), list(cgc.get_params()))
+
+        # Copy the partitioned circuit to the original circuit
+        circuit.become(partitioned_circuit)
+
+    def compute_finished_blocks(self, block, qudits, active_blocks, finished_blocks, 
+                                block_id, qudit_dependencies):
+        """
+        Add blocks with all inactive qudits to the finished_blocks list and
         remove them from the active_blocks list.
         
         """
@@ -85,12 +256,19 @@ class QuickPartitioner(BasePass):
                     remove_blocks.append(active_block)
 
         # Remove all blocks in the remove list from the active list
-        # and add them to the final all blocks list after deleting
-        # their inadmissible list
+        # and add them to the finished blocks list after deleting
+        # their inadmissible list and update qudit dependencies
+        updated_qudits = set()
         for remove_block in remove_blocks:
             del remove_block[-1]
-            all_blocks.append(remove_block)
+            finished_blocks[block_id] = remove_block
+            for qudit in remove_block:
+                qudit_dependencies[qudit].append(block_id)
+                updated_qudits.add(qudit)
             active_blocks.remove(remove_block)
+            block_id += 1
+
+        return block_id, updated_qudits
 
     def topo_sort(self, regions):
         """
@@ -146,118 +324,3 @@ class QuickPartitioner(BasePass):
             heapq.heapify(in_edges)
 
         return sorted_regions
-
-    def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
-        """
-        Partition gates in a circuit into a series of CircuitGates.
-
-        Args:
-            circuit (Circuit): Circuit to be partitioned.
-
-            data (dict[str,Any]): Optional data unique to specific run.
-        """
-
-        # If block size > circuit size, return the circuit as a block
-        if self.block_size > circuit.get_size():
-            _logger.warning(
-                'Configured block size is greater than circuit size; '
-                'blocking entire circuit.',
-            )
-            circuit.fold({
-                qudit_index: (0, circuit.get_num_cycles())
-                for qudit_index in range(circuit.get_size())
-            })
-            return
-
-        # List to hold the final blocks
-        all_blocks = []
-
-        # List to hold the active blocks
-        active_blocks = []
-
-        # For each cycle, operation in topological order
-        for cycle, op in circuit.operations_with_cycles():
-            
-            # Get the qudits of the operation
-            qudits = op.location._location
-
-            # Compile a list of admissible blocks out of the
-            # active blocks for the operation
-            admissible_blocks = []
-            for index, block in enumerate(active_blocks):
-                if all([qudit not in block[-1] for qudit in qudits]):
-                    admissible_blocks.append(index)
-
-            # Boolean indicator to capture if an active block
-            # has been found for the operation
-            found = False
-
-            # For all admissible blocks, check if all operation
-            # qudits are in the block. If such a block is found,
-            # update the upper region bound for the corresponding
-            # qudits, and raise the found boolean
-            for block in [active_blocks[index] for index in admissible_blocks]:
-                if all([qudit in block for qudit in qudits]):
-                    for qudit in qudits:
-                        block[qudit][1] = cycle
-                    found = True
-                    break
-
-            # If such a block is not found
-            if not found:
-
-                # For all admissible blocks, check if the operation
-                # qudits can be added to the block without breaching
-                # the size limit. If such a block is found, add the
-                # new qudits, update the region bounds, check if any
-                # blocks are finalized, and raise the found boolean
-                for block in [active_blocks[index] for index in admissible_blocks]:
-                    if len(set(list(qudits) + list(block.keys()))) - 1 <= self.block_size:
-                        for qudit in qudits:
-                            if qudit not in block:
-                                block[qudit] = [cycle, cycle]
-                            else:
-                                block[qudit][1] = cycle
-                        self.add_final_blocks(block, qudits, active_blocks, all_blocks)
-                        found = True
-                        break
-
-            # If a block is still not found, check if any blocks are finalized
-            # with the new operation qudits, create a new block, and add it
-            # to the list of active blocks
-            if not found:
-                self.add_final_blocks(None, qudits, active_blocks, all_blocks)
-                block = {qudit: [cycle, cycle] for qudit in qudits}
-                block[-1] = set()
-                active_blocks.append(block)
-
-        # Convert all remaining active blocks at the end
-        # of the circuit into final blocks
-        for block in active_blocks:
-            del block[-1]
-            all_blocks.append(block)
-
-        # Convert all the final blocks into circuit regions
-        # and topologically sort them
-        regions = []
-        for block in all_blocks:
-            region = CircuitRegion({qudit: (block[qudit][0], block[qudit][1]) for qudit in block})
-            regions.append(region)
-        regions = self.topo_sort(regions)
-
-        # Fold the regions into a new circuit
-        folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
-        for region in regions:
-            region = circuit.downsize_region(region)
-            if 0 < len(region) <= self.block_size:
-                cgc = circuit.get_slice(region.points)
-                folded_circuit.append_gate(
-                    CircuitGate(cgc, True),
-                    sorted(list(region.keys())),
-                    list(cgc.get_params()),
-                )
-            else:
-                folded_circuit.extend(circuit[region])
-
-        # Copy the new circuit to the original circuit
-        circuit.become(folded_circuit)
