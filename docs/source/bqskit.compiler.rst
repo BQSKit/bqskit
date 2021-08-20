@@ -17,7 +17,7 @@ bqskit.compiler.basepass module
 -------------------------------
 
 .. automodule:: bqskit.compiler.basepass
-   :members:
+   :no-members:
    :undoc-members:
    :show-inheritance:
 

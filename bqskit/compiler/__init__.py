@@ -1,3 +1,10 @@
+"""
+================================================
+Compiler Infrastructure (:mod:`bqskit.compiler`)
+================================================
+
+TODO: More description
+"""
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass

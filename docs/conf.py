@@ -29,6 +29,7 @@ author = 'BQSKit Development Team'
 # ones.
 extensions = [
     'sphinx.ext.napoleon',
+    'myst_parser',
     'sphinx.ext.autodoc',
 ]
 

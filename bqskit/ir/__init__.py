@@ -1,3 +1,10 @@
+"""
+=============================================================
+BQSKit Circuit Intermediate Representation (:mod:`bqskit.ir`)
+=============================================================
+
+TODO: More description
+"""
 from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit

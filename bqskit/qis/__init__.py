@@ -1,3 +1,10 @@
+"""
+===============================================
+Quantum Information Science (:mod:`bqskit.qis`)
+===============================================
+
+TODO: More description
+"""
 from __future__ import annotations
 
 from bqskit.qis.pauli import PauliMatrices
