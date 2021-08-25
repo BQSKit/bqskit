@@ -84,7 +84,7 @@ class QuickPartitioner(BasePass):
 
         # Active qudit cycles and block-qudit dependencies
         qudit_actives = [{} for _ in range(num_qudits)]
-        qudit_dependencies = [[] for _ in range(num_qudits)]
+        qudit_dependencies = [{} for _ in range(num_qudits)]
 
         # The partitioned circuit
         partitioned_circuit = Circuit(num_qudits, circuit.get_radixes())
@@ -139,7 +139,7 @@ class QuickPartitioner(BasePass):
                             else:
                                 block[qudit][1] = cycle
                         block_id, updated_qudits = self.compute_finished_blocks(block, qudits, active_blocks,
-                                                        finished_blocks, block_id, qudit_dependencies)
+                                                   finished_blocks, block_id, qudit_dependencies, cycle, num_qudits)
                         found = True
                         break
 
@@ -148,21 +148,22 @@ class QuickPartitioner(BasePass):
             # to the list of active blocks
             if not found:
                 block_id, updated_qudits = self.compute_finished_blocks(None, qudits, active_blocks,
-                                                finished_blocks, block_id, qudit_dependencies)
+                                           finished_blocks, block_id, qudit_dependencies, cycle, num_qudits)
                 block = {qudit: [cycle, cycle] for qudit in qudits}
                 block[-1] = set()
                 active_blocks.append(block)
 
             # Where the active qudit cycles keep getting updated
             while updated_qudits:
-
-                # Check if any blocks corresponding to updated qudits
+                
+               # Check if any blocks corresponding to updated qudits
                 # are eligible to be added to the circuit. If eligible,
                 # update actives, dependencies, and updated qudits.
                 final_regions = []
                 new_updated_qudits = set()
                 for qudit in updated_qudits:
-                    for blk_id in qudit_dependencies[qudit]:
+                    blk_ids = list(qudit_dependencies[qudit].keys())
+                    for blk_id in blk_ids:
                         num_passed = 0
                         for qdt, bounds in finished_blocks[blk_id].items():
                             if len(qudit_actives[qdt]) == 0:
@@ -174,7 +175,7 @@ class QuickPartitioner(BasePass):
                                 for cycle in range(bounds[0], bounds[1]+1):
                                     if cycle in qudit_actives[qdt]:
                                         del qudit_actives[qdt][cycle]
-                                qudit_dependencies[qdt].remove(blk_id)
+                                del qudit_dependencies[qdt][blk_id]
                                 new_updated_qudits.add(qdt)
                             final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in finished_blocks[blk_id].items()}))
                             del finished_blocks[blk_id]
@@ -220,7 +221,7 @@ class QuickPartitioner(BasePass):
         circuit.become(partitioned_circuit)
 
     def compute_finished_blocks(self, block, qudits, active_blocks, finished_blocks, 
-                                block_id, qudit_dependencies):
+                                block_id, qudit_dependencies, cycle, num_qudits):
         """
         Add blocks with all inactive qudits to the finished_blocks list and
         remove them from the active_blocks list.
@@ -249,10 +250,12 @@ class QuickPartitioner(BasePass):
                     active_block[-1].update(qudits)
 
                 # If the active block has reached its maximum size
-                # and all of its qudits are inadmissible,
+                # and/or all of its qudits are inadmissible,
                 # then add it to the remove list
-                if len(active_block) - 1 == self.block_size and \
-                   all([qudit in active_block[-1] for qudit in active_block if qudit != -1]):
+                if (len(active_block) - 1 == self.block_size and \
+                   all([qudit in active_block[-1] for qudit in active_block if qudit != -1])) or \
+                    cycle - max([active_block[qudit][1] for qudit in active_block if qudit != -1]) > 200 or \
+                    len(active_block[-1]) == num_qudits:
                     remove_blocks.append(active_block)
 
         # Remove all blocks in the remove list from the active list
@@ -263,7 +266,7 @@ class QuickPartitioner(BasePass):
             del remove_block[-1]
             finished_blocks[block_id] = remove_block
             for qudit in remove_block:
-                qudit_dependencies[qudit].append(block_id)
+                qudit_dependencies[qudit][block_id] = None
                 updated_qudits.add(qudit)
             active_blocks.remove(remove_block)
             block_id += 1
