@@ -1,3 +1,17 @@
+"""
+===========================================
+Berkeley Quantum Synthesis Toolkit (BQSKit)
+===========================================
+
+BQSKit is a superoptimizing quantum compiler that aims to provide
+easy to use and quick to extend software around quantum synthesis.
+This is accomplished by first building a quantum circuit intermediate
+representation designed to work efficiently with numerical optimizer
+based synthesis algorithms, and second bundling a compiler infrastructure
+and algorithm framework that can run many algorithms efficiently over
+a cluster of computers.
+"""
+
 from __future__ import annotations
 
 import logging

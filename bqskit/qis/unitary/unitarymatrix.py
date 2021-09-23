@@ -132,6 +132,10 @@ class UnitaryMatrix(np.ndarray, Unitary, StateVectorMap):  # type: ignore
 
     def get_shape(self) -> tuple[int, int]:
         return self.utry.shape  # type: ignore
+    
+    def get_numpy(self) -> np.ndarray:
+        """For backwards compatibility"""
+        return self
 
     def get_dim(self) -> int:
         return self.shape[0]

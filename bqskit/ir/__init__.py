@@ -3,6 +3,15 @@
 BQSKit Circuit Intermediate Representation (:mod:`bqskit.ir`)
 =============================================================
 
+.. currentmodule:: bqskit.ir
+
+.. autosummary::
+    :toctree:
+
+    Circuit
+    Gate
+    Operation
+
 TODO: More description
 """
 from __future__ import annotations
