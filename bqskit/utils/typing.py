@@ -190,12 +190,13 @@ def is_vector(V: np.ndarray) -> bool:
     return True
 
 
-def is_matrix(M: np.ndarray) -> bool:
+def is_matrix(M: np.typing.ArrayLike) -> bool:
     """Checks if M is a matrix."""
 
     if not isinstance(M, np.ndarray):
-        _logger.debug('M is not an numpy array.')
-        return False
+        # _logger.debug('M is not an numpy array.')
+        # return False
+        M = np.array(M)
 
     if len(M.shape) != 2:
         _logger.debug('M is not an 2-dimensional array.')
@@ -208,8 +209,11 @@ def is_matrix(M: np.ndarray) -> bool:
     return True
 
 
-def is_square_matrix(M: np.ndarray) -> bool:
+def is_square_matrix(M: np.typing.ArrayLike) -> bool:
     """Checks if M is a square matrix."""
+
+    if not isinstance(M, np.ndarray):
+        M = np.array(M)
 
     if not is_matrix(M):
         return False

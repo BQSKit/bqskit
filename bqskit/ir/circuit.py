@@ -651,10 +651,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             >>> opH = Operation(HGate(), [0])
             >>> circuit.append(opH)
             >>> circuit.point(opH)
-            CircuitPoint(cycle=0, qudit=0)
+            (0, 0)
             >>> opX = Operation(XGate(), [0])
             >>> circuit.point(opX)
-            CircuitPoint(cycle=1, qudit=0)
+            (1, 0)
         """
         if isinstance(op, Operation):
             self.check_valid_operation(op)

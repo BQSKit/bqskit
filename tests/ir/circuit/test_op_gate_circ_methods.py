@@ -652,12 +652,12 @@ class TestPoint:
         opH = Operation(HGate(), [0])
         circuit.append(opH)
         assert circuit.point(opH).__repr__(
-        ) == 'CircuitPoint(cycle=0, qudit=0)'
+        ) == '(0, 0)'
 
         opX = Operation(XGate(), [0])
         circuit.append(opX)
         assert circuit.point(opX).__repr__(
-        ) == 'CircuitPoint(cycle=1, qudit=0)'
+        ) == '(1, 0)'
 
 
 class TestAppend:

@@ -8,39 +8,18 @@ from __future__ import annotations
 
 import logging
 from functools import lru_cache
-from typing import cast
 from typing import Sequence
 
 import numpy as np
 from bqskitrs import calc_permutation_matrix
 
 from bqskit.ir.location import CircuitLocation
-from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 _logger = logging.getLogger(__name__)
 
 
 class PermutationMatrix(UnitaryMatrix):
     """The PermutationMatrix class."""
-
-    def __new__(
-        cls,
-        input: UnitaryLike,
-        radixes: Sequence[int] = [],
-        check_arguments: bool = True,
-    ) -> PermutationMatrix:
-        """Constructs a PermutationMatrix with the supplied matrix."""
-
-        if isinstance(input, PermutationMatrix):
-            return input
-
-        obj = super().__new__(cls, input, radixes, check_arguments)
-        obj = cast(PermutationMatrix, obj)
-
-        if check_arguments and not PermutationMatrix.is_permutation(obj):
-            raise TypeError(f'Expected square matrix, got {type(obj)}.')
-
-        return obj
 
     @staticmethod
     @lru_cache(maxsize=None)
