@@ -32,10 +32,10 @@ class TaggedGate(
 
         self.gate = gate
         self.tag = tag
-        self.name = 'Tagged(%s:%s)' % (gate.get_name(), tag)
-        self.num_params = gate.get_num_params()
-        self.size = gate.get_size()
-        self.radixes = gate.get_radixes()
+        self._name = 'Tagged(%s:%s)' % (gate.name, tag)
+        self._num_params = gate.num_params
+        self._num_qudits = gate.num_qudits
+        self._radixes = gate.radixes
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0:

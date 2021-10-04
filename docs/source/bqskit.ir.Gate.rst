@@ -1,18 +1,18 @@
-﻿bqskit.ir.Gate
+bqskit.ir.Gate
 ==============
 
 .. currentmodule:: bqskit.ir
 
 .. autoclass:: Gate
 
-   
+
    .. automethod:: __init__
 
-   
+
    .. rubric:: Methods
 
    .. autosummary::
-   
+
       ~Gate.__init__
       ~Gate.check_parameters
       ~Gate.get_dim
@@ -29,20 +29,15 @@
       ~Gate.is_qutrit_only
       ~Gate.with_all_frozen_params
       ~Gate.with_frozen_params
-   
-   
 
-   
-   
+
+
+
+
    .. rubric:: Attributes
 
    .. autosummary::
-   
+
+      ~Gate.dim
       ~Gate.name
       ~Gate.qasm_name
-      ~Gate.num_params
-      ~Gate.radixes
-      ~Gate.size
-      ~Gate.dim
-   
-   

@@ -51,10 +51,10 @@ NON_GRADIENT_GATES: list[Gate] = [
     ids=lambda gate: repr(gate),
 )
 def test_get_unitary(gate: Gate) -> None:
-    size = gate.get_size()
-    circ = Circ(size, radixes=gate.get_radixes())
+    size = gate.num_qudits
+    circ = Circ(size, radixes=gate.radixes)
     circ.append_gate(gate, list(range(size)))
-    num_params = circ.get_num_params()
+    num_params = circ.num_params
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
     assert np.allclose(circ.get_unitary(x), circuit.get_unitary(x))
@@ -62,10 +62,10 @@ def test_get_unitary(gate: Gate) -> None:
 
 @pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
 def test_get_grad(gate: Gate) -> None:
-    size = gate.get_size()
-    circ = Circ(size, radixes=gate.get_radixes())
+    size = gate.num_qudits
+    circ = Circ(size, radixes=gate.radixes)
     circ.append_gate(gate, list(range(size)))
-    num_params = circ.get_num_params()
+    num_params = circ.num_params
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
     grad_python = circ.get_grad(x)
@@ -76,10 +76,10 @@ def test_get_grad(gate: Gate) -> None:
 
 @pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
 def test_get_unitary_and_grad(gate: Gate) -> None:
-    size = gate.get_size()
-    circ = Circ(size, radixes=gate.get_radixes())
+    size = gate.num_qudits
+    circ = Circ(size, radixes=gate.radixes)
     circ.append_gate(gate, list(range(size)))
-    num_params = circ.get_num_params()
+    num_params = circ.num_params
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
     utry_python, grad_python = circ.get_unitary_and_grad(x)
@@ -93,7 +93,7 @@ def test_random_circuit_only_native(
         gen_random_circuit: Any,
 ) -> None:
     circ = gen_random_circuit(3, gateset=NATIVE_GATES + NON_GRADIENT_GATES)
-    num_params = circ.get_num_params()
+    num_params = circ.num_params
     x = np.random.random((num_params,))
     circuit = Circuit(circ)
     assert np.allclose(
@@ -103,9 +103,9 @@ def test_random_circuit_only_native(
 
 
 def test_random_circuit_qubit_gates(qubit_gate: Gate) -> None:
-    circ = Circ(qubit_gate.get_size())
-    circ.append_gate(qubit_gate, location=list(range(qubit_gate.get_size())))
-    num_params = circ.get_num_params()
+    circ = Circ(qubit_gate.num_qudits)
+    circ.append_gate(qubit_gate, location=list(range(qubit_gate.num_qudits)))
+    num_params = circ.num_params
     if qubit_gate.is_constant():
         assert num_params == 0
     x = np.random.random((num_params,))
@@ -118,10 +118,10 @@ def test_random_circuit_qubit_gates(qubit_gate: Gate) -> None:
 
 
 def test_random_circuit_qutrit_gates(qutrit_gate: Gate) -> None:
-    size = qutrit_gate.get_size()
+    size = qutrit_gate.num_qudits
     circ = Circ(size, radixes=[3] * size)
     circ.append_gate(qutrit_gate, location=list(range(size)))
-    num_params = circ.get_num_params()
+    num_params = circ.num_params
     if qutrit_gate.is_constant():
         assert num_params == 0
     x = np.random.random((num_params,))

@@ -185,17 +185,17 @@ class QPredictDecompositionPass(SynthesisPass):
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
 
         # 0. Skip any unitaries too small for the configured block.
-        if self.block_size_start > utry.get_size():
+        if self.block_size_start > utry.num_qudits:
             _logger.warning(
                 'Skipping synthesis: block size is larger than input unitary.',
             )
             return Circuit.from_unitary(utry)
 
         # 1. Create empty circuit with same size and radixes as `utry`.
-        circuit = Circuit(utry.get_size(), utry.get_radixes())
+        circuit = Circuit(utry.num_qudits, utry.radixes)
 
         # 2. Calculate block sizes
-        block_size_end = utry.get_size() - 1
+        block_size_end = utry.num_qudits - 1
         if self.block_size_limit is not None:
             block_size_end = self.block_size_limit
 
@@ -209,13 +209,13 @@ class QPredictDecompositionPass(SynthesisPass):
 
         if (
             not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.get_size()
+            or model.num_qudits < circuit.num_qudits
         ):
             _logger.warning(
                 'MachineModel not specified or invalid;'
                 ' defaulting to all-to-all.',
             )
-            model = MachineModel(circuit.get_size())
+            model = MachineModel(circuit.num_qudits)
         locations = [
             model.get_locations(i)
             for i in range(self.block_size_start, block_size_end + 1)
@@ -281,7 +281,7 @@ class QPredictDecompositionPass(SynthesisPass):
                 based on remainder analysis.
         """
         _logger.info('Performing remainder analysis.')
-        pauli_coefs = pauli_expansion(unitary_log_no_i(R))
+        pauli_coefs = pauli_expansion(unitary_log_no_i(R.get_numpy()))
 
         locations_by_index: dict[int, set[CircuitLocation]] = {}
         for location_group in locations:

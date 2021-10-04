@@ -33,7 +33,7 @@ class ComposedGate(Gate):
 
         raise AttributeError(
             'Expected gate or gates field for composed gate %s.'
-            % self.get_name(),
+            % self.name,
         )
 
     def is_locally_optimizable(self) -> bool:
@@ -50,5 +50,5 @@ class ComposedGate(Gate):
 
         raise AttributeError(
             'Expected gate or gates field for composed gate %s.'
-            % self.get_name(),
+            % self.name,
         )

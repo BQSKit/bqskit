@@ -91,50 +91,50 @@ class TestAppendQudit:
 
     def test_default(self) -> None:
         circuit = Circuit(1)
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 2
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 2
+        assert len(circuit.radixes) == 1
         circuit.append_qudit()
-        assert circuit.get_size() == 2
-        assert circuit.get_dim() == 4
-        assert len(circuit.get_radixes()) == 2
+        assert circuit.num_qudits == 2
+        assert circuit.dim == 4
+        assert len(circuit.radixes) == 2
         circuit.append_qudit()
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 8
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 8
+        assert len(circuit.radixes) == 3
 
     def test_qutrit(self) -> None:
         circuit = Circuit(1, [3])
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 3
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 3
+        assert len(circuit.radixes) == 1
         circuit.append_qudit(3)
-        assert circuit.get_size() == 2
-        assert circuit.get_dim() == 9
-        assert len(circuit.get_radixes()) == 2
+        assert circuit.num_qudits == 2
+        assert circuit.dim == 9
+        assert len(circuit.radixes) == 2
         circuit.append_qudit(3)
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 27
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 27
+        assert len(circuit.radixes) == 3
 
     def test_hybrid(self) -> None:
         circuit = Circuit(1)
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 2
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 2
+        assert len(circuit.radixes) == 1
         circuit.append_qudit(4)
-        assert circuit.get_size() == 2
-        assert circuit.get_dim() == 8
-        assert len(circuit.get_radixes()) == 2
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 4
+        assert circuit.num_qudits == 2
+        assert circuit.dim == 8
+        assert len(circuit.radixes) == 2
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 4
         circuit.append_qudit(3)
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 24
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 4
-        assert circuit.get_radixes()[2] == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 24
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 4
+        assert circuit.radixes[2] == 3
 
     def test_append_gate(self) -> None:
         circuit = Circuit(4)
@@ -143,7 +143,7 @@ class TestAppendQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.append_qudit()
         circuit.append_gate(CNOTGate(), [3, 4])
-        assert circuit.get_size() == 5
+        assert circuit.num_qudits == 5
         assert circuit[3, 4].gate == CNOTGate()
 
 
@@ -242,53 +242,53 @@ class TestExtendQudits:
 
     def test_qubits(self) -> None:
         circuit = Circuit(1, [2])
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 2
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 2
+        assert len(circuit.radixes) == 1
         circuit.extend_qudits([2, 2])
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 8
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 8
+        assert len(circuit.radixes) == 3
         circuit.extend_qudits([2, 2])
-        assert circuit.get_size() == 5
-        assert circuit.get_dim() == 32
-        assert len(circuit.get_radixes()) == 5
+        assert circuit.num_qudits == 5
+        assert circuit.dim == 32
+        assert len(circuit.radixes) == 5
 
     def test_qutrits(self) -> None:
         circuit = Circuit(1, [3])
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 3
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 3
+        assert len(circuit.radixes) == 1
         circuit.extend_qudits([3, 3])
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 27
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 27
+        assert len(circuit.radixes) == 3
         circuit.extend_qudits([3, 3])
-        assert circuit.get_size() == 5
-        assert circuit.get_dim() == 243
-        assert len(circuit.get_radixes()) == 5
+        assert circuit.num_qudits == 5
+        assert circuit.dim == 243
+        assert len(circuit.radixes) == 5
 
     def test_hybrid(self) -> None:
         circuit = Circuit(1)
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 2
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 2
+        assert len(circuit.radixes) == 1
         circuit.extend_qudits([3, 4])
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 24
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 3
-        assert circuit.get_radixes()[2] == 4
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 24
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 3
+        assert circuit.radixes[2] == 4
         circuit.extend_qudits([3, 2])
-        assert circuit.get_size() == 5
-        assert circuit.get_dim() == 144
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 3
-        assert circuit.get_radixes()[2] == 4
-        assert circuit.get_radixes()[3] == 3
-        assert circuit.get_radixes()[4] == 2
+        assert circuit.num_qudits == 5
+        assert circuit.dim == 144
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 3
+        assert circuit.radixes[2] == 4
+        assert circuit.radixes[3] == 3
+        assert circuit.radixes[4] == 2
 
     def test_append_gate(self) -> None:
         circuit = Circuit(4)
@@ -298,7 +298,7 @@ class TestExtendQudits:
         circuit.extend_qudits([2, 2])
         circuit.append_gate(CNOTGate(), [3, 4])
         circuit.append_gate(CNOTGate(), [4, 5])
-        assert circuit.get_size() == 6
+        assert circuit.num_qudits == 6
         assert circuit[3, 4].gate == CNOTGate()
         assert circuit[4, 5].gate == CNOTGate()
 
@@ -407,50 +407,50 @@ class TestInsertQudit:
 
     def test_default(self) -> None:
         circuit = Circuit(1)
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 2
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 2
+        assert len(circuit.radixes) == 1
         circuit.insert_qudit(0)
-        assert circuit.get_size() == 2
-        assert circuit.get_dim() == 4
-        assert len(circuit.get_radixes()) == 2
+        assert circuit.num_qudits == 2
+        assert circuit.dim == 4
+        assert len(circuit.radixes) == 2
         circuit.insert_qudit(0)
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 8
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 8
+        assert len(circuit.radixes) == 3
 
     def test_qutrit(self) -> None:
         circuit = Circuit(1, [3])
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 3
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 3
+        assert len(circuit.radixes) == 1
         circuit.insert_qudit(0, 3)
-        assert circuit.get_size() == 2
-        assert circuit.get_dim() == 9
-        assert len(circuit.get_radixes()) == 2
+        assert circuit.num_qudits == 2
+        assert circuit.dim == 9
+        assert len(circuit.radixes) == 2
         circuit.insert_qudit(0, 3)
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 27
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 27
+        assert len(circuit.radixes) == 3
 
     def test_hybrid(self) -> None:
         circuit = Circuit(1)
-        assert circuit.get_size() == 1
-        assert circuit.get_dim() == 2
-        assert len(circuit.get_radixes()) == 1
+        assert circuit.num_qudits == 1
+        assert circuit.dim == 2
+        assert len(circuit.radixes) == 1
         circuit.insert_qudit(0, 4)
-        assert circuit.get_size() == 2
-        assert circuit.get_dim() == 8
-        assert len(circuit.get_radixes()) == 2
-        assert circuit.get_radixes()[0] == 4
-        assert circuit.get_radixes()[1] == 2
+        assert circuit.num_qudits == 2
+        assert circuit.dim == 8
+        assert len(circuit.radixes) == 2
+        assert circuit.radixes[0] == 4
+        assert circuit.radixes[1] == 2
         circuit.insert_qudit(-1, 3)
-        assert circuit.get_size() == 3
-        assert circuit.get_dim() == 24
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes()[0] == 4
-        assert circuit.get_radixes()[1] == 3
-        assert circuit.get_radixes()[2] == 2
+        assert circuit.num_qudits == 3
+        assert circuit.dim == 24
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes[0] == 4
+        assert circuit.radixes[1] == 3
+        assert circuit.radixes[2] == 2
 
     def test_append_gate_1(self) -> None:
         circuit = Circuit(4)
@@ -459,9 +459,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(0)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 1].gate == CNOTGate()
@@ -478,9 +478,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(1)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 0].gate == CNOTGate()
@@ -497,9 +497,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(2)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 0].gate == CNOTGate()
@@ -516,9 +516,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(3)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[1, 0].gate == CNOTGate()
         assert circuit[1, 0].location == (0, 3)
         assert circuit[0, 0].gate == CNOTGate()
@@ -535,9 +535,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(4)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 1].gate == CNOTGate()
@@ -562,9 +562,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(-3)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 0].gate == CNOTGate()
@@ -581,9 +581,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(-6)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 1].gate == CNOTGate()
@@ -600,9 +600,9 @@ class TestInsertQudit:
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.insert_qudit(25)
         circuit.append_gate(CNOTGate(), [0, 3])
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[3, 0].gate == CNOTGate()
         assert circuit[3, 0].location == (0, 3)
         assert circuit[0, 1].gate == CNOTGate()
@@ -620,9 +620,9 @@ class TestInsertQudit:
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
         circuit.insert_qudit(0)
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes().count(2) == 5
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes.count(2) == 5
         assert circuit[0, 2].gate == three_qubit_gate
         assert circuit[0, 2].location == (2, 3, 4)
         assert circuit[1, 1].gate == three_qubit_gate
@@ -640,13 +640,13 @@ class TestInsertQudit:
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
         circuit.insert_qudit(2)
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 2
-        assert circuit.get_radixes()[2] == 2
-        assert circuit.get_radixes()[3] == 3
-        assert circuit.get_radixes()[4] == 3
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 2
+        assert circuit.radixes[2] == 2
+        assert circuit.radixes[3] == 3
+        assert circuit.radixes[4] == 3
         assert circuit[0, 1].gate == three_qubit_gate
         assert circuit[0, 1].location == (0, 1, 4)
         assert circuit[1, 1].gate == three_qubit_gate
@@ -658,13 +658,13 @@ class TestInsertQudit:
             gen_random_utry_np(12), [2, 2, 3],
         )
         circuit.insert_qudit(2, 3)
-        assert circuit.get_size() == 5
-        assert len(circuit.get_radixes()) == 5
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 2
-        assert circuit.get_radixes()[2] == 3
-        assert circuit.get_radixes()[3] == 2
-        assert circuit.get_radixes()[4] == 2
+        assert circuit.num_qudits == 5
+        assert len(circuit.radixes) == 5
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 2
+        assert circuit.radixes[2] == 3
+        assert circuit.radixes[3] == 2
+        assert circuit.radixes[4] == 2
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
         assert circuit[0, 0].gate == three_qubit_gate
         assert circuit[0, 0].location == (0, 1, 2)
@@ -738,7 +738,7 @@ class TestPopQudit:
 
     def test_index_invalid_empty(self) -> None:
         circuit = Circuit(1)
-        assert circuit.get_size() == 1
+        assert circuit.num_qudits == 1
         try:
             circuit.pop_qudit(0)
         except ValueError:
@@ -753,9 +753,9 @@ class TestPopQudit:
         circuit.append_gate(CNOTGate(), [1, 2])
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.pop_qudit(qudit_index)
-        assert circuit.get_size() == 3
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes().count(2) == 3
+        assert circuit.num_qudits == 3
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes.count(2) == 3
         assert circuit.get_num_operations() == 2
         assert circuit[0, 0].gate == CNOTGate()
         assert circuit[0, 0].location == (0, 1)
@@ -773,9 +773,9 @@ class TestPopQudit:
         circuit.append_gate(CNOTGate(), [1, 2])
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.pop_qudit(qudit_index)
-        assert circuit.get_size() == 3
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes().count(2) == 3
+        assert circuit.num_qudits == 3
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes.count(2) == 3
         assert circuit.get_num_operations() == 1
         assert circuit[0, 1].gate == CNOTGate()
         assert circuit[0, 1].location == (1, 2)
@@ -789,9 +789,9 @@ class TestPopQudit:
         circuit.append_gate(CNOTGate(), [1, 2])
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.pop_qudit(qudit_index)
-        assert circuit.get_size() == 3
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes().count(2) == 3
+        assert circuit.num_qudits == 3
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes.count(2) == 3
         assert circuit.get_num_operations() == 1
         assert circuit[0, 0].gate == CNOTGate()
         assert circuit[0, 0].location == (0, 1)
@@ -811,9 +811,9 @@ class TestPopQudit:
         circuit.append_gate(CNOTGate(), [1, 2])
         circuit.append_gate(CNOTGate(), [2, 3])
         circuit.pop_qudit(qudit_index)
-        assert circuit.get_size() == 3
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes().count(2) == 3
+        assert circuit.num_qudits == 3
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes.count(2) == 3
         assert circuit.get_num_operations() == 6
         assert circuit[0, 0].gate == CNOTGate()
         assert circuit[0, 0].location == (0, 1)
@@ -839,9 +839,9 @@ class TestPopQudit:
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
         circuit.pop_qudit(qudit_index)
-        assert circuit.get_size() == 3
-        assert len(circuit.get_radixes()) == 3
-        assert circuit.get_radixes().count(2) == 3
+        assert circuit.num_qudits == 3
+        assert len(circuit.radixes) == 3
+        assert circuit.radixes.count(2) == 3
         assert circuit.get_num_operations() == 1
         assert circuit.get_num_cycles() == 1
         assert circuit[0, 0].gate == three_qubit_gate
@@ -862,13 +862,13 @@ class TestPopQudit:
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
         circuit.pop_qudit(qudit_index)
-        assert circuit.get_size() == 3
-        assert len(circuit.get_radixes()) == 3
+        assert circuit.num_qudits == 3
+        assert len(circuit.radixes) == 3
         assert circuit.get_num_operations() == 1
         assert circuit.get_num_cycles() == 1
-        assert circuit.get_radixes()[0] == 2
-        assert circuit.get_radixes()[1] == 2
-        assert circuit.get_radixes()[2] == 3
+        assert circuit.radixes[0] == 2
+        assert circuit.radixes[1] == 2
+        assert circuit.radixes[2] == 3
         assert circuit[0, 0].gate == three_qubit_gate
         assert circuit[0, 0].location == (0, 1, 2)
         assert circuit[0, 1].gate == three_qubit_gate

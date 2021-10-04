@@ -103,7 +103,7 @@ class CompilationTask():
     def synthesis(utry: UnitaryLike) -> CompilationTask:
         """Produces a standard synthesis task for the given unitary."""
         circuit = Circuit.from_unitary(utry)
-        num_qudits = circuit.get_size()
+        num_qudits = circuit.num_qudits
 
         if num_qudits > 8:
             _logger.warning('Synthesis input size is very large.')
@@ -126,7 +126,7 @@ class CompilationTask():
     @staticmethod
     def optimize(circuit: Circuit) -> CompilationTask:
         """Produces a standard optimization task for the given circuit."""
-        num_qudits = circuit.get_size()
+        num_qudits = circuit.num_qudits
 
         if num_qudits <= 4:
             return CompilationTask.synthesis(circuit.get_unitary())

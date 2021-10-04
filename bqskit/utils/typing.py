@@ -172,12 +172,11 @@ def is_valid_coupling_graph(
     return True
 
 
-def is_vector(V: np.ndarray) -> bool:
+def is_vector(V: np.typing.ArrayLike) -> bool:
     """Return true if V is a vector."""
 
     if not isinstance(V, np.ndarray):
-        _logger.debug('V is not an numpy array.')
-        return False
+        V = np.array(V)
 
     if len(V.shape) != 1:
         _logger.debug('V is not an 1-dimensional array.')

@@ -160,7 +160,7 @@ class TestGenRandomCircuit:
 
     # r3_qubit_circuit
     def test_r3_size(self, r3_qubit_circuit: Circuit) -> None:
-        assert r3_qubit_circuit.get_size() == 3
+        assert r3_qubit_circuit.num_qudits == 3
 
     def test_r3_radix(self, r3_qubit_circuit: Circuit) -> None:
         assert r3_qubit_circuit.is_qubit_only()
@@ -170,7 +170,7 @@ class TestGenRandomCircuit:
 
     # r3_qubit_constant_circuit
     def test_r3_con_size(self, r3_qubit_constant_circuit: Circuit) -> None:
-        assert r3_qubit_constant_circuit.get_size() == 3
+        assert r3_qubit_constant_circuit.num_qudits == 3
 
     def test_r3_con_radix(self, r3_qubit_constant_circuit: Circuit) -> None:
         assert r3_qubit_constant_circuit.is_qubit_only()
@@ -183,7 +183,7 @@ class TestGenRandomCircuit:
 
     # r3_qutrit_circuit
     def test_r3_qutrit_size(self, r3_qutrit_circuit: Circuit) -> None:
-        assert r3_qutrit_circuit.get_size() == 3
+        assert r3_qutrit_circuit.num_qudits == 3
 
     def test_r3_qutrit_radix(self, r3_qutrit_circuit: Circuit) -> None:
         assert r3_qutrit_circuit.is_qutrit_only()
@@ -193,12 +193,12 @@ class TestGenRandomCircuit:
 
     # r6_qudit_circuit
     def test_r6_size(self, r6_qudit_circuit: Circuit) -> None:
-        assert r6_qudit_circuit.get_size() == 6
+        assert r6_qudit_circuit.num_qudits == 6
 
     def test_r6_radix(self, r6_qudit_circuit: Circuit) -> None:
-        count = r6_qudit_circuit.get_radixes().count(2)
-        count += r6_qudit_circuit.get_radixes().count(3)
-        assert count == r6_qudit_circuit.get_size()
+        count = r6_qudit_circuit.radixes.count(2)
+        count += r6_qudit_circuit.radixes.count(3)
+        assert count == r6_qudit_circuit.num_qudits
 
     def test_r6_depth(self, r6_qudit_circuit: Circuit) -> None:
         assert r6_qudit_circuit.get_num_operations() == 10

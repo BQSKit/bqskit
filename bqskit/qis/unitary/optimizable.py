@@ -39,5 +39,5 @@ class LocallyOptimizableUnitary(Unitary):
         if not is_square_matrix(env_matrix):
             raise TypeError('Expected a square matrix.')
 
-        if env_matrix.shape != (self.get_dim(), self.get_dim()):
+        if env_matrix.shape != (self.dim, self.dim):
             raise TypeError('Environmental matrix shape mismatch.')

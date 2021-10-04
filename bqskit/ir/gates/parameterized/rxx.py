@@ -14,9 +14,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class RXXGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
     """A gate representing an arbitrary rotation around the XX axis."""
 
-    size = 2
-    num_params = 1
-    qasm_name = 'rxx'
+    _num_qudits = 2
+    _num_params = 1
+    _qasm_name = 'rxx'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""

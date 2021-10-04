@@ -11,9 +11,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class TdgGate(ConstantGate, QubitGate):
     """The T Dagger gate."""
 
-    size = 1
-    qasm_name = 'tdg'
-    utry = UnitaryMatrix(
+    _num_qudits = 1
+    _qasm_name = 'tdg'
+    _utry = UnitaryMatrix(
         [
             [1, 0],
             [0, np.exp(-1j * np.pi / 4)],

@@ -125,13 +125,13 @@ class ForEachBlockPass(BasePass):
             model = data['machine_model']
         if (
             not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.get_size()
+            or model.num_qudits < circuit.num_qudits
         ):
             _logger.warning(
                 'MachineModel not specified or invalid;'
                 ' defaulting to all-to-all.',
             )
-            model = MachineModel(circuit.get_size())
+            model = MachineModel(circuit.num_qudits)
 
         # Go through the blocks
         points: list[CircuitPoint] = []

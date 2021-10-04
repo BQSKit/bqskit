@@ -52,15 +52,15 @@ s
 
         location = CircuitLocation(location)
 
-        if len(location) != gate.get_size():
+        if len(location) != gate.num_qudits:
             raise ValueError('Gate and location size mismatch.')
 
-        self.num_params = gate.get_num_params()
-        self.radixes = gate.get_radixes()
-        self.size = gate.get_size()
+        self._num_params = gate.num_params
+        self._radixes = gate.radixes
+        self._num_qudits = gate.num_qudits
 
-        if len(params) == 0 and self.get_num_params() != 0:
-            params = [0.0] * self.get_num_params()
+        if len(params) == 0 and self.num_params != 0:
+            params = [0.0] * self.num_params
 
         self.check_parameters(params)
 
@@ -94,7 +94,7 @@ s
             full_params = self.params
 
         return '{}({}) q[{}];\n'.format(
-            self.gate.get_qasm_name(),
+            self.gate.qasm_name,
             ', '.join([str(p) for p in full_params]),
             '], q['.join([str(q) for q in self.location]),
         ).replace('()', '')

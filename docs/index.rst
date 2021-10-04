@@ -7,6 +7,17 @@ Welcome to BQSKit's documentation!
    :no-special-members:
 
 .. toctree::
-   :maxdepth: 2
+   :caption: BQSKit Tutorials
+   :maxdepth: 1
 
-   api
+   tutorials/BQSKit IR Introduction.ipynb
+
+.. toctree::
+   :caption: API Programmer Reference
+   :maxdepth: 1
+
+   source/ir
+   source/compiler
+   source/passes
+   source/qis
+   source/utils

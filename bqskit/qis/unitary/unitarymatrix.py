@@ -28,8 +28,6 @@ _logger = logging.getLogger(__name__)
 class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     """The UnitaryMatrix Class."""
 
-    # num_params = 0
-
     def __init__(
         self,
         input: UnitaryLike,
@@ -62,8 +60,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """
 
         if isinstance(input, UnitaryMatrix):
-            self.utry = input.get_numpy()
-            self.radixes = input.get_radixes()
+            self._utry = input.get_numpy()
+            self._radixes = input.radixes
+            return
 
         if check_arguments and not is_square_matrix(input):
             raise TypeError(f'Expected square matrix, got {type(input)}.')
@@ -74,16 +73,16 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         dim = len(input)
 
         if radixes:
-            self.radixes = tuple(radixes)
+            self._radixes = tuple(radixes)
 
         # Check if unitary dimension is a power of two
         elif dim & (dim - 1) == 0:
-            self.radixes = tuple([2] * int(np.round(np.log2(dim))))
+            self._radixes = tuple([2] * int(np.round(np.log2(dim))))
 
         # Check if unitary dimension is a power of three
         elif 3 ** int(np.round(np.log(dim) / np.log(3))) == dim:  # noqa
             radixes = [3] * int(np.round(np.log(dim) / np.log(3)))
-            self.radixes = tuple(radixes)
+            self._radixes = tuple(radixes)
 
         else:
             raise RuntimeError(
@@ -97,41 +96,38 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if check_arguments and np.prod(self.radixes) != dim:
             raise ValueError('Qudit radixes mismatch with dimension.')
 
-        self.utry = np.array(input, dtype=np.complex128)
+        self._utry = np.array(input, dtype=np.complex128)
 
     @property
-    def shape(self) -> tuple[int, int]:
-        return self.utry.shape
+    def shape(self) -> tuple[int, ...]:
+        return self._utry.shape
 
     @property
-    def dtype(self) -> np.typing.DataType:
-        return self.utry.dtype
+    def dtype(self) -> np.typing.DTypeLike:
+        return self._utry.dtype
 
     def get_numpy(self) -> np.ndarray:
         """For backwards compatibility."""
-        return self.utry
+        return self._utry
 
-    def get_dim(self) -> int:
+    @property
+    def dim(self) -> int:
         return self.shape[0]
 
-    def get_num_params(self) -> int:
-        return 0
-
-    def get_radixes(self) -> tuple[int, ...]:
-        return self.radixes
-
-    def get_size(self) -> int:
-        return len(self.radixes)
+    _num_params = 0
 
     def __len__(self) -> int:
         return self.shape[0]
 
+    def __iter__(self) -> int:
+        return self._utry.__iter__()
+
     @property
     def T(self) -> UnitaryMatrix:
-        return UnitaryMatrix(self.utry.T, self.radixes, False)
+        return UnitaryMatrix(self._utry.T, self.radixes, False)
 
     def conj(self) -> UnitaryMatrix:
-        return UnitaryMatrix(self.utry.conj(), self.radixes, False)
+        return UnitaryMatrix(self._utry.conj(), self.radixes, False)
 
     @property
     def dagger(self) -> UnitaryMatrix:
@@ -148,7 +144,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Returns the distance to `other`."""
         other = UnitaryMatrix(other)
         num = np.abs(np.trace(other.conj().T @ self))
-        dem = self.get_dim()
+        dem = self.dim
         dist = np.sqrt(1 - ((num / dem) ** 2))
         return dist if dist > 0.0 else 0.0
 
@@ -159,10 +155,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         in_state = StateVector(in_state)
 
-        if in_state.get_dim() != self.dim:
+        if in_state.dim != self.dim:
             raise ValueError(
                 'State unitary dimension mismatch; '
-                f'expected {self.dim}, got {in_state.get_dim()}.',
+                f'expected {self.dim}, got {in_state.dim}.',
             )
 
         vec = in_state[:, None]
@@ -295,17 +291,19 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         return True
 
-    def __array__(self, dtype:np.typing.DataType=np.complex128):
+    def __array__(
+            self, dtype: np.typing.DTypeLike = np.complex128,
+    ) -> np.ndarray:
         if dtype != np.complex128:
             raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
 
-        return self.utry
+        return self._utry
 
     def __array_ufunc__(
         self,
         ufunc: np.ufunc,
         method: str,
-        *inputs: Sequence[np.ndarray],
+        *inputs: np.ndarray,
         **kwargs: Any,
     ) -> UnitaryMatrix | np.ndarray:
         if method != '__call__':
@@ -335,71 +333,13 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if convert_back:
             return UnitaryMatrix(out, self.radixes)
 
-        else:
-            return out
-        #     results = tuple(
-        #         (
-        #             np.asarray(result).view(UnitaryMatrix)
-        #             if output is None else output
-        #         )
-        #         for result, output in zip(results, outputs)
-        #     )
-        # else:
-        #     results = tuple(
-        #         (result if output is None else output)
-        #         for result, output in zip(results, outputs)
-        #     )
+        return out
 
-        # outputs: None | Sequence[np.ndarray] | Sequence[None] = out
-        # if outputs:
-        #     out_args = []
-        #     for j, output in enumerate(outputs):
-        #         if isinstance(output, UnitaryMatrix):
-        #             out_args.append(output.view(np.ndarray))
-        #         else:
-        #             out_args.append(output)
-        #     kwargs['out'] = tuple(out_args)
-        # else:
-        #     outputs = (None,) * ufunc.nout
+    def __str__(self) -> str:
+        return str(self._utry)
 
-        # results = super().__array_ufunc__(  # type: ignore
-        #     ufunc, method, *args, **kwargs,
-        # )
-
-        # if results is NotImplemented:
-        #     return NotImplemented
-
-        # if method == 'at':
-        #     return None
-
-        # if ufunc.nout == 1:
-        #     results = (results,)
-
-        # # The results are unitary
-        # # if only unitaries are involved
-        # # and unitaries are closed under the specific operation.
-        # convert_back = not non_unitary_involved and (
-        #     ufunc.__name__ == 'conjugate'
-        #     or ufunc.__name__ == 'matmul'
-        #     or ufunc.__name__ == 'negative'
-        #     or ufunc.__name__ == 'positive'
-        # )
-
-        # if convert_back:
-        #     results = tuple(
-        #         (
-        #             np.asarray(result).view(UnitaryMatrix)
-        #             if output is None else output
-        #         )
-        #         for result, output in zip(results, outputs)
-        #     )
-        # else:
-        #     results = tuple(
-        #         (result if output is None else output)
-        #         for result, output in zip(results, outputs)
-        #     )
-
-        # return results[0] if len(results) == 1 else results
+    def __repr__(self) -> str:
+        return repr(self._utry)
 
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]

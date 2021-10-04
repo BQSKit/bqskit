@@ -35,10 +35,10 @@ class CircuitGate(Gate):
         """
 
         self._circuit = circuit if move else circuit.copy()
-        self.size = self._circuit.get_size()
-        self.radixes = self._circuit.get_radixes()
-        self.num_params = self._circuit.get_num_params()
-        self.name = 'CircuitGate(%s)' % str(self._circuit)
+        self._num_qudits = self._circuit.num_qudits
+        self._radixes = self._circuit.radixes
+        self._num_params = self._circuit.num_params
+        self._name = 'CircuitGate(%s)' % str(self._circuit)
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         return self._circuit.get_unitary(params)

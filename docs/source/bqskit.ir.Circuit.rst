@@ -1,18 +1,18 @@
-﻿bqskit.ir.Circuit
+bqskit.ir.Circuit
 =================
 
 .. currentmodule:: bqskit.ir
 
 .. autoclass:: Circuit
 
-   
+
    .. automethod:: __init__
 
-   
+
    .. rubric:: Methods
 
    .. autosummary::
-   
+
       ~Circuit.__init__
       ~Circuit.append
       ~Circuit.append_circuit
@@ -101,18 +101,13 @@
       ~Circuit.surround
       ~Circuit.unfold
       ~Circuit.unfold_all
-   
-   
 
-   
-   
+
+
+
+
    .. rubric:: Attributes
 
    .. autosummary::
-   
-      ~Circuit.num_params
-      ~Circuit.radixes
-      ~Circuit.size
+
       ~Circuit.dim
-   
-   

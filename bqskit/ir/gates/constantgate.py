@@ -18,20 +18,13 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class ConstantGate(Gate, DifferentiableUnitary, LocallyOptimizableUnitary):
     """The ConstantGate Class."""
 
-    num_params = 0
-    utry: UnitaryMatrix
+    _num_params = 0
+    _utry: UnitaryMatrix
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
         self.check_parameters(params)
-
-        if hasattr(self, 'utry'):
-            return self.utry
-
-        raise AttributeError(
-            'Expected utry class variable for gate %s.'
-            % self.__class__.__name__,
-        )
+        return getattr(self, '_utry')
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """Returns the gradient for this gate, See Gate for more info."""

@@ -20,16 +20,16 @@ from bqskit.utils.math import unitary_log_no_i
 class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
     """A gate representing an arbitrary rotation."""
 
-    def __init__(self, size: int) -> None:
-        """Create a PauliGate acting on `size` qubits."""
+    def __init__(self, num_qudits: int) -> None:
+        """Create a PauliGate acting on `num_qudits` qubits."""
 
-        if size <= 0:
-            raise ValueError('Expected positive integer, got %d' % size)
+        if num_qudits <= 0:
+            raise ValueError('Expected positive integer, got %d' % num_qudits)
 
-        self.size = size
-        self.paulis = PauliMatrices(self.size)
-        self.num_params = len(self.paulis)
-        self.sigmav = (-1j / self.get_dim()) * self.paulis.get_numpy()
+        self._num_qudits = num_qudits
+        self.paulis = PauliMatrices(self.num_qudits)
+        self._num_params = len(self.paulis)
+        self.sigmav = (-1j / self.dim) * self.paulis.get_numpy()
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""

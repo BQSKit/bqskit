@@ -8,9 +8,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class SqrtCNOTGate(ConstantGate, QubitGate):
 
-    size = 2
-    qasm_name = 'csx'
-    utry = UnitaryMatrix(
+    _num_qudits = 2
+    _qasm_name = 'csx'
+    _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 1, 0, 0],

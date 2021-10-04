@@ -13,8 +13,8 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class U8Gate(QutritGate, DifferentiableUnitary):
     """The U8 single qutrit gate."""
 
-    size = 1
-    num_params = 8
+    _num_qudits = 1
+    _num_params = 8
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""

@@ -56,14 +56,14 @@ class GreedyPartitioner(BasePass):  # TODO: Change
             data (dict[str,Any]): Optional data unique to specific run.
         """
 
-        if self.block_size > circuit.get_size():
+        if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
             circuit.fold({
                 qudit_index: (0, circuit.get_num_cycles())
-                for qudit_index in range(circuit.get_size())
+                for qudit_index in range(circuit.num_qudits)
             })
             return
 
@@ -71,7 +71,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
         total_num_gates = 0
         regions: list[CircuitRegion] = []
         all_bounds: list[list[CycleInterval]] = [
-            [] for q in range(circuit.get_size())
+            [] for q in range(circuit.num_qudits)
         ]
         potential_regions = {}
         for cycle, op in circuit.operations_with_cycles():
@@ -169,7 +169,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
         # TODO: Merge regions that can be merged together
 
         # Fold the circuit
-        folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
+        folded_circuit = Circuit(circuit.num_qudits, circuit.radixes)
         regions = self.topo_sort(regions)
         # Option to keep a block's idle qudits as part of the CircuitGate
         if 'keep_idle_qudits' in data and data['keep_idle_qudits'] is True:

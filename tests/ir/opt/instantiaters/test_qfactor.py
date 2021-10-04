@@ -51,7 +51,7 @@ class TestQFactorEndToEnd:
         circuit.append_gate(g1, [0, 1])
         circuit.append_gate(g2, [1, 2, 3])
         circuit.append_gate(g3, [1])
-        utry = circuit.get_unitary(np.random.random(circuit.get_num_params()))
+        utry = circuit.get_unitary(np.random.random(circuit.num_params))
         params = QFactor().instantiate(circuit, utry, circuit.get_params())
 
         circuit.set_params(params)

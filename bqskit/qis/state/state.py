@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import Iterator
 from typing import Sequence
 from typing import Union
 
 import numpy as np
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from bqskit.utils.typing import is_valid_radixes
 from bqskit.utils.typing import is_vector
@@ -15,26 +17,26 @@ from bqskit.utils.typing import is_vector
 _logger = logging.getLogger(__name__)
 
 
-class StateVector(np.ndarray):
+class StateVector(NDArrayOperatorsMixin):
     """The StateVector class."""
 
-    def __new__(
-        cls,
+    def __init__(
+        self,
         input: StateLike,
         radixes: Sequence[int] = [],
         check_arguments: bool = True,
-    ) -> StateVector:
+    ) -> None:
         """
         Constructs a StateVector with the supplied vector.
 
         Args:
-            vec (StateLike): The state vector.
+            input (StateLike): The state vector.
 
             radixes (Sequence[int]): A sequence with its length equal to
                 the number of qudits this StateVector represents. Each
                 element specifies the base, number of orthogonal states,
                 for the corresponding qudit. By default, the constructor
-                will attempt to calculate `radixes` from `vec`.
+                will attempt to calculate `radixes` from `input`.
 
         Raises:
             TypeError: If `radixes` is not specified and the constructor
@@ -42,80 +44,75 @@ class StateVector(np.ndarray):
         """
         # Copy Constructor
         if isinstance(input, StateVector):
-            return input
+            self._vec = input.get_numpy()
+            self._radixes = input.radixes
+            return
 
-        obj = np.asarray(input).view(cls)
+        if check_arguments and not is_vector(input):
+            raise TypeError(f'Expected vector, got {type(input)}.')
 
-        if check_arguments and not is_vector(obj):
-            raise TypeError(f'Expected vector, got {type(obj)}.')
-
-        if check_arguments and not StateVector.is_pure_state(obj):
+        if check_arguments and not StateVector.is_pure_state(input):
             raise ValueError('Input failed state vector condition.')
+
+        dim = len(input)
 
         if radixes:
-            obj.radixes = tuple(radixes)
+            self._radixes = tuple(radixes)
 
         # Check if unitary dimension is a power of two
-        elif obj.get_dim() & (obj.get_dim() - 1) == 0:
-            obj.radixes = tuple([2] * int(np.round(np.log2(obj.get_dim()))))
+        elif dim & (dim - 1) == 0:
+            self._radixes = tuple([2] * int(np.round(np.log2(dim))))
 
         # Check if unitary dimension is a power of three
-        elif 3 ** int(np.round(np.log(obj.get_dim()) / np.log(3))) == obj.get_dim():  # noqa
-            radixes = [3] * int(np.round(np.log(obj.get_dim()) / np.log(3)))
-            obj.radixes = tuple(radixes)
+        elif 3 ** int(np.round(np.log(dim) / np.log(3))) == dim:  # noqa
+            radixes = [3] * int(np.round(np.log(dim) / np.log(3)))
+            self._radixes = tuple(radixes)
 
         else:
             raise RuntimeError(
                 'Unable to determine radixes'
-                ' for UnitaryMatrix with dim %d.' % obj.get_dim(),
+                ' for StateVector with dim %d.' % dim,
             )
 
-        if check_arguments and not is_valid_radixes(obj.radixes):
+        if check_arguments and not is_valid_radixes(self.radixes):
             raise TypeError('Invalid qudit radixes.')
 
-        if check_arguments and np.prod(obj.radixes) != obj.get_dim():
+        if check_arguments and np.prod(self.radixes) != dim:
             raise ValueError('Qudit radixes mismatch with dimension.')
 
-        return obj
+        self._vec = np.array(input, dtype=np.complex128)
 
-    def __array_finalize__(self, obj: StateVector | np.ndarray | None) -> None:
-        if isinstance(obj, StateVector):
-            self.radixes = getattr(obj, 'radixes', None)
-            return
+    def get_numpy(self) -> np.ndarray:
+        return self._vec
 
-        if obj is None:
-            return
+    @property
+    def shape(self) -> tuple[int, ...]:
+        return self._vec.shape
 
-        if not is_vector(obj):
-            raise TypeError(f'Expected vector, got {type(obj)}.')
+    @property
+    def dtype(self) -> np.typing.DTypeLike:
+        return self._vec.dtype
 
-        if not StateVector.is_pure_state(obj):
-            raise ValueError('Input failed state vector condition.')
-
-        dim = obj.shape[0]
-
-        # Check if unitary dimension is a power of two
-        if dim & (dim - 1) == 0:
-            self.radixes = tuple([2] * int(np.round(np.log2(dim))))
-
-        # Check if unitary dimension is a power of three
-        elif 3 ** int(np.round(np.log(dim) / np.log(3))) == dim:
-            self.radixes = tuple([3] * int(np.round(np.log(dim) / np.log(3))))
-
-        else:
-            raise RuntimeError(
-                'Unable to determine radixes'
-                ' for UnitaryMatrix with dim %d.' % dim,
-            )
-
-    def get_size(self) -> int:
+    @property
+    def num_qudits(self) -> int:
         return len(self.radixes)
 
-    def get_dim(self) -> int:
+    @property
+    def dim(self) -> int:
         return self.shape[0]
 
-    def get_radixes(self) -> tuple[int, ...]:
-        return self.radixes
+    @property
+    def radixes(self) -> tuple[int, ...]:
+        return self._radixes
+
+    def __len__(self) -> int:
+        return self.shape[0]
+
+    def __iter__(self) -> Iterator[np.complex128]:
+        return self._vec.__iter__()
+
+    def __getitem__(self, index: Any) -> np.complex128 | np.ndarray:
+        return self._vec[index]
 
     def get_probs(self) -> tuple[float, ...]:
         return tuple(np.abs(elem)**2 for elem in self)
@@ -132,70 +129,53 @@ class StateVector(np.ndarray):
 
         return True
 
+    def __array__(
+            self,
+            dtype: np.typing.DTypeLike = np.complex128,
+    ) -> np.ndarray:
+        if dtype != np.complex128:
+            raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
+
+        return self._vec
+
     def __array_ufunc__(
         self,
         ufunc: np.ufunc,
         method: str,
-        *inputs: Sequence[np.ndarray],
-        out: None | Sequence[np.ndarray] = None,
+        *inputs: np.ndarray,
         **kwargs: Any,
-    ) -> tuple[np.ndarray] | np.ndarray | None:
+    ) -> StateVector | np.ndarray:
+        if method != '__call__':
+            return NotImplemented
+
         non_state_involved = False
-        args = []
-        for i, input in enumerate(inputs):
+        args: list[np.ndarray] = []
+        for input in inputs:
             if isinstance(input, StateVector):
-                args.append(input.view(np.ndarray))
+                args.append(input.get_numpy())
             else:
                 args.append(input)
                 non_state_involved = True
 
-        outputs: None | Sequence[np.ndarray] | Sequence[None] = out
-        if outputs:
-            out_args = []
-            for j, output in enumerate(outputs):
-                if isinstance(output, StateVector):
-                    out_args.append(output.view(np.ndarray))
-                else:
-                    out_args.append(output)
-            kwargs['out'] = tuple(out_args)
-        else:
-            outputs = (None,) * ufunc.nout
-
-        results = super().__array_ufunc__(  # type: ignore
-            ufunc, method, *args, **kwargs,
-        )
-
-        if results is NotImplemented:
-            return NotImplemented
-
-        if method == 'at':
-            return None
-
-        if ufunc.nout == 1:
-            results = (results,)
+        out = ufunc(*args, **kwargs)
 
         # The results are state vectors
-        # if only unitaries are involved
-        # and unitaries are closed under the specific operation.
+        # if only states are involved
+        # and state vectors are closed under the specific operation.
         convert_back = not non_state_involved and (
             ufunc.__name__ == 'conjugate'
         )
 
         if convert_back:
-            results = tuple(
-                (
-                    np.asarray(result).view(StateVector)
-                    if output is None else output
-                )
-                for result, output in zip(results, outputs)
-            )
-        else:
-            results = tuple(
-                (result if output is None else output)
-                for result, output in zip(results, outputs)
-            )
+            return StateVector(out, self.radixes)
 
-        return results[0] if len(results) == 1 else results
+        return out
+
+    def __str__(self) -> str:
+        return str(self._vec)
+
+    def __repr__(self) -> str:
+        return repr(self._vec)
 
 
 StateLike = Union[StateVector, np.ndarray, Sequence[Any]]

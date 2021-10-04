@@ -51,28 +51,33 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         ], dtype=np.complex128,
     )
 
-    def __init__(self, size: int) -> None:
+    def __init__(self, num_qudits: int) -> None:
         """
-        Construct the Pauli group for `size` number of qubits.
+        Construct the Pauli group for `num_qudits` number of qubits.
 
         Args:
-            size (int): Power of the tensor product of the Pauli group.
+            num_qudits (int): Power of the tensor product of the Pauli group.
 
         Raises:
-            ValueError: If `size` is less than or equal to 0.
+            ValueError: If `num_qudits` is less than or equal to 0.
         """
 
-        if not is_integer(size):
-            raise TypeError('Expected integer for size, got %s.' % type(size))
-
-        if size <= 0:
-            raise ValueError(
-                'Expected positive integer for size, got %s.' % type(size),
+        if not is_integer(num_qudits):
+            raise TypeError(
+                'Expected integer for num_qudits, got %s.' %
+                type(num_qudits),
             )
 
-        self.size = size
+        if num_qudits <= 0:
+            raise ValueError(
+                'Expected positive integer for num_qudits, got %s.' % type(
+                    num_qudits,
+                ),
+            )
 
-        if size == 1:
+        self.num_qudits = num_qudits
+
+        if num_qudits == 1:
             self.paulis = [
                 PauliMatrices.I,
                 PauliMatrices.X,
@@ -81,7 +86,12 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
             ]
         else:
             self.paulis = []
-            matrices = it.product(PauliMatrices(size - 1), PauliMatrices(1))
+            matrices = it.product(
+                PauliMatrices(
+                    num_qudits - 1,
+                ),
+                PauliMatrices(1),
+            )
             for pauli_n_1, pauli_1 in matrices:
                 self.paulis.append(np.kron(pauli_n_1, pauli_1))
 
@@ -125,7 +135,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         if not all(is_integer(q) for q in q_set):
             raise TypeError('Expected sequence of integers for qubit indices.')
 
-        if any(q < 0 or q >= self.size for q in q_set):
+        if any(q < 0 or q >= self.num_qudits for q in q_set):
             raise ValueError('Qubit indices must be in [0, n).')
 
         if len(q_set) != len(set(q_set)):
@@ -144,7 +154,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         for ps in it.product([0, 1, 2, 3], repeat=len(q_set)):
             idx = 0
             for p, q in zip(ps, q_set):
-                idx += p * (4 ** (self.size - q - 1))
+                idx += p * (4 ** (self.num_qudits - q - 1))
             pauli_n_qubit.append(self.paulis[idx])
 
         return pauli_n_qubit

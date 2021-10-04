@@ -105,7 +105,7 @@ class Instantiater(abc.ABC):
             )
 
         return [  # [ circuit.get_params() ] + [  # TODO: re-evaluate
-            np.random.random(circuit.get_num_params())
+            np.random.random(circuit.num_params)
             for i in range(multistarts)
         ]
 
@@ -115,7 +115,7 @@ class Instantiater(abc.ABC):
     ) -> UnitaryMatrix | StateVector:
         """Check `target` to be valid and return it casted."""
         try:
-            typed_target = StateVector(target)
+            typed_target = StateVector(target)  # type: ignore
         except (ValueError, TypeError):
             try:
                 typed_target = UnitaryMatrix(target)  # type: ignore

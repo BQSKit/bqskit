@@ -1,18 +1,18 @@
-﻿bqskit.ir.Operation
+bqskit.ir.Operation
 ===================
 
 .. currentmodule:: bqskit.ir
 
 .. autoclass:: Operation
 
-   
+
    .. automethod:: __init__
 
-   
+
    .. rubric:: Methods
 
    .. autosummary::
-   
+
       ~Operation.__init__
       ~Operation.check_parameters
       ~Operation.get_dim
@@ -29,21 +29,16 @@
       ~Operation.is_parameterized
       ~Operation.is_qubit_only
       ~Operation.is_qutrit_only
-   
-   
 
-   
-   
+
+
+
+
    .. rubric:: Attributes
 
    .. autosummary::
-   
+
+      ~Operation.dim
       ~Operation.gate
       ~Operation.location
       ~Operation.params
-      ~Operation.num_params
-      ~Operation.radixes
-      ~Operation.size
-      ~Operation.dim
-   
-   

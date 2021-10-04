@@ -119,7 +119,7 @@ def frozen_gates(
 ) -> FrozenParameterGate:
     """Hypothesis strategy for generating `FrozenParameterGate`'s."""
     gate = draw(deferred(lambda: gates(radixes, False)))
-    max_idx = gate.get_num_params()
+    max_idx = gate.num_params
     indices = integers(0, max_idx - 1)
     values = floats(allow_nan=False, allow_infinity=False)
     frozen_params = draw(dictionaries(indices, values, max_size=max_idx))
@@ -178,8 +178,8 @@ def gates(
     if constant is not None:
         assume(gate.is_constant() == constant)
 
-    assume(sorted(gate.get_radixes()) == sorted(radixes))
-    assume(gate.get_num_params() <= 128)
+    assume(sorted(gate.radixes) == sorted(radixes))
+    assume(gate.num_params <= 128)
 
     return gate
 
@@ -228,7 +228,7 @@ def circuits(
         gate_radixes = list(zip(*gate_idx_and_rdx))[1]
         gate = draw(gates(gate_radixes, constant))
         params = floats(allow_nan=False, allow_infinity=False)
-        num_params = gate.get_num_params()
+        num_params = gate.num_params
         gate_params = draw(
             lists(
                 params,

@@ -87,14 +87,14 @@ class ScanPartitioner(BasePass):
             data (dict[str,Any]): Optional data unique to specific run.
         """
 
-        if self.block_size > circuit.get_size():
+        if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
             circuit.fold({
                 qudit_index: (0, circuit.get_num_cycles())
-                for qudit_index in range(circuit.get_size())
+                for qudit_index in range(circuit.num_qudits)
             })
             return
 
@@ -107,20 +107,20 @@ class ScanPartitioner(BasePass):
 
         if (
             not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.get_size()
+            or model.num_qudits < circuit.num_qudits
         ):
             _logger.warning(
                 'MachineModel not specified or invalid;'
                 ' defaulting to all-to-all.',
             )
-            model = MachineModel(circuit.get_size())
+            model = MachineModel(circuit.num_qudits)
 
         # Find all connected, `block_size`-sized groups of qudits
         # NOTE: This assumes circuit and topology qudit numbers are equal
         qudit_groups = model.get_locations(self.block_size)
         # Prune unused qudit groups
         used_qudits = [
-            q for q in range(circuit.get_size())
+            q for q in range(circuit.num_qudits)
             if not circuit.is_qudit_idle(q)
         ]
         for qudit_group in qudit_groups:
@@ -132,7 +132,7 @@ class ScanPartitioner(BasePass):
         num_cycles = circuit.get_num_cycles()
         divider = [
             0 if q in active_qudits else num_cycles
-            for q in range(circuit.get_size())
+            for q in range(circuit.num_qudits)
         ]
 
         # Form regions until there are no more gates to partition
@@ -168,7 +168,7 @@ class ScanPartitioner(BasePass):
                 divider[qudit] += 1
 
             # Skip any idle qudit-cycles
-            amount_to_add_to_each_qudit = [0 for _ in range(circuit.get_size())]
+            amount_to_add_to_each_qudit = [0 for _ in range(circuit.num_qudits)]
             for qudit, cycle in enumerate(divider):
                 while (
                     cycle < num_cycles
@@ -233,7 +233,7 @@ class ScanPartitioner(BasePass):
                 divider[qudit_index] = best_region[qudit_index].upper + 1
 
         # Fold the circuit
-        folded_circuit = Circuit(circuit.get_size(), circuit.get_radixes())
+        folded_circuit = Circuit(circuit.num_qudits, circuit.radixes)
         # Option to keep a block's idle qudits as part of the CircuitGate
         if 'keep_idle_qudits' in data and data['keep_idle_qudits'] is True:
             for region in regions:

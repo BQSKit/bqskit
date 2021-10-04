@@ -77,7 +77,7 @@ class OPENQASMVisitor(Visitor):
 
     def get_circuit(self) -> Circuit:
         """Retrieve the circuit generated after walking a parse tree."""
-        num_qubits = sum(qubit_reg.size for qubit_reg in self.qubit_regs)
+        num_qubits = sum(qubit_reg.num_qudits for qubit_reg in self.qubit_regs)
         if num_qubits == 0:
             raise LangException('No qubit registers defined.')
         circuit = Circuit(num_qubits)
@@ -161,7 +161,7 @@ class OPENQASMVisitor(Visitor):
                 if reg.name == reg_name:
                     location.append(outer_idx + reg_idx)
                     break
-                outer_idx += reg.size
+                outer_idx += reg.num_qudits
 
         if len(location) != gate_def.num_vars:
             raise LangException(

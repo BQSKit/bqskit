@@ -92,12 +92,12 @@ class SaveIntermediatePass(BasePass):
         for enum, block in blocks_to_save:
             enum = str(enum).zfill(num_digits)  # type: ignore
             structure_list.append(block.location)  # type: ignore
-            subcircuit = Circuit(block.size)
+            subcircuit = Circuit(block.num_qudits)
             subcircuit.append_gate(
                 block.gate,
                 list(
                     range(
-                        block.size,
+                        block.num_qudits,
                     ),
                 ),
                 block.params,
@@ -190,7 +190,7 @@ class RestoreIntermediatePass(BasePass):
                     block_circ = OPENQASM2Language().decode(f.read())
                 # Get location
                 block_location = self.structure[block_num]
-                if block_circ.get_size() != len(block_location):
+                if block_circ.num_qudits != len(block_location):
                     raise ValueError(
                         f'{block} and `structure.pickle` locations are '
                         'different sizes.',

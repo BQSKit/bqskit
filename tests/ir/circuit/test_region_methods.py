@@ -304,7 +304,7 @@ class TestSurround:
         qudit = 0
         while True:
             cycle = np.random.randint(r6_qudit_circuit.get_num_cycles())
-            qudit = np.random.randint(r6_qudit_circuit.get_size())
+            qudit = np.random.randint(r6_qudit_circuit.num_qudits)
             if not r6_qudit_circuit.is_point_idle((cycle, qudit)):
                 break
         utry = r6_qudit_circuit.get_unitary()

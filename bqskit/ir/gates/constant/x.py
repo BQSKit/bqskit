@@ -9,9 +9,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class XGate(ConstantGate, QubitGate):
     """The Pauli X gate."""
 
-    size = 1
-    qasm_name = 'x'
-    utry = UnitaryMatrix(
+    _num_qudits = 1
+    _qasm_name = 'x'
+    _utry = UnitaryMatrix(
         [
             [0, 1],
             [1, 0],

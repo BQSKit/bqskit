@@ -39,10 +39,10 @@ class FrozenParameterGate(
                 'Expected dict for frozen_params, '
                 'got %s.' % type(frozen_params),
             )
-        if not len(frozen_params) <= gate.get_num_params():
+        if not len(frozen_params) <= gate.num_params:
             raise ValueError(
                 'Too many fixed parameters specified, expected at most'
-                ' %d, got %d' % (gate.get_num_params(), len(frozen_params)),
+                ' %d, got %d' % (gate.num_params, len(frozen_params)),
             )
         keys = list(frozen_params.keys())
         values = list(frozen_params.values())
@@ -59,23 +59,24 @@ class FrozenParameterGate(
                 'Expected frozen_params values to be float, got %s.'
                 % type(values[fail_idx]),
             )
-        if not all(0 <= p < gate.get_num_params() for p in keys):
+        if not all(0 <= p < gate.num_params for p in keys):
             fail_idx = [
-                0 <= p < gate.get_num_params()
+                0 <= p < gate.num_params
                 for p in keys
             ].index(False)
             raise ValueError(
                 'Expected parameter index to be non-negative integer'
-                ' < %d, got %d.' % (gate.get_num_params(), keys[fail_idx]),
+                ' < %d, got %d.' % (gate.num_params, keys[fail_idx]),
             )
 
         self.gate = gate
-        self.num_params = gate.get_num_params() - len(frozen_params)
-        self.size = gate.get_size()
-        self.radixes = gate.get_radixes()
+        self._num_params = gate.num_params - len(frozen_params)
+        self._num_qudits = gate.num_qudits
+        self._radixes = gate.radixes
+        self._qasm_name = self.gate.qasm_name
         self.frozen_params = frozen_params
         self.unfixed_param_idxs = [
-            i for i in range(gate.get_num_params())
+            i for i in range(gate.num_params)
             if i not in self.frozen_params.keys()
         ]
 
@@ -98,17 +99,14 @@ class FrozenParameterGate(
             if i in self.unfixed_param_idxs
         ]
 
-    def get_name(self) -> str:
-        """Returns the name of the gate, see Gate for more info."""
+    @property
+    def name(self) -> str:
+        """The name of the gate, see Gate for more info."""
         return '%s(%s, %s)' % (
             self.__class__.__name__,
-            self.gate.get_name(),
+            self.gate.name,
             str(self.frozen_params),
         )
-
-    def get_qasm_name(self) -> str:
-        """Returns the qasm command for this gate, see Gate for more info."""
-        return self.gate.get_qasm_name()
 
     def get_qasm_gate_def(self) -> str:
         """Returns the qasm gate def for this gate, see Gate for more info."""

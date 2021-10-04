@@ -13,9 +13,9 @@ class TestNew:
         state = StateVector([1, 0])
         assert isinstance(state, StateVector)
         assert isinstance(state, np.ndarray)
-        assert state.get_dim() == 2
-        assert state.get_size() == 1
-        assert state.get_radixes() == (2,)
+        assert state.dim == 2
+        assert state.num_qudits == 1
+        assert state.radixes == (2,)
         assert state.get_probs() == (1.0, 0.0)
 
     def test_copy(self) -> None:

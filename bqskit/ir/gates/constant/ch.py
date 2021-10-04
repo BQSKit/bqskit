@@ -11,9 +11,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class CHGate(ConstantGate, QubitGate):
     """The controlled-H gate."""
 
-    size = 2
-    qasm_name = 'ch'
-    utry = UnitaryMatrix(
+    _num_qudits = 2
+    _qasm_name = 'ch'
+    _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 1, 0, 0],

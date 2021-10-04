@@ -13,9 +13,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class U3Gate(QubitGate, DifferentiableUnitary):
     """The U3 single qubit gate."""
 
-    size = 1
-    num_params = 3
-    qasm_name = 'u3'
+    _num_qudits = 1
+    _num_params = 3
+    _qasm_name = 'u3'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""

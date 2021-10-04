@@ -44,14 +44,14 @@ class ControlledGate(
             raise TypeError('Invalid radixes.')
 
         self.gate = gate
-        self.size = gate.get_size() + num_controls
+        self._num_qudits = gate.num_qudits + num_controls
         self.num_controls = num_controls
-        self.radixes = tuple(radixes or [2] * self.size) + gate.get_radixes()
-        self.name = '%d-Controlled(%s)' % (num_controls, gate.get_name())
-        self.num_params = gate.get_num_params()
+        self._radixes = tuple(radixes or [2] * self.num_qudits) + gate.radixes
+        self._name = '%d-Controlled(%s)' % (num_controls, gate.name)
+        self._num_params = gate.num_params
 
         self.Ic = np.identity(2 ** num_controls)  # TODO: General radix support
-        self.It = np.identity(gate.get_dim())
+        self.It = np.identity(gate.dim)
         self.OneProj = np.zeros(self.Ic.shape)
         self.OneProj[-1, -1] = 1
         self.left = np.kron((self.Ic - self.OneProj), self.It)
@@ -60,7 +60,7 @@ class ControlledGate(
         if self.num_params == 0:
             U = self.gate.get_unitary()
             right = np.kron(self.OneProj, U)
-            self.utry = UnitaryMatrix(self.left + right, self.get_radixes())
+            self.utry = UnitaryMatrix(self.left + right, self.radixes)
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
@@ -71,7 +71,7 @@ class ControlledGate(
         # TODO: Find reference
         U = self.gate.get_unitary(params)
         right = np.kron(self.OneProj, U)
-        return UnitaryMatrix(self.left + right, self.get_radixes())
+        return UnitaryMatrix(self.left + right, self.radixes)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """

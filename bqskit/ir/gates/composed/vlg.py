@@ -61,23 +61,23 @@ class VariableLocationGate(Gate):
 
         locations = [CircuitLocation(l) for l in locations]
 
-        if not all(len(l) == gate.get_size() for l in locations):
+        if not all(len(l) == gate.num_qudits for l in locations):
             raise ValueError('Invalid sized location.')
 
         if len(locations) < 1:
             raise ValueError('VLGs require at least 1 locations.')
 
         self.gate = gate
-        self.name = 'VariableLocationGate(%s)' % gate.get_name()
+        self._name = 'VariableLocationGate(%s)' % gate.name
         self.locations = list(locations)
 
         if radixes is None:
             # Calculate radixes
             radix_map: dict[int, int | None] = {
-                i: None for i in range(self.size)
+                i: None for i in range(self.num_qudits)
             }
             for l in locations:
-                for radix, qudit_index in zip(gate.get_radixes(), l):
+                for radix, qudit_index in zip(gate.radixes, l):
                     if radix_map[qudit_index] is None:
                         radix_map[qudit_index] = radix
                     elif radix_map[qudit_index] != radix:
@@ -86,26 +86,26 @@ class VariableLocationGate(Gate):
                             ' due to radix mismatch.',
                         )
 
-            self.radixes = tuple(radix_map.values())
+            self._radixes = tuple(radix_map.values())
         else:
             for l in locations:
-                for radix, qudit_index in zip(gate.get_radixes(), l):
+                for radix, qudit_index in zip(gate.radixes, l):
                     if radixes[qudit_index] != radix:
                         raise ValueError(
                             'Gate cannot be applied to all locations'
                             ' due to radix mismatch.',
                         )
 
-            self.radixes = tuple(radixes)
+            self._radixes = tuple(radixes)
 
-        self.size = len(self.radixes)
-        self.num_params = self.gate.get_num_params() + len(locations)
+        self._num_qudits = len(self.radixes)
+        self._num_params = self.gate.num_params + len(locations)
 
-        self.extension_size = self.size - self.gate.get_size()
+        self.extension_size = self.num_qudits - self.gate.num_qudits
         # TODO: This needs to changed for radixes
         self.I = np.identity(2 ** self.extension_size)
         self.perms = np.array([
-            PermutationMatrix.from_qubit_location(self.size, l)
+            PermutationMatrix.from_qubit_location(self.num_qudits, l)
             for l in self.locations
         ])
 
@@ -119,8 +119,8 @@ class VariableLocationGate(Gate):
     ) -> tuple[np.ndarray, np.ndarray]:
         """Split params into subgate params and location params."""
         return (
-            np.array(params[:self.gate.get_num_params()]),
-            np.array(params[self.gate.get_num_params():]),
+            np.array(params[:self.gate.num_params]),
+            np.array(params[self.gate.num_params:]),
         )
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
@@ -162,7 +162,7 @@ class VariableLocationGate(Gate):
         perm_array = np.array([perm for perm in self.perms])
         dP = perm_array @ GPT + PG @ perm_array.transpose((0, 2, 1)) - 2 * PGPT
         dP = np.array([10 * x * y for x, y in zip(l, dP)])
-        U = UnitaryMatrix.closest_to(PGPT, self.get_radixes())
+        U = UnitaryMatrix.closest_to(PGPT, self.radixes)
         return U, np.concatenate([dG, dP])
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:

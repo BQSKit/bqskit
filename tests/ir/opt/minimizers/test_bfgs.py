@@ -24,7 +24,7 @@ def test_minimize_bfgs() -> None:
 
 
 def test_minimize_bfgs_multiqubit(r3_qubit_circuit: Circuit) -> None:
-    num_params = r3_qubit_circuit.get_num_params()
+    num_params = r3_qubit_circuit.num_params
     x0 = np.random.random((num_params,))
     cost = HilbertSchmidtCostGenerator().gen_cost(
         r3_qubit_circuit, r3_qubit_circuit.get_unitary(x0),

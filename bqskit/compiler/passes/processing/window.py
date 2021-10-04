@@ -115,7 +115,7 @@ class WindowOptimizationPass(BasePass):
             if end_cycle > circuit.get_num_cycles():
                 end_cycle = circuit.get_num_cycles() - 1
 
-            window = Circuit(circuit.get_size(), circuit.get_radixes())
+            window = Circuit(circuit.num_qudits, circuit.radixes)
             window.extend(circuit[begin_cycle:end_cycle])
 
             _logger.info(
@@ -138,7 +138,7 @@ class WindowOptimizationPass(BasePass):
                 circuit.insert_circuit(
                     begin_cycle,
                     new_window,
-                    list(range(circuit.get_size())),
+                    list(range(circuit.num_qudits)),
                 )
 
                 index_shift += actual_window_size - new_window.get_num_cycles()

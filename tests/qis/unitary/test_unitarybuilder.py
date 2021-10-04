@@ -46,16 +46,16 @@ class TestConstructor:
     )
     def test_valid(self, size: int, radixes: Sequence[int]) -> None:
         ub = UnitaryBuilder(size, radixes)
-        assert ub.get_size() == size
-        assert isinstance(ub.get_radixes(), tuple)
-        assert len(ub.get_radixes()) == size
+        assert ub.num_qudits == size
+        assert isinstance(ub.radixes, tuple)
+        assert len(ub.radixes) == size
         if len(radixes) > 0:
-            for radix1, radix2 in zip(radixes, ub.get_radixes()):
+            for radix1, radix2 in zip(radixes, ub.radixes):
                 assert radix1 == radix2
-        assert ub.get_dim() == int(np.prod(ub.get_radixes()))
+        assert ub.dim == int(np.prod(ub.radixes))
         assert np.allclose(
             ub.get_unitary(),
-            np.identity(ub.get_dim()),
+            np.identity(ub.dim),
         )
 
 

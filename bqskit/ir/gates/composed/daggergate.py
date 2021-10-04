@@ -6,7 +6,7 @@ conjugate transpose of the input gate.
 
 For example:
     >>> DaggerGate(TGate()).get_unitary() == TdgGate().get_unitary()
-    True
+    ... True
 """
 from __future__ import annotations
 
@@ -39,10 +39,10 @@ class DaggerGate(
             raise TypeError('Expected gate object, got %s' % type(gate))
 
         self.gate = gate
-        self.name = 'Dagger(%s)' % gate.get_name()
-        self.num_params = gate.get_num_params()
-        self.size = gate.get_size()
-        self.radixes = gate.get_radixes()
+        self._name = 'Dagger(%s)' % gate.name
+        self._num_params = gate.num_params
+        self._num_qudits = gate.num_qudits
+        self._radixes = gate.radixes
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0:

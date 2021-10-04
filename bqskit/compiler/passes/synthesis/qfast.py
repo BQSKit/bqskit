@@ -115,12 +115,12 @@ class QFASTDecompositionPass(SynthesisPass):
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
 
         # 0. Skip any unitaries too small for the configured gate.
-        if self.gate.get_size() > utry.get_size():
+        if self.gate.num_qudits > utry.num_qudits:
             _logger.warning('Skipping unitary synthesis since gate is larger.')
             return Circuit.from_unitary(utry)
 
         # 1. Create empty circuit with same size and radixes as `utry`.
-        circuit = Circuit(utry.get_size(), utry.get_radixes())
+        circuit = Circuit(utry.num_qudits, utry.radixes)
 
         # 2. Calculate relevant coupling_graph and create the VLG head.
         # If a MachineModel is provided in the data dict, it will be used.
@@ -132,17 +132,17 @@ class QFASTDecompositionPass(SynthesisPass):
 
         if (
             not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.get_size()
+            or model.num_qudits < circuit.num_qudits
         ):
             _logger.warning(
                 'MachineModel not specified or invalid;'
                 ' defaulting to all-to-all.',
             )
-            model = MachineModel(circuit.get_size())
-        locations = model.get_locations(self.gate.get_size())
+            model = MachineModel(circuit.num_qudits)
+        locations = model.get_locations(self.gate.num_qudits)
         circuit.append_gate(
-            VariableLocationGate(self.gate, locations, circuit.get_radixes()),
-            list(range(utry.get_size())),
+            VariableLocationGate(self.gate, locations, circuit.radixes),
+            list(range(utry.num_qudits)),
         )
 
         # 3. Bottom-up synthesis: build circuit up one gate at a time
@@ -253,8 +253,8 @@ class QFASTDecompositionPass(SynthesisPass):
         locations = copy.deepcopy(head_gate.locations)
         locations.remove(location)
         new_head = Operation(
-            VariableLocationGate(self.gate, locations, circuit.get_radixes()),
-            list(range(circuit.get_size())),
+            VariableLocationGate(self.gate, locations, circuit.radixes),
+            list(range(circuit.num_qudits)),
         )
         circuit.pop()
         circuit.append(new_head)
@@ -272,8 +272,8 @@ class QFASTDecompositionPass(SynthesisPass):
         )
 
         new_head = Operation(
-            VariableLocationGate(self.gate, locations, circuit.get_radixes()),
-            list(range(circuit.get_size())),
+            VariableLocationGate(self.gate, locations, circuit.radixes),
+            list(range(circuit.num_qudits)),
         )
 
         circuit.pop()

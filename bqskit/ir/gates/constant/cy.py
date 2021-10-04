@@ -9,9 +9,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class CYGate(ConstantGate, QubitGate):
     """The controlled-Y gate."""
 
-    size = 2
-    qasm_name = 'cy'
-    utry = UnitaryMatrix(
+    _num_qudits = 2
+    _qasm_name = 'cy'
+    _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 1, 0, 0],

@@ -71,14 +71,14 @@ class ClusteringPartitioner(BasePass):
             data (dict[str,Any]): Optional data unique to specific run.
         """
 
-        if self.block_size > circuit.get_size():
+        if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
             circuit.fold({
                 qudit_index: (0, circuit.get_num_cycles())
-                for qudit_index in range(circuit.get_size())
+                for qudit_index in range(circuit.num_qudits)
             })
             return
 
@@ -92,7 +92,7 @@ class ClusteringPartitioner(BasePass):
                 qudit = 0
                 while True:
                     cycle = np.random.randint(circuit.get_num_cycles())
-                    qudit = np.random.randint(circuit.get_size())
+                    qudit = np.random.randint(circuit.num_qudits)
                     if not circuit.is_point_idle((cycle, qudit)):
                         break
 

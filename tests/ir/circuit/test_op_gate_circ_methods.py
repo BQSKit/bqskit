@@ -305,10 +305,10 @@ class TestCheckValidOperation:
             assert False, 'Unexpected Exception.'
 
     def test_location_mismatch_1(self, qubit_gate: Gate) -> None:
-        circuit = Circuit(qubit_gate.get_size())
-        location = list(range(qubit_gate.get_size()))
+        circuit = Circuit(qubit_gate.num_qudits)
+        location = list(range(qubit_gate.num_qudits))
         location[-1] += 1
-        params = [0] * qubit_gate.get_num_params()
+        params = [0] * qubit_gate.num_params
         op = Operation(qubit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -319,10 +319,10 @@ class TestCheckValidOperation:
         assert False
 
     def test_location_mismatch_2(self, qutrit_gate: Gate) -> None:
-        circuit = Circuit(qutrit_gate.get_size(), qutrit_gate.get_radixes())
-        location = list(range(qutrit_gate.get_size()))
+        circuit = Circuit(qutrit_gate.num_qudits, qutrit_gate.radixes)
+        location = list(range(qutrit_gate.num_qudits))
         location[-1] += 1
-        params = [0] * qutrit_gate.get_num_params()
+        params = [0] * qutrit_gate.num_params
         op = Operation(qutrit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -333,9 +333,9 @@ class TestCheckValidOperation:
         assert False
 
     def test_radix_mismatch_1(self, qubit_gate: Gate) -> None:
-        circuit = Circuit(qubit_gate.get_size(), [3] * qubit_gate.get_size())
-        location = list(range(qubit_gate.get_size()))
-        params = [0] * qubit_gate.get_num_params()
+        circuit = Circuit(qubit_gate.num_qudits, [3] * qubit_gate.num_qudits)
+        location = list(range(qubit_gate.num_qudits))
+        params = [0] * qubit_gate.num_params
         op = Operation(qubit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -346,9 +346,9 @@ class TestCheckValidOperation:
         assert False
 
     def test_radix_mismatch_2(self, qutrit_gate: Gate) -> None:
-        circuit = Circuit(qutrit_gate.get_size())
-        location = list(range(qutrit_gate.get_size()))
-        params = [0] * qutrit_gate.get_num_params()
+        circuit = Circuit(qutrit_gate.num_qudits)
+        location = list(range(qutrit_gate.num_qudits))
+        params = [0] * qutrit_gate.num_params
         op = Operation(qutrit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -359,15 +359,15 @@ class TestCheckValidOperation:
         assert False
 
     def test_valid_1(self, gate: Gate) -> None:
-        circuit = Circuit(gate.get_size(), gate.get_radixes())
-        location = list(range(gate.get_size()))
-        params = [0] * gate.get_num_params()
+        circuit = Circuit(gate.num_qudits, gate.radixes)
+        location = list(range(gate.num_qudits))
+        params = [0] * gate.num_params
         circuit.check_valid_operation(Operation(gate, location, params))
 
     def test_valid_2(self, gate: Gate) -> None:
-        circuit = Circuit(gate.get_size() + 2, (2, 2) + gate.get_radixes())
-        location = [x + 2 for x in list(range(gate.get_size()))]
-        params = [0] * gate.get_num_params()
+        circuit = Circuit(gate.num_qudits + 2, (2, 2) + gate.radixes)
+        location = [x + 2 for x in list(range(gate.num_qudits))]
+        params = [0] * gate.num_params
         circuit.check_valid_operation(Operation(gate, location, params))
 
     def test_valid_3(self) -> None:
@@ -495,7 +495,7 @@ class TestGetOperation:
 
     def test_correctness_1(self, r6_qudit_circuit: Circuit) -> None:
         for x in range(r6_qudit_circuit.get_num_cycles()):
-            for y in range(r6_qudit_circuit.get_size()):
+            for y in range(r6_qudit_circuit.num_qudits):
                 correct = r6_qudit_circuit._circuit[x][y]
 
                 if correct is not None:
@@ -593,7 +593,7 @@ class TestPoint:
 
     def test_correctness_1(self, r6_qudit_circuit: Circuit) -> None:
         for x in range(r6_qudit_circuit.get_num_cycles()):
-            for y in range(r6_qudit_circuit.get_size()):
+            for y in range(r6_qudit_circuit.num_qudits):
                 op = r6_qudit_circuit._circuit[x][y]
 
                 if op is not None:

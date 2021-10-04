@@ -67,11 +67,11 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
                 % type(two_qudit_gate),
             )
 
-        if two_qudit_gate.get_size() != 2:
+        if two_qudit_gate.num_qudits != 2:
             raise ValueError(
                 'Expected two-qudit gate'
                 ', got a gate that acts on %d qudits.'
-                % two_qudit_gate.get_size(),
+                % two_qudit_gate.num_qudits,
             )
 
         if not isinstance(single_qudit_gate_1, Gate):
@@ -80,11 +80,11 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
                 % type(single_qudit_gate_1),
             )
 
-        if single_qudit_gate_1.get_size() != 1:
+        if single_qudit_gate_1.num_qudits != 1:
             raise ValueError(
                 'Expected single-qudit gate'
                 ', got a gate that acts on %d qudits.'
-                % single_qudit_gate_1.get_size(),
+                % single_qudit_gate_1.num_qudits,
             )
 
         if single_qudit_gate_2 is None:
@@ -99,11 +99,11 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
                 % type(single_qudit_gate_2),
             )
 
-        if single_qudit_gate_2.get_size() != 1:
+        if single_qudit_gate_2.num_qudits != 1:
             raise ValueError(
                 'Expected single-qudit gate'
                 ', got a gate that acts on %d qudits.'
-                % single_qudit_gate_2.get_size(),
+                % single_qudit_gate_2.num_qudits,
             )
 
         if not isinstance(initial_layer_gate, Gate):
@@ -112,28 +112,28 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
                 % type(initial_layer_gate),
             )
 
-        if initial_layer_gate.get_size() != 1:
+        if initial_layer_gate.num_qudits != 1:
             raise ValueError(
                 'Expected single-qudit gate'
                 ', got a gate that acts on %d qudits.'
-                % initial_layer_gate.get_size(),
+                % initial_layer_gate.num_qudits,
             )
 
-        two_radix_1 = two_qudit_gate.get_radixes()[0]
-        two_radix_2 = two_qudit_gate.get_radixes()[1]
+        two_radix_1 = two_qudit_gate.radixes[0]
+        two_radix_2 = two_qudit_gate.radixes[1]
 
-        if two_radix_1 != single_qudit_gate_1.get_radixes()[0]:
+        if two_radix_1 != single_qudit_gate_1.radixes[0]:
             raise ValueError(
                 'Radix mismatch between two_qudit_gate and single_qudit_gate_1'
                 ': %d != %d.'
-                % (two_radix_1, single_qudit_gate_1.get_radixes()[0]),
+                % (two_radix_1, single_qudit_gate_1.radixes[0]),
             )
 
-        if two_radix_2 != single_qudit_gate_2.get_radixes()[0]:
+        if two_radix_2 != single_qudit_gate_2.radixes[0]:
             raise ValueError(
                 'Radix mismatch between two_qudit_gate and single_qudit_gate_2'
                 ': %d != %d.'
-                % (two_radix_2, single_qudit_gate_2.get_radixes()[0]),
+                % (two_radix_2, single_qudit_gate_2.radixes[0]),
             )
 
         self.two_qudit_gate = two_qudit_gate
@@ -159,14 +159,14 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
                 'Expected unitary or state, got %s.' % type(target),
             )
 
-        for radix in target.get_radixes():
-            if radix != self.initial_layer_gate.get_radixes()[0]:
+        for radix in target.radixes:
+            if radix != self.initial_layer_gate.radixes[0]:
                 raise ValueError(
                     'Radix mismatch between target and initial_layer_gate.',
                 )
 
-        init_circuit = Circuit(target.get_size(), target.get_radixes())
-        for i in range(init_circuit.get_size()):
+        init_circuit = Circuit(target.num_qudits, target.radixes)
+        for i in range(init_circuit.num_qudits):
             init_circuit.append_gate(self.initial_layer_gate, [i])
         return init_circuit
 
@@ -185,7 +185,7 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 
-        if circuit.get_size() < 2:
+        if circuit.num_qudits < 2:
             raise ValueError('Cannot expand a single-qudit circuit.')
 
         # If a MachineModel is provided in the data dict, it will be used.
@@ -195,13 +195,13 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
             model = data['machine_model']
         if (
             not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.get_size()
+            or model.num_qudits < circuit.num_qudits
         ):
             _logger.warning(
                 'MachineModel not specified or invalid;'
                 ' defaulting to all-to-all.',
             )
-            model = MachineModel(circuit.get_size())
+            model = MachineModel(circuit.num_qudits)
 
         # TODO: Reconsider linear topology default
         successors = []

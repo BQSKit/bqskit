@@ -11,9 +11,9 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class HGate(ConstantGate, QubitGate):
     """The Hadamard gate."""
 
-    size = 1
-    qasm_name = 'h'
-    utry = UnitaryMatrix(
+    _num_qudits = 1
+    _qasm_name = 'h'
+    _utry = UnitaryMatrix(
         [
             [np.sqrt(2) / 2, np.sqrt(2) / 2],
             [np.sqrt(2) / 2, -np.sqrt(2) / 2],

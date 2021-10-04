@@ -11,7 +11,6 @@ based synthesis algorithms, and second bundling a compiler infrastructure
 and algorithm framework that can run many algorithms efficiently over
 a cluster of computers.
 """
-
 from __future__ import annotations
 
 import logging

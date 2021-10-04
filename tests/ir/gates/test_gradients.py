@@ -38,9 +38,9 @@ def check_gradient(circ: Circuit, num_params: int) -> None:
 
 
 def test_gradients(r3_qubit_circuit: Circuit) -> None:
-    check_gradient(r3_qubit_circuit, r3_qubit_circuit.get_num_params())
+    check_gradient(r3_qubit_circuit, r3_qubit_circuit.num_params)
 
 
 def test_gradients_native(r3_qubit_circuit: Circuit) -> None:
     circ = Circ(r3_qubit_circuit)
-    check_gradient(circ, r3_qubit_circuit.get_num_params())
+    check_gradient(circ, r3_qubit_circuit.num_params)
