@@ -444,11 +444,17 @@ def test_depends_on(
             )
         elif r1_depends_on_r2:
             assert all(
-                qudit not in region1 or region2[qudit] < region1[qudit]
+                qudit not in region1 or region2[qudit] <= region1[qudit]
+                for qudit in region2
+            ) and any(
+                region2[qudit] < region1[qudit]
                 for qudit in region2
             )
         elif r2_depends_on_r1:
             assert all(
-                qudit not in region2 or region1[qudit] < region2[qudit]
+                qudit not in region2 or region1[qudit] <= region2[qudit]
+                for qudit in region1
+            ) and any(
+                region1[qudit] < region2[qudit]
                 for qudit in region1
             )
