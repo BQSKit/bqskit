@@ -141,29 +141,34 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     # region Circuit Properties
 
-    def get_num_params(self) -> int:
+    @property
+    def num_params(self) -> int:
         """Return the total number of parameters in the circuit."""
         num_params_acm = 0
         for gate, count in self._gate_info.items():
             num_params_acm += gate.num_params * count
         return num_params_acm
 
-    def get_num_operations(self) -> int:
+    @property
+    def num_operations(self) -> int:
         """Return the total number of operations in the circuit."""
         num_gates_acm = 0
         for _, count in self._gate_info.items():
             num_gates_acm += count
         return num_gates_acm
 
-    def get_num_cycles(self) -> int:
+    @property
+    def num_cycles(self) -> int:
         """Return the number of cycles in the circuit."""
         return len(self._circuit)
 
-    def get_params(self) -> np.ndarray:
+    @property
+    def params(self) -> np.ndarray:
         """Return the stored parameters for the circuit."""
         return np.array(sum((list(op.params) for op in self), []))
 
-    def get_depth(self) -> int:
+    @property
+    def depth(self) -> int:
         """Return the length of the critical path in the circuit."""
         qudit_depths = np.zeros(self.num_qudits, dtype=int)
         for op in self:
@@ -171,9 +176,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             qudit_depths[list(op.location)] = new_depth
         return int(max(qudit_depths))
 
-    def get_parallelism(self) -> float:
+    @property
+    def parallelism(self) -> float:
         """Calculate the amount of parallelism in the circuit."""
-        depth = self.get_depth()
+        depth = self.depth
 
         if depth == 0:
             return 0
@@ -185,7 +191,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         return float(weighted_num_operations / depth)
 
-    def get_coupling_graph(self) -> set[tuple[int, int]]:
+    @property
+    def coupling_graph(self) -> set[tuple[int, int]]:
         """
         Return the qudit connectivity in the circuit.
 
@@ -208,24 +215,26 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     coupling_graph.add((min(q1, q2), max(q1, q2)))
         return coupling_graph
 
-    def get_gate_set(self) -> set[Gate]:
+    @property
+    def gate_set(self) -> set[Gate]:
         """Return the set of gates in the circuit."""
         return set(self._gate_info.keys())
 
-    def is_differentiable(self) -> bool:
-        """Check if all gates are differentiable."""
-        return all(
-            isinstance(gate, DifferentiableUnitary)
-            for gate in self.get_gate_set()
-        )
-
-    def get_active_qudits(self) -> list[int]:
+    @property
+    def active_qudits(self) -> list[int]:
         """Return qudits involved in at least one operation."""
         return [
             qudit
             for qudit in range(self.num_qudits)
             if not self.is_qudit_idle(qudit)
         ]
+
+    def is_differentiable(self) -> bool:
+        """Check if all gates are differentiable."""
+        return all(
+            isinstance(gate, DifferentiableUnitary)
+            for gate in self.gate_set
+        )
 
     # endregion
 
@@ -448,8 +457,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
 
         return (
-            cycle_index < self.get_num_cycles()
-            and cycle_index >= -self.get_num_cycles()
+            cycle_index < self.num_cycles
+            and cycle_index >= -self.num_cycles
         )
 
     def is_cycle_unoccupied(
@@ -524,15 +533,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        if self.get_num_cycles() == 0:
+        if self.num_cycles == 0:
             raise ValueError('No available cycle.')
 
         # Iterate through cycles in reverse order
-        for cycle in range(self.get_num_cycles() - 1, -1, -1):
+        for cycle in range(self.num_cycles - 1, -1, -1):
             # Find the first occupied cycle
             if not self.is_cycle_unoccupied(cycle, location):
                 # The first available cycle is the previous one
-                if cycle == self.get_num_cycles() - 1:
+                if cycle == self.num_cycles - 1:
                     raise ValueError('No available cycle.')
                 return cycle + 1
 
@@ -549,7 +558,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             return self.find_available_cycle(location)
         except ValueError:
             self._append_cycle()
-            return self.get_num_cycles() - 1
+            return self.num_cycles - 1
 
     # endregion
 
@@ -576,7 +585,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if not self.is_point_in_range(point):
             raise IndexError('Out-of-range point.')
 
-        cycle = point[0] if point[0] >= 0 else self.get_num_cycles() + point[0]
+        cycle = point[0] if point[0] >= 0 else self.num_cycles + point[0]
         qudit = point[1] if point[1] >= 0 else self.num_qudits + point[1]
         return CircuitPoint(cycle, qudit)
 
@@ -672,7 +681,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         else:
             raise TypeError('Expected gate or operation, got %s.' % type(op))
 
-        end = end or (self.get_num_cycles() - 1, self.num_qudits - 1)
+        end = end or (self.num_cycles - 1, self.num_qudits - 1)
 
         if not self.is_point_in_range(start):
             raise IndexError('Out-of-range or invalid start point.')
@@ -829,10 +838,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self.check_valid_operation(op)
 
         if not self.is_cycle_in_range(cycle_index):
-            if cycle_index < -self.get_num_cycles():
+            if cycle_index < -self.num_cycles:
                 cycle_index = 0
             else:
-                cycle_index = self.get_num_cycles()
+                cycle_index = self.num_cycles
                 self._append_cycle()
 
         if op.gate not in self._gate_info:
@@ -1015,7 +1024,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Or find last gate in simulation order
         else:
-            cycle_index = self.get_num_cycles() - 1
+            cycle_index = self.num_cycles - 1
             for i, op in enumerate(reversed(self._circuit[cycle_index])):
                 if op is not None:
                     point = (cycle_index, self.num_qudits - 1 - i)
@@ -1080,7 +1089,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise IndexError('No operations exists at any of the points.')
 
         # Pop gates, tracking if the circuit popped a cycle
-        num_cycles = self.get_num_cycles()
+        num_cycles = self.num_cycles
         for i, point in enumerate(points):
 
             try:
@@ -1088,8 +1097,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             except IndexError:  # Silently discard multi-points-one-op errors
                 pass
 
-            if num_cycles != self.get_num_cycles():
-                num_cycles = self.get_num_cycles()
+            if num_cycles != self.num_cycles:
+                num_cycles = self.num_cycles
                 points[i + 1:] = [(point[0] - 1, point[1])
                                   for point in points[i + 1:]]
 
@@ -1155,10 +1164,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Points and Ops have different lengths.')
 
         points_and_ops = sorted(zip(points, ops), key=lambda x: x[0][0])
-        num_cycles = self.get_num_cycles()
+        num_cycles = self.num_cycles
 
         for point, op in points_and_ops:
-            shrink_amount = num_cycles - self.get_num_cycles()
+            shrink_amount = num_cycles - self.num_cycles
             shifted_point = (point[0] - shrink_amount, point[1])
             self.replace(shifted_point, op)
 
@@ -1250,10 +1259,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if not CircuitLocation.is_location(region.location, self.num_qudits):
             raise ValueError('Region circuit location mismatch.')
 
-        if region.max_cycle >= self.get_num_cycles():
+        if region.max_cycle >= self.num_cycles:
             raise ValueError(
                 'Region goes off circuit; '
-                f'circuit only has {self.get_num_cycles()} cycles, '
+                f'circuit only has {self.num_cycles} cycles, '
                 f"but region's maximum cycle is {region.max_cycle}.",
             )
 
@@ -1421,7 +1430,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             region.min_cycle,
             CircuitGate(circuit, True),
             sorted(list(region.keys())),
-            list(circuit.get_params()),
+            list(circuit.params),
         )
 
     def unfold(self, point: CircuitPointLike) -> None:
@@ -1438,7 +1447,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Unfold all CircuitGates in the circuit."""
         while any(
             isinstance(gate, CircuitGate)
-            for gate in self.get_gate_set()
+            for gate in self.gate_set
         ):
             for cycle, op in self.operations_with_cycles():
                 if isinstance(op.gate, CircuitGate):
@@ -1595,7 +1604,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     cycle_index += step
 
                     # Stop at edges
-                    if cycle_index < 0 or cycle_index >= self.get_num_cycles():
+                    if cycle_index < 0 or cycle_index >= self.num_cycles:
                         break
 
                     # Stop when outside bounds
@@ -1739,14 +1748,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             # Flip negative indices
             cycle_index = point[0]
             if cycle_index < 0:
-                cycle_index = self.get_num_cycles() + cycle_index
+                cycle_index = self.num_cycles + cycle_index
 
             if self.is_point_idle(point):
                 continue
 
             for qudit_index in self[point].location:
                 if qudit_index not in region:
-                    region[qudit_index] = (self.get_num_cycles(), -1)
+                    region[qudit_index] = (self.num_cycles, -1)
 
                 if cycle_index < region[qudit_index][0]:
                     region[qudit_index] = (cycle_index, region[qudit_index][1])
@@ -2190,7 +2199,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 attempts to assign best method. (kwarg)
         """
         minimizer = kwargs.get('minimizer', CeresMinimizer())
-        self.set_params(minimizer.minimize(cost, self.get_params()))
+        self.set_params(minimizer.minimize(cost, self.params))
 
     # endregion
 
@@ -2290,7 +2299,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         #         return sum([self[cycle_index] for cycle_index in indices], [])
 
         if isinstance(indices, slice):
-            start, stop, step = indices.indices(self.get_num_cycles())
+            start, stop, step = indices.indices(self.num_cycles)
             return sum((self[index] for index in range(start, stop, step)), [])
 
         if isinstance(indices, tuple) and len(indices) == 2:
@@ -2301,7 +2310,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 cycles = [cycle_indices]
 
             elif isinstance(cycle_indices, slice):
-                start, stop, step = cycle_indices.indices(self.get_num_cycles())
+                start, stop, step = cycle_indices.indices(self.num_cycles)
                 cycles = list(range(start, stop, step))
 
             elif is_iterable(cycle_indices):
@@ -2365,7 +2374,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def __len__(self) -> int:
         """Return the number of operations in the circuit."""
-        return self.get_num_operations()
+        return self.num_operations
 
     def operations(
         self,

@@ -12,7 +12,6 @@ class TestNew:
     def test_valid(self) -> None:
         state = StateVector([1, 0])
         assert isinstance(state, StateVector)
-        assert isinstance(state, np.ndarray)
         assert state.dim == 2
         assert state.num_qudits == 1
         assert state.radixes == (2,)
@@ -21,12 +20,9 @@ class TestNew:
     def test_copy(self) -> None:
         state1 = StateVector([1, 0])
         state2 = StateVector(state1)
-        assert state1 is state2
         assert np.allclose(state1, state2)
         assert isinstance(state1, StateVector)
-        assert isinstance(state1, np.ndarray)
         assert isinstance(state2, StateVector)
-        assert isinstance(state2, np.ndarray)
 
     def test_invalid(self) -> None:
         with pytest.raises(ValueError):

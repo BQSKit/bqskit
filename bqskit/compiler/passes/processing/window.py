@@ -112,8 +112,8 @@ class WindowOptimizationPass(BasePass):
             if begin_cycle < 0:
                 begin_cycle = 0
 
-            if end_cycle > circuit.get_num_cycles():
-                end_cycle = circuit.get_num_cycles() - 1
+            if end_cycle > circuit.num_cycles:
+                end_cycle = circuit.num_cycles - 1
 
             window = Circuit(circuit.num_qudits, circuit.radixes)
             window.extend(circuit[begin_cycle:end_cycle])
@@ -141,7 +141,7 @@ class WindowOptimizationPass(BasePass):
                     list(range(circuit.num_qudits)),
                 )
 
-                index_shift += actual_window_size - new_window.get_num_cycles()
+                index_shift += actual_window_size - new_window.num_cycles
 
 
 def default_replace_filter(new_circuit: Circuit, og_window: Circuit) -> bool:

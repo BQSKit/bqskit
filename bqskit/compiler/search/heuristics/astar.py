@@ -69,7 +69,7 @@ class AStarHeuristic(HeuristicFunction):
     ) -> float:
         """Return the heuristic's value, see HeuristicFunction for more info."""
         cost = 0.0
-        for gate in circuit.get_gate_set():
+        for gate in circuit.gate_set:
             if gate.num_qudits == 1:
                 continue
             cost += float(circuit.count(gate))

@@ -756,7 +756,7 @@ class TestPopQudit:
         assert circuit.num_qudits == 3
         assert len(circuit.radixes) == 3
         assert circuit.radixes.count(2) == 3
-        assert circuit.get_num_operations() == 2
+        assert circuit.num_operations == 2
         assert circuit[0, 0].gate == CNOTGate()
         assert circuit[0, 0].location == (0, 1)
         assert circuit[1, 1].gate == CNOTGate()
@@ -776,7 +776,7 @@ class TestPopQudit:
         assert circuit.num_qudits == 3
         assert len(circuit.radixes) == 3
         assert circuit.radixes.count(2) == 3
-        assert circuit.get_num_operations() == 1
+        assert circuit.num_operations == 1
         assert circuit[0, 1].gate == CNOTGate()
         assert circuit[0, 1].location == (1, 2)
         assert circuit[0, 2].gate == CNOTGate()
@@ -792,7 +792,7 @@ class TestPopQudit:
         assert circuit.num_qudits == 3
         assert len(circuit.radixes) == 3
         assert circuit.radixes.count(2) == 3
-        assert circuit.get_num_operations() == 1
+        assert circuit.num_operations == 1
         assert circuit[0, 0].gate == CNOTGate()
         assert circuit[0, 0].location == (0, 1)
         assert circuit[0, 1].gate == CNOTGate()
@@ -814,7 +814,7 @@ class TestPopQudit:
         assert circuit.num_qudits == 3
         assert len(circuit.radixes) == 3
         assert circuit.radixes.count(2) == 3
-        assert circuit.get_num_operations() == 6
+        assert circuit.num_operations == 6
         assert circuit[0, 0].gate == CNOTGate()
         assert circuit[0, 0].location == (0, 1)
         assert circuit[1, 1].gate == CNOTGate()
@@ -842,8 +842,8 @@ class TestPopQudit:
         assert circuit.num_qudits == 3
         assert len(circuit.radixes) == 3
         assert circuit.radixes.count(2) == 3
-        assert circuit.get_num_operations() == 1
-        assert circuit.get_num_cycles() == 1
+        assert circuit.num_operations == 1
+        assert circuit.num_cycles == 1
         assert circuit[0, 0].gate == three_qubit_gate
         assert circuit[0, 0].location == (0, 1, 2)
         assert circuit[0, 1].gate == three_qubit_gate
@@ -864,8 +864,8 @@ class TestPopQudit:
         circuit.pop_qudit(qudit_index)
         assert circuit.num_qudits == 3
         assert len(circuit.radixes) == 3
-        assert circuit.get_num_operations() == 1
-        assert circuit.get_num_cycles() == 1
+        assert circuit.num_operations == 1
+        assert circuit.num_cycles == 1
         assert circuit.radixes[0] == 2
         assert circuit.radixes[1] == 2
         assert circuit.radixes[2] == 3

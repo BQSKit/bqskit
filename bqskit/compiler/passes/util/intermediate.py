@@ -182,7 +182,7 @@ class RestoreIntermediatePass(BasePass):
                 `structure.pickle` are differnt lengths.
         """
         # If the circuit is empty, just append blocks in order
-        if circuit.get_depth() == 0:
+        if circuit.depth == 0:
             for block in self.block_list:
                 # Get block
                 block_num = int(findall(r'\d+', block)[0])

@@ -29,13 +29,14 @@ represents a pure quantum operation in matrix form.
     # Sample a random 2-qubit unitary from the Haar distribution
     utry = UnitaryMatrix.random(2)
 
-    # UnitaryMatrix objects implement the NumPy API
+    # The `UnitaryMatrix` class implement the NumPy API
     result = cnot @ utry
     print(result)
 
 
 .. autosummary::
     :toctree: autogen
+    :recursive:
 
     Unitary
     UnitaryMatrix

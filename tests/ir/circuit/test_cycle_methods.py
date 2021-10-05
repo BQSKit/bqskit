@@ -93,10 +93,10 @@ class TestPopCycle:
             assert False, 'Unexpected Exception.'
 
     def test_index_valid_1(self, r6_qudit_circuit: Circuit) -> None:
-        num_cycles = r6_qudit_circuit.get_num_cycles()
+        num_cycles = r6_qudit_circuit.num_cycles
         for i in range(num_cycles):
             r6_qudit_circuit.pop_cycle(-1)
-            assert r6_qudit_circuit.get_num_cycles() == num_cycles - i - 1
+            assert r6_qudit_circuit.num_cycles == num_cycles - i - 1
 
     @pytest.mark.parametrize('cycle_index', [-3, -2, -1, 0, 1, 2])
     def test_multi_qudit(self, cycle_index: int) -> None:
@@ -113,11 +113,11 @@ class TestPopCycle:
             ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
             [0, 1, 2, 3],
         )
-        assert circuit.get_num_cycles() == 3
-        assert circuit.get_num_operations() == 3
+        assert circuit.num_cycles == 3
+        assert circuit.num_operations == 3
         circuit.pop_cycle(cycle_index)
-        assert circuit.get_num_cycles() == 2
-        assert circuit.get_num_operations() == 2
+        assert circuit.num_cycles == 2
+        assert circuit.num_operations == 2
 
 
 class TestIsCycleInRange:

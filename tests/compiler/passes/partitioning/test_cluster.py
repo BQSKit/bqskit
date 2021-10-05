@@ -17,5 +17,5 @@ class TestClusteringPartitioner:
         )
 
         assert r6_qudit_circuit.get_unitary() == utry
-        for cycle_index in range(r6_qudit_circuit.get_num_cycles()):
+        for cycle_index in range(r6_qudit_circuit.num_cycles):
             assert not r6_qudit_circuit._is_cycle_idle(cycle_index)

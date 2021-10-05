@@ -43,7 +43,6 @@ bqskit.ir.Circuit
       ~Circuit.get_coupling_graph
       ~Circuit.get_dagger
       ~Circuit.get_depth
-      ~Circuit.get_dim
       ~Circuit.get_gate_set
       ~Circuit.get_grad
       ~Circuit.get_inverse
@@ -56,9 +55,7 @@ bqskit.ir.Circuit
       ~Circuit.get_param
       ~Circuit.get_param_location
       ~Circuit.get_params
-      ~Circuit.get_radixes
       ~Circuit.get_region
-      ~Circuit.get_size
       ~Circuit.get_slice
       ~Circuit.get_statevector
       ~Circuit.get_unitary
@@ -78,6 +75,7 @@ bqskit.ir.Circuit
       ~Circuit.is_qubit_only
       ~Circuit.is_qudit_idle
       ~Circuit.is_qudit_in_range
+      ~Circuit.is_qudit_only
       ~Circuit.is_qutrit_only
       ~Circuit.is_valid_region
       ~Circuit.minimize
@@ -111,3 +109,6 @@ bqskit.ir.Circuit
    .. autosummary::
 
       ~Circuit.dim
+      ~Circuit.num_params
+      ~Circuit.num_qudits
+      ~Circuit.radixes

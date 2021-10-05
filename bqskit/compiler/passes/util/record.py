@@ -19,13 +19,13 @@ class RecordStatsPass(BasePass):
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
         stats: dict[str, Any] = {}
-        stats['cycles'] = circuit.get_num_cycles()
-        stats['num_ops'] = circuit.get_num_operations()
-        stats['cgraph'] = circuit.get_coupling_graph()
-        stats['depth'] = circuit.get_depth()
+        stats['cycles'] = circuit.num_cycles
+        stats['num_ops'] = circuit.num_operations
+        stats['cgraph'] = circuit.coupling_graph
+        stats['depth'] = circuit.depth
         stats['gate_counts'] = {
             gate: circuit.count(gate)
-            for gate in circuit.get_gate_set()
+            for gate in circuit.gate_set
         }
 
         if self.key not in data:

@@ -19,12 +19,8 @@ bqskit.qis.UnitaryMatrix
       ~UnitaryMatrix.conj
       ~UnitaryMatrix.from_file
       ~UnitaryMatrix.get_dagger
-      ~UnitaryMatrix.get_dim
       ~UnitaryMatrix.get_distance_from
-      ~UnitaryMatrix.get_num_params
       ~UnitaryMatrix.get_numpy
-      ~UnitaryMatrix.get_radixes
-      ~UnitaryMatrix.get_size
       ~UnitaryMatrix.get_statevector
       ~UnitaryMatrix.get_unitary
       ~UnitaryMatrix.identity

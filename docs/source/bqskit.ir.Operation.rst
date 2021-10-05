@@ -15,12 +15,8 @@ bqskit.ir.Operation
 
       ~Operation.__init__
       ~Operation.check_parameters
-      ~Operation.get_dim
       ~Operation.get_grad
-      ~Operation.get_num_params
       ~Operation.get_qasm
-      ~Operation.get_radixes
-      ~Operation.get_size
       ~Operation.get_unitary
       ~Operation.get_unitary_and_grad
       ~Operation.is_constant
@@ -28,6 +24,7 @@ bqskit.ir.Operation
       ~Operation.is_locally_optimizable
       ~Operation.is_parameterized
       ~Operation.is_qubit_only
+      ~Operation.is_qudit_only
       ~Operation.is_qutrit_only
 
 
@@ -41,4 +38,7 @@ bqskit.ir.Operation
       ~Operation.dim
       ~Operation.gate
       ~Operation.location
+      ~Operation.num_params
+      ~Operation.num_qudits
       ~Operation.params
+      ~Operation.radixes

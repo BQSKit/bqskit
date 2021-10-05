@@ -222,7 +222,7 @@ class QFASTDecompositionPass(SynthesisPass):
         # TODO: reconsider method arg to instantiate call
         circuit.instantiate(utry, cost_fn_gen=self.cost, method='minimization')
 
-        dist = self.cost.gen_cost(circuit, utry).get_cost(circuit.get_params())
+        dist = self.cost.gen_cost(circuit, utry).get_cost(circuit.params)
         _logger.info('Final circuit distance: %e.' % dist)
 
     def can_restrict(self, head: Operation) -> bool:

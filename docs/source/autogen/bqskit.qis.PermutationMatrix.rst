@@ -20,12 +20,8 @@ bqskit.qis.PermutationMatrix
       ~PermutationMatrix.from_file
       ~PermutationMatrix.from_qubit_location
       ~PermutationMatrix.get_dagger
-      ~PermutationMatrix.get_dim
       ~PermutationMatrix.get_distance_from
-      ~PermutationMatrix.get_num_params
       ~PermutationMatrix.get_numpy
-      ~PermutationMatrix.get_radixes
-      ~PermutationMatrix.get_size
       ~PermutationMatrix.get_statevector
       ~PermutationMatrix.get_unitary
       ~PermutationMatrix.identity

@@ -196,7 +196,7 @@ class LEAPSynthesisPass(SynthesisPass):
                         )
                         last_prefix_layer = layer + 1
                         frontier.clear()
-                        data['window_markers'].append(circuit.get_num_cycles())
+                        data['window_markers'].append(circuit.num_cycles)
                         if self.max_layer is None or layer + 1 < self.max_layer:
                             frontier.add(circuit, layer + 1)
                         break

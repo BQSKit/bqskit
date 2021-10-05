@@ -93,7 +93,7 @@ class ScanPartitioner(BasePass):
                 'blocking entire circuit.',
             )
             circuit.fold({
-                qudit_index: (0, circuit.get_num_cycles())
+                qudit_index: (0, circuit.num_cycles)
                 for qudit_index in range(circuit.num_qudits)
             })
             return
@@ -128,8 +128,8 @@ class ScanPartitioner(BasePass):
                 qudit_groups.remove(qudit_group)
 
         # divider splits the circuit into partitioned and unpartitioned spaces.
-        active_qudits = circuit.get_active_qudits()
-        num_cycles = circuit.get_num_cycles()
+        active_qudits = circuit.active_qudits
+        num_cycles = circuit.num_cycles
         divider = [
             0 if q in active_qudits else num_cycles
             for q in range(circuit.num_qudits)
@@ -246,7 +246,7 @@ class ScanPartitioner(BasePass):
                 folded_circuit.append_gate(
                     CircuitGate(cgc, True),
                     sorted(list(region.keys())),
-                    list(cgc.get_params()),
+                    list(cgc.params),
                 )
         else:
             for region in regions:
@@ -256,7 +256,7 @@ class ScanPartitioner(BasePass):
                     folded_circuit.append_gate(
                         CircuitGate(cgc, True),
                         sorted(list(region.keys())),
-                        list(cgc.get_params()),
+                        list(cgc.params),
                     )
                 else:
                     folded_circuit.extend(circuit[region])

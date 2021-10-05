@@ -91,7 +91,7 @@ class CircuitIterator(
 
         if end is None:
             end = CircuitPoint(
-                circuit.get_num_cycles() - 1,
+                circuit.num_cycles - 1,
                 circuit.num_qudits - 1,
             )
 
@@ -107,7 +107,7 @@ class CircuitIterator(
             # iterate through the entire circuit normally
             self.qudits = list(range(self.circuit.num_qudits))
             self.region = CircuitRegion({
-                qudit: (0, self.circuit.get_num_cycles())
+                qudit: (0, self.circuit.num_cycles)
                 for qudit in self.qudits
             })
 
@@ -129,7 +129,7 @@ class CircuitIterator(
 
             self.qudits = list(qudits_or_region)
             self.region = CircuitRegion({
-                qudit: (0, self.circuit.get_num_cycles())
+                qudit: (0, self.circuit.num_cycles)
                 for qudit in self.qudits
             })
 
@@ -152,8 +152,8 @@ class CircuitIterator(
         self.qudit = start.qudit if not self.reverse else end.qudit
 
         # Used to track changes to circuit structure
-        self.num_ops = self.circuit.get_num_operations()
-        self.num_cycles = self.circuit.get_num_cycles()
+        self.num_ops = self.circuit.num_operations
+        self.num_cycles = self.circuit.num_cycles
         self.num_qudits = self.circuit.num_qudits
 
         # Ensure operations are only returned once
@@ -196,8 +196,8 @@ class CircuitIterator(
     def step(self) -> None:
         """Move the iterator one step."""
         if (
-            self.num_ops != self.circuit.get_num_operations()
-            or self.num_cycles != self.circuit.get_num_cycles()
+            self.num_ops != self.circuit.num_operations
+            or self.num_cycles != self.circuit.num_cycles
             or self.num_qudits != self.circuit.num_qudits
         ):
             raise RuntimeError('Circuit changed under iteration.')

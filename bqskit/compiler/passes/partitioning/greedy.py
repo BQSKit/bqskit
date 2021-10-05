@@ -62,7 +62,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                 'blocking entire circuit.',
             )
             circuit.fold({
-                qudit_index: (0, circuit.get_num_cycles())
+                qudit_index: (0, circuit.num_cycles)
                 for qudit_index in range(circuit.num_qudits)
             })
             return
@@ -129,7 +129,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                     # find first bound with lower larger than cycle
                     if len(bounds_list) == 0:
                         bounding_region[qudit] = (
-                            0, circuit.get_num_cycles() - 1,
+                            0, circuit.num_cycles - 1,
                         )
                         continue
 
@@ -141,7 +141,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                     if index_of_first_larger is None:
                         bounding_region[qudit] = (
                             bounds_list[-1][1] + 1,
-                            circuit.get_num_cycles() - 1,
+                            circuit.num_cycles - 1,
                         )
                     elif index_of_first_larger == 0:
                         bounding_region[qudit] = (0, bounds_list[0][0] - 1)
@@ -183,7 +183,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                 folded_circuit.append_gate(
                     CircuitGate(cgc, True),
                     sorted(list(region.keys())),
-                    list(cgc.get_params()),
+                    list(cgc.params),
                 )
         else:
             for region in regions:
@@ -193,7 +193,7 @@ class GreedyPartitioner(BasePass):  # TODO: Change
                     folded_circuit.append_gate(
                         CircuitGate(cgc, True),
                         sorted(list(region.keys())),
-                        list(cgc.get_params()),
+                        list(cgc.params),
                     )
                 else:
                     folded_circuit.extend(circuit[region])

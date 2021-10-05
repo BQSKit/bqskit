@@ -77,7 +77,7 @@ class ClusteringPartitioner(BasePass):
                 'blocking entire circuit.',
             )
             circuit.fold({
-                qudit_index: (0, circuit.get_num_cycles())
+                qudit_index: (0, circuit.num_cycles)
                 for qudit_index in range(circuit.num_qudits)
             })
             return
@@ -91,7 +91,7 @@ class ClusteringPartitioner(BasePass):
                 cycle = 0
                 qudit = 0
                 while True:
-                    cycle = np.random.randint(circuit.get_num_cycles())
+                    cycle = np.random.randint(circuit.num_cycles)
                     qudit = np.random.randint(circuit.num_qudits)
                     if not circuit.is_point_idle((cycle, qudit)):
                         break

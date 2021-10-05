@@ -22,7 +22,7 @@ class OPENQASM2Language(Language):
 
         source = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n"
         source += f'qreg q[{circuit.num_qudits}];\n'
-        for gate in circuit.get_gate_set():
+        for gate in circuit.gate_set:
             source += gate.get_qasm_gate_def()
 
         for op in circuit:

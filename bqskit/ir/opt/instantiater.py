@@ -104,7 +104,7 @@ class Instantiater(abc.ABC):
                 ', got %d' % multistarts,
             )
 
-        return [  # [ circuit.get_params() ] + [  # TODO: re-evaluate
+        return [  # [ circuit.params ] + [  # TODO: re-evaluate
             np.random.random(circuit.num_params)
             for i in range(multistarts)
         ]

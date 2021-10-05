@@ -96,7 +96,7 @@ from bqskit.ir.point import CircuitPointLike
 
 
 def check_no_idle_cycles(circuit: Circuit) -> None:
-    for cycle_index in range(circuit.get_num_cycles()):
+    for cycle_index in range(circuit.num_cycles):
         assert not circuit._is_cycle_idle(cycle_index)
 
 
@@ -494,7 +494,7 @@ class TestGetOperation:
         assert False, 'Should not have reached here.'
 
     def test_correctness_1(self, r6_qudit_circuit: Circuit) -> None:
-        for x in range(r6_qudit_circuit.get_num_cycles()):
+        for x in range(r6_qudit_circuit.num_cycles):
             for y in range(r6_qudit_circuit.num_qudits):
                 correct = r6_qudit_circuit._circuit[x][y]
 
@@ -592,7 +592,7 @@ class TestPoint:
         assert isinstance(circuit.point(HGate()), CircuitPoint)
 
     def test_correctness_1(self, r6_qudit_circuit: Circuit) -> None:
-        for x in range(r6_qudit_circuit.get_num_cycles()):
+        for x in range(r6_qudit_circuit.num_cycles):
             for y in range(r6_qudit_circuit.num_qudits):
                 op = r6_qudit_circuit._circuit[x][y]
 

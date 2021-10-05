@@ -73,7 +73,6 @@ class FrozenParameterGate(
         self._num_params = gate.num_params - len(frozen_params)
         self._num_qudits = gate.num_qudits
         self._radixes = gate.radixes
-        self._qasm_name = self.gate.qasm_name
         self.frozen_params = frozen_params
         self.unfixed_param_idxs = [
             i for i in range(gate.num_params)
@@ -107,6 +106,11 @@ class FrozenParameterGate(
             self.gate.name,
             str(self.frozen_params),
         )
+
+    @property
+    def qasm_name(self) -> str:
+        """The qasm command for this gate, see Gate for more info."""
+        return self.gate.qasm_name
 
     def get_qasm_gate_def(self) -> str:
         """Returns the qasm gate def for this gate, see Gate for more info."""

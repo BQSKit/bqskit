@@ -18,8 +18,8 @@ circ.append_gate(CNOTGate(), [3, 2])
 circ.append_gate(CNOTGate(), [2, 1])
 part = GreedyPartitioner()
 
-print('Num Cycles Before:', circ.get_num_cycles())
-print('Num Ops Before:', circ.get_num_operations())
+print('Num Cycles Before:', circ.num_cycles)
+print('Num Ops Before:', circ.num_operations)
 
 data = {'multi_gate_score': 1, 'single_gate_score': 1}
 part.run(circ, data)
@@ -27,5 +27,5 @@ part.run(circ, data)
 # for point, op in circ.operations_with_points():
 #     print(op, point)
 
-print('Num Cycles After:', circ.get_num_cycles())
-print('Num Ops After:', circ.get_num_operations())
+print('Num Cycles After:', circ.num_cycles)
+print('Num Ops After:', circ.num_operations)

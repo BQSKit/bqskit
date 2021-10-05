@@ -20,7 +20,7 @@ class Unitary(metaclass=UnitaryMeta):
     A unitary-valued function.
 
     A `Unitary` is map from zero or more real numbers to a unitary matrix. This
-    is captured in the main `get_unitary` abstract method.
+    is captured in the `get_unitary` abstract method.
     """
 
     _num_params: int
@@ -36,7 +36,10 @@ class Unitary(metaclass=UnitaryMeta):
     @property
     def num_qudits(self) -> int:
         """The number of qudits this unitary can act on."""
-        return getattr(self, '_num_qudits', len(self.radixes))
+        if hasattr(self, '_num_qudits'):
+            return self._num_qudits
+
+        return len(self.radixes)
 
     @property
     def radixes(self) -> tuple[int, ...]:
@@ -46,15 +49,18 @@ class Unitary(metaclass=UnitaryMeta):
     @property
     def dim(self) -> int:
         """The matrix dimension for this unitary."""
-        return getattr(self, '_dim', int(np.prod(self.radixes)))
+        if hasattr(self, '_dim'):
+            return self._dim
+
+        return int(np.prod(self.radixes))
 
     @abc.abstractmethod
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """
-        Abstract method that should return this unitary as a UnitaryMatrix.
+        Abstract method that maps real-valued `params` to a `UnitaryMatrix`.
 
         Args:
-            params (Sequence[float]): Unconstrained real number
+            params (Sequence[float]): Unconstrained vector of real number
                 parameters for parameterized unitaries.
 
         Returns:

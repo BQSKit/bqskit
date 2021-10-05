@@ -115,8 +115,8 @@ class ScanningGateRemovalPass(BasePass):
 
             # If removing gates from the left, we need to track index changes.
             if self.start_from_left:
-                idx_shift = circuit.get_num_cycles()
-                idx_shift -= working_copy.get_num_cycles()
+                idx_shift = circuit.num_cycles
+                idx_shift -= working_copy.num_cycles
                 cycle -= idx_shift
 
             working_copy.pop((cycle, op.location[0]))
