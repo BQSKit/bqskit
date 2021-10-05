@@ -29,7 +29,7 @@ class Operation(DifferentiableUnitary):
     ) -> None:
         """
         Operation Constructor.
-s
+
         Args:
             gate (Gate): The cell's gate.
 

@@ -30,7 +30,7 @@ class Unitary(metaclass=UnitaryMeta):
 
     @property
     def num_params(self) -> int:
-        """The number of parameters for this unitary."""
+        """The number of parameters this unitary-valued function takes."""
         return getattr(self, '_num_params')
 
     @property

@@ -6,7 +6,7 @@ BQSKit Circuit Intermediate Representation (:mod:`bqskit.ir`)
 .. currentmodule:: bqskit.ir
 
 .. autosummary::
-    :toctree:
+    :toctree: autogen
 
     Circuit
     Gate

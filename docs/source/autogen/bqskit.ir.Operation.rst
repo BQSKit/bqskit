@@ -1,19 +1,35 @@
-bqskit.ir.Operation
-===================
+Operation
+=========
 
 .. currentmodule:: bqskit.ir
 
 .. autoclass:: Operation
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+      :toctree:
+
+      ~Operation.dim
+      ~Operation.gate
+      ~Operation.location
+      ~Operation.num_params
+      ~Operation.num_qudits
+      ~Operation.params
+      ~Operation.radixes
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~Operation.__init__
       ~Operation.check_parameters
       ~Operation.get_grad
       ~Operation.get_qasm
@@ -26,19 +42,3 @@ bqskit.ir.Operation
       ~Operation.is_qubit_only
       ~Operation.is_qudit_only
       ~Operation.is_qutrit_only
-
-
-
-
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~Operation.dim
-      ~Operation.gate
-      ~Operation.location
-      ~Operation.num_params
-      ~Operation.num_qudits
-      ~Operation.params
-      ~Operation.radixes

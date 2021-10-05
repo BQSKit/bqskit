@@ -1,19 +1,34 @@
-bqskit.ir.Gate
-==============
+Gate
+====
 
 .. currentmodule:: bqskit.ir
 
 .. autoclass:: Gate
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+      :toctree:
+
+      ~Gate.dim
+      ~Gate.name
+      ~Gate.num_params
+      ~Gate.num_qudits
+      ~Gate.qasm_name
+      ~Gate.radixes
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~Gate.__init__
       ~Gate.check_parameters
       ~Gate.get_qasm_gate_def
       ~Gate.get_unitary
@@ -24,18 +39,3 @@ bqskit.ir.Gate
       ~Gate.is_qutrit_only
       ~Gate.with_all_frozen_params
       ~Gate.with_frozen_params
-
-
-
-
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~Gate.dim
-      ~Gate.name
-      ~Gate.num_params
-      ~Gate.num_qudits
-      ~Gate.qasm_name
-      ~Gate.radixes

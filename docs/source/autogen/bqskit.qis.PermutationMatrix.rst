@@ -1,19 +1,36 @@
-bqskit.qis.PermutationMatrix
-============================
+PermutationMatrix
+=================
 
 .. currentmodule:: bqskit.qis
 
 .. autoclass:: PermutationMatrix
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+      :toctree:
+
+      ~PermutationMatrix.T
+      ~PermutationMatrix.dagger
+      ~PermutationMatrix.dim
+      ~PermutationMatrix.dtype
+      ~PermutationMatrix.num_params
+      ~PermutationMatrix.num_qudits
+      ~PermutationMatrix.radixes
+      ~PermutationMatrix.shape
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~PermutationMatrix.__init__
       ~PermutationMatrix.check_parameters
       ~PermutationMatrix.closest_to
       ~PermutationMatrix.conj
@@ -34,20 +51,3 @@ bqskit.qis.PermutationMatrix
       ~PermutationMatrix.is_unitary
       ~PermutationMatrix.random
       ~PermutationMatrix.save
-
-
-
-
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~PermutationMatrix.T
-      ~PermutationMatrix.dagger
-      ~PermutationMatrix.dim
-      ~PermutationMatrix.dtype
-      ~PermutationMatrix.num_params
-      ~PermutationMatrix.num_qudits
-      ~PermutationMatrix.radixes
-      ~PermutationMatrix.shape

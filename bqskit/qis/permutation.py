@@ -44,7 +44,7 @@ class PermutationMatrix(UnitaryMatrix):
                 matrix.
 
         Examples:
-            calc_permutation_matrix( 2, (0, 1) ) =
+            >>> calc_permutation_matrix( 2, (0, 1) )
                 [ [ 1, 0, 0, 0 ],
                   [ 0, 1, 0, 0 ],
                   [ 0, 0, 1, 0 ],
@@ -54,12 +54,13 @@ class PermutationMatrix(UnitaryMatrix):
             qubits, specified by the first parameter, and the desired
             permutation is [0, 1] -> [0, 1].
 
-            calc_permutation_matrix( 2, (1,) ) = # Also equals
-            calc_permutation_matrix( 2, (1, 0) ) =
+            >>> calc_permutation_matrix( 2, (1,) ) = # Also equals
+            >>> calc_permutation_matrix( 2, (1, 0) ) =
                 [ [ 1, 0, 0, 0 ],
-                [ 0, 0, 1, 0 ],
-                [ 0, 1, 0, 0 ],
-                [ 0, 0, 0, 1 ] ]
+                  [ 0, 0, 1, 0 ],
+                  [ 0, 1, 0, 0 ],
+                  [ 0, 0, 0, 1 ] ]
+
             This is a more interesting example. The swap gate is returned
             here since we are working with 2 qubits and want the permutation
             that swaps the two qubits, giving by the permutation [0] -> [1]

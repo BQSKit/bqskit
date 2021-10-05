@@ -1,19 +1,40 @@
-bqskit.ir.Circuit
-=================
+Circuit
+=======
 
 .. currentmodule:: bqskit.ir
 
 .. autoclass:: Circuit
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+      :toctree:
+
+      ~Circuit.active_qudits
+      ~Circuit.coupling_graph
+      ~Circuit.depth
+      ~Circuit.dim
+      ~Circuit.gate_set
+      ~Circuit.num_cycles
+      ~Circuit.num_operations
+      ~Circuit.num_params
+      ~Circuit.num_qudits
+      ~Circuit.parallelism
+      ~Circuit.params
+      ~Circuit.radixes
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~Circuit.__init__
       ~Circuit.append
       ~Circuit.append_circuit
       ~Circuit.append_gate
@@ -39,22 +60,13 @@ bqskit.ir.Circuit
       ~Circuit.from_operation
       ~Circuit.from_str
       ~Circuit.from_unitary
-      ~Circuit.get_active_qudits
-      ~Circuit.get_coupling_graph
       ~Circuit.get_dagger
-      ~Circuit.get_depth
-      ~Circuit.get_gate_set
       ~Circuit.get_grad
       ~Circuit.get_inverse
-      ~Circuit.get_num_cycles
-      ~Circuit.get_num_operations
-      ~Circuit.get_num_params
       ~Circuit.get_operation
       ~Circuit.get_operations
-      ~Circuit.get_parallelism
       ~Circuit.get_param
       ~Circuit.get_param_location
-      ~Circuit.get_params
       ~Circuit.get_region
       ~Circuit.get_slice
       ~Circuit.get_statevector
@@ -99,16 +111,3 @@ bqskit.ir.Circuit
       ~Circuit.surround
       ~Circuit.unfold
       ~Circuit.unfold_all
-
-
-
-
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~Circuit.dim
-      ~Circuit.num_params
-      ~Circuit.num_qudits
-      ~Circuit.radixes

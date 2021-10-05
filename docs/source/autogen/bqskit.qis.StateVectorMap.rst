@@ -1,17 +1,20 @@
-bqskit.qis.StateVectorMap
-=========================
+StateVectorMap
+==============
 
 .. currentmodule:: bqskit.qis
 
 .. autoclass:: StateVectorMap
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~StateVectorMap.__init__
       ~StateVectorMap.get_statevector

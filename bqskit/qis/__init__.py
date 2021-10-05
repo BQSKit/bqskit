@@ -33,7 +33,6 @@ represents a pure quantum operation in matrix form.
     result = cnot @ utry
     print(result)
 
-
 .. autosummary::
     :toctree: autogen
     :recursive:

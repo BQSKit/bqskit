@@ -1,19 +1,36 @@
-bqskit.qis.UnitaryMatrix
-========================
+UnitaryMatrix
+=============
 
 .. currentmodule:: bqskit.qis
 
 .. autoclass:: UnitaryMatrix
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+      :toctree:
+
+      ~UnitaryMatrix.T
+      ~UnitaryMatrix.dagger
+      ~UnitaryMatrix.dim
+      ~UnitaryMatrix.dtype
+      ~UnitaryMatrix.num_params
+      ~UnitaryMatrix.num_qudits
+      ~UnitaryMatrix.radixes
+      ~UnitaryMatrix.shape
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~UnitaryMatrix.__init__
       ~UnitaryMatrix.check_parameters
       ~UnitaryMatrix.closest_to
       ~UnitaryMatrix.conj
@@ -32,20 +49,3 @@ bqskit.qis.UnitaryMatrix
       ~UnitaryMatrix.is_unitary
       ~UnitaryMatrix.random
       ~UnitaryMatrix.save
-
-
-
-
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~UnitaryMatrix.T
-      ~UnitaryMatrix.dagger
-      ~UnitaryMatrix.dim
-      ~UnitaryMatrix.dtype
-      ~UnitaryMatrix.num_params
-      ~UnitaryMatrix.num_qudits
-      ~UnitaryMatrix.radixes
-      ~UnitaryMatrix.shape

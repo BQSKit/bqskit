@@ -28,11 +28,13 @@ author = 'BQSKit Development Team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
+    'sphinx_rtd_theme',
     'myst_parser',
     'jupyter_sphinx',
-    'sphinx.ext.autodoc',
     'nbsphinx',
 ]
 
@@ -51,12 +53,37 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {'navigation_depth': 2}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
-autodoc_type_aliases = {'UnitaryLike': 'bqskit.qis.unitary.UnitaryLike'}
+autodoc_type_aliases = {
+    'tuple': 'tuple',
+    'list': 'list',
+    'dict': 'dict',
+}
+# autodoc_type_aliases = {
+#     'StateLike': 'bqskit.qis.state.StateLike',
+#     'CircuitLocationLike': 'bqskit.ir.CircuitLocationLike',
+#     'CircuitPointLike': 'bqskit.ir.CircuitPointLike',
+#     'CircuitRegionLike': 'bqskit.ir.CircuitRegionLike',
+#     'IntervalLike': 'bqskit.ir.IntervalLike',
+# }
+# napoleon_type_aliases = autodoc_type_aliases
+autodoc_typehints = 'description'
+autoclass_content = 'both'
 nbsphinx_output_prompt = 'Out[%s]:'
+
+add_module_names = False
+modindex_common_prefex = ['bqskit.']
+autosummary_generate = True
+autosummary_generate_overwrite = True
+napoleon_use_admonition_for_notes = True
+napoleon_use_admonition_for_examples = True
+napoleon_use_admonition_for_references = True
+napolean_custom_sections = ['Invariants']
+napoleon_preprocess_types = True
+napoleon_use_rtype = True

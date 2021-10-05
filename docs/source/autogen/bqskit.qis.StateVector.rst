@@ -1,33 +1,33 @@
-bqskit.qis.StateVector
-======================
+StateVector
+===========
 
 .. currentmodule:: bqskit.qis
 
 .. autoclass:: StateVector
-
-
-   .. automethod:: __init__
-
-
-   .. rubric:: Methods
-
-   .. autosummary::
-
-      ~StateVector.__init__
-      ~StateVector.get_numpy
-      ~StateVector.get_probs
-      ~StateVector.is_pure_state
-
-
+   :show-inheritance:
 
 
 
    .. rubric:: Attributes
 
    .. autosummary::
+      :toctree:
 
       ~StateVector.dim
       ~StateVector.dtype
       ~StateVector.num_qudits
       ~StateVector.radixes
       ~StateVector.shape
+
+
+
+
+
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree:
+
+      ~StateVector.get_numpy
+      ~StateVector.get_probs
+      ~StateVector.is_pure_state

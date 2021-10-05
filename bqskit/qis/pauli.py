@@ -195,8 +195,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         Args:
             pauli_string (str): A string that describes the desired matrices.
                 This is a comma-seperated list of pauli strings.
-                A pauli string has the following regex pattern:
-                    [IXYZ]+
+                A pauli string has the following regex pattern: [IXYZ]+
 
         Returns:
             (np.ndarray | list(np.ndarray)):

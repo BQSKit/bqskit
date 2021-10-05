@@ -1,19 +1,32 @@
-bqskit.qis.Unitary
-==================
+Unitary
+=======
 
 .. currentmodule:: bqskit.qis
 
 .. autoclass:: Unitary
+   :show-inheritance:
 
 
-   .. automethod:: __init__
+
+   .. rubric:: Attributes
+
+   .. autosummary::
+      :toctree:
+
+      ~Unitary.dim
+      ~Unitary.num_params
+      ~Unitary.num_qudits
+      ~Unitary.radixes
+
+
+
 
 
    .. rubric:: Methods
 
    .. autosummary::
+      :toctree:
 
-      ~Unitary.__init__
       ~Unitary.check_parameters
       ~Unitary.get_unitary
       ~Unitary.is_constant
@@ -21,16 +34,3 @@ bqskit.qis.Unitary
       ~Unitary.is_qubit_only
       ~Unitary.is_qudit_only
       ~Unitary.is_qutrit_only
-
-
-
-
-
-   .. rubric:: Attributes
-
-   .. autosummary::
-
-      ~Unitary.dim
-      ~Unitary.num_params
-      ~Unitary.num_qudits
-      ~Unitary.radixes
