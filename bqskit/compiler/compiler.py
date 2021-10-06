@@ -52,7 +52,8 @@ class Compiler:
         self.close()
 
     def __del__(self) -> None:
-        self.close()
+        if not self.conn.closed:
+            self.close()
 
     def close(self) -> None:
         """Shutdowns compiler and closes connection."""
