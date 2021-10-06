@@ -51,6 +51,9 @@ class Compiler:
         """Shutdowns compiler and closes connection."""
         self.close()
 
+    def __del__(self) -> None:
+        self.close()
+
     def close(self) -> None:
         """Shutdowns compiler and closes connection."""
         self.conn.send('CLOSE')
