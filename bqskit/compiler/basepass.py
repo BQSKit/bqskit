@@ -9,6 +9,9 @@ from __future__ import annotations
 import abc
 from typing import Any
 
+from dask.distributed import Client
+from dask.distributed import get_client as dask_get_client
+
 from bqskit.ir.circuit import Circuit
 
 
@@ -41,3 +44,9 @@ class BasePass (abc.ABC):
 
     # def __setstate__(self, state: Any) -> None:
     #     raise NotImplementedError()  # TODO
+
+    def get_client(self) -> Client:
+        try:
+            return dask_get_client()
+        except ValueError:
+            return Client()

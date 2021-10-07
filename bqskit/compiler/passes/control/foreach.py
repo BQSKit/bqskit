@@ -17,6 +17,8 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_sequence
 
+from dask.distributed import Client, get_client, secede, rejoin
+
 _logger = logging.getLogger(__name__)
 
 
@@ -106,6 +108,7 @@ class ForEachBlockPass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
         """Perform the pass's operation, see BasePass for more info."""
+        client = self.get_client()
 
         # Make room in data for block data
         if self.key not in data:
@@ -136,6 +139,8 @@ class ForEachBlockPass(BasePass):
         # Go through the blocks
         points: list[CircuitPoint] = []
         ops: list[Operation] = []
+        subcircuits: list[Circuit] = []
+        block_datas: list[dict[str, Any]] = []
         for i, (cycle, op) in enumerate(blocks):
             block_data: dict[str, Any] = {}
 
@@ -159,10 +164,27 @@ class ForEachBlockPass(BasePass):
             block_data['op'] = copy.deepcopy(op)
             block_data['subcircuit_pre'] = subcircuit.copy()
 
-            # Perform Work
-            for loop_pass in self.loop_body:
-                loop_pass.run(subcircuit, subdata)
+            subcircuits.append(subcircuit)
+            block_datas.append(block_data)
 
+        # Perform Work (Parallel)
+        completed_subcircuits = []
+        completed_block_datas = []
+        futures = []
+        secede()
+        for subcircuit, block_data in zip(subcircuits, block_datas):
+            future = client.submit(sub_do_work, self.loop_body, subcircuit, block_data)
+            futures.append(future)
+        
+        for future in futures:
+            x, y = future.result()
+            completed_subcircuits.append(x)
+            completed_block_datas.append(y)
+        rejoin()
+
+        for i, (cycle, op) in enumerate(blocks):
+            subcircuit = completed_subcircuits[i]
+            block_data = completed_block_datas[i]
             # Record Data Part 2
             block_data['subcircuit_post'] = subcircuit.copy()
             block_data['loop_body_data'] = subdata
@@ -183,7 +205,7 @@ class ForEachBlockPass(BasePass):
                     Operation(
                         CircuitGate(subcircuit, True),
                         op.location,
-                        subcircuit.params,  # type: ignore  # TODO: RealVector  # noqa
+                        subcircuit.params,  # type: ignore  # TODO: RealVector
                     ),
                 )
                 block_data['replaced'] = True
@@ -209,3 +231,8 @@ def default_collection_filter(op: Operation) -> bool:
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True
+
+def sub_do_work(loop_body: Sequence[BasePass], subcircuit: Circuit, subdata: dict[str, Any]) -> tuple[Circuit, dict[str, Any]]:
+    for loop_pass in loop_body:
+        loop_pass.run(subcircuit, subdata)
+    return subcircuit, subdata

@@ -5,6 +5,12 @@ import logging
 from typing import Any
 
 import numpy as np
+from dask.distributed import as_completed
+from dask.distributed import Client
+from dask.distributed import get_client
+from dask.distributed import rejoin
+from dask.distributed import secede
+from dask.distributed import worker_client
 from scipy.stats import linregress
 
 from bqskit.compiler.passes.synthesis.synthesis import SynthesisPass
@@ -15,11 +21,18 @@ from bqskit.compiler.search.heuristic import HeuristicFunction
 from bqskit.compiler.search.heuristics import AStarHeuristic
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
+from bqskit.ir.opt.cost.functions.residuals.hilbertschmidt import HilbertSchmidtResiduals
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
+from bqskit.ir.opt.instantiater import Instantiater
+from bqskit.ir.opt.instantiaters import instantiater_order
+from bqskit.ir.opt.instantiaters import Minimization
+from bqskit.ir.opt.instantiaters import QFactor
+from bqskit.qis.state.state import StateLike
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
-
 
 _logger = logging.getLogger(__name__)
 
@@ -141,80 +154,101 @@ class LEAPSynthesisPass(SynthesisPass):
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
-        frontier = Frontier(utry, self.heuristic_function)
-        data['window_markers'] = []
+        with worker_client() as client:
+            frontier = Frontier(utry, self.heuristic_function)
+            data['window_markers'] = []
 
-        # Seed the search with an initial layer
-        initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(
-            utry,
-            **self.instantiate_options,
-        )
-        frontier.add(initial_layer, 0)
+            # Seed the search with an initial layer
+            initial_layer = self.layer_gen.gen_initial_layer(utry, data)
+            initial_layer.instantiate(
+                utry,
+                **self.instantiate_options,
+            )
+            frontier.add(initial_layer, 0)
 
-        # Track best circuit, initially the initial layer
-        best_dist = self.cost.calc_cost(initial_layer, utry)
-        best_circ = initial_layer
-        best_layer = 0
-        best_dists = [best_dist]
-        best_layers = [0]
-        last_prefix_layer = 0
-        _logger.info('Search started, initial layer has cost: %e.' % best_dist)
+            # Track best circuit, initially the initial layer
+            best_dist = self.cost.calc_cost(initial_layer, utry)
+            best_circ = initial_layer
+            best_layer = 0
+            best_dists = [best_dist]
+            best_layers = [0]
+            last_prefix_layer = 0
+            _logger.info(
+                'Search started, initial layer has cost: %e.' %
+                best_dist,
+            )
 
-        if best_dist < self.success_threshold:
-            _logger.info('Successful synthesis.')
-            return initial_layer
+            if best_dist < self.success_threshold:
+                _logger.info('Successful synthesis.')
+                return initial_layer
 
-        while not frontier.empty():
-            top_circuit, layer = frontier.pop()
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
 
-            # Generate successors and evaluate each
-            for circuit in self.layer_gen.gen_successors(top_circuit, data):
+                # Generate successors and evaluate each
 
-                circuit.instantiate(utry, **self.instantiate_options)
+                futures = client.map(
+                    Circuit.instantiate,
+                    self.layer_gen.gen_successors(
+                        top_circuit,
+                        data,
+                    ),
+                    pure=False,
+                    target=utry,
+                    **self.instantiate_options,
+                )
+                for _, circuit in as_completed(futures, with_results=True):
 
-                dist = self.cost.calc_cost(circuit, utry)
+                    # for circuit in self.layer_gen.gen_successors(top_circuit,
+                    # data):
 
-                if dist < best_dist:
-                    _logger.info(
-                        'New best circuit found with %d layer%s and cost: %e.'
-                        % (layer + 1, '' if layer == 0 else 's', dist),
-                    )
-                    best_dist = dist
-                    best_circ = circuit
-                    best_layer = layer
+                    #     circuit.instantiate(utry, **self.instantiate_options)
 
-                    if self.check_leap_condition(
-                        layer + 1,
-                        best_dist,
-                        best_layers,
-                        best_dists,
-                        last_prefix_layer,
-                    ):
+                    dist = self.cost.calc_cost(circuit, utry)
+
+                    if dist < best_dist:
                         _logger.info(
-                            'Prefix formed at %d layers.' % (layer + 1),
+                            'New best circuit found with %d layer%s and cost: %e.'
+                            % (layer + 1, '' if layer == 0 else 's', dist),
                         )
-                        last_prefix_layer = layer + 1
-                        frontier.clear()
-                        data['window_markers'].append(circuit.num_cycles)
-                        if self.max_layer is None or layer + 1 < self.max_layer:
-                            frontier.add(circuit, layer + 1)
-                        break
+                        best_dist = dist
+                        best_circ = circuit
+                        best_layer = layer
 
-                if dist < self.success_threshold:
-                    _logger.info('Successful synthesis.')
-                    return circuit
+                        if self.check_leap_condition(
+                            layer + 1,
+                            best_dist,
+                            best_layers,
+                            best_dists,
+                            last_prefix_layer,
+                        ):
+                            _logger.info(
+                                'Prefix formed at %d layers.' % (layer + 1),
+                            )
+                            last_prefix_layer = layer + 1
+                            frontier.clear()
+                            data['window_markers'].append(circuit.num_cycles)
+                            if self.max_layer is None or layer + 1 < self.max_layer:
+                                frontier.add(circuit, layer + 1)
+                            break
 
-                if self.max_layer is None or layer + 1 < self.max_layer:
-                    frontier.add(circuit, layer + 1)
+                    if dist < self.success_threshold:
+                        _logger.info('Successful synthesis.')
+                        for future in futures:
+                            if not future.done:
+                                client.cancel(future)
+                        return circuit
 
-        _logger.info('Frontier emptied.')
-        _logger.info(
-            'Returning best known circuit with %d layer%s and cost: %e.'
-            % (best_layer, '' if best_layer == 1 else 's', best_dist),
-        )
+                    if self.max_layer is None or layer + 1 < self.max_layer:
+                        frontier.add(circuit, layer + 1)
 
-        return best_circ
+            _logger.info('Frontier emptied.')
+            _logger.info(
+                'Returning best known circuit with %d layer%s and cost: %e.'
+                % (best_layer, '' if best_layer == 1 else 's', best_dist),
+            )
+
+            return best_circ
 
     def check_leap_condition(
         self,

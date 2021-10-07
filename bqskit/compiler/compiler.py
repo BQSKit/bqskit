@@ -9,14 +9,14 @@ run.
 from __future__ import annotations
 
 import logging
-from multiprocessing import Pipe
-from multiprocessing import Process
+import uuid
 from typing import Any
 
+from dask.distributed import Client
+from dask.distributed import Future
+
+from bqskit.compiler.executor import Executor
 from bqskit.compiler.task import CompilationTask
-from bqskit.compiler.task import TaskResult
-from bqskit.compiler.task import TaskStatus
-from bqskit.compiler.workqueue import WorkQueue
 from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -27,9 +27,7 @@ class Compiler:
 
     def __init__(self) -> None:
         """
-        Compiler Constructor. Starts a new backend compiler on the local machine
-        with an empty WorkQueue, establishes a connection, and then starts
-        running.
+        Compiler Constructor.
 
         Examples:
             >>> compiler = Compiler()
@@ -38,9 +36,8 @@ class Compiler:
             >>> print(compiler.status(task))
             TaskStatus.RUNNING
         """
-        self.conn, backend_conn = Pipe()
-        self.process = Process(target=WorkQueue.run, args=(backend_conn,))
-        self.process.start()
+        self.client = Client()
+        self.tasks: dict[uuid.UUID, Future] = {}
         _logger.info('Started compiler process.')
 
     def __enter__(self) -> Compiler:
@@ -52,49 +49,40 @@ class Compiler:
         self.close()
 
     def __del__(self) -> None:
-        if not self.conn.closed:
-            self.close()
+        self.close()
 
     def close(self) -> None:
         """Shutdowns compiler and closes connection."""
-        self.conn.send('CLOSE')
-        self.process.join()
-        self.conn.close()
-        _logger.info('Stopped compiler process.')
+        try:
+            self.client.close()
+        except AttributeError:
+            pass
+        # _logger.info('Stopped compiler process.')
 
     def submit(self, task: CompilationTask) -> None:
         """Submit a CompilationTask to the Compiler."""
-        self.conn.send('SUBMIT')
-        self.conn.send(task)
-        okay_msg = self.conn.recv()  # Block until response
-        if (okay_msg != 'OKAY'):
-            raise Exception('Failed to submit job.')
+        executor = Executor(task)
+        future = self.client.submit(Executor.run, executor, pure=False)
+        self.tasks[task.task_id] = future
         _logger.info('Submitted task: %s' % task.task_id)
 
-    def status(self, task: CompilationTask) -> TaskStatus:
+    def status(self, task: CompilationTask) -> str:
         """Retrieve the status of the specified CompilationTask."""
-        self.conn.send('STATUS')
-        self.conn.send(task.task_id)
-        return self.conn.recv()  # Block until response
+        return self.tasks[task.task_id].status
 
-    def result(self, task: CompilationTask) -> TaskResult:
+    def result(self, task: CompilationTask) -> Circuit:
         """Block until the CompilationTask is finished, return its result."""
-        self.conn.send('RESULT')
-        self.conn.send(task.task_id)
-        return self.conn.recv()  # Block until response
+        circ = self.tasks[task.task_id].result()
+        return circ
 
-    def remove(self, task: CompilationTask) -> None:
+    def cancel(self, task: CompilationTask) -> None:
         """Remove a task from the compiler's workqueue."""
-        self.conn.send('REMOVE')
-        self.conn.send(task.task_id)
-        self.conn.recv()  # Block until response
-        _logger.info('Removed task: %s' % task.task_id)
+        self.client.cancel(self.tasks[task.task_id])
+        _logger.info('Cancelled task: %s' % task.task_id)
 
     def compile(self, task: CompilationTask) -> Circuit:
         """Execute the CompilationTask."""
         _logger.info('Compiling task: %s' % task.task_id)
         self.submit(task)
         result = self.result(task)
-        return result.get_circuit()
-
-    # def get_supported_passes(...): TODO
+        return result

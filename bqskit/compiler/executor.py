@@ -26,11 +26,12 @@ class Executor:
         self.passes = task.passes
         self.data: dict[str, Any] = {'executor': self}
 
-    def run(self) -> None:
+    def run(self) -> Circuit:
         """Executes the task."""
         for pass_obj in self.passes:
             pass_obj.run(self.circuit, self.data)
         self.done = True
+        return self.circuit
 
     def get_result(self) -> Circuit:
         """Retrieve result."""
