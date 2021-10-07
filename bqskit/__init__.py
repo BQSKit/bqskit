@@ -34,7 +34,7 @@ _logger = logging.getLogger('bqskit')
 _logger.setLevel(logging.CRITICAL)
 _handler = logging.StreamHandler()
 _handler.setLevel(logging.DEBUG)
-_fmt = '%(levelname)-8s | %(message)s'
-_formatter = logging.Formatter(_fmt)
+_fmt = '%(asctime)s.%(msecs)03d - %(levelname)-8s | %(name)s: %(message)s'
+_formatter = logging.Formatter(_fmt, '%H:%M:%S')
 _handler.setFormatter(_formatter)
 _logger.addHandler(_handler)
