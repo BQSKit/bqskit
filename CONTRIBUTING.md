@@ -18,6 +18,14 @@ for the IR and supported algorithms under the API Reference section.
 
 ### Development Environment
 
+You will want to install BQSKit from source, by cloning the repository from github:
+
+```
+git clone https://github.com/BQSKit/BQSKit.git
+cd bqskit
+pip install -e .
+```
+
 Once you clone the repository, you will want to install `tox`. The easiest
 way is with pip:
 

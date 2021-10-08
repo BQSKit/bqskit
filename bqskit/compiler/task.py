@@ -100,12 +100,12 @@ class CompilationTask():
 
     # TODO: Add rebase abilities to default tasks
     @staticmethod
-    def synthesis(utry: UnitaryLike) -> CompilationTask:
+    def synthesize(utry: UnitaryLike) -> CompilationTask:
         """Produces a standard synthesis task for the given unitary."""
         circuit = Circuit.from_unitary(utry)
         num_qudits = circuit.num_qudits
 
-        if num_qudits > 8:
+        if num_qudits > 6:
             _logger.warning('Synthesis input size is very large.')
 
         inner_seq = [
@@ -118,6 +118,7 @@ class CompilationTask():
         if num_qudits >= 5:
             passes.append(QFASTDecompositionPass())
             passes.append(ForEachBlockPass(inner_seq))
+            passes.append(UnfoldPass())
         else:
             passes.extend(inner_seq)
 
@@ -128,7 +129,7 @@ class CompilationTask():
         """Produces a standard optimization task for the given circuit."""
         num_qudits = circuit.num_qudits
 
-        if num_qudits <= 4:
+        if num_qudits <= 3:
             return CompilationTask.synthesis(circuit.get_unitary())
 
         inner_seq = [
@@ -138,7 +139,7 @@ class CompilationTask():
         ]
 
         passes: list[BasePass] = []
-        passes.append(GreedyPartitioner(3))
+        passes.append(ClusteringPartitioner(3, 4))
         passes.append(ForEachBlockPass(inner_seq))
 
         iterative_reopt = WhileLoopPass(
