@@ -8,5 +8,6 @@
 .vscode/
 .mypy_cache/
 .DS_Store
+docs/source/autogen/*
 __pycache__
 docs/_build
