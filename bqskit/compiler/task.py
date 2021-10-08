@@ -18,7 +18,6 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passes.control import ForEachBlockPass
 from bqskit.compiler.passes.control.predicates.count import GateCountPredicate
 from bqskit.compiler.passes.control.whileloop import WhileLoopPass
-from bqskit.compiler.passes.partitioning import GreedyPartitioner
 from bqskit.compiler.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.compiler.passes.processing import ScanningGateRemovalPass
 from bqskit.compiler.passes.processing import WindowOptimizationPass
@@ -130,7 +129,7 @@ class CompilationTask():
         num_qudits = circuit.num_qudits
 
         if num_qudits <= 3:
-            return CompilationTask.synthesis(circuit.get_unitary())
+            return CompilationTask.synthesize(circuit.get_unitary())
 
         inner_seq = [
             LEAPSynthesisPass(),

@@ -23,6 +23,7 @@ from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composed.tagged import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.iterator import CircuitIterator
+from bqskit.ir.lang import get_language
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.ir.operation import Operation
@@ -2498,12 +2499,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 pickle.dump(self, f)
 
     @staticmethod
-    def from_file(filename: str) -> Circuit | None:
-        if filename.endswith('.pickle'):
-            with open(filename, 'rb') as f:
-                return pickle.load(f)
-        else:
-            return None
+    def from_file(filename: str) -> Circuit:
+        language = get_language(filename.split('.')[-1])
+
+        with open(filename) as f:
+            return language.decode(f.read())
 
     @staticmethod
     def from_str(input_str: str) -> Circuit:

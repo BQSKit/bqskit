@@ -1,16 +1,4 @@
-"""
-===========================================
-Berkeley Quantum Synthesis Toolkit (BQSKit)
-===========================================
-
-BQSKit is a superoptimizing quantum compiler that aims to provide
-easy to use and quick to extend software around quantum synthesis.
-This is accomplished by first building a quantum circuit intermediate
-representation designed to work efficiently with numerical optimizer
-based synthesis algorithms, and second bundling a compiler infrastructure
-and algorithm framework that can run many algorithms efficiently over
-a cluster of computers.
-"""
+"""The Berkeley Quantum Synthesis Toolkit Python Package."""
 from __future__ import annotations
 
 import logging
@@ -20,6 +8,8 @@ from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.task import TaskResult
 from bqskit.compiler.task import TaskStatus
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.lang import register_language
+from bqskit.ir.lang.qasm2 import OPENQASM2Language
 
 __all__ = [
     'CompilationTask',
@@ -38,3 +28,6 @@ _fmt = '%(asctime)s.%(msecs)03d - %(levelname)-8s | %(name)s: %(message)s'
 _formatter = logging.Formatter(_fmt, '%H:%M:%S')
 _handler.setFormatter(_formatter)
 _logger.addHandler(_handler)
+
+# Register supported languages
+register_language('qasm', OPENQASM2Language())
