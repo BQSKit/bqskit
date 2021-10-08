@@ -12,24 +12,25 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class DifferentiableUnitary(Unitary):
     """
-    The DifferentiableUnitary base class.
+    A differentiable unitary-valued function.
 
-    A DifferentiableUnitary exposes the `get_grad` abstract method and the
-    `get_unitary_and_grad` method.
+    A `DifferentiableUnitary` inherits from `Unitary` and additionally
+    exposes the :func:`get_grad` abstract method and the
+    :func:`get_unitary_and_grad` method.
     """
 
     @abc.abstractmethod
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """
-        Return the gradient for the unitary as a np.ndarray.
+        Return the gradient for the unitary map as an np.ndarray.
 
         Args:
             params (Sequence[float]): The unitary parameters, see
-                `Unitary.get_unitary` for more info.
+                :func:`Unitary.get_unitary` for more info.
 
         Returns:
-            (np.ndarray): The `(num_params,N,N)`-shaped, matrix-by-vector
-                derivative of this unitary at the point specified by params.
+            np.ndarray: The `(num_params,N,N)`-shaped, matrix-by-vector
+            derivative of this unitary at the point specified by params.
 
         Notes:
             The gradient of a unitary is defined as a matrix-by-vector
@@ -49,16 +50,17 @@ class DifferentiableUnitary(Unitary):
 
         Args:
             params (Sequence[float]): The unitary parameters, see
-                `Unitary.get_unitary` for more info.
+                :func:`Unitary.get_unitary` for more info.
 
         Returns:
-            (UnitaryMatrix): The unitary matrix, see `Unitary.get_unitary`
-                for more info.
+            tuple: tuple containing:
+                UnitaryMatrix: The unitary matrix, see
+                :func:`Unitary.get_unitary` for more info.
 
-            (np.ndarray): The unitary's gradient, see `get_grad`.
+                np.ndarray: The unitary's gradient, see :func:`get_grad`.
 
         Notes:
-            Can be overridden to speed up optimization by calculating both
-            at the same time.
+            Can be overridden to potentially speed up optimization by
+            calculating both at the same time.
         """
         return (self.get_unitary(params), self.get_grad(params))
