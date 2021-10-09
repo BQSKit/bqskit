@@ -50,6 +50,7 @@ represents a pure quantum operation in matrix form.
     :recursive:
 
     UnitaryMatrix
+    UnitaryBuilder
     StateVector
     StateVectorMap
     PauliMatrices
@@ -65,6 +66,7 @@ from bqskit.qis.state import StateVectorMap
 from bqskit.qis.unitary import DifferentiableUnitary
 from bqskit.qis.unitary import LocallyOptimizableUnitary
 from bqskit.qis.unitary import Unitary
+from bqskit.qis.unitary import UnitaryBuilder
 from bqskit.qis.unitary import UnitaryLike
 from bqskit.qis.unitary import UnitaryMatrix
 
@@ -72,6 +74,7 @@ __all__ = [
     'Unitary',
     'DifferentiableUnitary',
     'LocallyOptimizableUnitary',
+    'UnitaryBuilder',
     'UnitaryMatrix',
     'StateVector',
     'UnitaryLike',
