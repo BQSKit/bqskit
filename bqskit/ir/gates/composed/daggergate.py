@@ -46,7 +46,7 @@ class DaggerGate(
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0:
-            self.utry = gate.get_unitary().get_dagger()
+            self.utry = gate.get_unitary().dagger
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""
@@ -54,7 +54,7 @@ class DaggerGate(
         if hasattr(self, 'utry'):
             return self.utry
 
-        return self.gate.get_unitary(params).get_dagger()
+        return self.gate.get_unitary(params).dagger
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """

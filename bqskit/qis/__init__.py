@@ -55,6 +55,14 @@ represents a pure quantum operation in matrix form.
     StateVectorMap
     PauliMatrices
     PermutationMatrix
+
+.. rubric:: Type Aliases
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    UnitaryLike
 """
 from __future__ import annotations
 
