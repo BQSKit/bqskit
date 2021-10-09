@@ -449,6 +449,7 @@ def test_depends_on(
             ) and any(
                 region2[qudit] < region1[qudit]
                 for qudit in region2
+                if qudit in region1
             )
         elif r2_depends_on_r1:
             assert all(
@@ -457,4 +458,5 @@ def test_depends_on(
             ) and any(
                 region1[qudit] < region2[qudit]
                 for qudit in region1
+                if qudit in region2
             )

@@ -52,3 +52,18 @@ class ComposedGate(Gate):
             'Expected gate or gates field for composed gate %s.'
             % self.name,
         )
+
+    def __hash__(self) -> int:
+        if hasattr(self, 'gate'):
+            return hash((self.name, self.gate))  # type: ignore
+        if hasattr(self, 'gates'):
+            return hash((self.name, tuple(self.gates)))  # type: ignore
+        raise RuntimeError(
+            f"Composed gate '{self.name}' has no attribute 'gate' or 'gates'.",
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+
+        return self.__dict__ == other.__dict__

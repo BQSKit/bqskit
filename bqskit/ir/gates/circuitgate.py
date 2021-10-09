@@ -55,3 +55,21 @@ class CircuitGate(Gate):
     def is_differentiable(self) -> bool:
         """Return true if the circuit is differentiable."""
         return self._circuit.is_differentiable()
+
+    def __hash__(self) -> int:
+        hashes: list[int] = [hash(self.name)]
+        for op in self._circuit:
+            hashes.append(hash(repr(op)))
+
+            # Don't let the hash list grow too large.
+            if len(hashes) >= 100:
+                hashes = [hash(tuple(hashes))]
+
+        hash_val = hash(tuple(hashes)) if len(hashes) > 1 else hashes[0]
+        return hash_val
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CircuitGate):
+            return NotImplemented
+
+        return self._circuit == other._circuit

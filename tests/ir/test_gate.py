@@ -168,3 +168,8 @@ class TestBasicGate:
 
     def test_repr(self, gate: Gate) -> None:
         assert isinstance(gate.__repr__(), str)
+
+    def test_use_as_key(self, gate: Gate) -> None:
+        test_dict = {}
+        test_dict[gate] = 0
+        assert gate in test_dict

@@ -271,8 +271,9 @@ def cycle_intervals(
 def circuit_regions(
     draw: Any,
     max_max_cycle: int = 1000,
-    max_qudits: int = 20,
+    max_num_qudits: int = 20,
     max_volume: int = 200,
+    max_qudit: int = 1000,
     empty: bool | None = None,
 ) -> CircuitRegion:
     """Hypothesis strategy for generating `CircuitRegion`'s."""
@@ -281,10 +282,10 @@ def circuit_regions(
 
     region = draw(
         dictionaries(
-            integers(0),
-            cycle_intervals(max_max_cycle, max_volume // max_qudits),
+            integers(0, max_qudit),
+            cycle_intervals(max_max_cycle, max_volume // max_num_qudits),
             min_size=0 if empty is None else 1,
-            max_size=max_qudits,
+            max_size=max_num_qudits,
         ),
     )
     return CircuitRegion(region)
