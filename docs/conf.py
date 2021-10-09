@@ -32,6 +32,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
+    'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
     'myst_parser',
     'jupyter_sphinx',
