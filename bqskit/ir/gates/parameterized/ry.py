@@ -9,9 +9,13 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class RYGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
+class RYGate(
+    QubitGate, DifferentiableUnitary,
+    LocallyOptimizableUnitary, CachedClass,
+):
     """A gate representing an arbitrary rotation around the Y axis."""
 
     _num_qudits = 1

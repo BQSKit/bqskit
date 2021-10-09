@@ -8,9 +8,10 @@ import numpy as np
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class RZGate(QubitGate, DifferentiableUnitary):
+class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
     """A gate representing an arbitrary rotation around the Z axis."""
 
     _num_qudits = 1

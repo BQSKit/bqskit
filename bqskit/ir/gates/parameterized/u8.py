@@ -8,9 +8,10 @@ import numpy as np
 from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class U8Gate(QutritGate, DifferentiableUnitary):
+class U8Gate(QutritGate, DifferentiableUnitary, CachedClass):
     """The U8 single qutrit gate."""
 
     _num_qudits = 1

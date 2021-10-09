@@ -9,9 +9,13 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class U1Gate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
+class U1Gate(
+    QubitGate, DifferentiableUnitary,
+    LocallyOptimizableUnitary, CachedClass,
+):
     """The U1 single qubit gate."""
 
     _num_qudits = 1

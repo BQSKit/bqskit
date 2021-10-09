@@ -121,7 +121,7 @@ def frozen_gates(
     gate = draw(deferred(lambda: gates(radixes, False)))
     max_idx = gate.num_params
     indices = integers(0, max_idx - 1)
-    values = floats(allow_nan=False, allow_infinity=False)
+    values = floats(allow_nan=False, allow_infinity=False, width=16)
     frozen_params = draw(dictionaries(indices, values, max_size=max_idx))
     return FrozenParameterGate(gate, frozen_params)
 
@@ -227,7 +227,7 @@ def circuits(
         gate_location = list(zip(*gate_idx_and_rdx))[0]
         gate_radixes = list(zip(*gate_idx_and_rdx))[1]
         gate = draw(gates(gate_radixes, constant))
-        params = floats(allow_nan=False, allow_infinity=False)
+        params = floats(allow_nan=False, allow_infinity=False, width=16)
         num_params = gate.num_params
         gate_params = draw(
             lists(

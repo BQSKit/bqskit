@@ -8,9 +8,10 @@ import numpy as np
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class U3Gate(QubitGate, DifferentiableUnitary):
+class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
     """The U3 single qubit gate."""
 
     _num_qudits = 1

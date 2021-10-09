@@ -13,9 +13,13 @@ from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class ConstantGate(Gate, DifferentiableUnitary, LocallyOptimizableUnitary):
+class ConstantGate(
+    Gate, DifferentiableUnitary,
+    LocallyOptimizableUnitary, CachedClass,
+):
     """The ConstantGate Class."""
 
     _num_params = 0
