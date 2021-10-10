@@ -29,7 +29,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self._num_qudits = num_qudits
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
-        self.sigmav = (-1j / self.dim) * self.paulis.get_numpy()
+        self.sigmav = (-1j / self.dim) * self.paulis.numpy
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Returns the unitary for this gate, see Unitary for more info."""

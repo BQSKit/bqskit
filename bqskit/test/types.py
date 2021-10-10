@@ -15,8 +15,6 @@ from hypothesis import given
 from hypothesis.extra.numpy import complex_number_dtypes
 from hypothesis.extra.numpy import floating_dtypes
 from hypothesis.extra.numpy import from_dtype
-from hypothesis.extra.numpy import integer_dtypes
-from hypothesis.extra.numpy import unsigned_integer_dtypes
 from hypothesis.strategies import complex_numbers
 from hypothesis.strategies import data
 from hypothesis.strategies import floats
@@ -36,6 +34,8 @@ from bqskit.test.strategies import circuit_points
 from bqskit.test.strategies import circuit_regions
 from bqskit.test.strategies import cycle_intervals
 from bqskit.test.strategies import everything_except
+from bqskit.test.strategies import unitaries
+from bqskit.test.strategies import unitary_likes
 
 
 def powerset(iterable: Iterable[Any]) -> Iterable[Any]:
@@ -79,8 +79,6 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
         elif type_str == 'int':
             strategies.append(integers())
-            strategies.append(unsigned_integer_dtypes().flatmap(from_dtype))
-            strategies.append(integer_dtypes().flatmap(from_dtype))
 
         elif type_str == 'float':
             strategies.append(floats())
@@ -156,6 +154,12 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
         elif type_str.lower().startswith('circuitregion'):
             strategies.append(circuit_regions())
+
+        elif type_str.lower().startswith('unitarylike'):
+            strategies.append(unitary_likes())
+
+        elif type_str.lower().startswith('unitarymatrix'):
+            strategies.append(unitaries())
 
         else:
             raise ValueError(f'Cannot generate strategy for type: {type_str}')
@@ -308,6 +312,12 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
         elif type_str.lower().startswith('circuitregion'):
             continue
 
+        elif type_str.lower().startswith('unitarylike'):
+            types_to_avoid.add(np.ndarray)
+
+        elif type_str.lower().startswith('unitarymatrix'):
+            continue
+
         else:
             raise ValueError(f'Cannot generate strategy for type: {type_str}')
 
@@ -357,11 +367,18 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
         )
 
     if len(list_invalids) > 0:
-        strategies.append(lists(one_of(list(list_invalids))))
+        strategies.append(lists(one_of(list(list_invalids)), min_size=1))
     if len(set_invalids) > 0:
-        strategies.append(sets(one_of(list(set_invalids))))
+        strategies.append(sets(one_of(list(set_invalids)), min_size=1))
     if len(iterable_invalids) > 0:
-        strategies.append(iterables(one_of(list(iterable_invalids))))
+        strategies.append(
+            iterables(
+                one_of(
+                    list(iterable_invalids),
+                ),
+                min_size=1,
+            ),
+        )
 
     return one_of(strategies)
 

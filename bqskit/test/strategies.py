@@ -16,6 +16,7 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import text
+from hypothesis.strategies import tuples
 from hypothesis.strategies._internal.core import permutations
 from hypothesis.strategies._internal.strategies import SearchStrategy
 
@@ -32,9 +33,98 @@ from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.interval import CycleInterval
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.region import CircuitRegion
+from bqskit.qis.state.state import StateLike
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence_of_int
+
+
+@composite
+def num_qudits(
+    draw: Any,
+    max_num_qudits: int = 8,
+) -> int:
+    """Hypothesis strategy for generating a valid number of qudits."""
+    return draw(integers(1, max_num_qudits))
+
+
+@composite
+def radixes(
+    draw: Any,
+    max_num_qudits: int = 4,
+    allowed_bases: Sequence[int] = (2, 3, 4),
+) -> tuple[int, ...]:
+    """Hypothesis strategy for generating a valid radixes object."""
+    num_q = draw(num_qudits(max_num_qudits))
+    x = [sampled_from(allowed_bases) for _ in range(num_q)]
+    return draw(tuples(*x))
+
+
+@composite
+def num_qudits_and_radixes(
+    draw: Any,
+    max_num_qudits: int = 4,
+    allowed_bases: Sequence[int] = (2, 3, 4),
+) -> tuple[int, tuple[int, ...]]:
+    """Hypothesis strategy for a matching pair of num_qudits and radixes."""
+    num_q = draw(num_qudits(max_num_qudits))
+    x = [sampled_from(allowed_bases) for _ in range(num_q)]
+    return (num_q, draw(tuples(*x)))
+
+
+@composite
+def unitaries(
+    draw: Any,
+    max_num_qudits: int = 3,
+    allowed_bases: Sequence[int] = (2, 3),
+) -> UnitaryMatrix:
+    """Hypothesis strategy for generating `UnitaryMatrix`'s."""
+    num_qudits, radixes = draw(
+        num_qudits_and_radixes(
+            max_num_qudits, allowed_bases,
+        ),
+    )
+    return UnitaryMatrix.random(num_qudits, radixes)
+
+
+@composite
+def unitary_likes(
+    draw: Any,
+    max_num_qudits: int = 3,
+    allowed_bases: Sequence[int] = (2, 3),
+) -> UnitaryLike:
+    """Hypothesis strategy for generating UnitaryLike objects."""
+    utry = draw(unitaries(max_num_qudits, allowed_bases))
+    return draw(sampled_from([utry, utry.numpy]))
+
+
+@composite
+def state_vectors(
+    draw: Any,
+    max_num_qudits: int = 3,
+    allowed_bases: Sequence[int] = (2, 3),
+) -> StateVector:
+    """Hypothesis strategy for generating `StateVector`'s."""
+    num_qudits, radixes = draw(
+        num_qudits_and_radixes(
+            max_num_qudits, allowed_bases,
+        ),
+    )
+    return StateVector.random(num_qudits, radixes)
+
+
+@composite
+def state_likes(
+    draw: Any,
+    max_num_qudits: int = 3,
+    allowed_bases: Sequence[int] = (2, 3),
+) -> StateLike:
+    """Hypothesis strategy for generating StateLike objects."""
+    vec = draw(state_vectors(max_num_qudits, allowed_bases))
+    return draw(sampled_from([vec, vec.numpy]))
+
 
 gate_instances = []
 for gate_class_str in bqskit.ir.gates.__all__:
@@ -50,16 +140,6 @@ for gate_class_str in bqskit.ir.gates.__all__:
 
 
 simple_gates = sampled_from(gate_instances)
-
-
-@composite
-def unitaries(
-    draw: Any,
-    size: int,
-    radixes: Sequence[int] = [],
-) -> UnitaryMatrix:
-    """Hypothesis strategy for generating `UnitaryMatrix`'s."""
-    return UnitaryMatrix.random(size, radixes)
 
 
 @composite

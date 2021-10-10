@@ -67,6 +67,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if isinstance(input, UnitaryMatrix):
             self._utry = input.numpy
             self._radixes = input.radixes
+            self._dim = input.dim
             return
 
         if check_arguments and not is_square_matrix(input):
@@ -107,6 +108,11 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     _num_params = 0
 
     @property
+    def numpy(self) -> np.ndarray:
+        """The NumPy array holding the unitary."""
+        return self._utry
+
+    @property
     def shape(self) -> tuple[int, ...]:
         """The two-dimensional square shape of the unitary."""
         return self._utry.shape
@@ -115,11 +121,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def dtype(self) -> np.typing.DTypeLike:
         """The NumPy data type of the unitary."""
         return self._utry.dtype
-
-    @property
-    def numpy(self) -> np.ndarray:
-        """The NumPy array holding the unitary."""
-        return self._utry
 
     @property
     def T(self) -> UnitaryMatrix:
@@ -142,6 +143,28 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def conj(self) -> UnitaryMatrix:
         """Return the complex conjugate unitary matrix."""
         return UnitaryMatrix(self._utry.conj(), self.radixes, False)
+
+    def otimes(self, *utrys: UnitaryLike) -> UnitaryMatrix:
+        """
+        Calculate the tensor or kroneckor product with other unitaries.
+
+        Args:
+            utrys (UnitaryLike | Sequence[UnitaryLike]): The unitary or
+                unitaries to computer the tensor product with.
+
+        Returns:
+            UnitaryMatrix: The resulting unitary matrix.
+        """
+
+        utrys = [UnitaryMatrix(u) for u in utrys]
+
+        utry_acm = self.numpy
+        radixes_acm = self.radixes
+        for utry in utrys:
+            utry_acm = np.kron(utry_acm, utry.numpy)
+            radixes_acm += utry.radixes
+
+        return UnitaryMatrix(utry_acm, radixes_acm)
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Return the same object, satisfies the :class:`Unitary` API."""
@@ -199,7 +222,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         vec = in_state[:, None]
         out_vec = self @ vec
-        return StateVector(out_vec.reshape((-1,)))
+        return StateVector(out_vec.reshape((-1,)), self.radixes)
 
     @staticmethod
     def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
@@ -314,7 +337,17 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
     @staticmethod
     def is_unitary(U: np.typing.ArrayLike, tol: float = 1e-8) -> bool:
-        """Check if U is a unitary matrix."""
+        """
+        Check if U is a unitary matrix.
+
+        Args:
+            U (np.typing.ArrayLike): The matrix to check.
+
+            tol (float): The numerical precision of the check.
+
+        Returns:
+            bool: True if U is a unitary.
+        """
 
         if isinstance(U, UnitaryMatrix):
             return True
@@ -384,11 +417,24 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         # The results are unitary
         # if only unitaries are involved
         # and unitaries are closed under the specific operation.
-        convert_back = not non_unitary_involved and (
-            ufunc.__name__ == 'conjugate'
-            or ufunc.__name__ == 'matmul'
-            or ufunc.__name__ == 'negative'
-            or ufunc.__name__ == 'positive'
+        convert_back = (
+            not non_unitary_involved and (
+                ufunc.__name__ == 'conjugate'
+                or ufunc.__name__ == 'matmul'
+                or ufunc.__name__ == 'negative'
+                or ufunc.__name__ == 'positive'
+            )
+            or (
+                ufunc.__name__ == 'multiply'
+                and all(
+                    np.isscalar(input) or isinstance(input, UnitaryMatrix)
+                    for input in inputs
+                )
+                and all(
+                    np.abs(np.abs(input) - 1) <= 1e-14
+                    for input in inputs if np.isscalar(input)
+                )
+            )
         )
 
         if convert_back:

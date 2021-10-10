@@ -9,7 +9,9 @@ from typing import Union
 
 import numpy as np
 from numpy.lib.mixins import NDArrayOperatorsMixin
+from scipy.stats import unitary_group
 
+from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
 from bqskit.utils.typing import is_vector
 
@@ -18,7 +20,7 @@ _logger = logging.getLogger(__name__)
 
 
 class StateVector(NDArrayOperatorsMixin):
-    """The StateVector class."""
+    """A vector representing a pure quantum state."""
 
     def __init__(
         self,
@@ -27,25 +29,34 @@ class StateVector(NDArrayOperatorsMixin):
         check_arguments: bool = True,
     ) -> None:
         """
-        Constructs a StateVector with the supplied vector.
+        Constructs a `StateVector` from the supplied vector.
 
         Args:
-            input (StateLike): The state vector.
+            input (StateLike): The state vector input.
 
             radixes (Sequence[int]): A sequence with its length equal to
-                the number of qudits this StateVector represents. Each
+                the number of qudits this `StateVector` represents. Each
                 element specifies the base, number of orthogonal states,
                 for the corresponding qudit. By default, the constructor
                 will attempt to calculate `radixes` from `input`.
 
+            check_arguments (bool): If true, check arguments for type
+                and value errors.
+
         Raises:
-            TypeError: If `radixes` is not specified and the constructor
-                cannot determine `radixes`.
+            ValueError: If `input` is not a pure quantum state.
+
+            ValueError: If the dimension of `input` does not match the
+                expected dimension from `radixes`.
+
+            RuntimeError: If `radixes` is not specified and the
+                constructor cannot infer it.
         """
         # Copy Constructor
         if isinstance(input, StateVector):
-            self._vec = input.get_numpy()
+            self._vec = input.numpy
             self._radixes = input.radixes
+            self._dim = input.dim
             return
 
         if check_arguments and not is_vector(input):
@@ -81,45 +92,67 @@ class StateVector(NDArrayOperatorsMixin):
             raise ValueError('Qudit radixes mismatch with dimension.')
 
         self._vec = np.array(input, dtype=np.complex128)
+        self._dim = dim
 
-    def get_numpy(self) -> np.ndarray:
+    @property
+    def numpy(self) -> np.ndarray:
+        """The NumPy array holding the vector."""
         return self._vec
 
     @property
     def shape(self) -> tuple[int, ...]:
+        """The one-dimensional shape of the vector."""
         return self._vec.shape
 
     @property
     def dtype(self) -> np.typing.DTypeLike:
+        """The NumPy data type of the vector."""
         return self._vec.dtype
 
     @property
     def num_qudits(self) -> int:
+        """The number of qudits in the state."""
         return len(self.radixes)
 
     @property
     def dim(self) -> int:
-        return self.shape[0]
+        """The vector dimension for this state."""
+        return self._dim
 
     @property
     def radixes(self) -> tuple[int, ...]:
+        """The number of orthogonal states for each qudit."""
         return self._radixes
 
     def __len__(self) -> int:
+        """The dimension of the state vector."""
         return self.shape[0]
 
     def __iter__(self) -> Iterator[np.complex128]:
+        """An iterator that iterates through the elements of the vector."""
         return self._vec.__iter__()
 
     def __getitem__(self, index: Any) -> np.complex128 | np.ndarray:
+        """Implements NumPy API for the StateVector class."""
         return self._vec[index]
 
     def get_probs(self) -> tuple[float, ...]:
+        """Return the probabilities for each classical outcome."""
         return tuple(np.abs(elem)**2 for elem in self)
 
     @staticmethod
-    def is_pure_state(V: Any, tol: float = 1e-8) -> bool:
-        """Return true if V is a pure state vector."""
+    def is_pure_state(V: np.typing.ArrayLike, tol: float = 1e-8) -> bool:
+        """
+        Check if V is a pure state vector.
+
+        Args:
+            V (np.typing.ArrayLike): The vector to check.
+
+            tol (float): The numerical precision of the check.
+
+        Returns:
+            bool: True if V is a pure quantum state vector.
+        """
         if isinstance(V, StateVector):
             return True
 
@@ -129,12 +162,65 @@ class StateVector(NDArrayOperatorsMixin):
 
         return True
 
+    @staticmethod
+    def random(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
+        """
+        Sample a random pure state.
+
+        Args:
+            num_qudits (np.ndarray): The number of qudits in the state.
+                This is not the dimension.
+
+            radixes (Sequence[int]): The radixes for the StateVector.
+
+        Returns:
+            StateVector: A random pue quantum state.
+
+        Raises:
+            ValueError: If `num_qudits` is nonpositive.
+
+            ValueError: If the length of `radixes` is not equal to
+                `num_qudits`.
+        """
+        if not is_integer(num_qudits):
+            raise TypeError(
+                f'Expected int for num_qudits, got {type(num_qudits)}.',
+            )
+
+        if num_qudits <= 0:
+            raise ValueError('Expected positive number for num_qudits.')
+
+        radixes = tuple(radixes if len(radixes) > 0 else [2] * num_qudits)
+
+        if not is_valid_radixes(radixes):
+            raise TypeError('Invalid qudit radixes.')
+
+        if len(radixes) != num_qudits:
+            raise ValueError(
+                'Expected length of radixes to be equal to num_qudits:'
+                ' %d != %d' % (len(radixes), num_qudits),
+            )
+
+        U = unitary_group.rvs(int(np.prod(radixes)))
+        return StateVector(U[:, 0], radixes)
+
+    def __eq__(self, other: object) -> bool:
+        """Check if `self` is approximately equal to `other`."""
+        if isinstance(other, StateVector):
+            return np.allclose(self.numpy, other.numpy)
+
+        if isinstance(other, np.ndarray):
+            return np.allclose(self.numpy, other)
+
+        return NotImplemented
+
     def __array__(
-            self,
-            dtype: np.typing.DTypeLike = np.complex128,
+        self,
+        dtype: np.typing.DTypeLike = np.complex128,
     ) -> np.ndarray:
+        """Implements NumPy API for the StateVector class."""
         if dtype != np.complex128:
-            raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
+            raise ValueError('StateVector only supports Complex128 dtype.')
 
         return self._vec
 
@@ -145,6 +231,7 @@ class StateVector(NDArrayOperatorsMixin):
         *inputs: np.ndarray,
         **kwargs: Any,
     ) -> StateVector | np.ndarray:
+        """Implements NumPy API for the StateVector class."""
         if method != '__call__':
             return NotImplemented
 
@@ -152,7 +239,7 @@ class StateVector(NDArrayOperatorsMixin):
         args: list[np.ndarray] = []
         for input in inputs:
             if isinstance(input, StateVector):
-                args.append(input.get_numpy())
+                args.append(input.numpy)
             else:
                 args.append(input)
                 non_state_involved = True
@@ -162,8 +249,19 @@ class StateVector(NDArrayOperatorsMixin):
         # The results are state vectors
         # if only states are involved
         # and state vectors are closed under the specific operation.
-        convert_back = not non_state_involved and (
-            ufunc.__name__ == 'conjugate'
+        convert_back = (
+            not non_state_involved and ufunc.__name__ == 'conjugate'
+            or (
+                ufunc.__name__ == 'multiply'
+                and all(
+                    np.isscalar(input) or isinstance(input, StateVector)
+                    for input in inputs
+                )
+                and all(
+                    np.abs(np.abs(input) - 1) <= 1e-14
+                    for input in inputs if np.isscalar(input)
+                )
+            )
         )
 
         if convert_back:
@@ -172,9 +270,11 @@ class StateVector(NDArrayOperatorsMixin):
         return out
 
     def __str__(self) -> str:
+        """Return the string representation of the vector."""
         return str(self._vec)
 
     def __repr__(self) -> str:
+        """Return the repr representation of the vector."""
         return repr(self._vec)
 
 

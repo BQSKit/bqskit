@@ -63,6 +63,7 @@ represents a pure quantum operation in matrix form.
     :recursive:
 
     UnitaryLike
+    StateLike
 """
 from __future__ import annotations
 

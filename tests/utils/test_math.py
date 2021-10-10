@@ -70,7 +70,7 @@ class TestDexpmv:
 
         dFs0_np = np.array(dFs0)
 
-        _, dFs1 = dexpmv(H, paulis.get_numpy())
+        _, dFs1 = dexpmv(H, paulis.numpy)
 
         assert np.allclose(dFs0_np, dFs1)
 
