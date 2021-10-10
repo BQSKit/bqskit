@@ -166,7 +166,7 @@ def test_random(pair: tuple[int, tuple[int, ...]]) -> None:
 @given(unitary_likes(3))
 def test_is_unitary(u: UnitaryLike) -> None:
     assert UnitaryMatrix.is_unitary(u)
-    assert not UnitaryMatrix.is_unitary(UnitaryMatrix(u) + 5)
+    assert not UnitaryMatrix.is_unitary(np.array(u) + 5)
 
 
 class TestClosedOperations:

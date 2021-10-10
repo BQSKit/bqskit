@@ -40,7 +40,7 @@ def test_properties(vec: StateVector) -> None:
 @given(state_likes(3))
 def test_is_unitary(v: StateLike) -> None:
     assert StateVector.is_pure_state(v)
-    assert not StateVector.is_pure_state(StateVector(v) + 5)
+    assert not StateVector.is_pure_state(np.array(v) + 5)
 
 
 @given(num_qudits_and_radixes(3))

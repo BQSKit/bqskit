@@ -9,13 +9,12 @@ from typing import Sequence
 
 import numpy as np
 
-from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
 
 
-class PauliMatrices(CachedClass, Sequence[np.ndarray]):
+class PauliMatrices(Sequence[np.ndarray]):
     """
     Pauli group of matrices.
 

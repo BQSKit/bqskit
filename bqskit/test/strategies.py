@@ -135,6 +135,7 @@ for gate_class_str in bqskit.ir.gates.__all__:
         and 'self' in gate_params
         and 'args' in gate_params
         and 'kwargs' in gate_params
+        and not inspect.isabstract(gate_class)
     ):
         gate_instances.append(gate_class())
 

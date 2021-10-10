@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import inspect
+import sys
 from itertools import chain
 from itertools import combinations
 from typing import Any
@@ -406,6 +407,9 @@ def invalid_type_test(
         ... def test_foo_invalid_type(self) -> None:
         ...     pass
     """
+    if sys.version_info[0] == 3 and sys.version_info[1] < 9:
+        return lambda x: x
+
     valids = []
     invalids = []
     for id, param in inspect.signature(func_to_test).parameters.items():
@@ -473,6 +477,9 @@ def valid_type_test(
         ... def test_foo_valid_type(self) -> None:
         ...     pass
     """
+    if sys.version_info[0] == 3 and sys.version_info[1] < 9:
+        return lambda x: x
+
     strategies = []
     for id, param in inspect.signature(func_to_test).parameters.items():
         if param.annotation == inspect._empty:  # type: ignore
