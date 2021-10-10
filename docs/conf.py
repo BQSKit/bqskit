@@ -75,7 +75,8 @@ autodoc_type_aliases = {
 # }
 # napoleon_type_aliases = autodoc_type_aliases
 autodoc_typehints = 'description'
-autoclass_content = 'both'
+autodoc_typehints_description_target = 'documented'
+autoclass_content = 'class'
 nbsphinx_output_prompt = 'Out[%s]:'
 
 add_module_names = False

@@ -1,4 +1,4 @@
-"""This module implements the CachedClass base class."""
+"""This module implements the CachedClass base classes."""
 from __future__ import annotations
 
 import logging
@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 class CachedClass:
     """
-    CachedClass base class.
+    A class that caches its instances.
 
     Any class that inherits from CachedClass will be instantiated once per
     parameter set. Any subsequent attempts to instantiate a CachedClass with
@@ -36,9 +36,9 @@ class CachedClass:
         if not hash_a or not hash_kw:
             return super().__new__(cls)  # TODO Reevaluate for numpy
 
-        if cls._instances.get(
-                (cls, args, tuple(kwargs.items())), None,
-        ) is None:
+        key = (cls, args, tuple(kwargs.items()))
+
+        if cls._instances.get(key, None) is None:
             _logger.debug(
                 (
                     'Creating cached instance for class: %s,'
@@ -46,10 +46,9 @@ class CachedClass:
                 )
                 % (cls.__name__, args, kwargs),
             )
-            cls._instances[
-                (cls, args, tuple(kwargs.items()))
-            ] = super().__new__(cls)
-        return cls._instances[(cls, args, tuple(kwargs.items()))]
+            cls._instances[key] = super().__new__(cls)
+
+        return cls._instances[key]
 
     def __copy__(self) -> CachedClass:
         return self

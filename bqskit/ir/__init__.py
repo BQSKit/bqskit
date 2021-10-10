@@ -5,12 +5,43 @@ BQSKit Circuit Intermediate Representation (:mod:`bqskit.ir`)
 
 .. currentmodule:: bqskit.ir
 
+.. rubric:: Core Classes
+
 .. autosummary::
     :toctree: autogen
+    :recursive:
 
     Circuit
     Gate
     Operation
+
+.. rubric:: Circuit Indexing and Helpers
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    CycleInterval
+    CircuitIterator
+    CircuitLocation
+    CircuitPoint
+    CircuitRegion
+
+.. rubric:: Type Aliases
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    IntervalLike
+    CircuitLocationLike
+    CircuitPointLike
+    CircuitRegionLike
+
+.. automodule:: bqskit.ir.gates
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:
 
 TODO: More description
 """

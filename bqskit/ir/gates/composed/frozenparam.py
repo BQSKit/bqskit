@@ -129,6 +129,17 @@ def with_frozen_params(
         self: Gate,
         frozen_params: dict[int, float],
 ) -> FrozenParameterGate:
+    """
+    Freeze some of a gate's parameters so they don't change from optimization.
+
+    Args:
+        frozen_params (dict[int, float]): A map from parameter indices to
+            parameters values. If i in frozen_params, then this will freeze
+            the i-th parameter to the value given by frozen_params[i].
+
+    Returns:
+        FrozenParameterGate: The gate with some parameters frozen.
+    """
     return FrozenParameterGate(self, frozen_params)
 
 
@@ -136,6 +147,15 @@ def with_all_frozen_params(
     self: Gate,
     params: list[float],
 ) -> FrozenParameterGate:
+    """
+    Freeze all of a gate's parameters so they don't change from optimization.
+
+    Args:
+        params (list[float]): The values to set and freeze all parameters to.
+
+    Returns:
+        FrozenParameterGate: The gate with all parameters frozen.
+    """
     return FrozenParameterGate(self, {i: x for i, x in enumerate(params)})
 
 

@@ -2,7 +2,7 @@
 
 .. currentmodule:: {{ module }}
 
-.. autoclass:: {{ objname }}
+.. autoclass:: {{ objname }}()
    :show-inheritance:
 
    {% block constructor %}

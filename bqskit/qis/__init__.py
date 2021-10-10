@@ -38,10 +38,13 @@ represents a pure quantum operation in matrix form.
 .. autosummary::
     :toctree: autogen
     :recursive:
+    :nosignatures:
+    :template: autosummary/class_no_init.rst
 
     Unitary
     DifferentiableUnitary
     LocallyOptimizableUnitary
+    StateVectorMap
 
 .. rubric:: Core Classes
 
@@ -52,7 +55,6 @@ represents a pure quantum operation in matrix form.
     UnitaryMatrix
     UnitaryBuilder
     StateVector
-    StateVectorMap
     PauliMatrices
     PermutationMatrix
 

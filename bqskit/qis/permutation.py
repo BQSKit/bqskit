@@ -37,7 +37,7 @@ class PermutationMatrix(UnitaryMatrix):
     @lru_cache(maxsize=None)
     def from_qubit_location(
         num_qubits: int,
-        location: Sequence[int],
+        location: tuple[int, ...],
     ) -> PermutationMatrix:
         """
         Creates the permutation matrix specified by arguments.
@@ -48,7 +48,7 @@ class PermutationMatrix(UnitaryMatrix):
         Args:
             num_qubits (int): Total number of qubits
 
-            location (Sequence[int]): The desired locations to swap
+            location (tuple[int, ...]): The desired locations to swap
                 the starting qubits to.
 
         Returns:
