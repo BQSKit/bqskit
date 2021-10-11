@@ -12,14 +12,27 @@ from bqskit.utils.cachedclass import CachedClass
 
 
 class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
-    """The U3 single qubit gate."""
+    """
+    The U3 single qubit gate.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\cos{\\frac{\\theta_0}{2}} &
+        -\\exp({i\\theta_2})\\sin{\\frac{\\theta_0}{2}} \\\\
+        \\exp({i\\theta_1})\\sin{\\frac{\\theta_0}{2}} &
+        \\exp({i(\\theta_1 + \\theta_2)})\\cos{\\frac{\\theta_0}{2}} \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 1
     _num_params = 3
     _qasm_name = 'u3'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         ct = np.cos(params[0] / 2)
@@ -39,7 +52,11 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
         )
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         ct = np.cos(params[0] / 2)
@@ -71,3 +88,34 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
                 ],
             ], dtype=np.complex128,
         )
+
+    @staticmethod
+    def calc_params(utry: UnitaryMatrix) -> tuple[float, float, float]:
+        """
+        Calculate the three parameters to a U3Gate from a given unitary.
+
+        Args:
+            utry (UnitaryMatrix): The single-qubit unitary matrix to
+                calculate a U3Gate's parameters for.
+
+        Returns:
+            tuple[float, float, float]: The three parameters to a U3Gate,
+                such that, `U3Gate().get_unitary` will return `utry`.
+
+        Raises:
+            ValueError: If `utry` is not a single-qubit unitary.
+        """
+
+        if utry.radixes != (2,):
+            raise ValueError('Expected single-qubit unitary.')
+
+        mag = np.linalg.det(utry.numpy) ** (-1 / 2)
+        special_utry = mag * utry
+        a = np.angle(special_utry[1, 1])
+        b = np.angle(special_utry[1, 0])
+        c = np.abs(special_utry[1, 0])
+        d = np.abs(special_utry[0, 0])
+        theta = 2 * float(np.arctan2(c, d))
+        phi = (a + b)
+        lamb = (a - b)
+        return theta, phi, lamb

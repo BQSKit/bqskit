@@ -1,6 +1,6 @@
 """
 =============================================================
-BQSKit Circuit Intermediate Representation (:mod:`bqskit.ir`)
+Circuit Intermediate Representation (:mod:`bqskit.ir`)
 =============================================================
 
 .. currentmodule:: bqskit.ir

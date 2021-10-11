@@ -14,11 +14,11 @@ from hypothesis.strategies import from_type
 from hypothesis.strategies import integers
 from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
+from hypothesis.strategies import permutations
 from hypothesis.strategies import sampled_from
+from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
-from hypothesis.strategies._internal.core import permutations
-from hypothesis.strategies._internal.strategies import SearchStrategy
 
 import bqskit.ir.gates
 from bqskit.ir import Circuit

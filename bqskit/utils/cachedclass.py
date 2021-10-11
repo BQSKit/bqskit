@@ -4,9 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 from typing import Hashable
+from typing import TypeVar
 
 
 _logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 
 class CachedClass:
@@ -29,16 +32,18 @@ class CachedClass:
     """
     _instances: dict[Any, CachedClass] = {}
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> CachedClass:
+    def __new__(cls: type[T], *args: Any, **kwargs: Any) -> T:
         hash_a = all(isinstance(arg, Hashable) for arg in args)
         hash_kw = all(isinstance(arg, Hashable) for arg in kwargs.values())
 
         if not hash_a or not hash_kw:
-            return super().__new__(cls)  # TODO Reevaluate for numpy
+            return object.__new__(cls)
 
         key = (cls, args, tuple(kwargs.items()))
 
-        if cls._instances.get(key, None) is None:
+        _instances = cls._instances  # type: ignore
+
+        if _instances.get(key, None) is None:
             _logger.debug(
                 (
                     'Creating cached instance for class: %s,'
@@ -46,9 +51,9 @@ class CachedClass:
                 )
                 % (cls.__name__, args, kwargs),
             )
-            cls._instances[key] = super().__new__(cls)
+            _instances[key] = object.__new__(cls)
 
-        return cls._instances[key]
+        return _instances[key]
 
     def __copy__(self) -> CachedClass:
         return self

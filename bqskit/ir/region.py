@@ -377,10 +377,9 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         if not isinstance(other, CircuitRegion):
             other = CircuitRegion(other)
 
-        if len(self.location.intersection(other.location)) != 0:
-            for qudit in self.location.intersection(other.location):
-                if other[qudit] < self[qudit]:
-                    return True
+        intersection = self.location.intersection(other.location)
+        if len(intersection) != 0:
+            return all(other[qudit] < self[qudit] for qudit in intersection)
 
         return False
 

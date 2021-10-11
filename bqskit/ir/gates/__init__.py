@@ -44,7 +44,9 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     XGate
     XXGate
     YGate
+    YYGate
     ZGate
+    ZZGate
 
 .. rubric:: Parameterized Gates
 

@@ -330,6 +330,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Save the unitary to a file."""
         np.savetxt(filename, self.numpy)
 
+    def __getitem__(self, index: Any) -> np.complex128 | np.ndarray:
+        """Implements NumPy API for the StateVector class."""
+        return self._utry[index]
+
     @staticmethod
     def from_file(filename: str) -> UnitaryMatrix:
         """Load a unitary from a file."""

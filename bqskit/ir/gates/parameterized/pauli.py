@@ -18,10 +18,30 @@ from bqskit.utils.math import unitary_log_no_i
 
 
 class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
-    """A gate representing an arbitrary rotation."""
+    """
+    A gate representing an arbitrary rotation.
+
+    This gate is given by:
+
+    .. math::
+
+        \\exp({i(\\vec{\\alpha} \\cdot \\vec{\\sigma^{\\otimes n}})})
+
+    Where :math:`\\vec{\\alpha}` are the gate's parameters,
+    :math:`\\vec{\\sigma}` are the Pauli matrices,
+    and :math:`n` is the number of qubits this gate acts on.
+    """
 
     def __init__(self, num_qudits: int) -> None:
-        """Create a PauliGate acting on `num_qudits` qubits."""
+        """
+        Create a PauliGate acting on `num_qudits` qubits.
+
+        Args:
+            num_qudits (int): The number of qudits this gate will act on.
+
+        Raises:
+            ValueError: If `num_qudits` is nonpositive.
+        """
 
         if num_qudits <= 0:
             raise ValueError('Expected positive integer, got %d' % num_qudits)
@@ -29,10 +49,10 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self._num_qudits = num_qudits
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
-        self.sigmav = (-1j / self.dim) * self.paulis.numpy
+        self.sigmav = (-1j / 2) * self.paulis.numpy
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         H = dot_product(params, self.sigmav)
@@ -40,7 +60,11 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         return UnitaryMatrix(eiH, check_arguments=False)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         H = dot_product(params, self.sigmav)
@@ -51,7 +75,11 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self,
         params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
-        """Returns the unitary and gradient, see Gate for more info."""
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         H = dot_product(params, self.sigmav)
@@ -59,7 +87,12 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         return UnitaryMatrix(U, check_arguments=False), dU
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
-        return list(pauli_expansion(unitary_log_no_i(Vh.conj().T @ U.conj().T)))
+        utry = Vh.conj().T @ U.conj().T
+        return list(-2 * pauli_expansion(unitary_log_no_i(utry)))

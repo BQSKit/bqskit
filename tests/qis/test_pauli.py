@@ -30,7 +30,7 @@ class TestPauliMatricesConstructor:
     @given(integers(max_value=-1))
     def test_invalid_value(self, size: int) -> None:
         with pytest.raises(ValueError):
-            paulis = PauliMatrices(size)  # noqa
+            PauliMatrices(size)
 
     def test_size_1(self) -> None:
         num_qubits = 1
@@ -171,7 +171,7 @@ class TestPauliMatricesGetProjectionMatrices:
     def test_invalid_value_1(self, invalid_qubit: int) -> None:
         paulis = PauliMatrices(4)
         with pytest.raises(ValueError):
-            projected_paulis = paulis.get_projection_matrices([invalid_qubit])  # noqa
+            paulis.get_projection_matrices([invalid_qubit])
 
     @pytest.mark.parametrize('invalid_q_set', [[0, 0], [0, 1, 2, 4]])
     def test_invalid_value_2(self, invalid_q_set: list[int]) -> None:
@@ -644,7 +644,7 @@ class TestPauliMatricesFromString:
     )
     def test_invalid_value(self, invalid_str: str) -> None:
         with pytest.raises(ValueError):
-            paulis = PauliMatrices.from_string(invalid_str)  # noqa
+            PauliMatrices.from_string(invalid_str)
 
     @pytest.mark.parametrize(
         'pauli_str, pauli_mat', [

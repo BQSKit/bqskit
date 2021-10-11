@@ -12,14 +12,26 @@ from bqskit.utils.cachedclass import CachedClass
 
 
 class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
-    """The U2 single qubit gate."""
+    """
+    The U2 single qubit gate.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\frac{\\sqrt{2}}{2} & -\\exp({i\\theta_1})\\frac{\\sqrt{2}}{2} \\\\
+        \\exp({i\\theta_0})\\frac{\\sqrt{2}}{2} &
+         \\exp({i(\\theta_0 + \\theta_1)})\\frac{\\sqrt{2}}{2} \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 1
     _num_params = 2
     _qasm_name = 'u2'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         sq2 = np.sqrt(2) / 2
@@ -34,7 +46,11 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
         )
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         sq2 = np.sqrt(2) / 2

@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 from hypothesis import given
 from hypothesis.extra.numpy import arrays
+from hypothesis.strategies import complex_numbers
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
-from hypothesis.strategies._internal.core import complex_numbers
 
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector

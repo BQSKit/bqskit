@@ -16,20 +16,20 @@ from hypothesis import given
 from hypothesis.extra.numpy import complex_number_dtypes
 from hypothesis.extra.numpy import floating_dtypes
 from hypothesis.extra.numpy import from_dtype
+from hypothesis.strategies import booleans
 from hypothesis.strategies import complex_numbers
 from hypothesis.strategies import data
+from hypothesis.strategies import dictionaries
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
+from hypothesis.strategies import iterables
 from hypothesis.strategies import just
+from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
 from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import sets
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
-from hypothesis.strategies._internal.core import booleans
-from hypothesis.strategies._internal.core import dictionaries
-from hypothesis.strategies._internal.core import iterables
-from hypothesis.strategies._internal.core import lists
-from hypothesis.strategies._internal.core import sets
 
 from bqskit.test.strategies import circuit_points
 from bqskit.test.strategies import circuit_regions
