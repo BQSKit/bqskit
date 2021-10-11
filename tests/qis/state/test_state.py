@@ -7,9 +7,9 @@ from hypothesis.strategies import floats
 
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
-from bqskit.test.strategies import num_qudits_and_radixes
-from bqskit.test.strategies import state_likes
-from bqskit.test.strategies import state_vectors
+from bqskit.utils.test.strategies import num_qudits_and_radixes
+from bqskit.utils.test.strategies import state_likes
+from bqskit.utils.test.strategies import state_vectors
 
 
 class TestInit:

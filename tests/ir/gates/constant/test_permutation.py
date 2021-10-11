@@ -6,7 +6,7 @@ from hypothesis import given
 
 from bqskit.ir.gates import PermutationGate
 from bqskit.qis.permutation import PermutationMatrix
-from bqskit.test.strategies import num_qudits
+from bqskit.utils.test.strategies import num_qudits
 
 
 @given(num_qudits())

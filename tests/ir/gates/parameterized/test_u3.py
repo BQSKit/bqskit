@@ -9,7 +9,7 @@ from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import U3Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.test.strategies import unitaries
+from bqskit.utils.test.strategies import unitaries
 
 
 @given(

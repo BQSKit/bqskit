@@ -1,3 +1,4 @@
+"""This module contains functions to generate strategies from annotations."""
 from __future__ import annotations
 
 import collections
@@ -31,23 +32,34 @@ from hypothesis.strategies import sets
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 
-from bqskit.test.strategies import circuit_points
-from bqskit.test.strategies import circuit_regions
-from bqskit.test.strategies import cycle_intervals
-from bqskit.test.strategies import everything_except
-from bqskit.test.strategies import unitaries
-from bqskit.test.strategies import unitary_likes
+from bqskit.utils.test.strategies import circuit_points
+from bqskit.utils.test.strategies import circuit_regions
+from bqskit.utils.test.strategies import cycle_intervals
+from bqskit.utils.test.strategies import everything_except
+from bqskit.utils.test.strategies import unitaries
+from bqskit.utils.test.strategies import unitary_likes
 
 
-def powerset(iterable: Iterable[Any]) -> Iterable[Any]:
-    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
-    https://stackoverflow.com/questions/18035595/powersets-in-python-using-
-    itertools."""
+def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
+    """
+    Calculate the powerset of an iterable.
+
+    Examples:
+
+        >>> list(powerset([1,2,3]))
+        ... [() (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)]
+
+    References:
+
+        https://stackoverflow.com/questions/18035595/powersets-in-python-using-
+        itertools.
+    """
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)))
 
 
-def split_generic_arguments(args: str) -> list[str]:
+def _split_generic_arguments(args: str) -> list[str]:
+    """Split a generic's type arguments up."""
     comma_indices = []
     num_open_brackets = 0
     for i, char in enumerate(args):
@@ -71,6 +83,7 @@ def split_generic_arguments(args: str) -> list[str]:
 
 
 def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
+    """Convert a type annotation into a hypothesis strategy."""
     strategies: list[SearchStrategy[Any]] = []
     for type_str in annotation.split('|'):
         type_str = type_str.strip()
@@ -100,18 +113,18 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
         elif type_str.lower().startswith('tuple'):
             inner_strategies = []
-            for arg in split_generic_arguments(type_str[6:-1]):
+            for arg in _split_generic_arguments(type_str[6:-1]):
                 inner_strategies.append(type_annotation_to_valid_strategy(arg))
             strategies.append(tuples(*inner_strategies))
 
         elif type_str.lower().startswith('dict'):
-            args = split_generic_arguments(type_str[5:-1])
+            args = _split_generic_arguments(type_str[5:-1])
             key_strat = type_annotation_to_valid_strategy(args[0])
             val_strat = type_annotation_to_valid_strategy(args[1])
             strategies.append(dictionaries(key_strat, val_strat))
 
         elif type_str.lower().startswith('mapping'):
-            args = split_generic_arguments(type_str[8:-1])
+            args = _split_generic_arguments(type_str[8:-1])
             key_strat = type_annotation_to_valid_strategy(args[0])
             val_strat = type_annotation_to_valid_strategy(args[1])
             strategies.append(dictionaries(key_strat, val_strat))
@@ -169,6 +182,7 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
 
 def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
+    """Convert a type annotation into an invalid hypothesis strategy."""
     strategies: list[SearchStrategy[Any]] = []
     types_to_avoid: set[type] = set()
     tuple_valids: dict[int, set[SearchStrategy[Any]]] = {}
@@ -225,7 +239,7 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
             continue
 
         elif type_str.lower().startswith('tuple'):
-            args = split_generic_arguments(type_str[6:-1])
+            args = _split_generic_arguments(type_str[6:-1])
             if len(args) not in tuple_valids:
                 tuple_valids[len(args)] = set()
                 tuple_invalids[len(args)] = set()
@@ -239,7 +253,7 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
             types_to_avoid.add(tuple)
 
         elif type_str.lower().startswith('dict'):
-            args = split_generic_arguments(type_str[5:-1])
+            args = _split_generic_arguments(type_str[5:-1])
             dict_key_valids.add(type_annotation_to_valid_strategy(args[0]))
             dict_key_invalids.add(type_annotation_to_valid_strategy(args[1]))
             dict_val_valids.add(type_annotation_to_invalid_strategy(args[0]))
@@ -248,7 +262,7 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
             types_to_avoid.add(map)
 
         elif type_str.lower().startswith('mapping'):
-            args = split_generic_arguments(type_str[8:-1])
+            args = _split_generic_arguments(type_str[8:-1])
             dict_key_valids.add(type_annotation_to_valid_strategy(args[0]))
             dict_key_invalids.add(type_annotation_to_valid_strategy(args[1]))
             dict_val_valids.add(type_annotation_to_invalid_strategy(args[0]))
@@ -324,12 +338,8 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
 
     strategies.append(everything_except(tuple(types_to_avoid)))
 
-    # TODO: Conservative strategy for tuples:
-    # tuple[int, int] | tuple[float, float]
-    # would never sample from tuple[int, float]
-    # which is an invalid type
     for tuple_len in tuple_valids:
-        for valid_set in powerset(list(range(tuple_len))):  # (), (0,), (1,)
+        for valid_set in _powerset(list(range(tuple_len))):  # (), (0,), (1,)
             strategy_builder = []
             for i in range(tuple_len):
                 if i in valid_set:
@@ -340,10 +350,6 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
                     strategy_builder.append(strat)
             strategies.append(tuples(*strategy_builder))
 
-    # TODO: Conservative strategy for dicts:
-    # dict[int, str] | dict[float, complex]
-    # would never sample from dict[int, complex]
-    # which is an invalid type
     if len(dict_val_invalids) > 0:
         strategies.append(
             dictionaries(
@@ -390,6 +396,9 @@ def invalid_type_test(
     """
     Decorator to generate invalid type tests.
 
+    A valid type test ensures that a function called with incorrect types
+    does raise a TypeError.
+
     Examples:
         >>> class Foo:
         ...     def foo(self, x: int, y: int) -> None:
@@ -422,7 +431,7 @@ def invalid_type_test(
         invalids.append(type_annotation_to_invalid_strategy(param.annotation))
 
     strategies = []
-    for valid_set in powerset(list(range(len(valids)))):
+    for valid_set in _powerset(list(range(len(valids)))):
         strategy_builder = []
         for i in range(len(valids)):
             if i in valid_set:
@@ -459,6 +468,9 @@ def valid_type_test(
 ) -> Callable[..., Callable[..., None]]:
     """
     Decorator to generate valid type tests.
+
+    A valid type test ensures that a function called with correct types
+    does not raise a TypeError.
 
     Examples:
         >>> class Foo:

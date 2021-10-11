@@ -8,8 +8,8 @@ from hypothesis.strategies import integers
 
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.test.strategies import num_qudits_and_radixes
-from bqskit.test.strategies import unitaries
+from bqskit.utils.test.strategies import num_qudits_and_radixes
+from bqskit.utils.test.strategies import unitaries
 
 
 class TestInit:

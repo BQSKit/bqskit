@@ -5,7 +5,7 @@ import numpy as np
 from hypothesis import given
 
 from bqskit.ir.gates import IdentityGate
-from bqskit.test.strategies import num_qudits_and_radixes
+from bqskit.utils.test.strategies import num_qudits_and_radixes
 
 
 @given(num_qudits_and_radixes())

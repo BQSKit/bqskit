@@ -9,7 +9,7 @@ from hypothesis import settings
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
-from bqskit.test.strategies import circuits
+from bqskit.utils.test.strategies import circuits
 
 
 class TestPickle:

@@ -6,7 +6,7 @@ from hypothesis import given
 from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.test.strategies import unitaries
+from bqskit.utils.test.strategies import unitaries
 
 
 @given(unitaries())

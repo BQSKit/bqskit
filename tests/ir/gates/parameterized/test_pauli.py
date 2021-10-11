@@ -16,8 +16,8 @@ from bqskit.ir.gates import RYYGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import RZZGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.test.strategies import num_qudits
-from bqskit.test.strategies import unitaries
+from bqskit.utils.test.strategies import num_qudits
+from bqskit.utils.test.strategies import unitaries
 
 
 class TestInit:

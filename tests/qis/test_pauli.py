@@ -10,8 +10,8 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from bqskit.qis.pauli import PauliMatrices
-from bqskit.test.types import invalid_type_test
-from bqskit.test.types import valid_type_test
+from bqskit.utils.test.types import invalid_type_test
+from bqskit.utils.test.types import valid_type_test
 
 
 class TestPauliMatricesConstructor:

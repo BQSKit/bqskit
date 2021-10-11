@@ -9,11 +9,11 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import tuples
 
 from bqskit.ir.interval import CycleInterval
-from bqskit.test.strategies import cycle_intervals
-from bqskit.test.strategies import everything_except
-from bqskit.test.types import invalid_type_test
-from bqskit.test.types import type_annotation_to_invalid_strategy
-from bqskit.test.types import valid_type_test
+from bqskit.utils.test.strategies import cycle_intervals
+from bqskit.utils.test.strategies import everything_except
+from bqskit.utils.test.types import invalid_type_test
+from bqskit.utils.test.types import type_annotation_to_invalid_strategy
+from bqskit.utils.test.types import valid_type_test
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int

@@ -13,12 +13,12 @@ from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.test.strategies import num_qudits
-from bqskit.test.strategies import num_qudits_and_radixes
-from bqskit.test.strategies import radixes
-from bqskit.test.strategies import state_likes
-from bqskit.test.strategies import unitaries
-from bqskit.test.strategies import unitary_likes
+from bqskit.utils.test.strategies import num_qudits
+from bqskit.utils.test.strategies import num_qudits_and_radixes
+from bqskit.utils.test.strategies import radixes
+from bqskit.utils.test.strategies import state_likes
+from bqskit.utils.test.strategies import unitaries
+from bqskit.utils.test.strategies import unitary_likes
 
 
 class TestInit:

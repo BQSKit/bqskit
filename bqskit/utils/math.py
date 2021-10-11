@@ -1,4 +1,4 @@
-"""This module implements some numerical functions."""
+"""This module implements numerical functions."""
 from __future__ import annotations
 
 from typing import Sequence
@@ -7,8 +7,6 @@ import numpy as np
 import scipy as sp
 
 from bqskit.qis.pauli import PauliMatrices
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_hermitian
 
 
 def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -19,19 +17,21 @@ def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     vector of partials then dF will be the respective partial vector.
     This is done using a Pade Approximat with scaling and squaring.
 
-    Brančík, Lubomír. "Matlab programs for matrix exponential function
-    derivative evaluation." Proc. of Technical Computing Prague 2008
-    (2008): 17-24.
-
     Args:
         M (np.ndarray): Matrix to exponentiate.
 
         dM (np.ndarray): Derivative(s) of M.
 
     Returns:
-        F (np.ndarray): Exponentiated matrix, i.e. e^M.
+        tuple: Tuple containing
+            - F (np.ndarray): Exponentiated matrix, i.e. e^M.
 
-        dF (np.ndarray): Derivative(s) of F.
+            - dF (np.ndarray): Derivative(s) of F.
+
+    References:
+        Brančík, Lubomír. "Matlab programs for matrix exponential function
+        derivative evaluation." Proc. of Technical Computing Prague 2008
+        (2008): 17-24.
     """
 
     e = np.log2(np.linalg.norm(M, np.inf))
@@ -83,7 +83,7 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
         beta (int): Beta coefficient to scale steepness of softmax.
 
     Returns:
-        (np.ndarray): Output vector of softmax.
+        np.ndarray: Output vector of softmax.
     """
 
     shiftx = beta * (x - np.max(x))
@@ -104,14 +104,14 @@ def dot_product(
         sigma (np.ndarray): The sigma vector.
 
     Returns:
-        (np.ndarray): Sum of element-wise multiplication of `alpha`
-            and `sigma`.
+        np.ndarray: Sum of element-wise multiplication of `alpha`
+        and `sigma`.
     """
 
     return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))
 
 
-def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
+def unitary_log_no_i(U: np.ndarray) -> np.ndarray:
     """
     Solves for H in U = e^{iH}
 
@@ -119,11 +119,12 @@ def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
         U (np.ndarray): The unitary to decompose.
 
     Returns:
-        H (np.ndarray): e^{iH} = U.
-    """
+        np.ndarray: H in e^{iH} = U.
 
-    if not UnitaryMatrix.is_unitary(U, tol):  # TODO: Re-evaluate check
-        raise TypeError('Expected U to be unitary, got %s.' % type(U))
+    Note:
+        This assumes the input is unitary but does not check. The output
+        is undefined on non-unitary inputs.
+    """
 
     T, Z = sp.linalg.schur(U)
     T = np.diag(T)
@@ -133,7 +134,7 @@ def unitary_log_no_i(U: np.ndarray, tol: float = 1e-8) -> np.ndarray:
     return 0.5 * H0 + 0.5 * H0.conj().T
 
 
-def pauli_expansion(H: np.ndarray, tol: float = 1e-8) -> np.ndarray:
+def pauli_expansion(H: np.ndarray) -> np.ndarray:
     """
     Computes a Pauli expansion of the hermitian matrix H.
 
@@ -141,13 +142,14 @@ def pauli_expansion(H: np.ndarray, tol: float = 1e-8) -> np.ndarray:
         H (np.ndarray): The hermitian matrix to expand.
 
     Returns:
-        (np.ndarray): The coefficients of a Pauli expansion for H,
-            i.e., X dot Sigma = H where Sigma is Pauli matrices of
-            same size of H.
-    """
+        np.ndarray: The coefficients of a Pauli expansion for H,
+        i.e., X dot Sigma = H where Sigma is Pauli matrices of
+        same size of H.
 
-    if not is_hermitian(H, tol):  # TODO: Re-evaluate check
-        raise TypeError('Expected H to be hermitian, got %s.' % type(H))
+    Note:
+        This assumes the input is hermitian but does not check. The
+        output is undefined on non-hermitian inputs.
+    """
 
     # Change basis of H to Pauli Basis (solve for coefficients -> X)
     n = int(np.log2(len(H)))

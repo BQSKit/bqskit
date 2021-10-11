@@ -146,9 +146,6 @@ class TestDotProduct:
 
 
 class TestUnitaryLog:
-    def test_invalid(self, not_a_seq_float: Any) -> None:
-        with pytest.raises(TypeError):
-            unitary_log_no_i(not_a_seq_float)
 
     @pytest.mark.parametrize(
         'reU',
@@ -178,9 +175,6 @@ class TestUnitaryLog:
 
 
 class TestPauliExpansion:
-    def test_invalid(self, not_a_seq_float: Any) -> None:
-        with pytest.raises(TypeError):
-            pauli_expansion(not_a_seq_float)
 
     @pytest.mark.parametrize(
         'reH',
