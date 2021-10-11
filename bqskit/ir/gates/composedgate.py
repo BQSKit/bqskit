@@ -8,7 +8,7 @@ from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 
 class ComposedGate(Gate):
     """
-    The ComposedGate class.
+    A gate composed of other gates.
 
     A ComposedGate provides methods for determining if the gate is
     differentiable or locally optimizable.
@@ -17,12 +17,12 @@ class ComposedGate(Gate):
     it inherits from the appropriate base class and all of its subgates
     (in either self.gate or self.gates) inherit from the base class.
 
-    For more complex behaviors, one can override is_differentiable
-    or is_locally_optimizable.
+    For more complex behaviors, one can override :func:`is_differentiable`
+    or :func:`is_locally_optimizable`.
     """
 
     def is_differentiable(self) -> bool:
-        """Check is all sub gates are differentiable."""
+        """Check if all sub gates are differentiable."""
         if hasattr(self, 'gate'):
             return isinstance(self.gate, DifferentiableUnitary)  # type: ignore
         if hasattr(self, 'gates'):
@@ -37,7 +37,7 @@ class ComposedGate(Gate):
         )
 
     def is_locally_optimizable(self) -> bool:
-        """Check is all sub gates are locally optimizable."""
+        """Check if all sub gates are locally optimizable."""
         if hasattr(self, 'gate'):
             return isinstance(
                 self.gate, LocallyOptimizableUnitary,  # type: ignore

@@ -41,15 +41,26 @@ class CircuitGate(Gate):
         self._name = 'CircuitGate(%s)' % str(self._circuit)
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         return self._circuit.get_unitary(params)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         return self._circuit.get_grad(params)
 
     def get_unitary_and_grad(
         self,
         params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         return self._circuit.get_unitary_and_grad(params)
 
     def is_differentiable(self) -> bool:

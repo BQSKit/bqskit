@@ -1,15 +1,11 @@
-"""
-This module implements the QutritGate base class.
-
-A QutritGate is one that only acts on qutrits.
-"""
+"""This module implements the QutritGate base class."""
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate
 
 
 class QutritGate(Gate):
-    """The QutritGate Class."""
+    """A gate that only acts on qutrits."""
 
     @property
     def radixes(self) -> tuple[int, ...]:

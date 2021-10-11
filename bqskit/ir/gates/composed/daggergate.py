@@ -1,13 +1,4 @@
-"""
-This module implements the DaggerGate Class.
-
-The DaggerGate is a composed gate that equivalent to the
-conjugate transpose of the input gate.
-
-For example:
-    >>> DaggerGate(TGate()).get_unitary() == TdgGate().get_unitary()
-    ... True
-"""
+"""This module implements the DaggerGate Class."""
 from __future__ import annotations
 
 from typing import Sequence
@@ -26,7 +17,16 @@ class DaggerGate(
     LocallyOptimizableUnitary,
     DifferentiableUnitary,
 ):
-    """The DaggerGate Class."""
+    """
+    An arbitrary inverted gate.
+
+    The DaggerGate is a composed gate that equivalent to the
+    conjugate transpose of the input gate.
+
+    For example:
+        >>> DaggerGate(TGate()).get_unitary() == TdgGate().get_unitary()
+        ... True
+    """
 
     def __init__(self, gate: Gate) -> None:
         """
@@ -49,8 +49,7 @@ class DaggerGate(
             self.utry = gate.get_unitary().dagger
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
-        self.check_parameters(params)
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         if hasattr(self, 'utry'):
             return self.utry
 
@@ -58,21 +57,41 @@ class DaggerGate(
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """
-        Returns the gradient for this gate, see Gate for more info.
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
 
         Notes:
             The derivative of the conjugate transpose of matrix is equal
             to the conjugate transpose of the derivative.
         """
-        self.check_parameters(params)
         if hasattr(self, 'utry'):
             return np.array([])
 
         grads = self.gate.get_grad(params)  # type: ignore
         return np.transpose(grads.conj(), (0, 2, 1))
 
+    def get_unitary_and_grad(
+        self,
+        params: Sequence[float] = [],
+    ) -> tuple[UnitaryMatrix, np.ndarray]:
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
+        if hasattr(self, 'utry'):
+            return self.utry, np.array([])
+
+        utry, grads = self.gate.get_unitary_and_grad(params)  # type: ignore
+        return utry.dagger, np.transpose(grads.conj(), (0, 2, 1))
+
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
         if hasattr(self, 'utry'):
             return []
         self.check_env_matrix(env_matrix)
