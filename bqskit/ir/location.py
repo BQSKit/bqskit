@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from typing import Iterable
 from typing import overload
 from typing import Sequence
 from typing import Union
@@ -12,6 +11,8 @@ from typing_extensions import TypeGuard
 
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
+from bqskit.utils.typing import is_mapping
+from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_sequence_of_int
 _logger = logging.getLogger(__name__)
 
@@ -24,12 +25,12 @@ class CircuitLocation(Sequence[int]):
     usually describes where a gate or operation is being applied.
     """
 
-    def __init__(self, location: int | Iterable[int]) -> None:
+    def __init__(self, location: int | Sequence[int]) -> None:
         """
         Construct a CircuitLocation from `location`.
 
         Args:
-            location (int | Iterable[int]): The qudit indices.
+            location (int | Sequence[int]): The qudit indices.
 
         Raises:
             ValueError: If any qudit index is negative.
@@ -40,7 +41,7 @@ class CircuitLocation(Sequence[int]):
         if is_integer(location):
             location = [location]
 
-        elif is_iterable(location):
+        elif is_sequence(location):
             location = list(location)
 
         else:
@@ -97,14 +98,16 @@ class CircuitLocation(Sequence[int]):
 
     def union(self, other: CircuitLocationLike) -> CircuitLocation:
         """Return the location containing qudits from self or other."""
-        if is_integer(other):  # TODO: TypeGuard
-            return CircuitLocation(self._location + [other])  # type: ignore  # noqa
-        return CircuitLocation(set(self).union(CircuitLocation(other)))
+        if is_integer(other):
+            if other in self:
+                return self
+            return CircuitLocation(self._location + (other,))
+        return CircuitLocation(list(set(self).union(CircuitLocation(other))))
 
     def intersection(self, other: CircuitLocationLike) -> CircuitLocation:
         """Return the location containing qudits from self and other."""
-        if is_integer(other):  # TODO: TypeGuard
-            return CircuitLocation(other if other in self else [])  # noqa
+        if is_integer(other):
+            return CircuitLocation([other] if other in self else [])
         return CircuitLocation([x for x in self if x in other])  # type: ignore
 
     @staticmethod
@@ -131,6 +134,9 @@ class CircuitLocation(Sequence[int]):
             if num_qudits is not None:
                 return max(location) < num_qudits
             return True
+
+        if is_mapping(location) or isinstance(location, set):
+            return False
 
         if is_integer(location):
             location = [location]
@@ -190,4 +196,4 @@ class CircuitLocation(Sequence[int]):
         return self._location.__eq__(other)
 
 
-CircuitLocationLike = Union[int, Iterable[int], CircuitLocation]
+CircuitLocationLike = Union[int, Sequence[int], CircuitLocation]

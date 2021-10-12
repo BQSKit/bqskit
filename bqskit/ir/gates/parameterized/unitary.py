@@ -7,14 +7,13 @@ import numpy as np
 import scipy as sp
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
 
 class VariableUnitaryGate(
-    Gate, DifferentiableUnitary,
+    Gate,
     LocallyOptimizableUnitary,
 ):
     """A Variable n-qudit unitary operator."""
@@ -24,7 +23,7 @@ class VariableUnitaryGate(
         Creates an VariableUnitaryGate, defaulting to a qubit gate.
 
         Args:
-            num_qudits (int) The number of qudits this gate acts on.
+            num_qudits (int): The number of qudits this gate acts on.
 
             radixes (Sequence[int]): The number of orthogonal
                 states for each qudit. Defaults to qubits.
@@ -47,7 +46,7 @@ class VariableUnitaryGate(
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """
-        Returns the unitary for this gate, see Unitary for more info.
+        Return the unitary for this gate, see :class:`Unitary` for more.
 
         Note:
             Ideally, params form a unitary matrix when reshaped,
@@ -59,17 +58,14 @@ class VariableUnitaryGate(
         real = np.array(params[:mid], dtype=np.complex128)
         imag = 1j * np.array(params[mid:], dtype=np.complex128)
         x = real + imag
-        return UnitaryMatrix.closest_to(np.reshape(x, self.shape))
-
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
-        raise NotImplementedError(
-            'Gradient-based optimization not implemented for '
-            'VariableUnitaryGate.',
-        )
+        return UnitaryMatrix.closest_to(np.reshape(x, self.shape), self.radixes)
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
         x = np.reshape(Vh.conj().T @ U.conj().T, (self.num_params // 2,))

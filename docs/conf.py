@@ -32,6 +32,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
+    'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
     'myst_parser',
     'jupyter_sphinx',
@@ -74,7 +75,8 @@ autodoc_type_aliases = {
 # }
 # napoleon_type_aliases = autodoc_type_aliases
 autodoc_typehints = 'description'
-autoclass_content = 'both'
+autodoc_typehints_description_target = 'documented'
+autoclass_content = 'class'
 nbsphinx_output_prompt = 'Out[%s]:'
 
 add_module_names = False
@@ -82,7 +84,7 @@ modindex_common_prefex = ['bqskit.']
 autosummary_generate = True
 autosummary_generate_overwrite = True
 napoleon_use_admonition_for_notes = True
-napoleon_use_admonition_for_examples = True
+napoleon_use_admonition_for_examples = False
 napoleon_use_admonition_for_references = True
 napolean_custom_sections = ['Invariants']
 napoleon_preprocess_types = True

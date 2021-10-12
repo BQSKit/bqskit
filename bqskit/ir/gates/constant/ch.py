@@ -9,7 +9,20 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class CHGate(ConstantGate, QubitGate):
-    """The controlled-H gate."""
+    """
+    The controlled-Hadamard gate.
+
+    The Controlled-H gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & \\frac{\\sqrt{2}}{2} & \\frac{\\sqrt{2}}{2} \\\\
+        0 & 0 & \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2} \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 2
     _qasm_name = 'ch'

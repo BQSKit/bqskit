@@ -5,7 +5,11 @@ import logging
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
+from bqskit.compiler.passes.control import ForEachBlockPass
+from bqskit.compiler.passes.processing import WindowOptimizationPass
+from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
 from bqskit.compiler.passes.synthesis import QFASTDecompositionPass
+from bqskit.compiler.passes.util.unfold import UnfoldPass
 from bqskit.ir import Circuit
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -18,7 +22,13 @@ if __name__ == '__main__':
     circuit = Circuit.from_unitary(UnitaryMatrix.random(3))
 
     # We will now define the CompilationTask we want to run.
-    task = CompilationTask(circuit, [QFASTDecompositionPass()])
+    task = CompilationTask(
+        circuit, [
+            QFASTDecompositionPass(),
+            ForEachBlockPass([LEAPSynthesisPass(), WindowOptimizationPass()]),
+            UnfoldPass(),
+        ],
+    )
 
     # Finally let's create create the compiler and execute the CompilationTask.
     with Compiler() as compiler:

@@ -1,22 +1,12 @@
-"""
-This test module verifies all circuit cycle methods.
-
-Circuit cycle methods:
-    def pop_cycle(self, cycle_index: int) -> None:
-    def is_cycle_in_range(self, cycle_index: int) -> bool:
-    def is_cycle_unoccupied(
-        self, cycle_index: int,
-        location: Sequence[int],
-    ) -> bool:
-    def find_available_cycle(self, location: Sequence[int]) -> int:
-"""
+"""This test module verifies all circuit cycle methods."""
 from __future__ import annotations
 
-from typing import Any
 from typing import Sequence
 
 import numpy as np
 import pytest
+from hypothesis import given
+from hypothesis.strategies import integers
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
@@ -25,46 +15,20 @@ from bqskit.ir.gates import CPIGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import XGate
 from bqskit.ir.gates import ZGate
+from bqskit.utils.test.types import invalid_type_test
+from bqskit.utils.test.types import valid_type_test
 
 
 class TestPopCycle:
     """This tests `circuit.pop_cycle`."""
 
-    def test_type_valid_1(self, an_int: int) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.pop_cycle(an_int)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).pop_cycle)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.pop_cycle(an_int)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.pop_cycle(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.pop_cycle(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @invalid_type_test(Circuit(1).pop_cycle)
+    def test_invalid_type(self) -> None:
+        pass
 
     @pytest.mark.parametrize('cycle_index', [-20, -10, -5, 5, 8, 10, 100])
     def test_index_invalid_1(self, cycle_index: int) -> None:
@@ -123,45 +87,18 @@ class TestPopCycle:
 class TestIsCycleInRange:
     """This tests `circuit.is_cycle_in_range`."""
 
-    def test_type_valid_1(self, an_int: int) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_cycle_in_range(an_int)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).is_cycle_in_range)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self, an_int: int) -> None:
+    @invalid_type_test(Circuit(1).is_cycle_in_range)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(integers())
+    def test_return_type(self, val: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_cycle_in_range(an_int)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_cycle_in_range(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_cycle_in_range(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_return_type(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        assert isinstance(circuit.is_cycle_in_range(an_int), (bool, np.bool_))
+        assert isinstance(circuit.is_cycle_in_range(val), (bool, np.bool_))
 
     @pytest.mark.parametrize('cycle_index', [-5, -4, -3, -2, -1])
     def test_true_neg(self, cycle_index: int) -> None:
@@ -207,89 +144,13 @@ class TestIsCycleInRange:
 class TestIsCycleUnoccupied:
     """This tests `circuit.is_cycle_unoccupied`."""
 
-    @pytest.mark.parametrize('location', [(0,)])
-    def test_type_valid_1(self, an_int: int, location: Sequence[int]) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_cycle_unoccupied(an_int, location)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).is_cycle_unoccupied)
+    def test_valid_type(self) -> None:
+        pass
 
-    @pytest.mark.parametrize(
-        'location',
-        [
-            (0,),
-            (0, 1, 2, 3),
-            (0, 1, 2),
-            (0, 2),
-        ],
-    )
-    def test_type_valid_2(self, an_int: int, location: Sequence[int]) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_cycle_unoccupied(an_int, location)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    @pytest.mark.parametrize('location', [(0,)])
-    def test_type_invalid_1(
-            self, not_an_int: Any, location: Sequence[int],
-    ) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_cycle_unoccupied(not_an_int, location)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    @pytest.mark.parametrize(
-        'location',
-        [
-            (0,),
-            (0, 1, 2, 3),
-            (0, 1, 2),
-            (0, 2),
-        ],
-    )
-    def test_type_invalid_2(
-            self, not_an_int: Any, location: Sequence[int],
-    ) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_cycle_unoccupied(not_an_int, location)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    @pytest.mark.parametrize('not_an_location', [(0, 1), -500, 'a'])
-    def test_type_invalid_3(
-            self, an_int: int, not_an_location: Any,
-    ) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_cycle_unoccupied(an_int, not_an_location)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    @pytest.mark.parametrize('not_an_location', [(0, 9), -500, 'a'])
-    def test_type_invalid_4(
-            self, an_int: int, not_an_location: Any,
-    ) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_cycle_unoccupied(an_int, not_an_location)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @invalid_type_test(Circuit(1).is_cycle_unoccupied)
+    def test_invalid_type(self) -> None:
+        pass
 
     @pytest.mark.parametrize(
         ('valid_int', 'location'),
@@ -398,53 +259,13 @@ class TestIsCycleUnoccupied:
 class TestFindAvailableCycle:
     """This tests `circuit.find_available_cycle`."""
 
-    @pytest.mark.parametrize('location', [(0,)])
-    def test_type_valid_1(self, location: Sequence[int]) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.find_available_cycle(location)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).find_available_cycle)
+    def test_valid_type(self) -> None:
+        pass
 
-    @pytest.mark.parametrize(
-        'location',
-        [
-            (0,),
-            (0, 1, 2, 3),
-            (0, 1, 2),
-            (0, 2),
-        ],
-    )
-    def test_type_valid_2(self, location: Sequence[int]) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.find_available_cycle(location)
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    @pytest.mark.parametrize('not_an_location', [(0, 1), -500, 'a'])
-    def test_type_invalid_1(self, not_an_location: Sequence[int]) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.find_available_cycle(not_an_location)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    @pytest.mark.parametrize('not_an_location', [(0, 9), -500, 'a'])
-    def test_type_invalid_2(self, not_an_location: Sequence[int]) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.find_available_cycle(not_an_location)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @invalid_type_test(Circuit(1).find_available_cycle)
+    def test_invalid_type(self) -> None:
+        pass
 
     @pytest.mark.parametrize('location', [(0,), (0, 1, 2), (0, 2)])
     def test_return_type(self, location: Sequence[int]) -> None:

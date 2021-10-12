@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pickle
+
 import numpy as np
 import pytest
 
@@ -75,49 +77,6 @@ class TestBasicGate:
         utry = gate.get_unitary(params)
         assert utry.shape == (gate.dim, gate.dim)
 
-    # def test_get_grad(self, gate: Gate) -> None:
-    #     grads = gate.get_grad([0] * gate.num_params)
-    #     assert isinstance(grads, np.ndarray)
-
-    #     num_params = gate.num_params
-    #     dim = gate.dim
-    #     shapes_match = grads.shape == (num_params, dim, dim)
-    #     empty_shape_and_no_params = grads.shape[0] == 0 and num_params == 0
-    #     assert shapes_match or empty_shape_and_no_params
-
-    # def test_get_unitary_and_grad(self, gate: Gate) -> None:
-    #     params = np.random.rand(gate.num_params)
-    #     grad1 = gate.get_grad(params)
-    #     utry1 = gate.get_unitary(params)
-    #     utry2, grad2 = gate.get_unitary_and_grad(params)
-    #     assert np.allclose(grad1, grad2)
-    #     assert np.allclose(utry1, utry2)
-
-    # def test_optimize_valid(self, gate: Gate) -> None:
-    #     try:
-    #         env_matrix = np.random.rand(gate.dim, gate.dim)
-    #         optimal_params = gate.optimize(env_matrix)
-    #     except NotImplementedError:
-    #         return
-    #     except BaseException:
-    #         assert False, 'Unexpected error on gate.optimize() call.'
-
-    #     assert isinstance(optimal_params, list)
-    #     assert len(optimal_params) == gate.num_params
-    #     assert all(isinstance(p, float) for p in optimal_params)
-
-    # def test_optimize_invalid(self, param_gate: Gate) -> None:
-    #     with pytest.raises(Exception):
-    #         param_gate.optimize(1)  # type: ignore
-    #     with pytest.raises(Exception):
-    #         param_gate.optimize([])  # type: ignore
-    #     with pytest.raises(Exception):
-    #         env_matrix = np.random.rand(param_gate.dim)
-    #         optimal_params = param_gate.optimize(env_matrix)  # noqa
-    #     with pytest.raises(Exception):
-    #         env_matrix = np.random.rand(param_gate.dim, 1)
-    #         optimal_params = param_gate.optimize(env_matrix)  # noqa
-
     def test_is_qubit_gate(self, qubit_gate: Gate) -> None:
         assert qubit_gate.is_qubit_only()
         assert not qubit_gate.is_qutrit_only()
@@ -168,3 +127,14 @@ class TestBasicGate:
 
     def test_repr(self, gate: Gate) -> None:
         assert isinstance(gate.__repr__(), str)
+
+    def test_use_as_key(self, gate: Gate) -> None:
+        test_dict = {}
+        test_dict[gate] = 0
+        assert gate in test_dict
+
+    def test_pickle(self, gate: Gate) -> None:
+        params = [0] * gate.num_params
+        utry = gate.get_unitary(params)
+        pickled_utry = pickle.loads(pickle.dumps(gate)).get_unitary(params)
+        assert utry == pickled_utry

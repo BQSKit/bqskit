@@ -7,7 +7,20 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class CYGate(ConstantGate, QubitGate):
-    """The controlled-Y gate."""
+    """
+    The Controlled-Y gate.
+
+    The CY gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & 0 & -i \\\\
+        0 & 0 & i & 0 \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 2
     _qasm_name = 'cy'

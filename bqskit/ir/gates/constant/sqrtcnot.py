@@ -7,6 +7,20 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class SqrtCNOTGate(ConstantGate, QubitGate):
+    """
+    The Square root Controlled-X gate.
+
+    The SqrtCNOT gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & \\frac{1}{2} + \\frac{1}{2}i & \\frac{1}{2} - \\frac{1}{2}i \\\\
+        0 & 0 & \\frac{1}{2} - \\frac{1}{2}i & \\frac{1}{2} + \\frac{1}{2}i \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 2
     _qasm_name = 'csx'

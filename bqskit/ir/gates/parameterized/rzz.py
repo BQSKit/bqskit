@@ -7,19 +7,36 @@ import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
-from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class RZZGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
-    """A gate representing an arbitrary rotation around the ZZ axis."""
+class RZZGate(
+    QubitGate,
+    DifferentiableUnitary,
+    CachedClass,
+):
+    """
+    A gate representing an arbitrary rotation around the ZZ axis.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\exp({-i\\frac{\\theta}{2}}) & 0 & 0 & 0 \\\\
+        0 & \\exp({i\\frac{\\theta}{2}}) & 0 & 0 \\\\
+        0 & 0 & \\exp({i\\frac{\\theta}{2}}) & 0 \\\\
+        0 & 0 & 0 & \\exp({-i\\frac{\\theta}{2}}) \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 2
     _num_params = 1
     _qasm_name = 'rzz'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         pos = np.exp(1j * params[0] / 2)
@@ -35,7 +52,11 @@ class RZZGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         )
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         dpos = 1j / 2 * np.exp(1j * params[0] / 2)
@@ -51,8 +72,3 @@ class RZZGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
                 ],
             ], dtype=np.complex128,
         )
-
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
-        self.check_env_matrix(env_matrix)
-        raise NotImplementedError()  # TODO

@@ -1,16 +1,56 @@
 """
 =============================================================
-BQSKit Circuit Intermediate Representation (:mod:`bqskit.ir`)
+Circuit Intermediate Representation (:mod:`bqskit.ir`)
 =============================================================
 
 .. currentmodule:: bqskit.ir
 
+The BQSKit Circuit structure is a 2-d array of operations. A circuit is
+indexed first by cycles and second by qudits. The cycle index determines
+when operations are executed, and the qudit index determines which
+qudits an operation operates on.
+
+Every component of the IR is also a function from a vector
+real numbers to a unitary matrix. This is done to facilitate circuit
+instantiatation, which is a very important primitive in quantum synthesis.
+
+.. rubric:: Core Classes
+
 .. autosummary::
     :toctree: autogen
+    :recursive:
 
     Circuit
     Gate
     Operation
+
+.. rubric:: Circuit Indexing and Helpers
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    CycleInterval
+    CircuitIterator
+    CircuitLocation
+    CircuitPoint
+    CircuitRegion
+
+.. rubric:: Type Aliases
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    IntervalLike
+    CircuitLocationLike
+    CircuitPointLike
+    CircuitRegionLike
+
+.. automodule:: bqskit.ir.gates
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:
 
 TODO: More description
 """

@@ -10,13 +10,12 @@ from typing import Callable
 from typing import TYPE_CHECKING
 
 from bqskit.qis.unitary.unitary import Unitary
-from bqskit.utils.cachedclass import CachedClass
 
 if TYPE_CHECKING:
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 
 
-class Gate(Unitary, CachedClass):
+class Gate(Unitary):
     """Gate Base Class."""
 
     _name: str

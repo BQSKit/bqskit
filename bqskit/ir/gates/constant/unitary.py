@@ -9,13 +9,22 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class ConstantUnitaryGate(ConstantGate):
-    """A constant unitary operator."""
+    """An arbitrary constant unitary operator."""
 
     def __init__(
         self,
         utry: UnitaryLike,
         radixes: Sequence[int] = [],
     ) -> None:
+        """
+        Construct a constant unitary operator.
+
+        Args:
+            utry (UnitaryLike): The operation as a unitary matrix.
+
+            radixes (Sequence[int]): The number of orthogonal states
+                for each qudit this gate will act on. Defaults to qubits.
+        """
         self._utry = UnitaryMatrix(utry, radixes)
         self._num_qudits = self._utry.num_qudits
         self._radixes = self._utry.radixes

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from bqskit.qis.unitary.meta import UnitaryMeta
-from bqskit.utils.typing import is_numeric
+from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
@@ -19,8 +19,8 @@ class Unitary(metaclass=UnitaryMeta):
     """
     A unitary-valued function.
 
-    A `Unitary` is map from zero or more real numbers to a unitary matrix. This
-    is captured in the `get_unitary` abstract method.
+    A `Unitary` is a map from zero or more real numbers to a unitary matrix.
+    This is captured in the `get_unitary` abstract method.
     """
 
     _num_params: int
@@ -30,7 +30,7 @@ class Unitary(metaclass=UnitaryMeta):
 
     @property
     def num_params(self) -> int:
-        """The number of parameters this unitary-valued function takes."""
+        """The number of real parameters this unitary-valued function takes."""
         return getattr(self, '_num_params')
 
     @property
@@ -57,46 +57,60 @@ class Unitary(metaclass=UnitaryMeta):
     @abc.abstractmethod
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """
-        Abstract method that maps real-valued `params` to a `UnitaryMatrix`.
+        Map real-valued `params` to a `UnitaryMatrix`.
 
         Args:
             params (Sequence[float]): Unconstrained vector of real number
                 parameters for parameterized unitaries.
 
         Returns:
-            (UnitaryMatrix): The unitary matrix.
+            UnitaryMatrix: The unitary matrix.
         """
 
     def is_qubit_only(self) -> bool:
-        """Returns true if this unitary can only act on qubits."""
+        """Return true if this unitary can only act on qubits."""
         return all([radix == 2 for radix in self.radixes])
 
     def is_qutrit_only(self) -> bool:
-        """Returns true if this unitary can only act on qutrits."""
+        """Return true if this unitary can only act on qutrits."""
         return all([radix == 3 for radix in self.radixes])
 
     def is_qudit_only(self, radix: int) -> bool:
-        """Returns true if this unitary can only act on `radix`-qudits."""
+        """
+        Return true if this unitary can only act on `radix`-qudits.
+
+        Args:
+            radix (int): Check all qudits have this many orthogonal
+                states.
+        """
         return all([r == radix for r in self.radixes])
 
     def is_parameterized(self) -> bool:
-        """Returns true if this unitary is parameterized."""
+        """Return true if this unitary is parameterized."""
         return self.num_params != 0
 
     def is_constant(self) -> bool:
-        """Returns true if this unitary doesn't have parameters."""
+        """Return true if this unitary doesn't take parameters."""
         return not self.is_parameterized()
 
     def check_parameters(self, params: Sequence[float] | np.ndarray) -> None:
-        """Checks to ensure parameters are valid and match the unitary."""
+        """
+        Check parameters are valid and match the unitary.
+
+        Args:
+            params(Sequence[float] | np.ndarray): The parameters to check.
+
+        Raises:
+            ValueError: If parameter length does not match expected number.
+        """
         if not is_sequence(params):
             raise TypeError(
                 'Expected a sequence type for params, got %s.'
                 % type(params),
             )
 
-        if not all(is_numeric(p) for p in params):
-            typechecks = [is_numeric(p) for p in params]
+        if not all(is_real_number(p) for p in params):
+            typechecks = [is_real_number(p) for p in params]
             fail_idx = typechecks.index(False)
             raise TypeError(
                 'Expected params to be floats, got %s.'

@@ -14,9 +14,10 @@ _logger = logging.getLogger(__name__)
 
 class CircuitPoint(Tuple[int, int]):
     """
-    The CircuitPoint NamedTuple class.
+    A cycle and qudit index pair used to index a circuit.
 
-    A CircuitPoint is a 2d-index into the Circuit data structure.
+    This is a subclass of a tuple, and therefore can be used where a tuple of
+    two ints can be used.
     """
 
     def __new__(
@@ -24,6 +25,23 @@ class CircuitPoint(Tuple[int, int]):
         cycle_or_tuple: int | tuple[int, int],
         qudit: int | None = None,
     ) -> CircuitPoint:
+        """
+        Construct a point.
+
+        Args:
+            cycle_or_tuple (int | tuple[int, int]): Either a cycle index
+                given as an integer, or a tuple of a cycle index and qudit
+                index. If an integer is given, then you will need to also
+                specify the qudit index as the next argument.
+
+            qudit (int | None): If `cycle_or_tuple` is an integer cycle
+                index, then you will need to specify the qudit index here.
+                Otherwise, leave this as None.
+
+        Returns:
+            CircuitPoint: The new point object.
+        """
+
         if qudit is not None and not is_integer(qudit):
             raise TypeError(
                 f'Expected int or None for qudit, got {type(qudit)}.',
@@ -48,24 +66,16 @@ class CircuitPoint(Tuple[int, int]):
         else:
             raise TypeError('Expected two integer arguments.')
 
-        # if cycle < 0:
-        #     raise ValueError(
-        #         'Expected cycle to be >= 0, got {cycle}.',
-        #     )
-
-        # if qudit < 0:
-        #     raise ValueError(
-        #         'Expected qudit to be >= 0, got {qudit}.',
-        #     )
-
         return super().__new__(cls, (cycle, qudit))  # type: ignore
 
     @property
     def cycle(self) -> int:
+        """The point's cycle index."""
         return self[0]
 
     @property
     def qudit(self) -> int:
+        """The point's qudit index."""
         return self[1]
 
     @staticmethod

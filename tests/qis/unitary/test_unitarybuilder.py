@@ -1,11 +1,12 @@
 """This module tests the UnitaryBuilder class in bqskit.qis.unitary."""
 from __future__ import annotations
 
-from typing import Any
 from typing import Sequence
 
 import numpy as np
 import pytest
+from hypothesis import given
+from hypothesis.strategies import integers
 
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -13,17 +14,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class TestConstructor:
 
-    def test_invalid_type_size(self, not_an_int: Any) -> None:
-        with pytest.raises(TypeError):
-            UnitaryBuilder(not_an_int)
-
-    def test_invalid_type_radixes(self, not_a_seq_int: Any) -> None:
-        if not_a_seq_int == '':
-            return
-        with pytest.raises(TypeError):
-            UnitaryBuilder(5, not_a_seq_int)
-
-    @pytest.mark.parametrize('size', [0, -1, -10000])
+    @given(integers(max_value=0))
     def test_invalid_value_size(self, size: int) -> None:
         with pytest.raises(ValueError):
             UnitaryBuilder(size)

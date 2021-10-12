@@ -38,6 +38,7 @@ from bqskit.ir.gates import SqrtCNOTGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates import SXGate
+from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates import TdgGate
 from bqskit.ir.gates import TGate
 from bqskit.ir.gates import U1Gate
@@ -570,6 +571,7 @@ BQSKIT_GATES = [
     FrozenParameterGate(U8Gate(), {0: np.pi}),
     FrozenParameterGate(U8Gate(), {0: np.pi / 2, 1: np.pi / 2, 2: np.pi / 2}),
     FrozenParameterGate(DaggerGate(U8Gate()), {0: np.pi / 2, 2: np.pi / 2}),
+    TaggedGate(TGate(), 'hello'),
     # VariableUnitaryGate(TOFFOLI), # TODO
     # CircuitGate(),  # TODO
     # ControlledGate(),  # TODO

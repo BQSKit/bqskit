@@ -1,4 +1,4 @@
-"""This module tests the CycleInterval class."""
+"""This module tests the CircuitRegion class."""
 from __future__ import annotations
 
 import pytest
@@ -11,11 +11,11 @@ from bqskit.ir.interval import CycleInterval
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.region import CircuitRegion
-from bqskit.test.strategies import circuit_points
-from bqskit.test.strategies import circuit_regions
-from bqskit.test.strategies import cycle_intervals
-from bqskit.test.types import invalid_type_test
-from bqskit.test.types import valid_type_test
+from bqskit.utils.test.strategies import circuit_points
+from bqskit.utils.test.strategies import circuit_regions
+from bqskit.utils.test.strategies import cycle_intervals
+from bqskit.utils.test.types import invalid_type_test
+from bqskit.utils.test.types import valid_type_test
 
 
 @given(circuit_regions())
@@ -449,6 +449,7 @@ def test_depends_on(
             ) and any(
                 region2[qudit] < region1[qudit]
                 for qudit in region2
+                if qudit in region1
             )
         elif r2_depends_on_r1:
             assert all(
@@ -457,4 +458,5 @@ def test_depends_on(
             ) and any(
                 region1[qudit] < region2[qudit]
                 for qudit in region1
+                if qudit in region2
             )

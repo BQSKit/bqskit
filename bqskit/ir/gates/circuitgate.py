@@ -41,17 +41,46 @@ class CircuitGate(Gate):
         self._name = 'CircuitGate(%s)' % str(self._circuit)
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         return self._circuit.get_unitary(params)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         return self._circuit.get_grad(params)
 
     def get_unitary_and_grad(
         self,
         params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         return self._circuit.get_unitary_and_grad(params)
 
     def is_differentiable(self) -> bool:
         """Return true if the circuit is differentiable."""
         return self._circuit.is_differentiable()
+
+    def __hash__(self) -> int:
+        hashes: list[int] = [hash(self.name)]
+        for op in self._circuit:
+            hashes.append(hash(repr(op)))
+
+            # Don't let the hash list grow too large.
+            if len(hashes) >= 100:
+                hashes = [hash(tuple(hashes))]
+
+        hash_val = hash(tuple(hashes)) if len(hashes) > 1 else hashes[0]
+        return hash_val
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CircuitGate):
+            return NotImplemented
+
+        return self._circuit == other._circuit

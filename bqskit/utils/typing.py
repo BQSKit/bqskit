@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 
 def is_iterable(x: Any) -> TypeGuard[Iterable[Any]]:
-    """Returns true if x is an iterable object."""
+    """Return true if x is an iterable object."""
     try:
         iterator = iter(x)  # noqa: F841
         return True
@@ -26,7 +26,7 @@ def is_iterable(x: Any) -> TypeGuard[Iterable[Any]]:
 
 
 def is_sized(x: Any) -> TypeGuard[Sized]:
-    """Returns true if x is a sized object."""
+    """Return true if x is a sized object."""
     try:
         length = len(x)  # noqa: F841
         return True
@@ -35,12 +35,12 @@ def is_sized(x: Any) -> TypeGuard[Sized]:
 
 
 def is_sequence(x: Any) -> TypeGuard[Sequence[Any]]:
-    """Returns true if x is a sequence."""
+    """Return true if x is a sequence."""
     return isinstance(x, (Sequence, np.ndarray))
 
 
 def is_mapping(x: Any) -> TypeGuard[Mapping[Any, Any]]:
-    """Returns true if x is a mapping."""
+    """Return true if x is a mapping."""
     return isinstance(x, Mapping)
 
 
@@ -65,7 +65,7 @@ def is_integer(x: Any) -> TypeGuard[int]:
 
 
 def is_bool(x: Any) -> TypeGuard[bool]:
-    """Return true if x is an integer."""
+    """Return true if x is a boolean value."""
     return isinstance(x, (bool, np.bool_))
 
 
@@ -79,7 +79,7 @@ def is_valid_radixes(
     num_qudits: int | None = None,
 ) -> bool:
     """
-    Determines if the sequence of radixes are valid. Radixes must be integers
+    Determine if the sequence of radixes is valid. Radixes must be integers
     greater than or equal to 2. If num_qudits is specified, then the length of
     radixes must be equal to num_qudits.
 
@@ -91,7 +91,7 @@ def is_valid_radixes(
             don't check.
 
     Returns:
-        (bool): True if the radixes are valid.
+        bool: True if the radixes are valid.
     """
 
     if not is_sequence(radixes):
@@ -122,7 +122,7 @@ def is_valid_coupling_graph(
     num_qudits: int | None = None,
 ) -> bool:
     """
-    Checks if the coupling graph is valid.
+    Return true if the coupling graph is valid.
 
     Args:
         coupling_graph (Any): The coupling graph to check.
@@ -131,7 +131,7 @@ def is_valid_coupling_graph(
             should be less than this. If None, don't check.
 
     Returns:
-        (bool): Valid or not
+        bool: Valid or not
     """
 
     if not is_iterable(coupling_graph):
@@ -190,11 +190,9 @@ def is_vector(V: np.typing.ArrayLike) -> bool:
 
 
 def is_matrix(M: np.typing.ArrayLike) -> bool:
-    """Checks if M is a matrix."""
+    """Return true if M is a matrix."""
 
     if not isinstance(M, np.ndarray):
-        # _logger.debug('M is not an numpy array.')
-        # return False
         M = np.array(M)
 
     if len(M.shape) != 2:
@@ -209,7 +207,7 @@ def is_matrix(M: np.typing.ArrayLike) -> bool:
 
 
 def is_square_matrix(M: np.typing.ArrayLike) -> bool:
-    """Checks if M is a square matrix."""
+    """Return true if M is a square matrix."""
 
     if not isinstance(M, np.ndarray):
         M = np.array(M)
@@ -224,7 +222,7 @@ def is_square_matrix(M: np.typing.ArrayLike) -> bool:
 
 
 def is_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
-    """Checks if H is a hermitian matrix."""
+    """Return true if H is a hermitian matrix."""
 
     if not is_square_matrix(H):
         return False
@@ -242,7 +240,7 @@ def is_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
 
 
 def is_skew_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
-    """Checks if H is a skew hermitian matrix."""
+    """Return true if H is a skew hermitian matrix."""
 
     if not is_square_matrix(H):
         return False

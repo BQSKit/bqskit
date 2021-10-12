@@ -137,7 +137,7 @@ class MachineModel:
         curr_path.add(vertex)
 
         if len(curr_path) == limit:
-            locations.add(CircuitLocation(curr_path))
+            locations.add(CircuitLocation(list(curr_path)))
             return
 
         frontier: set[int] = {

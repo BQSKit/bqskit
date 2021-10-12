@@ -11,37 +11,34 @@ from bqskit.ir.gates import FrozenParameterGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
-from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class Operation(DifferentiableUnitary):
-    """
-    The Operation class.
-
-    A Operation groups together a gate, its parameters and location.
-    """
+    """An Operation groups together a gate, its parameters and location."""
 
     def __init__(
-        self, gate: Gate,
+        self,
+        gate: Gate,
         location: CircuitLocationLike,
         params: Sequence[float] = [],
     ) -> None:
         """
-        Operation Constructor.
+        Construct an operation.
 
         Args:
-            gate (Gate): The cell's gate.
+            gate (Gate): The operation's gate.
 
             location (CircuitLocationLike):  The set of qudits this gate
-                affects.
+                is applied to.
 
             params (Sequence[float]): The parameters for the gate.
 
         Raises:
             ValueError: If `gate`'s size doesn't match `location`'s length.
 
-            ValueError: If `gate`'s size doesn't match `params`'s length.
+            ValueError: If `gate`'s num_params doesn't match `params`'s
+                length.
         """
 
         if not isinstance(gate, Gate):
@@ -49,6 +46,11 @@ class Operation(DifferentiableUnitary):
 
         if not CircuitLocation.is_location(location):
             raise TypeError('Invalid location.')
+
+        if len(params) == 0 and gate.num_params != 0:
+            params = [0.0] * gate.num_params
+
+        gate.check_parameters(params)
 
         location = CircuitLocation(location)
 
@@ -58,26 +60,23 @@ class Operation(DifferentiableUnitary):
         self._num_params = gate.num_params
         self._radixes = gate.radixes
         self._num_qudits = gate.num_qudits
-
-        if len(params) == 0 and self.num_params != 0:
-            params = [0.0] * self.num_params
-
-        self.check_parameters(params)
-
         self._gate = gate
         self._location = location
         self._params = list(params)
 
     @property
     def gate(self) -> Gate:
+        """The operation's gate."""
         return self._gate
 
     @property
     def location(self) -> CircuitLocation:
+        """The qudit this operation is applied to."""
         return self._location
 
     @property
     def params(self) -> list[float]:
+        """The operation's parameters for its gate."""
         return self._params
 
     @params.setter
@@ -86,8 +85,12 @@ class Operation(DifferentiableUnitary):
         self._params = params
 
     def get_qasm(self) -> str:
-        """Returns the qasm string for this operation."""
+        """
+        Return the qasm string for this operation.
 
+        Returns:
+            str: The operation as a qasm line.
+        """
         if isinstance(self.gate, FrozenParameterGate):
             full_params = self.gate.get_full_params(self.params)
         else:
@@ -100,26 +103,35 @@ class Operation(DifferentiableUnitary):
         ).replace('()', '')
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Return the op's unitary, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         if len(params) != 0:
-            self.check_parameters(params)
             return self.gate.get_unitary(params)
+
         return self.gate.get_unitary(self.params)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Return the op's gradient, see Unitary for more info."""
+        """
+        Return the gradient for this operation.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         if len(params) != 0:
-            self.check_parameters(params)
             return self.gate.get_grad(params)  # type: ignore
+
         return self.gate.get_grad(self.params)  # type: ignore
 
     def get_unitary_and_grad(
-        self, params: Sequence[float] = [],
+        self,
+        params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
-        """Return the op's unitary and gradient, see Unitary for more info."""
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         if len(params) != 0:
-            self.check_parameters(params)
             return self.gate.get_unitary_and_grad(params)  # type: ignore
+
         return self.gate.get_unitary_and_grad(self.params)  # type: ignore
 
     def __eq__(self, rhs: Any) -> bool:
@@ -132,23 +144,16 @@ class Operation(DifferentiableUnitary):
 
         return (
             self.gate == rhs.gate
-            and all(x == y for x, y in zip(self.params, rhs.params))
-            and all(x == y for x, y in zip(self.location, rhs.location))
+            and self.params == rhs.params
+            and self.location == rhs.location
         )
 
-    def __hash__(self) -> int:
-        return hash(self.__repr__())
-
     def __str__(self) -> str:
-        return str(self.gate) + '@' + str(self.location) + str(self.params)
+        return f'{self.gate}@{self.location}'
 
     def __repr__(self) -> str:
-        return str(self.gate) + '@' + str(self.location)
+        return f'{self.gate}({self.params})@{self.location}'
 
     def is_differentiable(self) -> bool:
         """Check if operation is differentiable."""
         return isinstance(self.gate, DifferentiableUnitary)
-
-    def is_locally_optimizable(self) -> bool:
-        """Check if operation is locally optimizable."""
-        return isinstance(self.gate, LocallyOptimizableUnitary)

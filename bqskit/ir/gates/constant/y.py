@@ -7,7 +7,18 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class YGate(ConstantGate, QubitGate):
-    """The Pauli Y gate."""
+    """
+    The Pauli Y gate.
+
+    The Y gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        0 & -i \\\\
+        i & 0 \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 1
     _qasm_name = 'y'

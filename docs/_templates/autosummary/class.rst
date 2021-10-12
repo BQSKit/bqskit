@@ -5,6 +5,10 @@
 .. autoclass:: {{ objname }}
    :show-inheritance:
 
+   {% block constructor %}
+   .. automethod:: __init__
+   {% endblock %}
+
    {% block attributes %}
    {% if attributes %}
    .. rubric:: {{ _('Attributes') }}

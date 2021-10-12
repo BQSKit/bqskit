@@ -1,3 +1,4 @@
+"""This package contains composed gates."""
 from __future__ import annotations
 
 from bqskit.ir.gates.composed.controlled import ControlledGate

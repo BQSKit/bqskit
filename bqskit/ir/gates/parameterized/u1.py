@@ -9,17 +9,34 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class U1Gate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
-    """The U1 single qubit gate."""
+class U1Gate(
+    QubitGate,
+    DifferentiableUnitary,
+    LocallyOptimizableUnitary,
+    CachedClass,
+):
+    """
+    The U1 single qubit gate.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 \\\\
+        0 & \\exp({i\\theta}) \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 1
     _num_params = 1
     _qasm_name = 'u1'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         exp = np.exp(1j * params[0])
@@ -32,7 +49,11 @@ class U1Gate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         )
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         dexp = 1j * np.exp(1j * params[0])
@@ -47,7 +68,11 @@ class U1Gate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         )
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
         self.check_env_matrix(env_matrix)
         a = np.real(env_matrix[1, 1])
         b = np.imag(env_matrix[1, 1])

@@ -8,16 +8,17 @@ import numpy as np
 from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class U8Gate(QutritGate, DifferentiableUnitary):
+class U8Gate(QutritGate, DifferentiableUnitary, CachedClass):
     """The U8 single qutrit gate."""
 
     _num_qudits = 1
     _num_params = 8
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         s1 = np.sin(params[0])
@@ -59,7 +60,11 @@ class U8Gate(QutritGate, DifferentiableUnitary):
         )
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         s1 = np.sin(params[0])

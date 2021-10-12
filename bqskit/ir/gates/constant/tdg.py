@@ -9,7 +9,16 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TdgGate(ConstantGate, QubitGate):
-    """The T Dagger gate."""
+    """
+    The single-qubit T Dagger gate.
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 \\\\
+        0 & e^{-i\\frac{\\pi}{4}} \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 1
     _qasm_name = 'tdg'

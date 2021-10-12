@@ -9,17 +9,34 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class RYGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
-    """A gate representing an arbitrary rotation around the Y axis."""
+class RYGate(
+    QubitGate,
+    DifferentiableUnitary,
+    LocallyOptimizableUnitary,
+    CachedClass,
+):
+    """
+    A gate representing an arbitrary rotation around the Y axis.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\cos{\\frac{\\theta}{2}} & -\\sin{\\frac{\\theta}{2}} \\\\
+        \\sin{\\frac{\\theta}{2}} & \\cos{\\frac{\\theta}{2}} \\\\
+        \\end{pmatrix}
+    """
 
     _num_qudits = 1
     _num_params = 1
     _qasm_name = 'ry'
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
         cos = np.cos(params[0] / 2)
@@ -33,7 +50,11 @@ class RYGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         )
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
-        """Returns the gradient for this gate, see Gate for more info."""
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         self.check_parameters(params)
 
         dcos = -np.sin(params[0] / 2) / 2
@@ -49,7 +70,11 @@ class RYGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         )
 
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
         self.check_env_matrix(env_matrix)
         a = np.real(env_matrix[0, 0] + env_matrix[1, 1])
         b = np.real(env_matrix[1, 0] - env_matrix[0, 1])

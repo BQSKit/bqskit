@@ -70,7 +70,7 @@ class TestDexpmv:
 
         dFs0_np = np.array(dFs0)
 
-        _, dFs1 = dexpmv(H, paulis.get_numpy())
+        _, dFs1 = dexpmv(H, paulis.numpy)
 
         assert np.allclose(dFs0_np, dFs1)
 
@@ -146,9 +146,6 @@ class TestDotProduct:
 
 
 class TestUnitaryLog:
-    def test_invalid(self, not_a_seq_float: Any) -> None:
-        with pytest.raises(TypeError):
-            unitary_log_no_i(not_a_seq_float)
 
     @pytest.mark.parametrize(
         'reU',
@@ -178,9 +175,6 @@ class TestUnitaryLog:
 
 
 class TestPauliExpansion:
-    def test_invalid(self, not_a_seq_float: Any) -> None:
-        with pytest.raises(TypeError):
-            pauli_expansion(not_a_seq_float)
 
     @pytest.mark.parametrize(
         'reH',

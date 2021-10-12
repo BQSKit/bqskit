@@ -1,15 +1,11 @@
-"""
-This module implements the QubitGate base class.
-
-A QubitGate is one that only acts on qubits.
-"""
+"""This module implements the QubitGate base class."""
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate
 
 
 class QubitGate(Gate):
-    """The QubitGate Class."""
+    """A gate that only acts on qubits."""
 
     @property
     def radixes(self) -> tuple[int, ...]:
