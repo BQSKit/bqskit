@@ -32,10 +32,15 @@ from hypothesis.strategies import sets
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 
+from bqskit.utils.test.strategies import circuit_location_likes
+from bqskit.utils.test.strategies import circuit_locations
 from bqskit.utils.test.strategies import circuit_points
 from bqskit.utils.test.strategies import circuit_regions
+from bqskit.utils.test.strategies import circuits
 from bqskit.utils.test.strategies import cycle_intervals
 from bqskit.utils.test.strategies import everything_except
+from bqskit.utils.test.strategies import gates
+from bqskit.utils.test.strategies import operations
 from bqskit.utils.test.strategies import unitaries
 from bqskit.utils.test.strategies import unitary_likes
 
@@ -174,6 +179,21 @@ def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
 
         elif type_str.lower().startswith('unitarymatrix'):
             strategies.append(unitaries())
+
+        elif type_str.lower().startswith('gate'):
+            strategies.append(gates())
+
+        elif type_str.lower().startswith('operation'):
+            strategies.append(operations())
+
+        elif type_str.lower().startswith('circuitlocationlike'):
+            strategies.append(circuit_locations())
+
+        elif type_str.lower().startswith('circuitlocation'):
+            strategies.append(circuit_location_likes())
+
+        elif type_str.lower().startswith('circuit'):
+            strategies.append(circuits(max_gates=1))
 
         else:
             raise ValueError(f'Cannot generate strategy for type: {type_str}')
@@ -327,10 +347,33 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
         elif type_str.lower().startswith('circuitregion'):
             continue
 
+        elif type_str.lower().startswith('circuitlocationlike'):
+            types_to_avoid.add(int)
+            types_to_avoid.add(Sequence)
+            types_to_avoid.add(Iterable)
+            types_to_avoid.add(list)
+            types_to_avoid.add(tuple)
+            types_to_avoid.add(collections.abc.MutableSet)
+            types_to_avoid.add(enumerate)
+            types_to_avoid.add(range)
+            types_to_avoid.add(reversed)
+
+        elif type_str.lower().startswith('circuitlocation'):
+            continue
+
         elif type_str.lower().startswith('unitarylike'):
             types_to_avoid.add(np.ndarray)
 
         elif type_str.lower().startswith('unitarymatrix'):
+            continue
+
+        elif type_str.lower().startswith('gate'):
+            continue
+
+        elif type_str.lower().startswith('operation'):
+            continue
+
+        elif type_str.lower().startswith('circuit'):
             continue
 
         else:
@@ -392,6 +435,7 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
 
 def invalid_type_test(
         func_to_test: Callable[..., Any],
+        other_allowed_errors: list[type] = [],
 ) -> Callable[..., Callable[..., None]]:
     """
     Decorator to generate invalid type tests.
@@ -446,7 +490,7 @@ def invalid_type_test(
             @given(data=data())
             def invalid_type_test(self: Any, strategy: Any, data: Any) -> None:
                 args = data.draw(strategy)
-                with pytest.raises(TypeError):
+                with pytest.raises((TypeError,) + tuple(other_allowed_errors)):
                     func_to_test(*args)
 
             return invalid_type_test
@@ -455,7 +499,7 @@ def invalid_type_test(
             @given(data=data())
             def invalid_type_test(strategy: Any, data: Any) -> None:
                 args = data.draw(strategy)
-                with pytest.raises(TypeError):
+                with pytest.raises((TypeError,) + tuple(other_allowed_errors)):
                     func_to_test(*args)
 
             return invalid_type_test

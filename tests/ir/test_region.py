@@ -1,4 +1,4 @@
-"""This module tests the CycleInterval class."""
+"""This module tests the CircuitRegion class."""
 from __future__ import annotations
 
 import pytest

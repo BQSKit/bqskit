@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from bqskit.qis.unitary.meta import UnitaryMeta
-from bqskit.utils.typing import is_numeric
+from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
@@ -109,8 +109,8 @@ class Unitary(metaclass=UnitaryMeta):
                 % type(params),
             )
 
-        if not all(is_numeric(p) for p in params):
-            typechecks = [is_numeric(p) for p in params]
+        if not all(is_real_number(p) for p in params):
+            typechecks = [is_real_number(p) for p in params]
             fail_idx = typechecks.index(False)
             raise TypeError(
                 'Expected params to be floats, got %s.'

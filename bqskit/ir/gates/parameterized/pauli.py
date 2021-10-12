@@ -96,3 +96,9 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         U, _, Vh = sp.linalg.svd(env_matrix)
         utry = Vh.conj().T @ U.conj().T
         return list(-2 * pauli_expansion(unitary_log_no_i(utry)))
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, PauliGate) and self.num_qudits == o.num_qudits
+
+    def __hash__(self) -> int:
+        return hash((self.__class__.__name__, self.num_qudits))

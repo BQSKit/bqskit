@@ -4,26 +4,6 @@ This test module verifies all circuit properties.
 The Circuit class defines multiple properties, but also inherits many
 from the Unitary base class.
 
-Unitary base class properties:
-    get_num_params(self) -> int
-    get_radixes(self) -> tuple[int, ...]
-    get_size(self) -> int
-    get_dim(self) -> int
-    is_qubit_only(self) -> bool
-    is_qutrit_only(self) -> bool
-    is_parameterized(self) -> bool
-    is_constant(self) -> bool
-
-Circuit class properties:
-    get_num_operations(self) -> int
-    get_num_cycles(self) -> int
-    get_params(self) -> list[float]
-    get_depth(self) -> int
-    get_parallelism(self) -> float
-    get_coupling_graph(self) -> set[tuple[int, int]]
-    get_gate_set(self) -> set[Gate]
-    is_differentiable(self) -> bool
-
 This test is broken down into multiple parts. First, a few simple known
 circuits have their properties tested. Then, each property is tested
 in depth individually.
@@ -57,18 +37,18 @@ class TestSimpleCircuit:
     """This set of tests will ensure that all circuit properties are correct for
     a simple circuit."""
 
-    def test_get_num_params(self, simple_circuit: Circuit) -> None:
+    def test_num_params(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.num_params == 0
 
-    def test_get_radixes(self, simple_circuit: Circuit) -> None:
+    def test_radixes(self, simple_circuit: Circuit) -> None:
         assert len(simple_circuit.radixes) == simple_circuit.num_qudits
         assert isinstance(simple_circuit.radixes, tuple)
         assert all(r == 2 for r in simple_circuit.radixes)
 
-    def test_get_size(self, simple_circuit: Circuit) -> None:
+    def test_num_qudits(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.num_qudits == 2
 
-    def test_get_dim(self, simple_circuit: Circuit) -> None:
+    def test_dim(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.dim == 4
 
     def test_is_qubit_only(self, simple_circuit: Circuit) -> None:
@@ -83,53 +63,59 @@ class TestSimpleCircuit:
     def test_is_constant(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.is_constant()
 
-    def test_get_num_operations(self, simple_circuit: Circuit) -> None:
+    def test_num_operations(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.num_operations == 4
 
-    def test_get_num_cycles(self, simple_circuit: Circuit) -> None:
+    def test_num_cycles(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.num_cycles == 4
 
-    def test_get_params(self, simple_circuit: Circuit) -> None:
+    def test_params(self, simple_circuit: Circuit) -> None:
         assert len(simple_circuit.params) == 0
         assert isinstance(simple_circuit.params, np.ndarray)
 
-    def test_get_depth(self, simple_circuit: Circuit) -> None:
+    def test_depth(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.depth == 4
 
-    def test_get_parallelism(self, simple_circuit: Circuit) -> None:
+    def test_parallelism(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.parallelism == 1.5
 
-    def test_get_coupling_graph(self, simple_circuit: Circuit) -> None:
+    def test_coupling_graph(self, simple_circuit: Circuit) -> None:
         cgraph = simple_circuit.coupling_graph
         assert isinstance(cgraph, set)
         assert is_valid_coupling_graph(cgraph, 2)
         assert len(cgraph) == 1
         assert (0, 1) in cgraph
 
-    def test_get_gate_set(self, simple_circuit: Circuit) -> None:
+    def test_gate_set(self, simple_circuit: Circuit) -> None:
         gate_set = simple_circuit.gate_set
         assert isinstance(gate_set, set)
         assert len(gate_set) == 2
         assert XGate() in gate_set
         assert CNOTGate() in gate_set
 
+    def test_active_qudits(self, simple_circuit: Circuit) -> None:
+        qudits = simple_circuit.active_qudits
+        assert len(qudits) == simple_circuit.num_qudits
+        assert isinstance(qudits, list)
+        assert all(x in qudits for x in range(simple_circuit.num_qudits))
+
 
 class TestSwapCircuit:
     """This set of tests will ensure that all circuit properties are correct for
     a swap circuit."""
 
-    def test_get_num_params(self, swap_circuit: Circuit) -> None:
+    def test_num_params(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.num_params == 0
 
-    def test_get_radixes(self, swap_circuit: Circuit) -> None:
+    def test_radixes(self, swap_circuit: Circuit) -> None:
         assert len(swap_circuit.radixes) == swap_circuit.num_qudits
         assert isinstance(swap_circuit.radixes, tuple)
         assert all(r == 2 for r in swap_circuit.radixes)
 
-    def test_get_size(self, swap_circuit: Circuit) -> None:
+    def test_num_qudits(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.num_qudits == 2
 
-    def test_get_dim(self, swap_circuit: Circuit) -> None:
+    def test_dim(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.dim == 4
 
     def test_is_qubit_only(self, swap_circuit: Circuit) -> None:
@@ -144,52 +130,58 @@ class TestSwapCircuit:
     def test_is_constant(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.is_constant()
 
-    def test_get_num_operations(self, swap_circuit: Circuit) -> None:
+    def test_num_operations(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.num_operations == 3
 
-    def test_get_num_cycles(self, swap_circuit: Circuit) -> None:
+    def test_num_cycles(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.num_cycles == 3
 
-    def test_get_params(self, swap_circuit: Circuit) -> None:
+    def test_params(self, swap_circuit: Circuit) -> None:
         assert len(swap_circuit.params) == 0
         assert isinstance(swap_circuit.params, np.ndarray)
 
-    def test_get_depth(self, swap_circuit: Circuit) -> None:
+    def test_depth(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.depth == 3
 
-    def test_get_parallelism(self, swap_circuit: Circuit) -> None:
+    def test_parallelism(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.parallelism == 2
 
-    def test_get_coupling_graph(self, swap_circuit: Circuit) -> None:
+    def test_coupling_graph(self, swap_circuit: Circuit) -> None:
         cgraph = swap_circuit.coupling_graph
         assert isinstance(cgraph, set)
         assert is_valid_coupling_graph(cgraph, 2)
         assert len(cgraph) == 1
         assert (0, 1) in cgraph
 
-    def test_get_gate_set(self, swap_circuit: Circuit) -> None:
+    def test_gate_set(self, swap_circuit: Circuit) -> None:
         gate_set = swap_circuit.gate_set
         assert isinstance(gate_set, set)
         assert len(gate_set) == 1
         assert CNOTGate() in gate_set
+
+    def test_active_qudits(self, swap_circuit: Circuit) -> None:
+        qudits = swap_circuit.active_qudits
+        assert len(qudits) == swap_circuit.num_qudits
+        assert isinstance(qudits, list)
+        assert all(x in qudits for x in range(swap_circuit.num_qudits))
 
 
 class TestToffoliCircuit:
     """This set of tests will ensure that all circuit properties are correct for
     a toffoli circuit."""
 
-    def test_get_num_params(self, toffoli_circuit: Circuit) -> None:
+    def test_num_params(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.num_params == 0
 
-    def test_get_radixes(self, toffoli_circuit: Circuit) -> None:
+    def test_radixes(self, toffoli_circuit: Circuit) -> None:
         assert len(toffoli_circuit.radixes) == toffoli_circuit.num_qudits
         assert isinstance(toffoli_circuit.radixes, tuple)
         assert all(r == 2 for r in toffoli_circuit.radixes)
 
-    def test_get_size(self, toffoli_circuit: Circuit) -> None:
+    def test_num_qudits(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.num_qudits == 3
 
-    def test_get_dim(self, toffoli_circuit: Circuit) -> None:
+    def test_dim(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.dim == 8
 
     def test_is_qubit_only(self, toffoli_circuit: Circuit) -> None:
@@ -204,23 +196,23 @@ class TestToffoliCircuit:
     def test_is_constant(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.is_constant()
 
-    def test_get_num_operations(self, toffoli_circuit: Circuit) -> None:
+    def test_num_operations(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.num_operations == 15
 
-    def test_get_num_cycles(self, toffoli_circuit: Circuit) -> None:
+    def test_num_cycles(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.num_cycles == 11
 
-    def test_get_params(self, toffoli_circuit: Circuit) -> None:
+    def test_params(self, toffoli_circuit: Circuit) -> None:
         assert len(toffoli_circuit.params) == 0
         assert isinstance(toffoli_circuit.params, np.ndarray)
 
-    def test_get_depth(self, toffoli_circuit: Circuit) -> None:
+    def test_depth(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.depth == 11
 
-    def test_get_parallelism(self, toffoli_circuit: Circuit) -> None:
+    def test_parallelism(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.parallelism == 21 / 11
 
-    def test_get_coupling_graph(self, toffoli_circuit: Circuit) -> None:
+    def test_coupling_graph(self, toffoli_circuit: Circuit) -> None:
         cgraph = toffoli_circuit.coupling_graph
         assert isinstance(cgraph, set)
         assert is_valid_coupling_graph(cgraph, 3)
@@ -229,7 +221,7 @@ class TestToffoliCircuit:
         assert (1, 2) in cgraph
         assert (0, 2) in cgraph
 
-    def test_get_gate_set(self, toffoli_circuit: Circuit) -> None:
+    def test_gate_set(self, toffoli_circuit: Circuit) -> None:
         gate_set = toffoli_circuit.gate_set
         assert isinstance(gate_set, set)
         assert len(gate_set) == 4
@@ -238,9 +230,15 @@ class TestToffoliCircuit:
         assert TdgGate() in gate_set
         assert TGate() in gate_set
 
+    def test_active_qudits(self, toffoli_circuit: Circuit) -> None:
+        qudits = toffoli_circuit.active_qudits
+        assert len(qudits) == toffoli_circuit.num_qudits
+        assert isinstance(qudits, list)
+        assert all(x in qudits for x in range(toffoli_circuit.num_qudits))
+
 
 class TestGetNumParams:
-    """This tests `circuit.get_num_params`."""
+    """This tests `circuit.num_params`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.num_params, int)
@@ -316,7 +314,7 @@ class TestGetNumParams:
 
 
 class TestGetRadixes:
-    """This tests `circuit.get_radixes`."""
+    """This tests `circuit.radixes`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.radixes, tuple)
@@ -344,7 +342,7 @@ class TestGetRadixes:
 
 
 class TestGetSize:
-    """This tests `circuit.get_size`."""
+    """This tests `circuit.num_qudits`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.num_qudits, int)
@@ -362,7 +360,7 @@ class TestGetSize:
 
 
 class TestGetDim:
-    """This tests `circuit.get_dim`."""
+    """This tests `circuit.dim`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.dim, int)
@@ -474,7 +472,7 @@ class TestIsConstant:
 
 
 class TestGetNumOperations:
-    """This tests `circuit.get_num_operations`."""
+    """This tests `circuit.num_operations`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.num_operations, int)
@@ -538,7 +536,7 @@ class TestGetNumOperations:
 
 
 class TestGetNumCycles:
-    """This tests `circuit.get_num_cycles`."""
+    """This tests `circuit.num_cycles`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.num_cycles, int)
@@ -605,7 +603,7 @@ class TestGetNumCycles:
 
 
 class TestGetParams:
-    """This tests `circuit.get_params`."""
+    """This tests `circuit.params`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         params = r6_qudit_circuit.params
@@ -634,7 +632,7 @@ class TestGetParams:
 
 
 class TestGetDepth:
-    """This tests `circuit.get_depth`."""
+    """This tests `circuit.depth`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.depth, int)
@@ -707,7 +705,7 @@ class TestGetDepth:
 
 
 class TestGetParallelism:
-    """This tests `circuit.get_parallelism`."""
+    """This tests `circuit.parallelism`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.parallelism, float)
@@ -761,7 +759,7 @@ class TestGetParallelism:
 
 
 class TestGetCouplingGraph:
-    """This tests `circuit.get_coupling_graph`."""
+    """This tests `circuit.coupling_graph`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert is_valid_coupling_graph(
@@ -917,7 +915,7 @@ class TestGetCouplingGraph:
 
 
 class TestGetGateSet:
-    """This tests `circuit.get_gate_set`."""
+    """This tests `circuit.gate_set`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.gate_set, set)
