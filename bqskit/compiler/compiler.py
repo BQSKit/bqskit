@@ -30,9 +30,15 @@ class Compiler:
         ...     circuit = compiler.compile(task)
     """
 
-    def __init__(self) -> None:
-        """Construct a Compiler object."""
-        self.client = Client()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Construct a Compiler object.
+
+        Notes:
+            All arguments are passed directly to Dask. You can use
+            these to connect to and configure a Dask cluster.
+        """
+        self.client = Client(*args, **kwargs)
         self.tasks: dict[uuid.UUID, Future] = {}
         _logger.info('Started compiler process.')
 
