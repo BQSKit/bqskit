@@ -15,6 +15,7 @@ from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
+from distributed import worker_client
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -2302,8 +2303,26 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Instantiate the circuit
         params = []
-        for start in starts:
-            params.append(instantiater.instantiate(self, typed_target, start))
+        if multistarts > 1 and 'parallel' in kwargs:
+            with worker_client() as client:
+                futures = [
+                    client.submit(
+                        instantiater.instantiate,
+                        self,
+                        typed_target,
+                        start,
+                    )
+                    for start in starts
+                ]
+                params = [future.result() for future in futures]
+
+        else:
+            for start in starts:
+                params.append(
+                    instantiater.instantiate(
+                        self, typed_target, start,
+                    ),
+                )
 
         cost_fn = HilbertSchmidtCost(self, typed_target)
         self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
