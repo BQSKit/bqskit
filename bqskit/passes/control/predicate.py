@@ -9,10 +9,10 @@ from bqskit.ir.circuit import Circuit
 
 class PassPredicate(abc.ABC):
     """
-    The PassPredicate base class.
+    The PassPredicate abstract base class.
 
-    A PassPredicate implements the `get_truth_value` method, which is called
-    from control passes to determine the flow of execution.
+    A PassPredicate implements the :func:`get_truth_value` method, which is
+    called from control passes to determine the flow of execution.
     """
 
     @abc.abstractmethod

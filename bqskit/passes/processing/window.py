@@ -82,7 +82,7 @@ class WindowOptimizationPass(BasePass):
         self.synthesispass = synthesispass
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Check data for windows markers
         if 'window_markers' not in data:

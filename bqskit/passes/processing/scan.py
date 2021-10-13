@@ -94,7 +94,7 @@ class ScanningGateRemovalPass(BasePass):
         self.instantiate_options.update(instantiate_options)
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
         start = 'left' if self.start_from_left else 'right'
         _logger.debug(f'Starting scan gate removal from {start}.')
 

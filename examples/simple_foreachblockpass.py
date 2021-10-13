@@ -5,35 +5,35 @@ import logging
 from typing import Any
 
 import numpy as np
-from qiskit.quantum_info import OneQubitEulerDecomposer
 from qsearch import assemblers
 from qsearch import compiler
-from qsearch import leap_compiler
 from qsearch import options
-from qsearch import post_processing
-from threadpoolctl import threadpool_limits
 
-from bqskit.compiler import CompilationTask
-from bqskit.compiler import Compiler
-from bqskit.compiler.machine import MachineModel
 from bqskit.ir import Circuit
-from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.gates.constant.cx import CNOTGate
-from bqskit.ir.gates.constant.h import HGate
-from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
-from bqskit.ir.operation import Operation
-from bqskit.ir.point import CircuitPoint
-from bqskit.passes.control import ForEachBlockPass
-from bqskit.passes.partitioning.scan import ScanPartitioner
-from bqskit.passes.processing import ScanningGateRemovalPass
-from bqskit.passes.processing import WindowOptimizationPass
-from bqskit.passes.search.generators.simple import SimpleLayerGenerator
-from bqskit.passes.synthesis import LEAPSynthesisPass
-from bqskit.passes.synthesis import QSearchSynthesisPass
 from bqskit.passes.synthesis import SynthesisPass
-from bqskit.passes.util import UnfoldPass
 from bqskit.qis.unitary import UnitaryMatrix
+# from qiskit.quantum_info import OneQubitEulerDecomposer
+# from qsearch import leap_compiler
+# from qsearch import post_processing
+# from threadpoolctl import threadpool_limits
+# from bqskit.compiler import CompilationTask
+# from bqskit.compiler import Compiler
+# from bqskit.compiler.machine import MachineModel
+# from bqskit.ir.gates import VariableUnitaryGate
+# from bqskit.ir.gates.constant.h import HGate
+# from bqskit.ir.gates.parameterized.u3 import U3Gate
+# from bqskit.ir.operation import Operation
+# from bqskit.ir.point import CircuitPoint
+# from bqskit.passes.control import ForEachBlockPass
+# from bqskit.passes.partitioning.scan import ScanPartitioner
+# from bqskit.passes.processing import ScanningGateRemovalPass
+# from bqskit.passes.processing import WindowOptimizationPass
+# from bqskit.passes.search.generators.simple import SimpleLayerGenerator
+# from bqskit.passes.synthesis import LEAPSynthesisPass
+# from bqskit.passes.synthesis import QSearchSynthesisPass
+# from bqskit.passes.util import UnfoldPass
 
 
 class OldLeap(SynthesisPass):

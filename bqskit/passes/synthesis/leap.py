@@ -11,22 +11,14 @@ from scipy.stats import linregress
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
-from bqskit.ir.opt.cost.functions.residuals.hilbertschmidt import HilbertSchmidtResiduals
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.ir.opt.instantiater import Instantiater
-from bqskit.ir.opt.instantiaters import instantiater_order
-from bqskit.ir.opt.instantiaters import Minimization
-from bqskit.ir.opt.instantiaters import QFactor
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.passes.search.generators import SimpleLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
-from bqskit.qis.state.state import StateLike
-from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary import UnitaryMatrix
-from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
@@ -213,7 +205,10 @@ class LEAPSynthesisPass(SynthesisPass):
         _logger.info('Frontier emptied.')
         _logger.info(
             'Returning best known circuit with %d layer%s and cost: %e.'
-            % (leap_data['best_layer'], '' if leap_data['best_layer'] == 1 else 's', leap_data['best_dist']),
+            % (
+                leap_data['best_layer'], '' if leap_data['best_layer'] == 1
+                else 's', leap_data['best_dist'],
+            ),
         )
 
         return leap_data['best_circ']

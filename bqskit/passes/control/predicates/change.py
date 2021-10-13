@@ -21,7 +21,7 @@ class ChangePredicate(PassPredicate):
     key = 'ChangePredicate_circuit_hash'
 
     def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
-        """Call this predicate, see PassPredicate for more info."""
+        """Call this predicate, see :class:`PassPredicate` for more info."""
 
         # If first call, record data and return true
         if self.key not in data:

@@ -61,7 +61,7 @@ class WhileLoopPass(BasePass):
         self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
         while self.condition(circuit, data):
             _logger.debug('Loop body executing...')
             for loop_pass in self.loop_body:

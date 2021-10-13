@@ -162,7 +162,12 @@ class QSearchSynthesisPass(SynthesisPass):
                     )
                     for _, circuit in as_completed(futures, with_results=True):
                         if self.evaluate_node(
-                                circuit, utry, data, frontier, layer, search_data,
+                            circuit,
+                            utry,
+                            data,
+                            frontier,
+                            layer,
+                            search_data,
                         ):
                             for future in futures:
                                 if not future.done:
@@ -173,14 +178,17 @@ class QSearchSynthesisPass(SynthesisPass):
                 for circuit in successors:
                     circuit.instantiate(utry, **self.instantiate_options)
                     if self.evaluate_node(
-                            circuit, utry, data, frontier, layer, search_data,
+                        circuit, utry, data, frontier, layer, search_data,
                     ):
                         return circuit
 
         _logger.info('Frontier emptied.')
         _logger.info(
             'Returning best known circuit with %d layer%s and cost: %e.'
-            % (search_data['best_layer'], '' if search_data['best_layer'] == 1 else 's', search_data['best_dist']),
+            % (
+                search_data['best_layer'], '' if search_data['best_layer'] == 1
+                else 's', search_data['best_dist'],
+            ),
         )
 
         return search_data['best_circ']

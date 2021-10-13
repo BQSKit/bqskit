@@ -78,14 +78,7 @@ class ScanPartitioner(BasePass):
         self.multi_gate_score = multi_gate_score
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """
-        Partition gates in a circuit into a series of CircuitGates.
-
-        Args:
-            circuit (Circuit): Circuit to be partitioned.
-
-            data (dict[str,Any]): Optional data unique to specific run.
-        """
+        """Perform the pass's operation, see :class:`BasePass` for more."""
 
         if self.block_size > circuit.num_qudits:
             _logger.warning(

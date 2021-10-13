@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 from typing import Any
 
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 
 
@@ -44,3 +45,26 @@ class BasePass(abc.ABC):
             - This function should be self-contained and have no side effects.
               This is because it will be potentially run in parallel.
         """
+
+    @staticmethod
+    def get_model(circuit: Circuit, data: dict[str, Any]) -> MachineModel:
+        """
+        Retrieve the machine model from the data dictionary.
+
+        Args:
+            data (dict[str, Any]): The data dictionary.
+
+        Returns:
+            MachineModel: The machine model in the data dictionary, or
+                a default one.
+        """
+        model = None
+        if 'machine_model' in data:
+            model = data['machine_model']
+        if (
+            not isinstance(model, MachineModel)
+            or model.num_qudits < circuit.num_qudits
+        ):
+            model = MachineModel(circuit.num_qudits)
+            data['machine_model'] = model
+        return model

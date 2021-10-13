@@ -18,7 +18,7 @@ class ClusteringPartitioner(BasePass):
     The ClusteringPartitioner Pass.
 
     This pass forms partitions in the circuit by placing points in the circuit
-    clustering the gates around them.
+    and clustering the gates around them.
     """
 
     def __init__(self, block_size: int = 3, num_points: int = 8) -> None:
@@ -62,14 +62,7 @@ class ClusteringPartitioner(BasePass):
         self.num_points = num_points
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """
-        Partition gates in a circuit into a series of CircuitGates.
-
-        Args:
-            circuit (Circuit): Circuit to be partitioned.
-
-            data (dict[str,Any]): Optional data unique to specific run.
-        """
+        """Perform the pass's operation, see :class:`BasePass` for more."""
 
         if self.block_size > circuit.num_qudits:
             _logger.warning(

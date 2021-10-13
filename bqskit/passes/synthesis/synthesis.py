@@ -42,7 +42,7 @@ class SynthesisPass(BasePass):
         """
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
 
         target_utry = circuit.get_unitary()
         circuit.become(self.synthesize(target_utry, data))

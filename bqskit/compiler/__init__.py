@@ -30,4 +30,5 @@ __all__ = [
     'Compiler',
     'Executor',
     'CompilationTask',
+    'MachineModel',
 ]

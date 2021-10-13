@@ -32,5 +32,5 @@ class NotPredicate(PassPredicate):
         self.predicate = predicate
 
     def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
-        """Call this predicate, see PassPredicate for more info."""
+        """Call this predicate, see :class:`PassPredicate` for more info."""
         return not self.predicate(circuit, data)

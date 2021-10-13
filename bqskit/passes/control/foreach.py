@@ -27,7 +27,8 @@ class ForEachBlockPass(BasePass):
     The ForEachBlockPass class.
 
     This is a control pass that executes another pass or passes on every block
-    in the circuit.
+    in the circuit. This will be done in parallel if executed in the compiler
+    framework.
     """
 
     key = 'ForEachBlockPass_data'
@@ -107,33 +108,20 @@ class ForEachBlockPass(BasePass):
             )
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
         # Make room in data for block data
         if self.key not in data:
             data[self.key] = []
         data[self.key].append([])
 
-        # Collect CircuitGate blocks
+        # Collect blocks
         blocks: list[tuple[int, Operation]] = []
         for cycle, op in circuit.operations_with_cycles():
             if self.collection_filter(op):
                 blocks.append((cycle, op))
 
-        # If a MachineModel is provided in the data dict, it will be used.
-        # Otherwise all-to-all connectivity is assumed.
-        model = None
-        if 'machine_model' in data:
-            model = data['machine_model']
-        if (
-            not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.num_qudits
-        ):
-            _logger.warning(
-                'MachineModel not specified or invalid;'
-                ' defaulting to all-to-all.',
-            )
-            model = MachineModel(circuit.num_qudits)
-            data['machine_model'] = model
+        # Get the machine model
+        model = BasePass.get_model(circuit, data)
 
         # Go through the blocks
         points: list[CircuitPoint] = []
@@ -174,7 +162,7 @@ class ForEachBlockPass(BasePass):
                 futures = []
                 for subcircuit, block_data in zip(subcircuits, block_datas):
                     future = client.submit(
-                        sub_do_work,
+                        _sub_do_work,
                         self.loop_body,
                         subcircuit,
                         block_data,
@@ -190,10 +178,11 @@ class ForEachBlockPass(BasePass):
             completed_subcircuits = []
             completed_block_datas = []
             for subcircuit, block_data in zip(subcircuits, block_datas):
-                x, y = sub_do_work(self.loop_body, subcircuit, block_data)
+                x, y = _sub_do_work(self.loop_body, subcircuit, block_data)
                 completed_subcircuits.append(x)
                 completed_block_datas.append(y)
 
+        # Process work
         for i, (cycle, op) in enumerate(blocks):
             subcircuit = completed_subcircuits[i]
             block_data = completed_block_datas[i]
@@ -245,8 +234,9 @@ def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True
 
 
-def sub_do_work(
-    loop_body: Sequence[BasePass], subcircuit: Circuit,
+def _sub_do_work(
+    loop_body: Sequence[BasePass],
+    subcircuit: Circuit,
     subdata: dict[str, Any],
 ) -> tuple[Circuit, dict[str, Any]]:
     for loop_pass in loop_body:
