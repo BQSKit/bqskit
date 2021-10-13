@@ -340,6 +340,27 @@ class CircuitRegion(Mapping[int, QuditBounds]):
 
         return False
 
+    def dependency(self, other: CircuitRegionLike) -> int:
+        """
+        Return 1 if self depends on other.
+
+        Return -1 if other depends on self. Return 0 if no dependency.
+        """
+
+        if not isinstance(other, CircuitRegion):
+            other = CircuitRegion(other)
+
+        intersection = self.location.intersection(other.location)
+
+        if not intersection:
+            return 0
+
+        for qudit in intersection:
+            if other[qudit] < self[qudit]:
+                return 1
+
+        return -1
+
     def __eq__(self, other: object) -> bool:
         if CircuitRegion.is_region(other):
             other = CircuitRegion(other)
