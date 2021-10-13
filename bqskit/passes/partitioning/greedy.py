@@ -89,7 +89,7 @@ class GreedyPartitioner(BasePass):
 
             # Pick largest region
             s = sorted(potential_regions.values(), key=lambda x: x[0])
-            num_gates, best_region = s[0]
+            num_gates, best_region = s[-1]
             num_partitioned_gates += num_gates
             regions.append(best_region)
 
@@ -130,6 +130,7 @@ class GreedyPartitioner(BasePass):
                     for i, bounds in enumerate(bounds_list):
                         if bounds.lower > cycle:
                             index_of_first_larger = i
+                            break
 
                     if index_of_first_larger is None:
                         bounding_region[qudit] = (
@@ -141,7 +142,7 @@ class GreedyPartitioner(BasePass):
                     else:
                         bounding_region[qudit] = (
                             bounds_list[index_of_first_larger - 1][1] + 1,
-                            bounds_list[index_of_first_larger - 1][1] - 1,
+                            bounds_list[index_of_first_larger][0] - 1,
                         )
 
                     if bounding_region[qudit][0] > bounding_region[qudit][1]:

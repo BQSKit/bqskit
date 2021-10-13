@@ -228,14 +228,19 @@ class LEAPSynthesisPass(SynthesisPass):
             _logger.info('Successful synthesis.')
             return True
 
-        if dist < leap_data['best_dist']:
+        if self.check_new_best(
+            layer + 1,
+            dist,
+            leap_data['best_layer'],
+            leap_data['best_dist'],
+        ):
             _logger.info(
                 'New best circuit found with %d layer%s and cost: %e.'
                 % (layer + 1, '' if layer == 0 else 's', dist),
             )
             leap_data['best_dist'] = dist
             leap_data['best_circ'] = circuit
-            leap_data['best_layer'] = layer
+            leap_data['best_layer'] = layer + 1
 
             if self.check_leap_condition(layer + 1, leap_data):
                 _logger.info('Prefix formed at %d layers.' % (layer + 1))
@@ -248,6 +253,37 @@ class LEAPSynthesisPass(SynthesisPass):
         if self.max_layer is None or layer + 1 < self.max_layer:
             frontier.add(circuit, layer + 1)
         return False
+
+    def check_new_best(
+        self,
+        layer: int,
+        dist: float,
+        best_layer: int,
+        best_dist: float,
+    ) -> bool:
+        """
+        Check if the new layer depth and dist are a new best node.
+
+        Args:
+            layer (int): The current layer in search.
+
+            dist (float): The current distance in search.
+
+            best_layer (int): The current best layer in the search tree.
+
+            best_dist (float): The current best distance in search.
+        """
+        better_layer = (
+            dist < best_dist
+            and (
+                best_dist >= self.success_threshold
+                or layer <= best_layer
+            )
+        )
+        better_dist_and_layer = (
+            dist < self.success_threshold and layer < best_layer
+        )
+        return better_layer or better_dist_and_layer
 
     def check_leap_condition(
         self,
