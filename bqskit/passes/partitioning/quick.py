@@ -49,7 +49,7 @@ class QuickPartitioner(BasePass):
 
         self.block_size = block_size
 
-    def run(self, circuit: Circuit, data: dict[str, Any]) -> None:
+    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """
         Partition gates in a circuit into a series of CircuitGates.
 
@@ -60,7 +60,7 @@ class QuickPartitioner(BasePass):
         """
 
         # Number of qudits in the circuit
-        num_qudits = circuit.get_size()
+        num_qudits = circuit.num_qudits
 
         # If block size > circuit size, return the circuit as a block
         if self.block_size > num_qudits:
@@ -69,8 +69,8 @@ class QuickPartitioner(BasePass):
                 'blocking entire circuit.',
             )
             circuit.fold({
-                qudit_index: (0, circuit.get_num_cycles())
-                for qudit_index in range(circuit.get_size())
+                qudit_index: (0, circuit.num_cycles)
+                for qudit_index in range(circuit.num_qudits)
             })
             return
 
@@ -86,7 +86,7 @@ class QuickPartitioner(BasePass):
         qudit_dependencies: Any = [{} for _ in range(num_qudits)]
 
         # The partitioned circuit
-        partitioned_circuit = Circuit(num_qudits, circuit.get_radixes())
+        partitioned_circuit = Circuit(num_qudits, circuit.radixes)
 
         # For each cycle, operation in topological order
         for cycle, op in circuit.operations_with_cycles():
@@ -210,7 +210,7 @@ class QuickPartitioner(BasePass):
                                     region.keys(),
                                 ),
                             ), list(
-                                cgc.get_params(),
+                                cgc.params,
                             ),
                         )
 
@@ -252,7 +252,7 @@ class QuickPartitioner(BasePass):
                             region.keys(),
                         ),
                     ), list(
-                        cgc.get_params(),
+                        cgc.params,
                     ),
                 )
 

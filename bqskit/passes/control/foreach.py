@@ -14,6 +14,7 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
@@ -226,6 +227,7 @@ def default_collection_filter(op: Operation) -> bool:
             CircuitGate,
             ConstantUnitaryGate,
             VariableUnitaryGate,
+            PauliGate,
         ),
     )
 

@@ -12,6 +12,7 @@ from bqskit.passes.control import ForEachBlockPass
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
+from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.processing import ScanningGateRemovalPass
 from bqskit.passes.processing import WindowOptimizationPass
 from bqskit.passes.synthesis import LEAPSynthesisPass
@@ -86,8 +87,9 @@ class CompilationTask():
         ]
 
         passes: list[BasePass] = []
-        passes.append(ClusteringPartitioner(3, 4))
+        passes.append(QuickPartitioner(3))
         passes.append(ForEachBlockPass(inner_seq))
+        passes.append(UnfoldPass())
 
         iterative_reopt = WhileLoopPass(
             GateCountPredicate(CNOTGate()),

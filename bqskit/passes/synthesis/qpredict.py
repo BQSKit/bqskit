@@ -182,7 +182,7 @@ class QPredictDecompositionPass(SynthesisPass):
         self.instantiate_options.update(instantiate_options)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
-        """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
+        """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # 0. Skip any unitaries too small for the configured block.
         if self.block_size_start > utry.num_qudits:

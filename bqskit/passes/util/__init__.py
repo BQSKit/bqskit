@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bqskit.passes.util.compress import CompressPass
+from bqskit.passes.util.converttou3 import ToU3Pass
 from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
@@ -13,4 +14,5 @@ __all__ = [
     'SetRandomSeedPass',
     'UnfoldPass',
     'UpdateDataPass',
+    'ToU3Pass',
 ]

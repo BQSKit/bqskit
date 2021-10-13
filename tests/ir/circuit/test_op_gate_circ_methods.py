@@ -5,8 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from hypothesis import given
-from hypothesis import HealthCheck
-from hypothesis import settings
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
@@ -307,7 +305,6 @@ class TestAppend:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits())
     def test_reconstruct(self, circuit: Circuit) -> None:
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
@@ -328,7 +325,6 @@ class TestAppendGate:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits())
     def test_reconstruct(self, circuit: Circuit) -> None:
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
@@ -349,7 +345,6 @@ class TestAppendCircuit:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits())
     def test_reconstruct(self, circuit: Circuit) -> None:
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
@@ -357,7 +352,6 @@ class TestAppendCircuit:
         check_no_idle_cycles(new_circuit)
         assert new_circuit.get_unitary() == circuit.get_unitary()
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits())
     def test_reconstruct_larger(self, circuit: Circuit) -> None:
         new_circ = Circuit(circuit.num_qudits + 1, circuit.radixes + (2,))
@@ -402,7 +396,6 @@ class TestInsert:
         circuit.insert(0, Operation(CXGate(), (0, 1)))
         assert circuit[0, 0] == Operation(CXGate(), (0, 1))
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)), operations(2, max_qudit=3))
     def test_insert(self, circuit: Circuit, op: Operation) -> None:
         circuit.insert(0, op)
@@ -428,7 +421,6 @@ class TestInsertGate:
         circuit.insert_gate(0, CXGate(), (0, 1))
         assert circuit[0, 0] == Operation(CXGate(), (0, 1))
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)), operations(2, max_qudit=3))
     def test_insert(self, circuit: Circuit, op: Operation) -> None:
         circuit.insert_gate(0, op.gate, op.location, op.params)
@@ -449,7 +441,6 @@ class TestInsertCircuit:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_apply(self, circuit: Circuit) -> None:
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
@@ -483,7 +474,6 @@ class TestRemove:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_remove(self, circuit: Circuit) -> None:
         num_ops = circuit.num_operations
@@ -508,7 +498,6 @@ class TestRemoveAll:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_remove_all_op(self, circuit: Circuit) -> None:
         num_ops = circuit.num_operations
@@ -523,7 +512,6 @@ class TestRemoveAll:
             num_ops = circuit.num_operations
             check_no_idle_cycles(circuit)
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_remove_all_gate(self, circuit: Circuit) -> None:
         num_ops = circuit.num_operations
@@ -550,7 +538,6 @@ class TestCount:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_count_op(self, circuit: Circuit) -> None:
         for op in circuit:
@@ -563,7 +550,6 @@ class TestCount:
             with pytest.raises((ValueError, IndexError)):
                 circuit.point(op, start)
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_count_gate(self, circuit: Circuit) -> None:
         for op in circuit:
@@ -582,7 +568,6 @@ class TestPop:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_pop_all(self, circuit: Circuit) -> None:
         for x in range(circuit.num_operations):
@@ -602,7 +587,6 @@ class TestBatchPop:
     def test_invalid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_batch_pop_all(self, circuit: Circuit) -> None:
         if circuit.num_operations == 0:
@@ -625,7 +609,6 @@ class TestReplace:
     def test_valid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_replace(self, circuit: Circuit) -> None:
         if circuit.num_operations == 0:
@@ -644,7 +627,6 @@ class TestBatchReplace:
     def test_valid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_batch_replace(self, circuit: Circuit) -> None:
         ops = list(circuit.operations())
@@ -662,7 +644,6 @@ class TestReplaceGate:
     def test_valid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_replace(self, circuit: Circuit) -> None:
         if circuit.num_operations == 0:
@@ -681,7 +662,6 @@ class TestReplaceWithCircuit:
     def test_valid_type(self) -> None:
         pass
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_replace(self, circuit: Circuit) -> None:
         if circuit.num_operations == 0:
@@ -697,7 +677,6 @@ class TestReplaceWithCircuit:
 class TestCopy:
     """This tests `circuit.copy`."""
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_copy(self, circuit: Circuit) -> None:
         new_circuit = circuit.copy()
@@ -707,7 +686,6 @@ class TestCopy:
 class TestBecome:
     """This tests `circuit.copy`."""
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_become(self, circuit: Circuit) -> None:
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
@@ -718,7 +696,6 @@ class TestBecome:
 class TestClear:
     """This tests `circuit.clear`."""
 
-    @settings(suppress_health_check=(HealthCheck.too_slow,))
     @given(circuits((2, 2, 2, 2)))
     def test_clear(self, circuit: Circuit) -> None:
         circuit.clear()

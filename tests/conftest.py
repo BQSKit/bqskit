@@ -13,6 +13,8 @@ from typing import Sequence
 
 import numpy as np
 import pytest
+from hypothesis import HealthCheck
+from hypothesis import settings
 from scipy.stats import unitary_group
 
 from bqskit.ir.circuit import Circuit
@@ -56,6 +58,17 @@ from bqskit.utils.typing import is_sequence
 # from bqskit.ir.gates import PauliGate
 # from bqskit.ir.gates import PermutationGate
 # from bqskit.ir.gates import VariableUnitaryGate
+
+# region Hypothesis Settings
+
+
+settings.register_profile(
+    'default',
+    suppress_health_check=(HealthCheck.too_slow,),
+)
+settings.load_profile('default')
+
+# endregion
 
 # region Test Variables
 

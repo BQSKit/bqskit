@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis import HealthCheck
-from hypothesis import settings
 
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.permutation import calc_permutation_matrix
@@ -13,7 +11,6 @@ from bqskit.utils.test.types import invalid_type_test
 from bqskit.utils.test.types import valid_type_test
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(circuits((2, 2, 2)))
 def test_get_inverse(circuit: Circuit) -> None:
     U = circuit.get_unitary()
@@ -32,7 +29,6 @@ def test_invalid_type() -> None:
     pass
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(circuits((2, 2, 2)))
 def test_renumber(circuit: Circuit) -> None:
     U = circuit.get_unitary()

@@ -2617,12 +2617,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             op_string += str(list(self.operations())[0])
             op_string += ', '
             op_string += str(list(self.operations())[1])
-        else:
+        elif self.num_operations > 2:
             op_string += str(list(self.operations())[0])
             op_string += ' ... '
             op_string += str(list(self.operations())[-1])
         op_string += ']'
-        return f'Circuit({self.num_qudits}){op_string}'
+        num_qudits = self.num_qudits
+        return f'Circuit({num_qudits}){op_string}'
 
     def __repr__(self) -> str:
         """Repr representation of the circuit."""

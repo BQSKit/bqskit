@@ -123,7 +123,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self.instantiate_options.update(instantiate_options)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
-        """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
+        """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
 
         # Seed the search with an initial layer
@@ -178,7 +178,12 @@ class QSearchSynthesisPass(SynthesisPass):
                 for circuit in successors:
                     circuit.instantiate(utry, **self.instantiate_options)
                     if self.evaluate_node(
-                        circuit, utry, data, frontier, layer, search_data,
+                        circuit,
+                        utry,
+                        data,
+                        frontier,
+                        layer,
+                        search_data,
                     ):
                         return circuit
 

@@ -14,8 +14,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
-from bqskit.passes.util.converttou3 import PauliToU3Pass
-from bqskit.passes.util.converttou3 import VariableToU3Pass
+from bqskit.passes.util.converttou3 import ToU3Pass
 
 _logger = logging.getLogger(__name__)
 
@@ -103,8 +102,7 @@ class SaveIntermediatePass(BasePass):
                 block.params,
             )
             subcircuit.unfold((0, 0))
-            VariableToU3Pass().run(subcircuit, {})
-            PauliToU3Pass().run(subcircuit, {})
+            ToU3Pass().run(subcircuit, {})
             if self.as_qasm:
                 with open(block_skeleton + f'{enum}.qasm', 'w') as f:
                     f.write(OPENQASM2Language().encode(subcircuit))

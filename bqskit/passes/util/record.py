@@ -17,7 +17,7 @@ class RecordStatsPass(BasePass):
     key = 'RecordStatsPass_stats_list'
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
         stats: dict[str, Any] = {}
         stats['cycles'] = circuit.num_cycles
         stats['num_ops'] = circuit.num_operations

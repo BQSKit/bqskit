@@ -89,3 +89,4 @@ napoleon_use_admonition_for_references = True
 napolean_custom_sections = ['Invariants']
 napoleon_preprocess_types = True
 napoleon_use_rtype = True
+myst_enable_extensions = ['dollarmath', 'amsmath']

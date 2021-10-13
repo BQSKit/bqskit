@@ -28,7 +28,7 @@ class WindowOptimizationPass(BasePass):
 
     def __init__(
         self,
-        window_size: int = 14,
+        window_size: int = 9,
         synthesispass: SynthesisPass = QSearchSynthesisPass(),
         replace_filter: Callable[[Circuit, Circuit], bool] | None = None,
     ) -> None:
@@ -37,7 +37,7 @@ class WindowOptimizationPass(BasePass):
 
         Args:
             window_size (int): The size of the window to surround each
-                marker. (Default: 14)
+                marker. (Default: 9)
 
             synthesispass (SynthesisPass): The configured synthesis algorithm
                 to use during window synthesis.

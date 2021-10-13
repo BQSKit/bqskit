@@ -112,7 +112,7 @@ class QFASTDecompositionPass(SynthesisPass):
         self.max_depth = max_depth
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
-        """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
+        """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # 0. Skip any unitaries too small for the configured gate.
         if self.gate.num_qudits > utry.num_qudits:

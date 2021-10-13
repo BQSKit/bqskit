@@ -141,16 +141,13 @@ class LEAPSynthesisPass(SynthesisPass):
         self.instantiate_options.update(instantiate_options)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
-        """Synthesize `utry` into a circuit, see SynthesisPass for more info."""
+        """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
         data['window_markers'] = []
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(
-            utry,
-            **self.instantiate_options,
-        )
+        initial_layer.instantiate(utry, **self.instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -187,7 +184,12 @@ class LEAPSynthesisPass(SynthesisPass):
                     )
                     for _, circuit in as_completed(futures, with_results=True):
                         if self.evaluate_node(
-                                circuit, utry, data, frontier, layer, leap_data,
+                            circuit,
+                            utry,
+                            data,
+                            frontier,
+                            layer,
+                            leap_data,
                         ):
                             for future in futures:
                                 if not future.done:
@@ -198,7 +200,12 @@ class LEAPSynthesisPass(SynthesisPass):
                 for circuit in successors:
                     circuit.instantiate(utry, **self.instantiate_options)
                     if self.evaluate_node(
-                            circuit, utry, data, frontier, layer, leap_data,
+                        circuit,
+                        utry,
+                        data,
+                        frontier,
+                        layer,
+                        leap_data,
                     ):
                         return circuit
 

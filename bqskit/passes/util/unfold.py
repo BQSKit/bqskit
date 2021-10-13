@@ -19,6 +19,6 @@ class UnfoldPass(BasePass):
     """
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-        """Perform the pass's operation, see BasePass for more info."""
+        """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Unfolding the circuit.')
         circuit.unfold_all()
