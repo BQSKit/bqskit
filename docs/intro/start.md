@@ -4,8 +4,8 @@ BQSKit allows you to use high-quality synthesis algorithms with ease to
 compile quantum circuits. It is designed to be highly customizable to find
 a compiler-flow that suites your needs well. In this guide, we will cover
 installation and some basic workflows, but there is no one-size-fits-all
-when it comes to synthesis, and we recommend you explore the package
-when you get more comfortable with it.
+when it comes to synthesis. We recommend you explore the package
+once you get more comfortable with the basics.
 
 ## Installation
 
@@ -51,9 +51,9 @@ algorithms that are desired to be used to compile the program.
 
 We provide some default constructors for the common cases, such as
 `CompilationTask.optimize` and the ones you will see in the following
-sections. However good these default configurations may be, they will be
-far from the best; they aim to be widely applicable. The best compilation
-flow for your use case will likely require more exploration. Once you are
+sections. These these default configurations aim to be widely applicable,
+and as a result, may be far from the best. The best compilation
+flow for your use case will likely require some experimentation. Once you are
 familiar with the basics, we recommend you explore how these defaults are
 built and toy with them.
 
@@ -92,25 +92,17 @@ with Compiler() as compiler:
     synthesized_circuit = compiler.compile(task)
 ```
 
-### Circuit Template Instantiation Example
-
-At the core of all our of synthesis tools, is the circuit instantiate
-primitive. Circuit Instantiation is the problem where given a circuit
-template and a target unitary, one has to find the optimal parameters
-for the template such that the distance between the resulting circuit's
-operation and the target unitary is minimized. This is according to some
-cost function.
-
-
 ## Verifying Results
-## Further Reading
 
+All of BQSKit's synthesis algorithms are approximate, which mean the
+compiled results might be slightly different than what was inputted.
+For most cases, these differences are close to floating point thresholds,
+but can be greater in magnitude. Most algorithms will offer some sort
+of control over this error, but it is important to be able to measure it.
 
-Here is an example of
+For simulatable circuits, we can compare the unitaries directly:
 
-It is composed of two parts:
-
-1. BQSKIT IR: One main difference between other quantum python SDKs is that in BQSKit
-all circuits and gates are treated more like a function than a fixed object.
-
-2. BQSKIT Compiler Infrastructure
+```python
+dist = synthesized_circuit.get_unitary().get_distance_from(toffoli)
+assert dist < 1e-10
+```

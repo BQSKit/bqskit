@@ -5,14 +5,14 @@ import logging
 
 from numpy import pi
 
-from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
-from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
-from bqskit.compiler.passes.util.variabletou3 import VariableToU3Pass
-from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
 from bqskit.ir import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.passes.partitioning.scan import ScanPartitioner
+from bqskit.passes.search.generators.simple import SimpleLayerGenerator
+from bqskit.passes.synthesis import LEAPSynthesisPass
+from bqskit.passes.util.variabletou3 import VariableToU3Pass
 
 # Enable logging
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)

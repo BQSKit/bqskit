@@ -5,7 +5,6 @@ import numpy as np
 from numpy import pi
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.ir import Circuit
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.constant.cx import CNOTGate
@@ -14,6 +13,7 @@ from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.iterator import CircuitIterator
+from bqskit.passes.partitioning.scan import ScanPartitioner
 
 
 def make_line(n):  # type: ignore

@@ -148,6 +148,9 @@ class Operation(DifferentiableUnitary):
             and self.location == rhs.location
         )
 
+    def __hash__(self) -> int:
+        return hash((self.gate, self.location))
+
     def __str__(self) -> str:
         return f'{self.gate}@{self.location}'
 

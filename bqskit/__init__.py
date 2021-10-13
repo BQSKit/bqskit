@@ -5,8 +5,6 @@ import logging
 
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.task import CompilationTask
-from bqskit.compiler.task import TaskResult
-from bqskit.compiler.task import TaskStatus
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.lang import register_language
 from bqskit.ir.lang.qasm2 import OPENQASM2Language

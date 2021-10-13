@@ -16,6 +16,7 @@ and algorithm framework that can run many algorithms efficiently.
    intro/start
    intro/synthesis
    intro/CONTRIBUTING
+   intro/license
 
 .. toctree::
    :caption: BQSKit Tutorials

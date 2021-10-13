@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from random import randint
 
-from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.operation import Operation
+from bqskit.passes.partitioning.scan import ScanPartitioner
 
 
 class TestBatchReplace:

@@ -8,6 +8,7 @@
 .vscode/
 .mypy_cache/
 .DS_Store
-docs/source/autogen/*
+docs/source/autogen
 __pycache__
 docs/_build
+dask-worker-space

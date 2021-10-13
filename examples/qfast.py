@@ -5,12 +5,12 @@ import logging
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
-from bqskit.compiler.passes.control import ForEachBlockPass
-from bqskit.compiler.passes.processing import WindowOptimizationPass
-from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
-from bqskit.compiler.passes.synthesis import QFASTDecompositionPass
-from bqskit.compiler.passes.util.unfold import UnfoldPass
 from bqskit.ir import Circuit
+from bqskit.passes.control import ForEachBlockPass
+from bqskit.passes.processing import WindowOptimizationPass
+from bqskit.passes.synthesis import LEAPSynthesisPass
+from bqskit.passes.synthesis import QFASTDecompositionPass
+from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if __name__ == '__main__':

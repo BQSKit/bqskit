@@ -2280,10 +2280,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Check Target
         try:
-            typed_target = StateVector(target)  # type: ignore
+            typed_target = UnitaryMatrix(target)  # type: ignore
         except (ValueError, TypeError):
             try:
-                typed_target = UnitaryMatrix(target)  # type: ignore
+                typed_target = StateVector(target)  # type: ignore
             except (ValueError, TypeError) as ex:
                 raise TypeError(
                     'Expected either StateVector or UnitaryMatrix'

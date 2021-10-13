@@ -5,8 +5,8 @@ import logging
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
-from bqskit.compiler.passes.synthesis.qpredict import QPredictDecompositionPass
 from bqskit.ir import Circuit
+from bqskit.passes.synthesis.qpredict import QPredictDecompositionPass
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 # Enable logging

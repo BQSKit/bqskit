@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import IdentityGate
 from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 

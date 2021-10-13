@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passes.simplepartitioner import SimplePartitioner
 from bqskit.ir import Circuit
 from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.passes.simplepartitioner import SimplePartitioner
 
 #     0  1  2  3           #########
 # 0 --o-----o--------    --#-o---o-#-----#######--

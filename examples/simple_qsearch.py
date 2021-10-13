@@ -7,8 +7,8 @@ import numpy as np
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
-from bqskit.compiler.passes.synthesis import QSearchSynthesisPass
 from bqskit.ir import Circuit
+from bqskit.passes.synthesis import QSearchSynthesisPass
 
 # Enable logging
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)

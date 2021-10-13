@@ -12,11 +12,7 @@ from bqskit.utils.typing import is_valid_coupling_graph
 
 
 class MachineModel:
-    """
-    The MachineModel Class.
-
-    A MachineModel models a quantum processing unit's connectivity.
-    """
+    """A model of a quantum processing unit's connectivity."""
 
     def __init__(
         self,
@@ -75,7 +71,7 @@ class MachineModel:
             block_size (int): The size of each location in the final list.
 
         Returns:
-            (list[CircuitLocation]): The locations compliant with the machine.
+            list[CircuitLocation]: The locations compliant with the machine.
 
         Raises:
             ValueError: If `block_size` is nonpositive or too large.
@@ -153,9 +149,9 @@ class MachineModel:
     def get_subgraph(
         self,
         location: CircuitLocationLike,
-        renumbering: dict[int, int] = None,  # type: ignore
+        renumbering: dict[int, int] | None = None,
     ) -> list[tuple[int, int]]:
-        """Returns the sub_coupling_graph with qudits in location."""
+        """Returns the sub_coupling_graph with qudits in `location`."""
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 

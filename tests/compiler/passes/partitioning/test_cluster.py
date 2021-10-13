@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from bqskit.compiler.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
+from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 
 
 class TestClusteringPartitioner:

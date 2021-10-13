@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from bqskit.compiler.passes.greedypartitioner import GreedyPartitioner
 from bqskit.ir import Circuit
 from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.passes.greedypartitioner import GreedyPartitioner
 
 num_q = 5
 coup_map = {(0, 1), (1, 2), (2, 3), (3, 4)}

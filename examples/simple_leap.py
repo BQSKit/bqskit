@@ -7,10 +7,10 @@ import numpy as np
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
-from bqskit.compiler.passes.synthesis import LEAPSynthesisPass
-from bqskit.compiler.search.generators.simple import SimpleLayerGenerator
 from bqskit.ir import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
+from bqskit.passes.search.generators.simple import SimpleLayerGenerator
+from bqskit.passes.synthesis import LEAPSynthesisPass
 
 # Enable logging
 logging.getLogger('bqskit.compiler').setLevel(logging.DEBUG)
