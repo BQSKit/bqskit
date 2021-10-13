@@ -28,6 +28,7 @@ synthesis pass to convert the circuit to native gates.
     :recursive:
 
     LEAPSynthesisPass
+    OptimizedLEAPPass
     QSearchSynthesisPass
     QFASTDecompositionPass
     QPredictDecompositionPass
@@ -96,6 +97,7 @@ from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.synthesis.leap import LEAPSynthesisPass
+from bqskit.passes.synthesis.leap import OptimizedLEAPPass
 from bqskit.passes.synthesis.qfast import QFASTDecompositionPass
 from bqskit.passes.synthesis.qpredict import QPredictDecompositionPass
 from bqskit.passes.synthesis.qsearch import QSearchSynthesisPass
@@ -122,6 +124,7 @@ __all__ = [
     'QuickPartitioner',
     'SynthesisPass',
     'LEAPSynthesisPass',
+    'OptimizedLEAPPass',
     'QSearchSynthesisPass',
     'QFASTDecompositionPass',
     'QPredictDecompositionPass',

@@ -15,8 +15,8 @@ from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.processing import ScanningGateRemovalPass
 from bqskit.passes.processing import WindowOptimizationPass
-from bqskit.passes.synthesis import LEAPSynthesisPass
 from bqskit.passes.synthesis import QFASTDecompositionPass
+from bqskit.passes.synthesis.leap import OptimizedLEAPPass
 from bqskit.passes.util import UnfoldPass
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 
@@ -57,7 +57,7 @@ class CompilationTask():
             _logger.warning('Synthesis input size is very large.')
 
         inner_seq = [
-            LEAPSynthesisPass(),
+            OptimizedLEAPPass(),
             WindowOptimizationPass(),
             ScanningGateRemovalPass(),
         ]
@@ -81,8 +81,7 @@ class CompilationTask():
             return CompilationTask.synthesize(circuit.get_unitary())
 
         inner_seq = [
-            LEAPSynthesisPass(),
-            WindowOptimizationPass(),
+            OptimizedLEAPPass(),
             ScanningGateRemovalPass(),
         ]
 

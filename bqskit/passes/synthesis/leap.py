@@ -7,9 +7,15 @@ from typing import Any
 import numpy as np
 from dask.distributed import as_completed
 from dask.distributed import worker_client
+from qsearch import assemblers
+from qsearch import leap_compiler
+from qsearch import options
+from qsearch import parallelizers
+from qsearch import post_processing
 from scipy.stats import linregress
 
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.lang.qasm2 import OPENQASM2Language
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
@@ -342,3 +348,38 @@ class LEAPSynthesisPass(SynthesisPass):
 
         layers_added = new_layer - leap_data['last_prefix_layer']
         return delta < 0 and layers_added >= self.min_prefix_size
+
+
+# TODO: Improve quality of LEAPSynthesisPass and deprecate OptimizedLEAPPass
+
+class OptimizedLEAPPass(SynthesisPass):
+    """
+    An optimized version of LEAP.
+
+    This version of the LEAP algorithm is a translation layer to the
+    original implementation of LEAP. This version has more features
+    and generally produces higher-quality results than the LEAPSynthesisPass.
+    However, this one is not well integrated into the BQSKit tool suite,
+    and as a result lacks customizability.
+
+    As we continue to port over the features that make this implementation
+    slightly higher quality, we will deprecate this pass.
+    """
+
+    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+        # Set leap options
+        opts = options.Options()
+        opts.target = utry.numpy
+        opts.verbosity = 0
+        opts.write_to_stdout = False
+        opts.reoptimize_size = 7
+        opts.parallelizer = parallelizers.SequentialParallelizer
+
+        # Run the LEAP algorithm and optimizations
+        intermediate = leap_compiler.LeapCompiler().compile(opts)
+        pp = post_processing.LEAPReoptimizing_PostProcessor()
+        output = pp.post_process_circuit(intermediate, opts)
+
+        # Translate back to BQSKit through QASM
+        output = assemblers.ASSEMBLER_IBMOPENQASM.assemble(output)
+        return OPENQASM2Language().decode(output)
