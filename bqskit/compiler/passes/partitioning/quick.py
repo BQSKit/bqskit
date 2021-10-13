@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.region import CircuitRegion
@@ -14,13 +13,13 @@ from bqskit.utils.typing import is_integer
 
 _logger = logging.getLogger(__name__)
 
+
 class QuickPartitioner(BasePass):
     """
     The QuickPartitioner Pass.
 
-    This pass forms partitions in the circuit by iterating over the
-    operations in a topological order and binning them into blocks.
-
+    This pass forms partitions in the circuit by iterating over the operations
+    in a topological order and binning them into blocks.
     """
 
     def __init__(
@@ -76,22 +75,22 @@ class QuickPartitioner(BasePass):
             return
 
         # List to hold the active blocks
-        active_blocks = []
+        active_blocks: Any = []
 
         # List to hold the finished blocks
-        finished_blocks = {}
+        finished_blocks: Any = {}
         block_id = 0
 
         # Active qudit cycles and block-qudit dependencies
-        qudit_actives = [{} for _ in range(num_qudits)]
-        qudit_dependencies = [{} for _ in range(num_qudits)]
+        qudit_actives: Any = [{} for _ in range(num_qudits)]
+        qudit_dependencies: Any = [{} for _ in range(num_qudits)]
 
         # The partitioned circuit
         partitioned_circuit = Circuit(num_qudits, circuit.get_radixes())
 
         # For each cycle, operation in topological order
         for cycle, op in circuit.operations_with_cycles():
-            
+
             # Get the qudits of the operation
             qudits = op.location._location
 
@@ -131,15 +130,21 @@ class QuickPartitioner(BasePass):
                 # the size limit. If such a block is found, add the
                 # new qudits, update the region bounds, check if any
                 # blocks are finished, and raise the found boolean
-                for block in [active_blocks[index] for index in admissible_blocks]:
-                    if len(set(list(qudits) + list(block.keys()))) - 1 <= self.block_size:
+                for block in [
+                    active_blocks[index]
+                    for index in admissible_blocks
+                ]:
+                    if len(set(list(qudits) + list(block.keys()))) - \
+                            1 <= self.block_size:
                         for qudit in qudits:
                             if qudit not in block:
                                 block[qudit] = [cycle, cycle]
                             else:
                                 block[qudit][1] = cycle
-                        block_id, updated_qudits = self.compute_finished_blocks(block, qudits, active_blocks,
-                                                   finished_blocks, block_id, qudit_dependencies, cycle, num_qudits)
+                        block_id, updated_qudits = self.compute_finished_blocks(
+                            block, qudits, active_blocks,
+                            finished_blocks, block_id, qudit_dependencies, cycle, num_qudits,  # noqa
+                        )
                         found = True
                         break
 
@@ -147,16 +152,18 @@ class QuickPartitioner(BasePass):
             # with the new operation qudits, create a new block, and add it
             # to the list of active blocks
             if not found:
-                block_id, updated_qudits = self.compute_finished_blocks(None, qudits, active_blocks,
-                                           finished_blocks, block_id, qudit_dependencies, cycle, num_qudits)
+                block_id, updated_qudits = self.compute_finished_blocks(
+                    None, qudits, active_blocks,
+                    finished_blocks, block_id, qudit_dependencies, cycle, num_qudits,  # noqa
+                )
                 block = {qudit: [cycle, cycle] for qudit in qudits}
                 block[-1] = set()
                 active_blocks.append(block)
 
             # Where the active qudit cycles keep getting updated
             while updated_qudits:
-                
-               # Check if any blocks corresponding to updated qudits
+
+                # Check if any blocks corresponding to updated qudits
                 # are eligible to be added to the circuit. If eligible,
                 # update actives, dependencies, and updated qudits.
                 final_regions = []
@@ -172,12 +179,16 @@ class QuickPartitioner(BasePass):
                                 num_passed += 1
                         if num_passed == len(finished_blocks[blk_id]):
                             for qdt, bounds in finished_blocks[blk_id].items():
-                                for cycle in range(bounds[0], bounds[1]+1):
+                                for cycle in range(bounds[0], bounds[1] + 1):
                                     if cycle in qudit_actives[qdt]:
                                         del qudit_actives[qdt][cycle]
                                 del qudit_dependencies[qdt][blk_id]
                                 new_updated_qudits.add(qdt)
-                            final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in finished_blocks[blk_id].items()}))
+                            final_regions.append(
+                                CircuitRegion(
+                                {qdt: (bounds[0], bounds[1]) for qdt, bounds in finished_blocks[blk_id].items()},  # noqa
+                                ),
+                            )
                             del finished_blocks[blk_id]
 
                 # If there are any regions
@@ -191,7 +202,17 @@ class QuickPartitioner(BasePass):
                     for region in final_regions:
                         region = circuit.downsize_region(region)
                         cgc = circuit.get_slice(region.points)
-                        partitioned_circuit.append_gate(CircuitGate(cgc, True), sorted(list(region.keys())), list(cgc.get_params()))
+                        partitioned_circuit.append_gate(
+                            CircuitGate(
+                                cgc, True,
+                            ), sorted(
+                                list(
+                                    region.keys(),
+                                ),
+                            ), list(
+                                cgc.get_params(),
+                            ),
+                        )
 
                 updated_qudits = new_updated_qudits
 
@@ -199,11 +220,19 @@ class QuickPartitioner(BasePass):
         # into circuit regions
         final_regions = []
         for block in finished_blocks.values():
-            final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()}))
+            final_regions.append(
+                CircuitRegion(
+                {qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()},  # noqa
+                ),
+            )
         for block in active_blocks:
             del block[-1]
-            final_regions.append(CircuitRegion({qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()}))
-                
+            final_regions.append(
+                CircuitRegion(
+                {qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()},  # noqa
+                ),
+            )
+
         # If there are any regions
         if final_regions:
 
@@ -215,18 +244,27 @@ class QuickPartitioner(BasePass):
             for region in final_regions:
                 region = circuit.downsize_region(region)
                 cgc = circuit.get_slice(region.points)
-                partitioned_circuit.append_gate(CircuitGate(cgc, True), sorted(list(region.keys())), list(cgc.get_params()))
+                partitioned_circuit.append_gate(
+                    CircuitGate(
+                        cgc, True,
+                    ), sorted(
+                        list(
+                            region.keys(),
+                        ),
+                    ), list(
+                        cgc.get_params(),
+                    ),
+                )
 
         # Copy the partitioned circuit to the original circuit
         circuit.become(partitioned_circuit)
 
-    def compute_finished_blocks(self, block, qudits, active_blocks, finished_blocks, 
-                                block_id, qudit_dependencies, cycle, num_qudits):
-        """
-        Add blocks with all inactive qudits to the finished_blocks list and
-        remove them from the active_blocks list.
-        
-        """
+    def compute_finished_blocks(  # type: ignore
+        self, block, qudits, active_blocks, finished_blocks,
+        block_id, qudit_dependencies, cycle, num_qudits,
+    ):
+        """Add blocks with all inactive qudits to the finished_blocks list and
+        remove them from the active_blocks list."""
 
         # Compile the qudits from the new operation,
         # the active qudits of the block being updated,
@@ -244,18 +282,31 @@ class QuickPartitioner(BasePass):
             # If the active block is different than the block being updated
             if active_block != block:
 
-                # If any of the qudits are in the active block or its inadmissible list,
-                # then add those qudits to the inadmissible list of the active block
-                if any([qudit in active_block or qudit in active_block[-1] for qudit in qudits]):
+                # If any of the qudits are in the active block or its
+                # inadmissible list, then add those qudits to the
+                # inadmissible list of the active block
+                if any([
+                    qudit in active_block or qudit in active_block[-1]
+                    for qudit in qudits
+                ]):
                     active_block[-1].update(qudits)
 
                 # If the active block has reached its maximum size
                 # and/or all of its qudits are inadmissible,
                 # then add it to the remove list
-                if (len(active_block) - 1 == self.block_size and \
-                   all([qudit in active_block[-1] for qudit in active_block if qudit != -1])) or \
-                    cycle - max([active_block[qudit][1] for qudit in active_block if qudit != -1]) > 200 or \
-                    len(active_block[-1]) == num_qudits:
+                if (
+                    len(active_block) - 1 == self.block_size and  # noqa
+                    all([
+                        qudit in active_block[-1]
+                        for qudit in active_block if qudit != -1
+                    ])
+                ) or (
+                    cycle - max(
+                        active_block[qudit][1]
+                        for qudit in active_block
+                        if qudit != -1
+                    ) > 200
+                ) or len(active_block[-1]) == num_qudits:
                     remove_blocks.append(active_block)
 
         # Remove all blocks in the remove list from the active list
@@ -273,21 +324,18 @@ class QuickPartitioner(BasePass):
 
         return block_id, updated_qudits
 
-    def topo_sort(self, regions):
-        """
-        Topologically sort circuit regions.
-        
-        """
+    def topo_sort(self, regions):  # type: ignore
+        """Topologically sort circuit regions."""
 
         # Number of regions in the circuit
         num_regions = len(regions)
-       
+
         # For each region, generate the number of in edges
         # and the list of all out edges
-        in_edges = [0]*num_regions
-        out_edges = [[] for _ in range(num_regions)]
-        for i in range(num_regions-1):
-            for j in range(i+1, num_regions):
+        in_edges = [0] * num_regions
+        out_edges: Any = [[] for _ in range(num_regions)]
+        for i in range(num_regions - 1):
+            for j in range(i + 1, num_regions):
                 dependency = regions[i].dependency(regions[j])
                 if dependency == 1:
                     in_edges[i] += 1
@@ -321,7 +369,10 @@ class QuickPartitioner(BasePass):
 
             # Remove the regions from all other regions' in edges counts
             for i in range(len(in_edges)):
-                in_edges[i][0] -= sum([in_edges[i][1] in out_edges[region[1]] for region in selections])
+                in_edges[i][0] -= sum(
+                    in_edges[i][1] in out_edges[region[1]]
+                    for region in selections
+                )
 
             # Convert in edges into a min-heap
             heapq.heapify(in_edges)
