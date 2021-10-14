@@ -98,4 +98,5 @@ autodoc_mock_imports = [
     'scipy',
     'numpy',
     'lark-parser',
+    'distributed',
 ]
