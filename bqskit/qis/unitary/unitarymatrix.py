@@ -360,8 +360,11 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if isinstance(U, UnitaryMatrix):
             return True
 
-        if not isinstance(U, np.ndarray):
-            U = np.array(U)
+        try:
+            if not isinstance(U, np.ndarray):
+                U = np.array(U)
+        except TypeError:
+            return False
 
         if not is_square_matrix(U):
             return False

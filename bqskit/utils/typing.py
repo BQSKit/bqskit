@@ -209,8 +209,11 @@ def is_matrix(M: np.typing.ArrayLike) -> bool:
 def is_square_matrix(M: np.typing.ArrayLike) -> bool:
     """Return true if M is a square matrix."""
 
-    if not isinstance(M, np.ndarray):
-        M = np.array(M)
+    try:
+        if not isinstance(M, np.ndarray):
+            M = np.array(M)
+    except TypeError:
+        return False
 
     if not is_matrix(M):
         return False
