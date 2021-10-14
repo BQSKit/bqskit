@@ -64,15 +64,16 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             ... )  # Creates a single-qubit Pauli X unitary matrix.
         """
 
+        # Stop any actual logic when building documentation
+        if 'READTHEDOCS' in os.environ:
+            return
+
         # Copy constructor
         if isinstance(input, UnitaryMatrix):
             self._utry = input.numpy
             self._radixes = input.radixes
             self._dim = input.dim
             return
-
-        if 'READTHEDOCS' in os.environ:
-            check_arguments = False
 
         if check_arguments and not is_square_matrix(input):
             raise TypeError(f'Expected square matrix, got {type(input)}.')
