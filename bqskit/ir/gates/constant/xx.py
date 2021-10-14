@@ -9,11 +9,24 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class XXGate(ConstantGate, QubitGate):
-    """The Ising XX coupling gate."""
+    """
+    The Ising XX coupling gate.
 
-    size = 2
-    qasm_name = 'rxx(pi/2)'
-    utry = UnitaryMatrix(
+    The XX gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\frac{\\sqrt{2}}{2} & 0 & 0 & -\\frac{\\sqrt{2}}{2}i \\\\
+        0 & \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2}i & 0 \\\\
+        0 & -\\frac{\\sqrt{2}}{2}i & \\frac{\\sqrt{2}}{2} & 0 \\\\
+        -\\frac{\\sqrt{2}}{2}i & 0 & 0 & \\frac{\\sqrt{2}}{2} \\\\
+        \\end{pmatrix}
+    """
+
+    _num_qudits = 2
+    _qasm_name = 'rxx(pi/2)'
+    _utry = UnitaryMatrix(
         [
             [np.sqrt(2) / 2, 0, 0, -1j * np.sqrt(2) / 2],
             [0, np.sqrt(2) / 2, -1j * np.sqrt(2) / 2, 0],

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from bqskit.compiler.passes.partitioning.scan import ScanPartitioner
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import IdentityGate
 from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -39,7 +39,7 @@ class TestScanPartitioner:
         placeholder_gate = TaggedGate(IdentityGate(1), '__fold_placeholder__')
         assert all(op.gate._circuit.count(placeholder_gate) == 0 for op in circ)  # type: ignore  # noqa
         assert circ.get_unitary() == utry
-        for cycle_index in range(circ.get_num_cycles()):
+        for cycle_index in range(circ.num_cycles):
             assert not circ._is_cycle_idle(cycle_index)
 
     def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
@@ -57,7 +57,7 @@ class TestScanPartitioner:
             for op in r6_qudit_circuit
         )
         assert r6_qudit_circuit.get_unitary() == utry
-        for cycle_index in range(r6_qudit_circuit.get_num_cycles()):
+        for cycle_index in range(r6_qudit_circuit.num_cycles):
             assert not r6_qudit_circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_1(self) -> None:
@@ -109,7 +109,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_2(self) -> None:
@@ -169,7 +169,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_3(self) -> None:
@@ -226,7 +226,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_4(self) -> None:
@@ -284,7 +284,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_5(self) -> None:
@@ -351,7 +351,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_6(self) -> None:
@@ -416,7 +416,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_7(self) -> None:
@@ -495,7 +495,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_8(self) -> None:
@@ -555,7 +555,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_9(self) -> None:
@@ -613,7 +613,7 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_10(self) -> None:
@@ -673,5 +673,5 @@ class TestScanPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)

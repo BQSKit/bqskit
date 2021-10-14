@@ -11,9 +11,12 @@ from bqskit.utils.typing import is_square_matrix
 
 class LocallyOptimizableUnitary(Unitary):
     """
-    The LocallyOptimizableUnitary base class.
+    A locally optimizable unitary-valued function.
 
-    A LocallyOptimizableUnitary exposes the `optimize` abstract method.
+    A locally optimizable unitary-valued function is one that can be optimized
+    with respect to a fixed environment. A `LocallyOptimizableUnitary` inherits
+    from `Unitary` and additionally exposes the :func:`optimize` abstract
+    method.
     """
 
     @abc.abstractmethod
@@ -24,20 +27,24 @@ class LocallyOptimizableUnitary(Unitary):
         More specifically, return the parameters that maximize the
         real component of the trace of the product between `env_matrix`
         and this unitary:
-            `argmax(Re(Trace(env_matrix @ self.get_unitary(params))))`
+
+        .. math::
+
+            argmax(Re(Tr(\\mathit{env\\_matrix} \\times
+            \\mathit{self.get\\_unitary(params))}))
 
         Args:
             env_matrix (np.ndarray): Optimize with respect to this matrix.
                 Has the same dimensions as this unitary.
 
-        Returns
-            (list[float]): The parameters that optimizes this unitary.
+        Returns:
+            list[float]: The parameters that optimizes this unitary.
         """
 
     def check_env_matrix(self, env_matrix: np.ndarray) -> None:
-        """Check to ensure the `env_matrix` is valid and matches the gate."""
+        """Check to ensure the `env_matrix` is validly shaped."""
         if not is_square_matrix(env_matrix):
             raise TypeError('Expected a square matrix.')
 
-        if env_matrix.shape != (self.get_dim(), self.get_dim()):
+        if env_matrix.shape != (self.dim, self.dim):
             raise TypeError('Environmental matrix shape mismatch.')

@@ -42,7 +42,7 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
         """Return true if the circuit can be instantiated."""
         return all(
             isinstance(gate, LocallyOptimizableUnitary)
-            for gate in circuit.get_gate_set()
+            for gate in circuit.gate_set
         )
 
     @staticmethod
@@ -60,7 +60,7 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
 
         invalid_gates = {
             gate
-            for gate in circuit.get_gate_set()
+            for gate in circuit.gate_set
             if not isinstance(gate, LocallyOptimizableUnitary)
         }
 

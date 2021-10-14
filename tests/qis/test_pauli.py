@@ -6,8 +6,12 @@ from typing import Sequence
 
 import numpy as np
 import pytest
+from hypothesis import given
+from hypothesis.strategies import integers
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.utils.test.types import invalid_type_test
+from bqskit.utils.test.types import valid_type_test
 
 
 class TestPauliMatricesConstructor:
@@ -19,14 +23,14 @@ class TestPauliMatricesConstructor:
 
         return False
 
-    def test_invalid_type(self, not_an_int: Any) -> None:
-        with pytest.raises(TypeError):
-            paulis = PauliMatrices(not_an_int)  # noqa
+    @invalid_type_test(PauliMatrices)
+    def test_invalid_type(self) -> None:
+        pass
 
-    @pytest.mark.parametrize('size', [-10, -5, 0])
+    @given(integers(max_value=-1))
     def test_invalid_value(self, size: int) -> None:
         with pytest.raises(ValueError):
-            paulis = PauliMatrices(size)  # noqa
+            PauliMatrices(size)
 
     def test_size_1(self) -> None:
         num_qubits = 1
@@ -155,24 +159,21 @@ class TestPauliMatricesGetProjectionMatrices:
 
         return False
 
-    @pytest.mark.parametrize('invalid_qubit', ['a', 1.37, False, [1.37]])
-    def test_invalid_type_1(self, invalid_qubit: Any) -> None:
-        paulis = PauliMatrices(4)
-        with pytest.raises(TypeError):
-            projected_paulis = paulis.get_projection_matrices(invalid_qubit)  # noqa
+    @valid_type_test(PauliMatrices(1).get_projection_matrices)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_invalid_type_2(self, not_an_int: Any) -> None:
-        paulis = PauliMatrices(4)
-        with pytest.raises(TypeError):
-            projected_paulis = paulis.get_projection_matrices([not_an_int])  # noqa
+    @invalid_type_test(PauliMatrices(1).get_projection_matrices)
+    def test_invalid_type(self) -> None:
+        pass
 
     @pytest.mark.parametrize('invalid_qubit', [-5, -2, 4, 10])
     def test_invalid_value_1(self, invalid_qubit: int) -> None:
         paulis = PauliMatrices(4)
         with pytest.raises(ValueError):
-            projected_paulis = paulis.get_projection_matrices([invalid_qubit])  # noqa
+            paulis.get_projection_matrices([invalid_qubit])
 
-    @pytest.mark.parametrize('invalid_q_set', [[], [0, 0], [0, 1, 2, 4]])
+    @pytest.mark.parametrize('invalid_q_set', [[0, 0], [0, 1, 2, 4]])
     def test_invalid_value_2(self, invalid_q_set: list[int]) -> None:
         paulis = PauliMatrices(4)
         with pytest.raises(ValueError):
@@ -499,11 +500,6 @@ class TestPauliMatricesGetProjectionMatrices:
 
 class TestPauliMatricesDotProduct:
 
-    @pytest.mark.parametrize('invalid_alpha', [1.37, False, ['x']])
-    def test_invalid_type(self, invalid_alpha: Any) -> None:
-        with pytest.raises(TypeError):
-            PauliMatrices(1).dot_product(invalid_alpha)
-
     @pytest.mark.parametrize('invalid_alpha', [[1.1] * i for i in range(4)])
     def test_invalid_value(self, invalid_alpha: Sequence[float]) -> None:
         with pytest.raises(ValueError):
@@ -628,9 +624,13 @@ class TestPauliMatricesFromString:
 
         return False
 
-    def test_invalid_type(self, not_a_str: Any) -> None:
-        with pytest.raises(TypeError):
-            paulis = PauliMatrices.from_string(not_a_str)  # noqa
+    @valid_type_test(PauliMatrices.from_string)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(PauliMatrices.from_string)
+    def test_invalid_type(self) -> None:
+        pass
 
     @pytest.mark.parametrize(
         'invalid_str', [
@@ -644,7 +644,7 @@ class TestPauliMatricesFromString:
     )
     def test_invalid_value(self, invalid_str: str) -> None:
         with pytest.raises(ValueError):
-            paulis = PauliMatrices.from_string(invalid_str)  # noqa
+            PauliMatrices.from_string(invalid_str)
 
     @pytest.mark.parametrize(
         'pauli_str, pauli_mat', [

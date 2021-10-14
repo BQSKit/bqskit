@@ -8,110 +8,117 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from bqskit.qis.unitary.meta import UnitaryMeta
-from bqskit.utils.typing import is_numeric
+from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class Unitary (metaclass=UnitaryMeta):
+class Unitary(metaclass=UnitaryMeta):
     """
-    The Unitary base class.
+    A unitary-valued function.
 
-    A Unitary is map from zero or more real numbers to a unitary matrix. This is
-    captured in the main `get_unitary` abstract method.
+    A `Unitary` is a map from zero or more real numbers to a unitary matrix.
+    This is captured in the `get_unitary` abstract method.
     """
 
-    num_params: int
-    radixes: tuple[int, ...]
-    size: int
-    dim: int
+    _num_params: int
+    _num_qudits: int
+    _radixes: tuple[int, ...]
+    _dim: int
 
-    def get_num_params(self) -> int:
-        """Returns the number of parameters for this unitary."""
-        if hasattr(self, 'num_params'):
-            return self.num_params
+    @property
+    def num_params(self) -> int:
+        """The number of real parameters this unitary-valued function takes."""
+        return getattr(self, '_num_params')
 
-        raise AttributeError(
-            'Expected num_params field for unitary'
-            ': %s.' % self.__class__.__name__,
-        )
+    @property
+    def num_qudits(self) -> int:
+        """The number of qudits this unitary can act on."""
+        if hasattr(self, '_num_qudits'):
+            return self._num_qudits
 
-    def get_radixes(self) -> tuple[int, ...]:
-        """Returns the number of orthogonal states for each qudit."""
-        if hasattr(self, 'radixes'):
-            return self.radixes
+        return len(self.radixes)
 
-        raise AttributeError(
-            'Expected radixes field for unitary'
-            ': %s.' % self.__class__.__name__,
-        )
+    @property
+    def radixes(self) -> tuple[int, ...]:
+        """The number of orthogonal states for each qudit."""
+        return getattr(self, '_radixes')
 
-    def get_size(self) -> int:
-        """Returns the number of qudits this unitary can act on."""
-        if hasattr(self, 'size'):
-            return self.size
+    @property
+    def dim(self) -> int:
+        """The matrix dimension for this unitary."""
+        if hasattr(self, '_dim'):
+            return self._dim
 
-        raise AttributeError(
-            'Expected size field for unitary'
-            ': %s.' % self.__class__.__name__,
-        )
-
-    def get_dim(self) -> int:
-        """Returns the matrix dimension for this unitary."""
-        if hasattr(self, 'dim'):
-            return self.dim
-
-        return int(np.prod(self.get_radixes()))
+        return int(np.prod(self.radixes))
 
     @abc.abstractmethod
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """
-        Abstract method that should return this unitary as a UnitaryMatrix.
+        Map real-valued `params` to a `UnitaryMatrix`.
 
         Args:
-            params (Sequence[float]): Unconstrained real number
+            params (Sequence[float]): Unconstrained vector of real number
                 parameters for parameterized unitaries.
 
         Returns:
-            (UnitaryMatrix): The unitary matrix.
+            UnitaryMatrix: The unitary matrix.
         """
 
     def is_qubit_only(self) -> bool:
-        """Returns true if this unitary can only act on qubits."""
-        return all([radix == 2 for radix in self.get_radixes()])
+        """Return true if this unitary can only act on qubits."""
+        return all([radix == 2 for radix in self.radixes])
 
     def is_qutrit_only(self) -> bool:
-        """Returns true if this unitary can only act on qutrits."""
-        return all([radix == 3 for radix in self.get_radixes()])
+        """Return true if this unitary can only act on qutrits."""
+        return all([radix == 3 for radix in self.radixes])
+
+    def is_qudit_only(self, radix: int) -> bool:
+        """
+        Return true if this unitary can only act on `radix`-qudits.
+
+        Args:
+            radix (int): Check all qudits have this many orthogonal
+                states.
+        """
+        return all([r == radix for r in self.radixes])
 
     def is_parameterized(self) -> bool:
-        """Returns true if this unitary is parameterized."""
-        return self.get_num_params() != 0
+        """Return true if this unitary is parameterized."""
+        return self.num_params != 0
 
     def is_constant(self) -> bool:
-        """Returns true if this unitary doesn't have parameters."""
+        """Return true if this unitary doesn't take parameters."""
         return not self.is_parameterized()
 
     def check_parameters(self, params: Sequence[float] | np.ndarray) -> None:
-        """Checks to ensure parameters are valid and match the unitary."""
+        """
+        Check parameters are valid and match the unitary.
+
+        Args:
+            params(Sequence[float] | np.ndarray): The parameters to check.
+
+        Raises:
+            ValueError: If parameter length does not match expected number.
+        """
         if not is_sequence(params):
             raise TypeError(
                 'Expected a sequence type for params, got %s.'
                 % type(params),
             )
 
-        if not all(is_numeric(p) for p in params):
-            typechecks = [is_numeric(p) for p in params]
+        if not all(is_real_number(p) for p in params):
+            typechecks = [is_real_number(p) for p in params]
             fail_idx = typechecks.index(False)
             raise TypeError(
                 'Expected params to be floats, got %s.'
                 % type(params[fail_idx]),
             )
 
-        if len(params) != self.get_num_params():
+        if len(params) != self.num_params:
             raise ValueError(
                 'Expected %d params, got %d.'
-                % (self.get_num_params(), len(params)),
+                % (self.num_params, len(params)),
             )

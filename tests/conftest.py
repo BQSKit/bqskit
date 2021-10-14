@@ -13,6 +13,8 @@ from typing import Sequence
 
 import numpy as np
 import pytest
+from hypothesis import HealthCheck
+from hypothesis import settings
 from scipy.stats import unitary_group
 
 from bqskit.ir.circuit import Circuit
@@ -38,6 +40,7 @@ from bqskit.ir.gates import SqrtCNOTGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates import SXGate
+from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates import TdgGate
 from bqskit.ir.gates import TGate
 from bqskit.ir.gates import U1Gate
@@ -55,6 +58,17 @@ from bqskit.utils.typing import is_sequence
 # from bqskit.ir.gates import PauliGate
 # from bqskit.ir.gates import PermutationGate
 # from bqskit.ir.gates import VariableUnitaryGate
+
+# region Hypothesis Settings
+
+
+settings.register_profile(
+    'default',
+    suppress_health_check=(HealthCheck.too_slow,),
+)
+settings.load_profile('default')
+
+# endregion
 
 # region Test Variables
 
@@ -570,6 +584,7 @@ BQSKIT_GATES = [
     FrozenParameterGate(U8Gate(), {0: np.pi}),
     FrozenParameterGate(U8Gate(), {0: np.pi / 2, 1: np.pi / 2, 2: np.pi / 2}),
     FrozenParameterGate(DaggerGate(U8Gate()), {0: np.pi / 2, 2: np.pi / 2}),
+    TaggedGate(TGate(), 'hello'),
     # VariableUnitaryGate(TOFFOLI), # TODO
     # CircuitGate(),  # TODO
     # ControlledGate(),  # TODO
@@ -581,27 +596,27 @@ QUTRIT_GATES = [g for g in BQSKIT_GATES if g.is_qutrit_only()]
 PARAMETERIZED_GATES = [g for g in BQSKIT_GATES if g.is_parameterized()]
 SINGLE_QUBIT_GATES = [
     g for g in BQSKIT_GATES
-    if g.is_qubit_only() and g.get_size() == 1
+    if g.is_qubit_only() and g.num_qudits == 1
 ]
 SINGLE_QUTRIT_GATES = [
     g for g in BQSKIT_GATES
-    if g.is_qutrit_only() and g.get_size() == 1
+    if g.is_qutrit_only() and g.num_qudits == 1
 ]
 TWO_QUBIT_GATES = [
     g for g in BQSKIT_GATES
-    if g.is_qubit_only() and g.get_size() == 2
+    if g.is_qubit_only() and g.num_qudits == 2
 ]
 TWO_QUTRIT_GATES = [
     g for g in BQSKIT_GATES
-    if g.is_qutrit_only() and g.get_size() == 2
+    if g.is_qutrit_only() and g.num_qudits == 2
 ]
 MULTI_QUBIT_GATES = [
     g for g in BQSKIT_GATES
-    if g.is_qubit_only() and g.get_size() >= 2
+    if g.is_qubit_only() and g.num_qudits >= 2
 ]
 MULTI_QUTRIT_GATES = [
     g for g in BQSKIT_GATES
-    if g.is_qutrit_only() and g.get_size() >= 2
+    if g.is_qutrit_only() and g.num_qudits >= 2
 ]
 
 
@@ -759,7 +774,7 @@ def circuit_gen(
 
         # 1. Select random qudit
         qudit_selected = np.random.randint(0, size)
-        qudit_radix = circuit.get_radixes()[qudit_selected]
+        qudit_radix = circuit.radixes[qudit_selected]
 
         # 2. Select random gate and location
         gate_selected = None
@@ -773,7 +788,7 @@ def circuit_gen(
         for gate in shuffled_gates:
 
             # must be compatible with qudit
-            if qudit_radix not in gate.get_radixes():
+            if qudit_radix not in gate.radixes:
                 continue
 
             # must be compatible with the constant flag
@@ -781,14 +796,14 @@ def circuit_gen(
                 continue
 
             # must be compatible with circuit size
-            if gate.get_size() > size:
+            if gate.num_qudits > size:
                 continue
 
             # must be compatible with circuit radix
             if not all(
-                gate.get_radixes().count(unique_radix)
-                <= circuit.get_radixes().count(unique_radix)
-                for unique_radix in set(gate.get_radixes())
+                gate.radixes.count(unique_radix)
+                <= circuit.radixes.count(unique_radix)
+                for unique_radix in set(gate.radixes)
             ):
                 continue
 
@@ -800,9 +815,9 @@ def circuit_gen(
 
         # 3. Select location for gate
         location_selected = []
-        qudit_selected_index = gate.get_radixes().index(qudit_radix)
+        qudit_selected_index = gate.radixes.index(qudit_radix)
 
-        for i, radix in enumerate(gate.get_radixes()):
+        for i, radix in enumerate(gate.radixes):
             # One qudit has already been matched
             if i == qudit_selected_index:
                 location_selected.append(qudit_selected)
@@ -816,12 +831,12 @@ def circuit_gen(
                 or qudit in location_selected
                 or qudit == qudit_selected
             ):
-                qudit = circuit.get_radixes()[iter:].index(radix) + iter
+                qudit = circuit.radixes[iter:].index(radix) + iter
                 iter = qudit + 1
             location_selected.append(qudit)
 
         # 4. Append gate
-        params = np.random.random(gate_selected.get_num_params())
+        params = np.random.random(gate_selected.num_params)
         circuit.append_gate(gate_selected, location_selected, params)
 
     return circuit

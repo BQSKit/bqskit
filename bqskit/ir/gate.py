@@ -10,37 +10,29 @@ from typing import Callable
 from typing import TYPE_CHECKING
 
 from bqskit.qis.unitary.unitary import Unitary
-from bqskit.utils.cachedclass import CachedClass
 
 if TYPE_CHECKING:
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 
 
-class Gate(Unitary, CachedClass):
+class Gate(Unitary):
     """Gate Base Class."""
 
-    name: str
-    qasm_name: str
+    _name: str
+    _qasm_name: str
 
-    def get_name(self) -> str:
-        """Returns the name of the gate, defaults to the class name."""
-        if hasattr(self, 'name'):
-            return self.name
+    @property
+    def name(self) -> str:
+        """The name of this gate."""
+        return getattr(self, '_name', self.__class__.__name__)
 
-        return self.__class__.__name__
-
-    def get_qasm_name(self) -> str:
-        """Returns the qasm name for this gate."""
+    @property
+    def qasm_name(self) -> str:
+        """The qasm identifier for this gate."""
         if not self.is_qubit_only():
             raise AttributeError('QASM only supports qubit gates.')
 
-        if hasattr(self, 'qasm_name'):
-            return self.qasm_name
-
-        raise AttributeError(
-            'Expected qasm_name field for gate %s.'
-            % self.get_name(),
-        )
+        return getattr(self, '_qasm_name')
 
     def get_qasm_gate_def(self) -> str:
         """Returns a qasm gate definition block for this gate."""
@@ -53,4 +45,4 @@ class Gate(Unitary, CachedClass):
     with_all_frozen_params: Callable[[Gate, list[float]], FrozenParameterGate]
 
     def __repr__(self) -> str:
-        return self.get_name()
+        return self.name

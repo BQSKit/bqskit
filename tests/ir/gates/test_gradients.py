@@ -19,13 +19,13 @@ def check_gradient(circ: Circuit, num_params: int) -> None:
             v2[i] = v[i] + eps
             U1 = circ.get_unitary(v2)
             if isinstance(U1, UnitaryMatrix):
-                utry1 = U1.get_numpy()
+                utry1 = U1
             else:
                 utry1 = U1
             v2[i] = v[i] - eps
             U2 = circ.get_unitary(v2)
             if isinstance(U2, UnitaryMatrix):
-                utry2 = U2.get_numpy()
+                utry2 = U2
             else:
                 utry2 = U2
 
@@ -38,9 +38,9 @@ def check_gradient(circ: Circuit, num_params: int) -> None:
 
 
 def test_gradients(r3_qubit_circuit: Circuit) -> None:
-    check_gradient(r3_qubit_circuit, r3_qubit_circuit.get_num_params())
+    check_gradient(r3_qubit_circuit, r3_qubit_circuit.num_params)
 
 
 def test_gradients_native(r3_qubit_circuit: Circuit) -> None:
     circ = Circ(r3_qubit_circuit)
-    check_gradient(circ, r3_qubit_circuit.get_num_params())
+    check_gradient(circ, r3_qubit_circuit.num_params)

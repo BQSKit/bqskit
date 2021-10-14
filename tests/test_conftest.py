@@ -44,11 +44,11 @@ from typing import Any
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
+from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.utils.typing import is_complex
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
-from bqskit.utils.typing import is_unitary
 
 
 class TestGenRandomUtryNp:
@@ -74,13 +74,13 @@ class TestGenRandomUtryNp:
         utry = gen_random_utry_np(8)
         assert isinstance(utry, np.ndarray)
         assert utry.shape == (8, 8)
-        assert is_unitary(utry)
+        assert UnitaryMatrix.is_unitary(utry)
 
     def test_valid_multi_dim(self, gen_random_utry_np: Any) -> None:
         utry = gen_random_utry_np([4, 8])
         assert isinstance(utry, np.ndarray)
         assert utry.shape == (8, 8) or utry.shape == (4, 4)
-        assert is_unitary(utry)
+        assert UnitaryMatrix.is_unitary(utry)
 
 
 class TestGenInvalidUtryNp:
@@ -106,13 +106,13 @@ class TestGenInvalidUtryNp:
         iutry = gen_invalid_utry_np(8)
         assert isinstance(iutry, np.ndarray)
         assert iutry.shape == (8, 8)
-        assert not is_unitary(iutry)
+        assert not UnitaryMatrix.is_unitary(iutry)
 
     def test_valid_multi_dim(self, gen_invalid_utry_np: Any) -> None:
         iutry = gen_invalid_utry_np([4, 8])
         assert isinstance(iutry, np.ndarray)
         assert iutry.shape == (8, 8) or iutry.shape == (4, 4)
-        assert not is_unitary(iutry)
+        assert not UnitaryMatrix.is_unitary(iutry)
 
 
 class TestGenRandomCircuit:
@@ -160,48 +160,48 @@ class TestGenRandomCircuit:
 
     # r3_qubit_circuit
     def test_r3_size(self, r3_qubit_circuit: Circuit) -> None:
-        assert r3_qubit_circuit.get_size() == 3
+        assert r3_qubit_circuit.num_qudits == 3
 
     def test_r3_radix(self, r3_qubit_circuit: Circuit) -> None:
         assert r3_qubit_circuit.is_qubit_only()
 
     def test_r3_depth(self, r3_qubit_circuit: Circuit) -> None:
-        assert r3_qubit_circuit.get_num_operations() == 10
+        assert r3_qubit_circuit.num_operations == 10
 
     # r3_qubit_constant_circuit
     def test_r3_con_size(self, r3_qubit_constant_circuit: Circuit) -> None:
-        assert r3_qubit_constant_circuit.get_size() == 3
+        assert r3_qubit_constant_circuit.num_qudits == 3
 
     def test_r3_con_radix(self, r3_qubit_constant_circuit: Circuit) -> None:
         assert r3_qubit_constant_circuit.is_qubit_only()
 
     def test_r3_con_depth(self, r3_qubit_constant_circuit: Circuit) -> None:
-        assert r3_qubit_constant_circuit.get_num_operations() == 25
+        assert r3_qubit_constant_circuit.num_operations == 25
 
     def test_r3_con_constant(self, r3_qubit_constant_circuit: Circuit) -> None:
         assert r3_qubit_constant_circuit.is_constant()
 
     # r3_qutrit_circuit
     def test_r3_qutrit_size(self, r3_qutrit_circuit: Circuit) -> None:
-        assert r3_qutrit_circuit.get_size() == 3
+        assert r3_qutrit_circuit.num_qudits == 3
 
     def test_r3_qutrit_radix(self, r3_qutrit_circuit: Circuit) -> None:
         assert r3_qutrit_circuit.is_qutrit_only()
 
     def test_r3_qutrit_depth(self, r3_qutrit_circuit: Circuit) -> None:
-        assert r3_qutrit_circuit.get_num_operations() == 10
+        assert r3_qutrit_circuit.num_operations == 10
 
     # r6_qudit_circuit
     def test_r6_size(self, r6_qudit_circuit: Circuit) -> None:
-        assert r6_qudit_circuit.get_size() == 6
+        assert r6_qudit_circuit.num_qudits == 6
 
     def test_r6_radix(self, r6_qudit_circuit: Circuit) -> None:
-        count = r6_qudit_circuit.get_radixes().count(2)
-        count += r6_qudit_circuit.get_radixes().count(3)
-        assert count == r6_qudit_circuit.get_size()
+        count = r6_qudit_circuit.radixes.count(2)
+        count += r6_qudit_circuit.radixes.count(3)
+        assert count == r6_qudit_circuit.num_qudits
 
     def test_r6_depth(self, r6_qudit_circuit: Circuit) -> None:
-        assert r6_qudit_circuit.get_num_operations() == 10
+        assert r6_qudit_circuit.num_operations == 10
 
 
 class TestTypedValues:

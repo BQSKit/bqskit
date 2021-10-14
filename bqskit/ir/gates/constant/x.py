@@ -7,11 +7,22 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class XGate(ConstantGate, QubitGate):
-    """The Pauli X gate."""
+    """
+    The Pauli X gate.
 
-    size = 1
-    qasm_name = 'x'
-    utry = UnitaryMatrix(
+    The X gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        0 & 1 \\\\
+        1 & 0 \\\\
+        \\end{pmatrix}
+    """
+
+    _num_qudits = 1
+    _qasm_name = 'x'
+    _utry = UnitaryMatrix(
         [
             [0, 1],
             [1, 0],

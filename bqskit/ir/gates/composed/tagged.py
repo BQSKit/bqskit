@@ -25,25 +25,31 @@ class TaggedGate(
     """
 
     def __init__(self, gate: Gate, tag: Any) -> None:
-        """Associate `tag` with `gate`."""
+        """
+        Associate `tag` with `gate`.
+
+        Args:
+            gate (Gate): The gate to tag.
+
+            tag (Any): The tag to associate with the gate.
+        """
 
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))
 
         self.gate = gate
         self.tag = tag
-        self.name = 'Tagged(%s:%s)' % (gate.get_name(), tag)
-        self.num_params = gate.get_num_params()
-        self.size = gate.get_size()
-        self.radixes = gate.get_radixes()
+        self._name = 'Tagged(%s:%s)' % (gate.name, str(tag))
+        self._num_params = gate.num_params
+        self._num_qudits = gate.num_qudits
+        self._radixes = gate.radixes
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0:
             self.utry = gate.get_unitary()
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
-        """Returns the unitary for this gate, see Unitary for more info."""
-        self.check_parameters(params)
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         if hasattr(self, 'utry'):
             return self.utry
 
@@ -51,21 +57,37 @@ class TaggedGate(
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
         """
-        Returns the gradient for this gate, see Gate for more info.
+        Return the gradient for this gate.
 
-        Notes:
-            The derivative of the conjugate transpose of matrix is equal
-            to the conjugate transpose of the derivative.
+        See :class:`DifferentiableUnitary` for more info.
         """
-        self.check_parameters(params)
         if hasattr(self, 'utry'):
             return np.array([])
 
         return self.gate.get_grad(params)  # type: ignore
 
+    def get_unitary_and_grad(
+        self,
+        params: Sequence[float] = [],
+    ) -> tuple[UnitaryMatrix, np.ndarray]:
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
+        if hasattr(self, 'utry'):
+            return self.utry, np.array([])
+
+        return self.gate.get_unitary_and_grad(params)  # type: ignore
+
     def optimize(self, env_matrix: np.ndarray) -> list[float]:
-        """Returns optimal parameters with respect to an environment matrix."""
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
         if hasattr(self, 'utry'):
             return []
+
         self.check_env_matrix(env_matrix)
         return self.gate.optimize(env_matrix)  # type: ignore

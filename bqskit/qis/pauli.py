@@ -1,34 +1,34 @@
-"""
-This module implements the PauliMatrices class.
-
-A PauliMatrices object represents the entire of set of pauli matrices for some
-number of qubits.
-"""
+"""This module implements the PauliMatrices class."""
 from __future__ import annotations
 
 import itertools as it
+from typing import Iterable
 from typing import Iterator
 from typing import overload
 from typing import Sequence
 
 import numpy as np
 
-from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
 
 
-class PauliMatrices(CachedClass, Sequence[np.ndarray]):
-    """The PauliMatrices class."""
+class PauliMatrices(Sequence[np.ndarray]):
+    """
+    Pauli group of matrices.
 
-    # The Pauli Matrices
+    A PauliMatrices object represents the entire of set of Pauli matrices for
+    some number of qubits.
+    """
+
     X = np.array(
         [
             [0, 1],
             [1, 0],
         ], dtype=np.complex128,
     )
+    """The Pauli X Matrix."""
 
     Y = np.array(
         [
@@ -36,6 +36,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
             [1j, 0],
         ], dtype=np.complex128,
     )
+    """The Pauli Y Matrix."""
 
     Z = np.array(
         [
@@ -43,6 +44,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
             [0, -1],
         ], dtype=np.complex128,
     )
+    """The Pauli Z Matrix."""
 
     I = np.array(
         [
@@ -50,29 +52,35 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
             [0, 1],
         ], dtype=np.complex128,
     )
+    """The Identity Matrix."""
 
-    def __init__(self, size: int) -> None:
+    def __init__(self, num_qudits: int) -> None:
         """
-        Construct the Pauli group for `size` number of qubits.
+        Construct the Pauli group for `num_qudits` number of qubits.
 
         Args:
-            size (int): Power of the tensor product of the Pauli group.
+            num_qudits (int): Power of the tensor product of the Pauli group.
 
         Raises:
-            ValueError: If `size` is less than or equal to 0.
+            ValueError: If `num_qudits` is less than or equal to 0.
         """
 
-        if not is_integer(size):
-            raise TypeError('Expected integer for size, got %s.' % type(size))
-
-        if size <= 0:
-            raise ValueError(
-                'Expected positive integer for size, got %s.' % type(size),
+        if not is_integer(num_qudits):
+            raise TypeError(
+                'Expected integer for num_qudits, got %s.' %
+                type(num_qudits),
             )
 
-        self.size = size
+        if num_qudits <= 0:
+            raise ValueError(
+                'Expected positive integer for num_qudits, got %s.' % type(
+                    num_qudits,
+                ),
+            )
 
-        if size == 1:
+        self.num_qudits = num_qudits
+
+        if num_qudits == 1:
             self.paulis = [
                 PauliMatrices.I,
                 PauliMatrices.X,
@@ -81,7 +89,12 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
             ]
         else:
             self.paulis = []
-            matrices = it.product(PauliMatrices(size - 1), PauliMatrices(1))
+            matrices = it.product(
+                PauliMatrices(
+                    num_qudits - 1,
+                ),
+                PauliMatrices(1),
+            )
             for pauli_n_1, pauli_1 in matrices:
                 self.paulis.append(np.kron(pauli_n_1, pauli_1))
 
@@ -102,37 +115,45 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
     def __len__(self) -> int:
         return len(self.paulis)
 
-    def get_numpy(self) -> np.ndarray:
+    @property
+    def numpy(self) -> np.ndarray:
+        """The NumPy array holding the pauli matrices."""
         return np.array(self.paulis)
 
-    def get_projection_matrices(
-            self, q_set: Sequence[int],
-    ) -> list[np.ndarray]:
+    def __array__(
+        self,
+        dtype: np.typing.DTypeLike = np.complex128,
+    ) -> np.ndarray:
+        """Implements NumPy API for the PauliMatrices class."""
+        if dtype != np.complex128:
+            raise ValueError('PauliMatrices only supports Complex128 dtype.')
+
+        return np.array(self.paulis, dtype)
+
+    def get_projection_matrices(self, q_set: Iterable[int]) -> list[np.ndarray]:
         """
         Return the Pauli matrices that act only on qubits in `q_set`.
 
         Args:
-            q_set (Sequence[int]): Active qubit indices
+            q_set (Iterable[int]): Active qubit indices
 
         Returns:
-            (list(np.ndarray)): Pauli matrices from `self` acting only
-                on qubits in `q_set`.
+            list[np.ndarray]: Pauli matrices from `self` acting only
+            on qubits in `q_set`.
 
         Raises:
             ValueError: if `q_set` is an invalid set of qubit indices.
         """
+        q_set = list(q_set)
 
         if not all(is_integer(q) for q in q_set):
             raise TypeError('Expected sequence of integers for qubit indices.')
 
-        if any(q < 0 or q >= self.size for q in q_set):
+        if any(q < 0 or q >= self.num_qudits for q in q_set):
             raise ValueError('Qubit indices must be in [0, n).')
 
         if len(q_set) != len(set(q_set)):
             raise ValueError('Qubit indices cannot have duplicates.')
-
-        if len(q_set) == 0:
-            raise ValueError('Need at least one qubit index.')
 
         # Nth Order Pauli Matrices can be thought of base 4 number
         # I = 0, X = 1, Y = 2, Z = 3
@@ -144,7 +165,7 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         for ps in it.product([0, 1, 2, 3], repeat=len(q_set)):
             idx = 0
             for p, q in zip(ps, q_set):
-                idx += p * (4 ** (self.size - q - 1))
+                idx += p * (4 ** (self.num_qudits - q - 1))
             pauli_n_qubit.append(self.paulis[idx])
 
         return pauli_n_qubit
@@ -157,8 +178,8 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
             alpha (Sequence[float] | np.ndarray): The pauli coefficients.
 
         Returns:
-            (np.ndarray): Sum of element-wise multiplication of `alpha`
-                and `self.paulis`.
+            np.ndarray: Sum of element-wise multiplication of `alpha`
+            and `self.paulis`.
 
         Raises:
             ValueError: If `alpha` and `self.paulis` are incompatible.
@@ -185,13 +206,12 @@ class PauliMatrices(CachedClass, Sequence[np.ndarray]):
         Args:
             pauli_string (str): A string that describes the desired matrices.
                 This is a comma-seperated list of pauli strings.
-                A pauli string has the following regex pattern:
-                    [IXYZ]+
+                A pauli string has the following regex pattern: [IXYZ]+
 
         Returns:
-            (np.ndarray | list(np.ndarray)):
-                Either the single pauli matrix if only one is constructed,
-                or the list of the constructed pauli matrices.
+            np.ndarray | list[np.ndarray]: Either the single pauli matrix
+            if only one is constructed, or the list of the constructed
+            pauli matrices.
 
         Raises:
             ValueError: if `pauli_string` is invalid.

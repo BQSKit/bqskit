@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from bqskit.compiler.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -19,7 +19,7 @@ class TestGreedyPartitioner:
             for op in r6_qudit_circuit
         )
         assert r6_qudit_circuit.get_unitary() == utry
-        for cycle_index in range(r6_qudit_circuit.get_num_cycles()):
+        for cycle_index in range(r6_qudit_circuit.num_cycles):
             assert not r6_qudit_circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_1(self) -> None:
@@ -66,7 +66,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_2(self) -> None:
@@ -121,7 +121,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_3(self) -> None:
@@ -173,7 +173,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_4(self) -> None:
@@ -226,7 +226,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_5(self) -> None:
@@ -288,7 +288,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_6(self) -> None:
@@ -348,7 +348,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_7(self) -> None:
@@ -422,7 +422,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_8(self) -> None:
@@ -477,7 +477,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_9(self) -> None:
@@ -530,7 +530,7 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
     def test_corner_case_10(self) -> None:
@@ -585,5 +585,5 @@ class TestGreedyPartitioner:
             for op in circuit
         )
         assert circuit.get_unitary() == utry
-        for cycle_index in range(circuit.get_num_cycles()):
+        for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)

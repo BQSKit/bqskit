@@ -7,11 +7,24 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class CNOTGate(ConstantGate, QubitGate):
-    """The controlled-not or controlled-X gate."""
+    """
+    The Controlled-Not or Controlled-X gate.
 
-    size = 2
-    qasm_name = 'cx'
-    utry = UnitaryMatrix(
+    The CNOT gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & 0 & 1 \\\\
+        0 & 0 & 1 & 0 \\\\
+        \\end{pmatrix}
+    """
+
+    _num_qudits = 2
+    _qasm_name = 'cx'
+    _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 1, 0, 0],

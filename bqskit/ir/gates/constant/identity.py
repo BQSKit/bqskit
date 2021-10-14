@@ -13,31 +13,40 @@ from bqskit.utils.typing import is_valid_radixes
 class IdentityGate(ConstantGate):
     """An Identity (No-OP) Gate."""
 
-    def __init__(self, size: int = 1, radixes: Sequence[int] = []) -> None:
+    def __init__(
+        self,
+        num_qudits: int = 1,
+        radixes: Sequence[int] = [],
+    ) -> None:
         """
-        Creates an IdentityGate, defaulting to a single-qubit identity.
+        Create an IdentityGate, defaulting to a single-qubit identity.
 
         Args:
-            size (int) The number of qudits this gate acts on.
+            num_qudits (int): The number of qudits this gate acts on.
 
             radixes (Sequence[int]): The number of orthogonal
                 states for each qudit. Defaults to qubits.
+
+        Raises:
+            ValueError: If `num_qudits` is nonpositive.
         """
-        if size <= 0:
-            raise ValueError('Expected positive integer, got %d' % size)
-        if len(radixes) != 0 and not is_valid_radixes(radixes, size):
+        if num_qudits <= 0:
+            raise ValueError('Expected positive integer, got %d' % num_qudits)
+
+        if len(radixes) != 0 and not is_valid_radixes(radixes, num_qudits):
             raise TypeError('Invalid radixes.')
 
-        self.size = size
-        self.radixes = tuple(radixes or [2] * size)
-        self.utry = UnitaryMatrix.identity(int(np.prod(self.radixes)))
-        self.qasm_name = 'identity%d' % self.size
+        self._num_qudits = num_qudits
+        self._radixes = tuple(radixes or [2] * num_qudits)
+        self._dim = int(np.prod(self.radixes))
+        self._utry = UnitaryMatrix.identity(self.dim, self.radixes)
+        self._qasm_name = 'identity%d' % self.num_qudits
 
     def get_qasm_gate_def(self) -> str:
-        """Returns a qasm gate definition block for this gate."""
-        param_symbols = ['a%d' % i for i in range(self.size)]
+        """Return a qasm gate definition block for this gate."""
+        param_symbols = ['a%d' % i for i in range(self.num_qudits)]
         param_str = ','.join(param_symbols)
-        header = 'gate identity%d %s' % (self.size, param_str)
+        header = 'gate identity%d %s' % (self.num_qudits, param_str)
         body_stmts = ['\tU(0,0,0) %s;' % sym for sym in param_symbols]
         body = '\n'.join(body_stmts)
         return f'{header}\n{{\n{body}\n}}\n'

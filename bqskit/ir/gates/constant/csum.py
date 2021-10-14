@@ -7,10 +7,28 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class CSUMGate(ConstantGate, QutritGate):
-    """The Conditional-SUM gate."""
+    """
+    The two-qutrit Conditional-SUM gate.
 
-    size = 2
-    utry = UnitaryMatrix(
+    The CSUM gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\\\
+        \\end{pmatrix}
+    """
+
+    _num_qudits = 2
+    _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 1, 0, 0, 0, 0, 0, 0, 0],

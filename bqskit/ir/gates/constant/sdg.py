@@ -7,11 +7,20 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class SdgGate(ConstantGate, QubitGate):
-    """The S Dagger gate."""
+    """
+    The single-qubit S Dagger gate.
 
-    size = 1
-    qasm_name = 'sdg'
-    utry = UnitaryMatrix(
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 \\\\
+        0 & -i \\\\
+        \\end{pmatrix}
+    """
+
+    _num_qudits = 1
+    _qasm_name = 'sdg'
+    _utry = UnitaryMatrix(
         [
             [1, 0],
             [0, -1j],

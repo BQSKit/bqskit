@@ -1,3 +1,4 @@
+"""This package defines constant gates."""
 from __future__ import annotations
 
 from bqskit.ir.gates.constant.ch import CHGate
@@ -23,7 +24,9 @@ from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.constant.x import XGate
 from bqskit.ir.gates.constant.xx import XXGate
 from bqskit.ir.gates.constant.y import YGate
+from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
+from bqskit.ir.gates.constant.zz import ZZGate
 
 __all__ = [
     'CHGate',
@@ -49,5 +52,7 @@ __all__ = [
     'XGate',
     'XXGate',
     'YGate',
+    'YYGate',
     'ZGate',
+    'ZZGate',
 ]

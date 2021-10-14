@@ -15,4 +15,4 @@ def test_full_pauli_gate() -> None:
     circuit.append_gate(PauliGate(3), [0, 1, 2])
     cost = HilbertSchmidtResiduals(circuit, UnitaryMatrix(unitary_group.rvs(8)))
     circuit.minimize(cost)
-    assert cost.get_cost(circuit.get_params()) < 1e-6
+    assert cost.get_cost(circuit.params) < 1e-6

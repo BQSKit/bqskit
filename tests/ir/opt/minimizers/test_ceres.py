@@ -16,7 +16,7 @@ def test_minimize_ceres() -> None:
     xgate = XGate()
     xutry = xgate.get_unitary()
     cost = HilbertSchmidtResidualsGenerator().gen_cost(
-        circ, UnitaryMatrix(-1j * xutry.get_numpy()),
+        circ, UnitaryMatrix(-1j * xutry),
     )
     minimizer = CeresMinimizer()
     x = minimizer.minimize(cost, np.array([np.pi / 2]))
@@ -24,7 +24,7 @@ def test_minimize_ceres() -> None:
 
 
 def test_minimize_bfgs_multiqubit(r3_qubit_circuit: Circuit) -> None:
-    num_params = r3_qubit_circuit.get_num_params()
+    num_params = r3_qubit_circuit.num_params
     x0 = np.random.random((num_params,))
     cost = HilbertSchmidtResidualsGenerator().gen_cost(
         r3_qubit_circuit, r3_qubit_circuit.get_unitary(x0),

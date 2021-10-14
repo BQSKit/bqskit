@@ -7,11 +7,24 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class ISwapGate(ConstantGate, QubitGate):
-    """The two qubit swap and phase iSWAP gate."""
+    """
+    The two qubit swap and phase iSWAP gate.
 
-    size = 2
-    qasm_name = 'iswap'
-    utry = UnitaryMatrix(
+    The ISwap gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 0 & i & 0 \\\\
+        0 & i & 0 & 0 \\\\
+        0 & 0 & 0 & 1 \\\\
+        \\end{pmatrix}
+    """
+
+    _num_qudits = 2
+    _qasm_name = 'iswap'
+    _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 0, 1j, 0],

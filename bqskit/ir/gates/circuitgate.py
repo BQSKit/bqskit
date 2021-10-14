@@ -35,23 +35,61 @@ class CircuitGate(Gate):
         """
 
         self._circuit = circuit if move else circuit.copy()
-        self.size = self._circuit.get_size()
-        self.radixes = self._circuit.get_radixes()
-        self.num_params = self._circuit.get_num_params()
-        self.name = 'CircuitGate(%s)' % str(self._circuit)
+        self._num_qudits = self._circuit.num_qudits
+        self._radixes = self._circuit.radixes
+        self._num_params = self._circuit.num_params
+        self._name = 'CircuitGate(%s)' % str(self._circuit)
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
         return self._circuit.get_unitary(params)
 
     def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+        """
+        Return the gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         return self._circuit.get_grad(params)
 
     def get_unitary_and_grad(
         self,
         params: Sequence[float] = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
+        """
+        Return the unitary and gradient for this gate.
+
+        See :class:`DifferentiableUnitary` for more info.
+        """
         return self._circuit.get_unitary_and_grad(params)
 
     def is_differentiable(self) -> bool:
         """Return true if the circuit is differentiable."""
         return self._circuit.is_differentiable()
+
+    def __hash__(self) -> int:
+        hashes: list[int] = [hash(self.name)]
+        for op in self._circuit:
+            hashes.append(hash(op))
+
+            # Don't let the hash list grow too large.
+            if len(hashes) >= 100:
+                hashes = [hash(tuple(hashes))]
+
+        hash_val = hash(tuple(hashes)) if len(hashes) > 1 else hashes[0]
+        return hash_val
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CircuitGate):
+            return NotImplemented
+
+        if self._circuit.num_qudits != other._circuit.num_qudits:
+            return False
+
+        if self._circuit.radixes != other._circuit.radixes:
+            return False
+
+        return all(
+            op1.gate == op2.gate and op1.location == op2.location
+            for op1, op2 in zip(self._circuit, other._circuit)
+        )

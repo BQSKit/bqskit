@@ -11,10 +11,12 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 __all__ = [
     'Unitary',
+    'UnitaryLike',
     'UnitaryMatrix',
     'UnitaryBuilder',
     'DifferentiableUnitary',

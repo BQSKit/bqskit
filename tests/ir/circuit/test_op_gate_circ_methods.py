@@ -1,87 +1,10 @@
-"""
-This test module verifies all circuit operation, gate, and circuit methods.
-
-Circuit operation, gate, and circuit methods:
-    def is_point_in_range(self, point: CircuitPointLike) -> bool:
-    def check_valid_operation(self, op: Operation) -> None:
-    def get_operation(self, point: CircuitPointLike) -> Operation:
-    def point(
-        self,
-        op: Operation | Gate,
-        start: CircuitPointLike = (0, 0),
-        end: CircuitPointLike | None = None,
-    ) -> CircuitPoint:
-    def append(self, op: Operation) -> None:
-    def append_gate(
-        self,
-        gate: Gate,
-        location: Sequence[int],
-        params: Sequence[float] = [],
-    ) -> None:
-    def append_circuit(
-        self,
-        circuit: Circuit,
-        location: Sequence[int],
-    ) -> None:
-    def extend(self, ops: Iterable[Operation]) -> None:
-    def insert(self, cycle_index: int, op: Operation) -> None:
-    def insert_gate(
-        self,
-        cycle_index: int,
-        gate: Gate,
-        location: Sequence[int],
-        params: Sequence[float] = [],
-    ) -> None:
-    def insert_circuit(
-        self,
-        cycle_index: int,
-        circuit: Circuit,
-        location: Sequence[int],
-    ) -> None:
-    def remove(self, op: Operation | Gate) -> None:
-    def count(self, op: Operation | Gate) -> int:
-    def pop(self, point: CircuitPointLike | None = None) -> Operation:
-    def batch_pop(self, points: Sequence[CircuitPointLike]) -> Circuit:
-    def replace(self, point: CircuitPointLike, op: Operation) -> None:
-    def replace_gate(
-        self,
-        point: CircuitPointLike,
-        gate: Gate,
-        location: Sequence[int],
-        params: Sequence[float] = [],
-    ) -> None:
-    def replace_with_circuit(
-        self,
-        point: CircuitPointLike,
-        circuit: Circuit,
-        location: Sequence[int],
-    ) -> None:
-    def fold(self, points: Sequence[CircuitPointLike]) -> None:
-    def copy(self) -> Circuit:
-    def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
-    def clear(self) -> None:
-    def operations(self, reversed: bool = False) -> Iterator[Operation]:
-    def operations_with_points(
-            self,
-            reversed: bool = False,
-    ) -> Iterator[tuple[CircuitPoint, Operation]]:
-    def operations_on_qudit(
-        self,
-        qudit_index: int,
-        reversed: bool = False,
-    ) -> Iterator[Operation]:
-    def operations_on_qudit_with_points(
-            self,
-            qudit_index: int,
-            reversed: bool = False,
-    ) -> Iterator[tuple[CircuitPoint, Operation]]:
-"""
+"""This test module verifies all circuit operation, gate, and circuit
+methods."""
 from __future__ import annotations
-
-from typing import Any
 
 import numpy as np
 import pytest
+from hypothesis import given
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
@@ -90,225 +13,37 @@ from bqskit.ir.gates import ConstantUnitaryGate
 from bqskit.ir.gates import CPIGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import XGate
+from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
+from bqskit.utils.test.strategies import circuits
+from bqskit.utils.test.strategies import operations
+from bqskit.utils.test.types import invalid_type_test
+from bqskit.utils.test.types import valid_type_test
 
 
 def check_no_idle_cycles(circuit: Circuit) -> None:
-    for cycle_index in range(circuit.get_num_cycles()):
+    for cycle_index in range(circuit.num_cycles):
         assert not circuit._is_cycle_idle(cycle_index)
-
-
-class TestIsPointInRange:
-    """This tests `circuit.is_point_in_range`."""
-
-    def test_type_valid_1(self, an_int: int) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_point_in_range((an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_2(self, an_int: int) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_point_in_range(CircuitPoint(an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_3(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_point_in_range((an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_4(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.is_point_in_range(CircuitPoint(an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_point_in_range((not_an_int, 0))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_point_in_range(CircuitPoint(not_an_int, 0))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_3(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_point_in_range((not_an_int, not_an_int))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_4(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.is_point_in_range((0, not_an_int))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_return_type(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        assert isinstance(
-            circuit.is_point_in_range(
-                (an_int, an_int),
-            ), (bool, np.bool_),
-        )
-
-    @pytest.mark.parametrize(
-        'point', [
-            (-5, -5),
-            (-4, -4),
-            (-3, -3),
-            (-2, -2),
-            (-1, -1),
-        ],
-    )
-    def test_true_neg(self, point: CircuitPointLike) -> None:
-        circuit = Circuit(5)
-        for i in range(5):
-            circuit.append_gate(HGate(), [0])
-            circuit.append_gate(HGate(), [1])
-            circuit.append_gate(HGate(), [2])
-            circuit.append_gate(HGate(), [3])
-            circuit.append_gate(HGate(), [4])
-        assert circuit.is_point_in_range(point)
-
-    @pytest.mark.parametrize(
-        'point', [
-            (0, 0),
-            (1, 1),
-            (2, 2),
-            (3, 3),
-            (4, 4),
-        ],
-    )
-    def test_true_pos(self, point: CircuitPointLike) -> None:
-        circuit = Circuit(5)
-        for i in range(5):
-            circuit.append_gate(HGate(), [0])
-            circuit.append_gate(HGate(), [1])
-            circuit.append_gate(HGate(), [2])
-            circuit.append_gate(HGate(), [3])
-            circuit.append_gate(HGate(), [4])
-        assert circuit.is_point_in_range(point)
-
-    @pytest.mark.parametrize(
-        'point', [
-            (-1000, 0),
-            (1, -100),
-            (-8, -8),
-            (-6, -6),
-            (-7, 4),
-        ],
-    )
-    def test_false_neg(self, point: CircuitPointLike) -> None:
-        circuit = Circuit(5)
-        for i in range(5):
-            circuit.append_gate(HGate(), [0])
-            circuit.append_gate(HGate(), [1])
-            circuit.append_gate(HGate(), [2])
-            circuit.append_gate(HGate(), [3])
-            circuit.append_gate(HGate(), [4])
-        assert not circuit.is_point_in_range(point)
-
-    @pytest.mark.parametrize(
-        'point', [
-            (1000, 0),
-            (1, 100),
-            (8, 8),
-            (6, 6),
-            (5, 4),
-            (3, 8),
-            (2, 9),
-            (8, 2),
-        ],
-    )
-    def test_false_pos(self, point: CircuitPointLike) -> None:
-        circuit = Circuit(5)
-        for i in range(5):
-            circuit.append_gate(HGate(), [0])
-            circuit.append_gate(HGate(), [1])
-            circuit.append_gate(HGate(), [2])
-            circuit.append_gate(HGate(), [3])
-            circuit.append_gate(HGate(), [4])
-        assert not circuit.is_point_in_range(point)
 
 
 class TestCheckValidOperation:
     """This tests `circuit.check_valid_operation`."""
 
-    @pytest.mark.parametrize(
-        ('circuit', 'op'),
-        [
-            (Circuit(1), Operation(HGate(), [0])),
-            (Circuit(1), Operation(CNOTGate(), [0, 1])),
-            (Circuit(1), Operation(CPIGate(), [2, 3])),
-            (Circuit(4, [2, 2, 3, 3]), Operation(HGate(), [0])),
-            (Circuit(4, [2, 2, 3, 3]), Operation(CNOTGate(), [0, 1])),
-            (Circuit(4, [2, 2, 3, 3]), Operation(CPIGate(), [2, 3])),
-        ],
-    )
-    def test_type_valid(self, circuit: Circuit, op: Operation) -> None:
-        try:
-            circuit.check_valid_operation(op)
-        except TypeError:
-            assert False, 'Unexpected Exception.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).check_valid_operation)
+    def test_valid_type(self) -> None:
+        pass
 
-    @pytest.mark.parametrize(
-        ('circuit', 'op'),
-        [
-            (Circuit(1), 'A'),
-            (Circuit(1), 0),
-            (Circuit(1), np.int64(1234)),
-            (Circuit(4, [2, 2, 3, 3]), 'A'),
-            (Circuit(4, [2, 2, 3, 3]), 0),
-            (Circuit(4, [2, 2, 3, 3]), np.int64(1234)),
-        ],
-    )
-    def test_type_invalid(self, circuit: Circuit, op: Operation) -> None:
-        try:
-            circuit.check_valid_operation(op)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @invalid_type_test(Circuit(1).check_valid_operation)
+    def test_invalid_type(self) -> None:
+        pass
 
     def test_location_mismatch_1(self, qubit_gate: Gate) -> None:
-        circuit = Circuit(qubit_gate.get_size())
-        location = list(range(qubit_gate.get_size()))
+        circuit = Circuit(qubit_gate.num_qudits)
+        location = list(range(qubit_gate.num_qudits))
         location[-1] += 1
-        params = [0] * qubit_gate.get_num_params()
+        params = [0] * qubit_gate.num_params
         op = Operation(qubit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -319,10 +54,10 @@ class TestCheckValidOperation:
         assert False
 
     def test_location_mismatch_2(self, qutrit_gate: Gate) -> None:
-        circuit = Circuit(qutrit_gate.get_size(), qutrit_gate.get_radixes())
-        location = list(range(qutrit_gate.get_size()))
+        circuit = Circuit(qutrit_gate.num_qudits, qutrit_gate.radixes)
+        location = list(range(qutrit_gate.num_qudits))
         location[-1] += 1
-        params = [0] * qutrit_gate.get_num_params()
+        params = [0] * qutrit_gate.num_params
         op = Operation(qutrit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -333,9 +68,9 @@ class TestCheckValidOperation:
         assert False
 
     def test_radix_mismatch_1(self, qubit_gate: Gate) -> None:
-        circuit = Circuit(qubit_gate.get_size(), [3] * qubit_gate.get_size())
-        location = list(range(qubit_gate.get_size()))
-        params = [0] * qubit_gate.get_num_params()
+        circuit = Circuit(qubit_gate.num_qudits, [3] * qubit_gate.num_qudits)
+        location = list(range(qubit_gate.num_qudits))
+        params = [0] * qubit_gate.num_params
         op = Operation(qubit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -346,9 +81,9 @@ class TestCheckValidOperation:
         assert False
 
     def test_radix_mismatch_2(self, qutrit_gate: Gate) -> None:
-        circuit = Circuit(qutrit_gate.get_size())
-        location = list(range(qutrit_gate.get_size()))
-        params = [0] * qutrit_gate.get_num_params()
+        circuit = Circuit(qutrit_gate.num_qudits)
+        location = list(range(qutrit_gate.num_qudits))
+        params = [0] * qutrit_gate.num_params
         op = Operation(qutrit_gate, location, params)
         try:
             circuit.check_valid_operation(op)
@@ -359,15 +94,15 @@ class TestCheckValidOperation:
         assert False
 
     def test_valid_1(self, gate: Gate) -> None:
-        circuit = Circuit(gate.get_size(), gate.get_radixes())
-        location = list(range(gate.get_size()))
-        params = [0] * gate.get_num_params()
+        circuit = Circuit(gate.num_qudits, gate.radixes)
+        location = list(range(gate.num_qudits))
+        params = [0] * gate.num_params
         circuit.check_valid_operation(Operation(gate, location, params))
 
     def test_valid_2(self, gate: Gate) -> None:
-        circuit = Circuit(gate.get_size() + 2, (2, 2) + gate.get_radixes())
-        location = [x + 2 for x in list(range(gate.get_size()))]
-        params = [0] * gate.get_num_params()
+        circuit = Circuit(gate.num_qudits + 2, (2, 2) + gate.radixes)
+        location = [x + 2 for x in list(range(gate.num_qudits))]
+        params = [0] * gate.num_params
         circuit.check_valid_operation(Operation(gate, location, params))
 
     def test_valid_3(self) -> None:
@@ -379,68 +114,13 @@ class TestCheckValidOperation:
 class TestGetOperation:
     """This tests `circuit.get_operation`."""
 
-    def test_type_valid_1(self, an_int: int) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.get_operation((an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).get_operation)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self, an_int: int) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.get_operation(CircuitPoint(an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_3(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.get_operation((an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_4(self, an_int: int) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.get_operation(CircuitPoint(an_int, an_int))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.get_operation((not_an_int, 0))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.get_operation(CircuitPoint(not_an_int, 0))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_3(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.get_operation((not_an_int, not_an_int))
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @invalid_type_test(Circuit(1).get_operation)
+    def test_invalid_type(self) -> None:
+        pass
 
     @pytest.mark.parametrize(
         'point', [
@@ -494,8 +174,8 @@ class TestGetOperation:
         assert False, 'Should not have reached here.'
 
     def test_correctness_1(self, r6_qudit_circuit: Circuit) -> None:
-        for x in range(r6_qudit_circuit.get_num_cycles()):
-            for y in range(r6_qudit_circuit.get_size()):
+        for x in range(r6_qudit_circuit.num_cycles):
+            for y in range(r6_qudit_circuit.num_qudits):
                 correct = r6_qudit_circuit._circuit[x][y]
 
                 if correct is not None:
@@ -527,59 +207,13 @@ class TestGetOperation:
 class TestPoint:
     """This tests `circuit.point`."""
 
-    def test_type_valid_1(self) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.point(HGate())
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).point)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.point(Operation(HGate(), [0]))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_3(self) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.point(HGate())
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_valid_4(self) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.point(Operation(HGate(), [0]))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
-
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.point(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.point(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @invalid_type_test(Circuit(1).point, [IndexError])
+    def test_invalid_type(self) -> None:
+        pass
 
     def test_return_type(self) -> None:
         circuit = Circuit(5)
@@ -592,8 +226,8 @@ class TestPoint:
         assert isinstance(circuit.point(HGate()), CircuitPoint)
 
     def test_correctness_1(self, r6_qudit_circuit: Circuit) -> None:
-        for x in range(r6_qudit_circuit.get_num_cycles()):
-            for y in range(r6_qudit_circuit.get_size()):
+        for x in range(r6_qudit_circuit.num_cycles):
+            for y in range(r6_qudit_circuit.num_qudits):
                 op = r6_qudit_circuit._circuit[x][y]
 
                 if op is not None:
@@ -652,237 +286,422 @@ class TestPoint:
         opH = Operation(HGate(), [0])
         circuit.append(opH)
         assert circuit.point(opH).__repr__(
-        ) == 'CircuitPoint(cycle=0, qudit=0)'
+        ) == '(0, 0)'
 
         opX = Operation(XGate(), [0])
         circuit.append(opX)
         assert circuit.point(opX).__repr__(
-        ) == 'CircuitPoint(cycle=1, qudit=0)'
+        ) == '(1, 0)'
 
 
 class TestAppend:
     """This tests `circuit.append`."""
 
-    def test_type_valid_1(self) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.append(Operation(HGate(), [0]))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).append)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.append(Operation(HGate(), [2]))
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @invalid_type_test(Circuit(1).append)
+    def test_invalid_type(self) -> None:
+        pass
 
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.append(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.append(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @given(circuits())
+    def test_reconstruct(self, circuit: Circuit) -> None:
+        new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        for op in circuit:
+            new_circuit.append(op)
+        check_no_idle_cycles(new_circuit)
+        assert new_circuit.get_unitary() == circuit.get_unitary()
 
 
 class TestAppendGate:
     """This tests `circuit.append_gate`."""
 
-    def test_type_valid_1(self) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.append_gate(HGate(), [0])
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).append_gate)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.append_gate(HGate(), [2])
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @invalid_type_test(Circuit(1).append_gate, [ValueError])
+    def test_invalid_type(self) -> None:
+        pass
 
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.append_gate(not_an_int, not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.append_gate(not_an_int, not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @given(circuits())
+    def test_reconstruct(self, circuit: Circuit) -> None:
+        new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        for op in circuit:
+            new_circuit.append_gate(op.gate, op.location, op.params)
+        check_no_idle_cycles(new_circuit)
+        assert new_circuit.get_unitary() == circuit.get_unitary()
 
 
 class TestAppendCircuit:
     """This tests `circuit.append_circuit`."""
 
-    def test_type_valid_1(self) -> None:
-        circuit = Circuit(1)
-        circuit_to_add = Circuit(1)
-        circuit_to_add.append_gate(HGate(), [0])
-        try:
-            circuit.append_circuit(circuit_to_add, [0])
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).append_circuit)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        circuit_to_add = Circuit(1)
-        circuit_to_add.append_gate(HGate(), [0])
-        try:
-            circuit.append_circuit(circuit_to_add, [0])
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @invalid_type_test(Circuit(1).append_circuit)
+    def test_invalid_type(self) -> None:
+        pass
 
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.append_circuit(not_an_int, not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @given(circuits())
+    def test_reconstruct(self, circuit: Circuit) -> None:
+        new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        new_circuit.append_circuit(circuit, list(range(circuit.num_qudits)))
+        check_no_idle_cycles(new_circuit)
+        assert new_circuit.get_unitary() == circuit.get_unitary()
 
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.append_circuit(not_an_int, not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @given(circuits())
+    def test_reconstruct_larger(self, circuit: Circuit) -> None:
+        new_circ = Circuit(circuit.num_qudits + 1, circuit.radixes + (2,))
+        new_circ.append_circuit(circuit, list(range(circuit.num_qudits)))
+        check_no_idle_cycles(new_circ)
+        circuit.append_qudit()
+        assert new_circ.get_unitary() == circuit.get_unitary()
 
 
 class TestExtend:
     """This tests `circuit.extend`."""
 
-    def test_type_valid_1(self) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.extend([Operation(HGate(), [0])])
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @valid_type_test(Circuit(1).extend)
+    def test_valid_type(self) -> None:
+        pass
 
-    def test_type_valid_2(self) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.extend([Operation(HGate(), [0])])
-        except TypeError:
-            assert False, 'Unexpected TypeError.'
-        except BaseException:
-            return
+    @invalid_type_test(Circuit(1).extend)
+    def test_invalid_type(self) -> None:
+        pass
 
-    def test_type_invalid_1(self, not_an_int: Any) -> None:
-        circuit = Circuit(1)
-        try:
-            circuit.extend(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
-
-    def test_type_invalid_2(self, not_an_int: Any) -> None:
-        circuit = Circuit(4, [2, 2, 3, 3])
-        try:
-            circuit.extend(not_an_int)
-        except TypeError:
-            return
-        except BaseException:
-            assert False, 'Unexpected Exception.'
+    @given(circuits())
+    def test_reconstruct(self, circuit: Circuit) -> None:
+        new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        new_circuit.extend(circuit)
+        check_no_idle_cycles(new_circuit)
+        assert new_circuit.get_unitary() == circuit.get_unitary()
 
 
 class TestInsert:
     """This tests `circuit.insert`."""
 
+    @valid_type_test(Circuit(1).insert)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).insert, [ValueError])
+    def test_invalid_type(self) -> None:
+        pass
+
+    def test_empty(self) -> None:
+        circuit = Circuit(2)
+        circuit.insert(0, Operation(CXGate(), (0, 1)))
+        assert circuit[0, 0] == Operation(CXGate(), (0, 1))
+
+    @given(circuits((2, 2, 2, 2)), operations(2, max_qudit=3))
+    def test_insert(self, circuit: Circuit, op: Operation) -> None:
+        circuit.insert(0, op)
+        assert circuit[0, op.location[0]] == op
+        circuit.insert(circuit.num_cycles, op)
+        assert circuit[-1, op.location[0]] == op
+        check_no_idle_cycles(circuit)
+
 
 class TestInsertGate:
     """This tests `circuit.insert_gate`."""
+
+    @valid_type_test(Circuit(1).insert_gate)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).insert_gate, [ValueError])
+    def test_invalid_type(self) -> None:
+        pass
+
+    def test_empty(self) -> None:
+        circuit = Circuit(2)
+        circuit.insert_gate(0, CXGate(), (0, 1))
+        assert circuit[0, 0] == Operation(CXGate(), (0, 1))
+
+    @given(circuits((2, 2, 2, 2)), operations(2, max_qudit=3))
+    def test_insert(self, circuit: Circuit, op: Operation) -> None:
+        circuit.insert_gate(0, op.gate, op.location, op.params)
+        assert circuit[0, op.location[0]] == op
+        circuit.insert_gate(circuit.num_cycles, op.gate, op.location, op.params)
+        assert circuit[-1, op.location[0]] == op
+        check_no_idle_cycles(circuit)
 
 
 class TestInsertCircuit:
     """This tests `circuit.insert_circuit`."""
 
+    @valid_type_test(Circuit(1).insert_circuit)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).insert_circuit, [ValueError, AttributeError])
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_apply(self, circuit: Circuit) -> None:
+        new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        location = list(range(circuit.num_qudits))
+        new_circuit.insert_circuit(0, circuit, location)
+        U = circuit.get_unitary()
+        assert U == new_circuit.get_unitary()
+        check_no_idle_cycles(circuit)
+
+        new_circuit.insert_circuit(new_circuit.num_cycles, circuit, location)
+        assert U @ U == new_circuit.get_unitary()
+        check_no_idle_cycles(circuit)
+
+        new_circuit.insert_circuit(
+            0,
+            circuit,
+            location,
+        )
+        assert U @ U @ U == new_circuit.get_unitary()
+        check_no_idle_cycles(circuit)
+
 
 class TestRemove:
     """This tests `circuit.remove`."""
+
+    @valid_type_test(Circuit(1).remove)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).remove)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_remove(self, circuit: Circuit) -> None:
+        num_ops = circuit.num_operations
+        while num_ops > 0:
+            op = list(circuit.operations())[0]
+            old_count = circuit.count(op)
+            circuit.remove(op)
+            assert num_ops - circuit.num_operations == 1
+            assert old_count - circuit.count(op) == 1
+            num_ops = circuit.num_operations
+            check_no_idle_cycles(circuit)
+
+
+class TestRemoveAll:
+    """This tests `circuit.remove_all`."""
+
+    @valid_type_test(Circuit(1).remove_all)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).remove_all)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_remove_all_op(self, circuit: Circuit) -> None:
+        num_ops = circuit.num_operations
+        while num_ops > 0:
+            op = list(circuit.operations())[0]
+            old_count = circuit.count(op)
+            circuit.remove_all(op)
+            assert num_ops - circuit.num_operations == old_count
+            assert circuit.count(op) == 0
+            with pytest.raises((ValueError, IndexError)):
+                circuit.point(op)
+            num_ops = circuit.num_operations
+            check_no_idle_cycles(circuit)
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_remove_all_gate(self, circuit: Circuit) -> None:
+        num_ops = circuit.num_operations
+        while num_ops > 0:
+            op = list(circuit.operations())[0]
+            old_count = circuit.count(op.gate)
+            circuit.remove_all(op.gate)
+            assert num_ops - circuit.num_operations == old_count
+            assert circuit.count(op.gate) == 0
+            with pytest.raises((ValueError, IndexError)):
+                circuit.point(op.gate)
+            num_ops = circuit.num_operations
+            check_no_idle_cycles(circuit)
 
 
 class TestCount:
     """This tests `circuit.count`."""
 
+    @valid_type_test(Circuit(1).count)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).count)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_count_op(self, circuit: Circuit) -> None:
+        for op in circuit:
+            count = circuit.count(op)
+            start = (0, 0)
+            for i in range(count):
+                start = circuit.point(op, start)
+                start = (start[0] + 1, 0)
+
+            with pytest.raises((ValueError, IndexError)):
+                circuit.point(op, start)
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_count_gate(self, circuit: Circuit) -> None:
+        for op in circuit:
+            count = circuit.count(op.gate)
+            assert count == len([op2 for op2 in circuit if op2.gate == op.gate])
+
 
 class TestPop:
     """This tests `circuit.pop`."""
+
+    @valid_type_test(Circuit(1).pop)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).pop)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_pop_all(self, circuit: Circuit) -> None:
+        for x in range(circuit.num_operations):
+            assert isinstance(circuit.pop(), Operation)
+            check_no_idle_cycles(circuit)
+        assert circuit.num_operations == 0
 
 
 class TestBatchPop:
     """This tests `circuit.batch_pop`."""
 
+    @valid_type_test(Circuit(1).batch_pop)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(Circuit(1).batch_pop, [IndexError])
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_batch_pop_all(self, circuit: Circuit) -> None:
+        if circuit.num_operations == 0:
+            return
+        pts = [
+            (x, y)
+            for x in range(circuit.num_cycles)
+            for y in range(circuit.num_qudits)
+        ]
+        popped_circuit = circuit.batch_pop(pts)
+        assert isinstance(popped_circuit, Circuit)
+        check_no_idle_cycles(popped_circuit)
+        assert circuit.num_operations == 0
+
 
 class TestReplace:
     """This tests `circuit.replace`."""
+
+    @valid_type_test(Circuit(1).replace)
+    def test_valid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_replace(self, circuit: Circuit) -> None:
+        if circuit.num_operations == 0:
+            return
+        op = list(circuit.operations())[0]
+        point = circuit.point(op)
+        U = circuit.get_unitary()
+        circuit.replace(point, op)
+        assert circuit.get_unitary() == U
+
+
+class TestBatchReplace:
+    """This tests `circuit.replace`."""
+
+    @valid_type_test(Circuit(1).batch_replace)
+    def test_valid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_batch_replace(self, circuit: Circuit) -> None:
+        ops = list(circuit.operations())
+        ops = ops[:1] if len(ops) > 2 else ops
+        points = [circuit.point(op) for op in ops]
+        U = circuit.get_unitary()
+        circuit.batch_replace(points, ops)
+        assert circuit.get_unitary() == U
 
 
 class TestReplaceGate:
     """This tests `circuit.replace_gate`."""
 
+    @valid_type_test(Circuit(1).replace)
+    def test_valid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_replace(self, circuit: Circuit) -> None:
+        if circuit.num_operations == 0:
+            return
+        op = list(circuit.operations())[0]
+        point = circuit.point(op)
+        U = circuit.get_unitary()
+        circuit.replace_gate(point, op.gate, op.location, op.params)
+        assert circuit.get_unitary() == U
+
 
 class TestReplaceWithCircuit:
     """This tests `circuit.replace_with_circuit`."""
+
+    @valid_type_test(Circuit(1).replace)
+    def test_valid_type(self) -> None:
+        pass
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_replace(self, circuit: Circuit) -> None:
+        if circuit.num_operations == 0:
+            return
+        op = list(circuit.operations())[0]
+        circ = Circuit.from_operation(op)
+        point = circuit.point(op)
+        U = circuit.get_unitary()
+        circuit.replace_with_circuit(point, circ)
+        assert circuit.get_unitary() == U
 
 
 class TestCopy:
     """This tests `circuit.copy`."""
 
+    @given(circuits((2, 2, 2, 2)))
+    def test_copy(self, circuit: Circuit) -> None:
+        new_circuit = circuit.copy()
+        new_circuit.get_unitary() == circuit.get_unitary()
+
+
+class TestBecome:
+    """This tests `circuit.copy`."""
+
+    @given(circuits((2, 2, 2, 2)))
+    def test_become(self, circuit: Circuit) -> None:
+        new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        new_circuit.become(circuit)
+        new_circuit.get_unitary() == circuit.get_unitary()
+
 
 class TestClear:
     """This tests `circuit.clear`."""
 
-
-class TestOperations:
-    """This tests `circuit.operations`."""
-
-
-class TestOperationsWithPoints:
-    """This tests `circuit.operations_with_points`."""
-
-
-class TestOperationsOnQudit:
-    """This tests `circuit.operations_on_qudit`."""
-
-
-class TestOperationsOnQuditWithPoints:
-    """This tests `circuit.operations_on_qudit_with_points`."""
+    @given(circuits((2, 2, 2, 2)))
+    def test_clear(self, circuit: Circuit) -> None:
+        circuit.clear()
+        assert circuit.num_operations == 0
+        assert len(circuit.gate_set) == 0
+        assert circuit.depth == 0
+        assert circuit.parallelism == 0
+        assert circuit.num_cycles == 0
+        assert len(circuit.active_qudits) == 0

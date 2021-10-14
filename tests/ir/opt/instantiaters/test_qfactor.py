@@ -19,12 +19,12 @@ class TestQFactorEndToEnd:
         circuit.append_gate(g1, [0, 1, 2])
         utry_before = circuit.get_unitary()
         # The following call should not make any changes in circuit
-        QFactor().instantiate(circuit, u1, circuit.get_params())
+        QFactor().instantiate(circuit, u1, circuit.params)
         utry_after = circuit.get_unitary()
 
         assert np.allclose(
-            utry_before.get_numpy(),
-            utry_after.get_numpy(),
+            utry_before,
+            utry_after,
         )
 
     def test_1_gate(self) -> None:
@@ -32,15 +32,15 @@ class TestQFactorEndToEnd:
         g1 = VariableUnitaryGate(3)
         circuit = Circuit(3)
         circuit.append_gate(g1, [0, 1, 2])
-        params = QFactor().instantiate(circuit, u1, circuit.get_params())
+        params = QFactor().instantiate(circuit, u1, circuit.params)
         circuit.set_params(params)
 
         g1_params = list(np.reshape(u1, (64,)))
         g1_params = list(np.real(g1_params)) + list(np.imag(g1_params))
 
         assert np.allclose(
-            circuit.get_unitary().get_numpy(),
-            g1.get_unitary(g1_params).get_numpy(),
+            circuit.get_unitary(),
+            g1.get_unitary(g1_params),
         )
 
     def test_2_gate(self) -> None:
@@ -51,12 +51,12 @@ class TestQFactorEndToEnd:
         circuit.append_gate(g1, [0, 1])
         circuit.append_gate(g2, [1, 2, 3])
         circuit.append_gate(g3, [1])
-        utry = circuit.get_unitary(np.random.random(circuit.get_num_params()))
-        params = QFactor().instantiate(circuit, utry, circuit.get_params())
+        utry = circuit.get_unitary(np.random.random(circuit.num_params))
+        params = QFactor().instantiate(circuit, utry, circuit.params)
 
         circuit.set_params(params)
 
         assert np.allclose(
-            circuit.get_unitary().get_numpy(),
-            utry.get_numpy(),
+            circuit.get_unitary(),
+            utry,
         )

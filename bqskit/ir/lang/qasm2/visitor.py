@@ -161,7 +161,7 @@ class OPENQASMVisitor(Visitor):
                 if reg.name == reg_name:
                     location.append(outer_idx + reg_idx)
                     break
-                outer_idx += reg.size
+                outer_idx += reg.num_qudits
 
         if len(location) != gate_def.num_vars:
             raise LangException(
