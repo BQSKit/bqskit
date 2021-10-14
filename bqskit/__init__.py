@@ -8,13 +8,13 @@ from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.lang import register_language
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 __all__ = [
     'CompilationTask',
     'Compiler',
-    'TaskStatus',
-    'TaskResult',
     'Circuit',
+    'UnitaryMatrix',
 ]
 
 # Initialize Logging

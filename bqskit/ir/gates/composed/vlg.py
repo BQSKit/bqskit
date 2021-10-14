@@ -104,6 +104,7 @@ class VariableLocationGate(ComposedGate):
                         )
 
             self._radixes = tuple(radixes)
+            self._num_qudits = len(self.radixes)
 
         self._num_params = self.gate.num_params + len(locations)
 

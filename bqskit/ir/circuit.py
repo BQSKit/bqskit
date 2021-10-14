@@ -2242,6 +2242,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `multistarts` is not a positive integer.
         """
+        # Check if should run in parallel
+        parallel = 'parallel' in kwargs and kwargs['parallel']
+        if 'parallel' in kwargs:
+            kwargs.pop('parallel')
+
         # Assign method if unspecified
         if method is None:
             error_msg = ''
@@ -2303,7 +2308,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # Instantiate the circuit
         params = []
-        if multistarts > 1 and 'parallel' in kwargs:
+        if multistarts > 1 and parallel:
             with worker_client() as client:
                 futures = [
                     client.submit(

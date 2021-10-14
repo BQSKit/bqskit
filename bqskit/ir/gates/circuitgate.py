@@ -70,7 +70,7 @@ class CircuitGate(Gate):
     def __hash__(self) -> int:
         hashes: list[int] = [hash(self.name)]
         for op in self._circuit:
-            hashes.append(hash(repr(op)))
+            hashes.append(hash(op))
 
             # Don't let the hash list grow too large.
             if len(hashes) >= 100:
@@ -83,4 +83,13 @@ class CircuitGate(Gate):
         if not isinstance(other, CircuitGate):
             return NotImplemented
 
-        return self._circuit == other._circuit
+        if self._circuit.num_qudits != other._circuit.num_qudits:
+            return False
+
+        if self._circuit.radixes != other._circuit.radixes:
+            return False
+
+        return all(
+            op1.gate == op2.gate and op1.location == op2.location
+            for op1, op2 in zip(self._circuit, other._circuit)
+        )

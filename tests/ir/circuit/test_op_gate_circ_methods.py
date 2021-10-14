@@ -455,7 +455,7 @@ class TestInsertCircuit:
         check_no_idle_cycles(circuit)
 
         new_circuit.insert_circuit(
-            -new_circuit.num_cycles - 1,
+            0,
             circuit,
             location,
         )

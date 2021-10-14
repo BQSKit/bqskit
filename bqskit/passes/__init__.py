@@ -33,6 +33,15 @@ synthesis pass to convert the circuit to native gates.
     QFASTDecompositionPass
     QPredictDecompositionPass
 
+.. rubric:: Processing Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    ScanningGateRemovalPass
+    WindowOptimizationPass
+
 .. rubric:: Control Passes
 
 This are passes that are used to manage control flow inside of a
@@ -96,6 +105,8 @@ from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
+from bqskit.passes.processing.scan import ScanningGateRemovalPass
+from bqskit.passes.processing.window import WindowOptimizationPass
 from bqskit.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.passes.synthesis.leap import OptimizedLEAPPass
 from bqskit.passes.synthesis.qfast import QFASTDecompositionPass
@@ -135,4 +146,6 @@ __all__ = [
     'UpdateDataPass',
     'ToU3Pass',
     'SimpleLayoutPass',
+    'ScanningGateRemovalPass',
+    'WindowOptimizationPass',
 ]

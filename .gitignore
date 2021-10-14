@@ -1,5 +1,4 @@
 *.egg-info/
-*.qasm
 *.unitary
 .tox/
 .env/
@@ -12,3 +11,4 @@ docs/source/autogen
 __pycache__
 docs/_build
 dask-worker-space
+.ipynb_checkpoints

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
@@ -188,22 +188,10 @@ class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
         if circuit.num_qudits < 2:
             raise ValueError('Cannot expand a single-qudit circuit.')
 
-        # If a MachineModel is provided in the data dict, it will be used.
-        # Otherwise all-to-all connectivity is assumed.
-        model = None
-        if 'machine_model' in data:
-            model = data['machine_model']
-        if (
-            not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.num_qudits
-        ):
-            _logger.warning(
-                'MachineModel not specified or invalid;'
-                ' defaulting to all-to-all.',
-            )
-            model = MachineModel(circuit.num_qudits)
-            data['machine_model'] = model
+        # Get the machine model
+        model = BasePass.get_model(circuit, data)
 
+        # Generate successors
         successors = []
         for edge in model.coupling_graph:
             successor = circuit.copy()

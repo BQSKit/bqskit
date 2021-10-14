@@ -6,12 +6,12 @@ import logging
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.ir import Circuit
-from bqskit.passes.control import ForEachBlockPass
-from bqskit.passes.processing import WindowOptimizationPass
-from bqskit.passes.synthesis import LEAPSynthesisPass
-from bqskit.passes.synthesis import QFASTDecompositionPass
-from bqskit.passes.util.unfold import UnfoldPass
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.passes import ForEachBlockPass
+from bqskit.passes import LEAPSynthesisPass
+from bqskit.passes import QFASTDecompositionPass
+from bqskit.passes import ScanningGateRemovalPass
+from bqskit.passes import UnfoldPass
+from bqskit.qis import UnitaryMatrix
 
 if __name__ == '__main__':
     # Enable logging
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     task = CompilationTask(
         circuit, [
             QFASTDecompositionPass(),
-            ForEachBlockPass([LEAPSynthesisPass(), WindowOptimizationPass()]),
+            ForEachBlockPass([LEAPSynthesisPass(), ScanningGateRemovalPass()]),
             UnfoldPass(),
         ],
     )

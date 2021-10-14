@@ -33,11 +33,11 @@ class SimpleLayoutPass(BasePass):
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if self.model is None:
-            data['model'] = MachineModel(circuit.num_qudits)
+            data['machine_model'] = MachineModel(circuit.num_qudits)
             return
 
         if self.model.num_qudits < circuit.num_qudits:
             raise RuntimeError('Machine model is too small for circuit.')
 
         graph = self.model.get_subgraph(list(range(circuit.num_qudits)))
-        data['model'] = MachineModel(circuit.num_qudits, graph)
+        data['machine_model'] = MachineModel(circuit.num_qudits, graph)
