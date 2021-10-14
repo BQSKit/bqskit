@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 from typing import Sequence
 from typing import Union
@@ -69,6 +70,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             self._radixes = input.radixes
             self._dim = input.dim
             return
+
+        if 'READTHEDOCS' in os.environ:
+            check_arguments = False
 
         if check_arguments and not is_square_matrix(input):
             raise TypeError(f'Expected square matrix, got {type(input)}.')
