@@ -1,7 +1,7 @@
 """This module implements the XXGate."""
 from __future__ import annotations
 
-import numpy as np
+import math
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -28,9 +28,9 @@ class XXGate(ConstantGate, QubitGate):
     _qasm_name = 'rxx(pi/2)'
     _utry = UnitaryMatrix(
         [
-            [np.sqrt(2) / 2, 0, 0, -1j * np.sqrt(2) / 2],
-            [0, np.sqrt(2) / 2, -1j * np.sqrt(2) / 2, 0],
-            [0, -1j * np.sqrt(2) / 2, np.sqrt(2) / 2, 0],
-            [-1j * np.sqrt(2) / 2, 0, 0, np.sqrt(2) / 2],
+            [math.sqrt(2) / 2, 0, 0, -1j * math.sqrt(2) / 2],
+            [0, math.sqrt(2) / 2, -1j * math.sqrt(2) / 2, 0],
+            [0, -1j * math.sqrt(2) / 2, math.sqrt(2) / 2, 0],
+            [-1j * math.sqrt(2) / 2, 0, 0, math.sqrt(2) / 2],
         ],
     )

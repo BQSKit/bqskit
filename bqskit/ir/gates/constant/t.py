@@ -1,7 +1,7 @@
 """This module implements the TGate."""
 from __future__ import annotations
 
-import numpy as np
+import cmath
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -25,6 +25,6 @@ class TGate(ConstantGate, QubitGate):
     _utry = UnitaryMatrix(
         [
             [1, 0],
-            [0, np.exp(1j * np.pi / 4)],
+            [0, cmath.exp(1j * cmath.pi / 4)],
         ],
     )

@@ -11,28 +11,6 @@ for common objects found in quantum information science.
 The most widely used will be the `UnitaryMatrix` object which
 represents a pure quantum operation in matrix form.
 
-.. jupyter-execute::
-    :linenos:
-
-    from bqskit.qis import UnitaryMatrix
-
-    # Create a unitary object containing the cnot operation
-    cnot = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, 1],
-            [0, 0, 1, 0],
-        ]
-    )
-
-    # Sample a random 2-qubit unitary from the Haar distribution
-    utry = UnitaryMatrix.random(2)
-
-    # The `UnitaryMatrix` class implement the NumPy API
-    result = cnot @ utry
-    print(result)
-
 .. rubric:: Abstract Base Classes
 
 .. autosummary::

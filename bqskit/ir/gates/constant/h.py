@@ -1,7 +1,7 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-import numpy as np
+import math
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -26,7 +26,7 @@ class HGate(ConstantGate, QubitGate):
     _qasm_name = 'h'
     _utry = UnitaryMatrix(
         [
-            [np.sqrt(2) / 2, np.sqrt(2) / 2],
-            [np.sqrt(2) / 2, -np.sqrt(2) / 2],
+            [math.sqrt(2) / 2, math.sqrt(2) / 2],
+            [math.sqrt(2) / 2, -math.sqrt(2) / 2],
         ],
     )

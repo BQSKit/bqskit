@@ -9,7 +9,12 @@ from typing import Union
 
 import numpy as np
 import scipy as sp
-from numpy.lib.mixins import NDArrayOperatorsMixin
+
+if 'READTHEDOCS' not in os.environ:
+    from numpy.lib.mixins import NDArrayOperatorsMixin
+else:
+    class NDArrayOperatorsMixin:
+        pass
 from scipy.stats import unitary_group
 
 from bqskit.qis.state.state import StateLike
@@ -66,6 +71,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         # Stop any actual logic when building documentation
         if 'READTHEDOCS' in os.environ:
+            self._utry = None
             return
 
         # Copy constructor

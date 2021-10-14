@@ -1,6 +1,7 @@
 """This module implements the PauliGate."""
 from __future__ import annotations
 
+import os
 from typing import Sequence
 
 import numpy as np
@@ -49,7 +50,10 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self._num_qudits = num_qudits
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
-        self.sigmav = (-1j / 2) * self.paulis.numpy
+        if 'READTHEDOCS' in os.environ:
+            self.sigmav = None
+        else:
+            self.sigmav = (-1j / 2) * self.paulis.numpy
 
     def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
