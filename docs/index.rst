@@ -22,7 +22,10 @@ and algorithm framework that can run many algorithms efficiently.
    :caption: BQSKit Tutorials
    :maxdepth: 1
 
-   tutorials/BQSKit IR Introduction.ipynb
+   tutorials/Introduction to BQSKit IR.ipynb
+   tutorials/Search Synthesis.ipynb
+   tutorials/Searchless Synthesis.ipynb
+   tutorials/Partitioning and Optimization.ipynb
 
 .. toctree::
    :caption: API Reference

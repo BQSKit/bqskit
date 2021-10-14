@@ -2,10 +2,7 @@
 
 BQSKit allows you to use high-quality synthesis algorithms with ease to
 compile quantum circuits. It is designed to be highly customizable to find
-a compiler-flow that suites your needs well. In this guide, we will cover
-installation and some basic workflows, but there is no one-size-fits-all
-when it comes to synthesis. We recommend you explore the package
-once you get more comfortable with the basics.
+a compiler-flow that suites your needs well.
 
 ## Installation
 
