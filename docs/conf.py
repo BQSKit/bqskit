@@ -100,3 +100,4 @@ autodoc_mock_imports = [
     'lark-parser',
     'distributed',
 ]
+nbsphinx_allow_errors = True
