@@ -464,7 +464,5 @@ def everything_except(
     return (
         from_type(type)
         .flatmap(from_type)
-        .filter(
-            lambda x: not isinstance(x, tuple(checked_types)),  # type: ignore
-        )
+        .filter(lambda x: not isinstance(x, tuple(checked_types)))
     )

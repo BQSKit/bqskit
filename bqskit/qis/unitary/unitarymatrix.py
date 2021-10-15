@@ -13,7 +13,7 @@ import scipy as sp
 if 'READTHEDOCS' not in os.environ:
     from numpy.lib.mixins import NDArrayOperatorsMixin
 else:
-    class NDArrayOperatorsMixin:
+    class NDArrayOperatorsMixin:  # type: ignore
         pass
 from scipy.stats import unitary_group
 
@@ -71,7 +71,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         # Stop any actual logic when building documentation
         if 'READTHEDOCS' in os.environ:
-            self._utry = None
+            self._utry = np.array([])
             return
 
         # Copy constructor

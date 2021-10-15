@@ -51,7 +51,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
         if 'READTHEDOCS' in os.environ:
-            self.sigmav = None
+            self.sigmav = np.array([])
         else:
             self.sigmav = (-1j / 2) * self.paulis.numpy
 

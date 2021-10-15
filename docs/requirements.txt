@@ -11,4 +11,4 @@ sphinxcontrib-serializinghtml==1.1.5
 myst-parser==0.15.2
 jupyter-sphinx==0.3.2
 nbsphinx==0.8.7
-bqskit>=0.2.3
+bqskit
