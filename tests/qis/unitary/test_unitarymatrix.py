@@ -211,6 +211,7 @@ class TestClosedOperations:
         assert out is not u
         assert isinstance(out, UnitaryMatrix)
 
-        out2 = a * u
-        assert out2 is not u
-        assert not isinstance(out2, UnitaryMatrix)
+        if np.abs(a) != 1:
+            out2 = a * u
+            assert out2 is not u
+            assert not isinstance(out2, UnitaryMatrix)
