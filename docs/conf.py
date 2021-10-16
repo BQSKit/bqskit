@@ -101,3 +101,4 @@ autodoc_mock_imports = [
     'distributed',
 ]
 nbsphinx_allow_errors = True
+nbsphinx_execute = 'never'
