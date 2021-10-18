@@ -89,6 +89,26 @@ This objects are designed as conditions for use with control passes.
     UnfoldPass
     UpdateDataPass
     ToU3Pass
+
+.. rubric:: Search Heuristics
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    HeuristicFunction
+    AStarHeuristic
+    GreedyHeuristic
+    DijkstraHeuristic
+
+.. rubric:: Search Layer Generators
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    LayerGenerator
+    SimpleLayerGenerator
 """
 from __future__ import annotations
 
@@ -107,6 +127,13 @@ from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.window import WindowOptimizationPass
+from bqskit.passes.search.frontier import Frontier
+from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.simple import SimpleLayerGenerator
+from bqskit.passes.search.heuristic import HeuristicFunction
+from bqskit.passes.search.heuristics.astar import AStarHeuristic
+from bqskit.passes.search.heuristics.dijkstra import DijkstraHeuristic
+from bqskit.passes.search.heuristics.greedy import GreedyHeuristic
 from bqskit.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.passes.synthesis.leap import OptimizedLEAPPass
 from bqskit.passes.synthesis.qfast import QFASTDecompositionPass
@@ -148,4 +175,11 @@ __all__ = [
     'SimpleLayoutPass',
     'ScanningGateRemovalPass',
     'WindowOptimizationPass',
+    'SimpleLayerGenerator',
+    'AStarHeuristic',
+    'GreedyHeuristic',
+    'DijkstraHeuristic',
+    'Frontier',
+    'LayerGenerator',
+    'HeuristicFunction',
 ]
