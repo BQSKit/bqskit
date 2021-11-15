@@ -20,7 +20,7 @@ from scipy.stats import unitary_group
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
-from bqskit.qis.unitary.unitary import Unitary
+from bqskit.qis.unitary.unitary import RealVector, Unitary
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
@@ -177,7 +177,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         return UnitaryMatrix(utry_acm, radixes_acm)
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the same object, satisfies the :class:`Unitary` API."""
         return self
 

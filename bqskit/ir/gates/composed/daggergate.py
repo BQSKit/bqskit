@@ -1,14 +1,13 @@
 """This module implements the DaggerGate Class."""
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -48,14 +47,14 @@ class DaggerGate(
         if self.num_params == 0:
             self.utry = gate.get_unitary().dagger
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         if hasattr(self, 'utry'):
             return self.utry
 
         return self.gate.get_unitary(params).dagger
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 
@@ -73,7 +72,7 @@ class DaggerGate(
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return the unitary and gradient for this gate.

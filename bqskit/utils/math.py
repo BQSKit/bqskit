@@ -1,12 +1,11 @@
 """This module implements numerical functions."""
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 import scipy as sp
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.unitary.unitary import RealVector
 
 
 def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -91,17 +90,14 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
     return exps / np.sum(exps)
 
 
-def dot_product(
-    alpha: np.ndarray | Sequence[float],
-    sigma: np.ndarray | Sequence[float],
-) -> np.ndarray:
+def dot_product(alpha: RealVector, sigma: RealVector) -> np.ndarray:
     """
     Computes the standard dot product of `alpha` with `sigma`.
 
     Args:
-        alpha (np.ndarray): The alpha vector.
+        alpha (RealVector): The alpha vector.
 
-        sigma (np.ndarray): The sigma vector.
+        sigma (RealVector): The sigma vector.
 
     Returns:
         np.ndarray: Sum of element-wise multiplication of `alpha`

@@ -9,6 +9,7 @@ import numpy as np
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
@@ -77,7 +78,7 @@ class UnitaryBuilder(Unitary):
         self.tensor = np.identity(self.dim)
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
         utry = self.tensor.reshape((self.dim, self.dim))
         return UnitaryMatrix(utry, self.radixes, False)

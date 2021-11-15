@@ -1,12 +1,11 @@
 """This module implements the U2Gate."""
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
@@ -30,7 +29,7 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
     _num_params = 2
     _qasm_name = 'u2'
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
@@ -45,7 +44,7 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
             ],
         )
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 

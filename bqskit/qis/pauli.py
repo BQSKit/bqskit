@@ -9,6 +9,7 @@ from typing import Sequence
 
 import numpy as np
 
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
@@ -170,12 +171,12 @@ class PauliMatrices(Sequence[np.ndarray]):
 
         return pauli_n_qubit
 
-    def dot_product(self, alpha: Sequence[float] | np.ndarray) -> np.ndarray:
+    def dot_product(self, alpha: RealVector) -> np.ndarray:
         """
         Computes the standard dot product of `alpha` with the paulis.
 
         Args:
-            alpha (Sequence[float] | np.ndarray): The pauli coefficients.
+            alpha (RealVector): The pauli coefficients.
 
         Returns:
             np.ndarray: Sum of element-wise multiplication of `alpha`

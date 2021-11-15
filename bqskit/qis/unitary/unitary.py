@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 from typing import Sequence
 from typing import TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 
@@ -55,12 +56,12 @@ class Unitary(metaclass=UnitaryMeta):
         return int(np.prod(self.radixes))
 
     @abc.abstractmethod
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """
         Map real-valued `params` to a `UnitaryMatrix`.
 
         Args:
-            params (Sequence[float]): Unconstrained vector of real number
+            params (RealVector): Unconstrained vector of real number
                 parameters for parameterized unitaries.
 
         Returns:
@@ -93,12 +94,12 @@ class Unitary(metaclass=UnitaryMeta):
         """Return true if this unitary doesn't take parameters."""
         return not self.is_parameterized()
 
-    def check_parameters(self, params: Sequence[float] | np.ndarray) -> None:
+    def check_parameters(self, params: RealVector) -> None:
         """
         Check parameters are valid and match the unitary.
 
         Args:
-            params(Sequence[float] | np.ndarray): The parameters to check.
+            params(RealVector): The parameters to check.
 
         Raises:
             ValueError: If parameter length does not match expected number.
@@ -122,3 +123,6 @@ class Unitary(metaclass=UnitaryMeta):
                 'Expected %d params, got %d.'
                 % (self.num_params, len(params)),
             )
+
+
+RealVector = Union[Sequence[float], np.ndarray]
