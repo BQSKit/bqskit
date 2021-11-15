@@ -37,8 +37,9 @@ circuit = Circuit.from_file("tfim.qasm")
 task = CompilationTask.optimize(circuit)
 
 # Spawn a compiler and compile the task
-with Compiler() as compiler:
-    optimized_circuit = compiler.compile(task)
+if __name__ == '__main__':
+    with Compiler() as compiler:
+        optimized_circuit = compiler.compile(task)
 ```
 
 We first load the qasm program into a `Circuit` object. Then we create
@@ -85,8 +86,9 @@ toffoli = np.array([
 task = CompilationTask.synthesize(toffoli)
 
 # Spawn a compiler and compile the task
-with Compiler() as compiler:
-    synthesized_circuit = compiler.compile(task)
+if __name__ == '__main__':
+    with Compiler() as compiler:
+        synthesized_circuit = compiler.compile(task)
 ```
 
 ## Verifying Results
