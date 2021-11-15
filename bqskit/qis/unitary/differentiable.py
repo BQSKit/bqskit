@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence
 
 import numpy as np
 
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -20,12 +20,12 @@ class DifferentiableUnitary(Unitary):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for the unitary map as an np.ndarray.
 
         Args:
-            params (Sequence[float]): The unitary parameters, see
+            params (RealVector): The unitary parameters, see
                 :func:`Unitary.get_unitary` for more info.
 
         Returns:
@@ -43,13 +43,13 @@ class DifferentiableUnitary(Unitary):
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return a tuple combining the outputs of `get_unitary` and `get_grad`.
 
         Args:
-            params (Sequence[float]): The unitary parameters, see
+            params (RealVector): The unitary parameters, see
                 :func:`Unitary.get_unitary` for more info.
 
         Returns:

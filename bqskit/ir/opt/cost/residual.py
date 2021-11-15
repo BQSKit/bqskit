@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence
 
 import numpy as np
 
 from bqskit.ir.opt.cost.function import CostFunction
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
 
@@ -21,12 +21,12 @@ class ResidualsFunction(CostFunction):
     """
 
     @abc.abstractmethod
-    def get_residuals(self, params: Sequence[float] | np.ndarray) -> np.ndarray:
+    def get_residuals(self, params: RealVector) -> np.ndarray:
         """Return the vector of residuals given the input parameters."""
 
     def __call__(  # type: ignore
         self,
-        params: Sequence[float] | np.ndarray,
+        params: RealVector,
     ) -> np.ndarray:
         """Return the vector of residuals given the input parameters."""
 

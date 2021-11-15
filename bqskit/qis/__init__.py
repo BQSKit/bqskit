@@ -44,6 +44,7 @@ represents a pure quantum operation in matrix form.
 
     UnitaryLike
     StateLike
+    RealVector
 """
 from __future__ import annotations
 
@@ -54,6 +55,7 @@ from bqskit.qis.state import StateVector
 from bqskit.qis.state import StateVectorMap
 from bqskit.qis.unitary import DifferentiableUnitary
 from bqskit.qis.unitary import LocallyOptimizableUnitary
+from bqskit.qis.unitary import RealVector
 from bqskit.qis.unitary import Unitary
 from bqskit.qis.unitary import UnitaryBuilder
 from bqskit.qis.unitary import UnitaryLike
@@ -71,4 +73,5 @@ __all__ = [
     'PauliMatrices',
     'StateLike',
     'PermutationMatrix',
+    'RealVector',
 ]

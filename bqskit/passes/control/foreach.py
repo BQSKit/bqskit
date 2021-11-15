@@ -207,7 +207,7 @@ class ForEachBlockPass(BasePass):
                     Operation(
                         CircuitGate(subcircuit, True),
                         op.location,
-                        subcircuit.params,  # type: ignore  # TODO: RealVector
+                        subcircuit.params,
                     ),
                 )
                 block_data['replaced'] = True

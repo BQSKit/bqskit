@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence
 
 import numpy as np
 
 from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.cost.residual import ResidualsFunction
+from bqskit.qis.unitary.unitary import RealVector
 
 
 class DifferentiableCostFunction(CostFunction):
@@ -24,12 +24,12 @@ class DifferentiableCostFunction(CostFunction):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: Sequence[float] | np.ndarray) -> np.ndarray:
+    def get_grad(self, params: RealVector) -> np.ndarray:
         """Return the cost gradient given the input parameters."""
 
     def get_cost_and_grad(
         self,
-        params: Sequence[float] | np.ndarray,
+        params: RealVector,
     ) -> tuple[float, np.ndarray]:
         """Return the cost and gradient given the input parameters."""
         return self.get_cost(params), self.get_grad(params)
@@ -50,12 +50,12 @@ class DifferentiableResidualsFunction(ResidualsFunction):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: Sequence[float] | np.ndarray) -> np.ndarray:
+    def get_grad(self, params: RealVector) -> np.ndarray:
         """Return the residuals gradient given the input parameters."""
 
     def get_cost_and_grad(
         self,
-        params: Sequence[float] | np.ndarray,
+        params: RealVector,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Return the residuals and gradient given the input parameters."""
         return self.get_residuals(params), self.get_grad(params)

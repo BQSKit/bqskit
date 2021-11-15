@@ -8,6 +8,7 @@ import scipy as sp
 
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
@@ -44,7 +45,7 @@ class VariableUnitaryGate(
         self._num_params = 2 * self.dim**2
         self._name = 'VariableUnitaryGate(%d)' % self.num_qudits
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """
         Return the unitary for this gate, see :class:`Unitary` for more.
 

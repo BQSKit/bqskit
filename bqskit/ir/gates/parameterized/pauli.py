@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-from typing import Sequence
 
 import numpy as np
 import scipy as sp
@@ -11,6 +10,7 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import dexpmv
 from bqskit.utils.math import dot_product
@@ -55,7 +55,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         else:
             self.sigmav = (-1j / 2) * self.paulis.numpy
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
@@ -63,7 +63,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         eiH = sp.linalg.expm(H)
         return UnitaryMatrix(eiH, check_arguments=False)
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 
@@ -77,7 +77,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return the unitary and gradient for this gate.
