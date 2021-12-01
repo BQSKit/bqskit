@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import Any
-from typing import Sequence
 
 import numpy as np
 import pytest
@@ -10,6 +9,7 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.test.types import invalid_type_test
 from bqskit.utils.test.types import valid_type_test
 
@@ -501,7 +501,7 @@ class TestPauliMatricesGetProjectionMatrices:
 class TestPauliMatricesDotProduct:
 
     @pytest.mark.parametrize('invalid_alpha', [[1.1] * i for i in range(4)])
-    def test_invalid_value(self, invalid_alpha: Sequence[float]) -> None:
+    def test_invalid_value(self, invalid_alpha: RealVector) -> None:
         with pytest.raises(ValueError):
             PauliMatrices(1).dot_product(invalid_alpha)
 
@@ -528,7 +528,7 @@ class TestPauliMatricesDotProduct:
             ),
         ],
     )
-    def test_size_1(self, alpha: Sequence[float], prod: np.ndarray) -> None:
+    def test_size_1(self, alpha: RealVector, prod: np.ndarray) -> None:
         assert np.allclose(PauliMatrices(1).dot_product(alpha), prod)
 
     @pytest.mark.parametrize(
@@ -609,7 +609,7 @@ class TestPauliMatricesDotProduct:
             ),
         ],
     )
-    def test_size_2(self, alpha: Sequence[float], prod: np.ndarray) -> None:
+    def test_size_2(self, alpha: RealVector, prod: np.ndarray) -> None:
         assert np.allclose(PauliMatrices(2).dot_product(alpha), prod)
 
 

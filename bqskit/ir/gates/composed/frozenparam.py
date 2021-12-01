@@ -1,14 +1,13 @@
 """This module implements the FrozenParameterGate."""
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -89,11 +88,11 @@ class FrozenParameterGate(
             str(self.frozen_params),
         )
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         return self.gate.get_unitary(self.get_full_params(params))
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 
@@ -104,7 +103,7 @@ class FrozenParameterGate(
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return the unitary and gradient for this gate.
@@ -137,12 +136,12 @@ class FrozenParameterGate(
         """Returns a qasm def for this gate, see :class:Gate for more."""
         return self.gate.get_qasm_gate_def()
 
-    def get_full_params(self, params: Sequence[float]) -> list[float]:
+    def get_full_params(self, params: RealVector) -> list[float]:
         """
         Returns the full parameter list for the underlying gate.
 
         Args:
-            params (Sequence[float]): The parameters to the gate.
+            params (RealVector): The parameters to the gate.
 
         Returns:
             list[float]: The full parameters to the underlying gate.

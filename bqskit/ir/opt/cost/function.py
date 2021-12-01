@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence
 
-import numpy as np
-
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
 
@@ -20,10 +18,10 @@ class CostFunction(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_cost(self, params: Sequence[float] | np.ndarray) -> float:
+    def get_cost(self, params: RealVector) -> float:
         """Return the cost value given the input parameters."""
 
-    def __call__(self, params: Sequence[float] | np.ndarray) -> float:
+    def __call__(self, params: RealVector) -> float:
         """Return the cost value given the input parameters."""
 
         if not is_sequence(params):

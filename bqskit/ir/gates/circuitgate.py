@@ -1,11 +1,11 @@
 """This module implements the CircuitGate class."""
 from __future__ import annotations
 
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
@@ -40,11 +40,11 @@ class CircuitGate(Gate):
         self._num_params = self._circuit.num_params
         self._name = 'CircuitGate(%s)' % str(self._circuit)
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         return self._circuit.get_unitary(params)
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 
@@ -54,7 +54,7 @@ class CircuitGate(Gate):
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return the unitary and gradient for this gate.

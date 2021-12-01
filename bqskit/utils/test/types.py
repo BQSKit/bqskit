@@ -90,6 +90,9 @@ def _split_generic_arguments(args: str) -> list[str]:
 def type_annotation_to_valid_strategy(annotation: str) -> SearchStrategy[Any]:
     """Convert a type annotation into a hypothesis strategy."""
     strategies: list[SearchStrategy[Any]] = []
+
+    annotation = annotation.replace('RealVector', 'Sequence[float]')
+
     for type_str in annotation.split('|'):
         type_str = type_str.strip()
 
@@ -214,6 +217,9 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
     list_invalids: set[SearchStrategy[Any]] = set()
     set_invalids: set[SearchStrategy[Any]] = set()
     iterable_invalids: set[SearchStrategy[Any]] = set()
+
+    annotation = annotation.replace('RealVector', 'Sequence[float]')
+
     for type_str in annotation.split('|'):
         type_str = type_str.strip()
 

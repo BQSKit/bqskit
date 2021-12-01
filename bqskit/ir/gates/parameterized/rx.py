@@ -1,13 +1,12 @@
 """This module implements the RXGate."""
 from __future__ import annotations
 
-from typing import Sequence
-
 import numpy as np
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
@@ -35,7 +34,7 @@ class RXGate(
     _num_params = 1
     _qasm_name = 'rx'
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
@@ -49,7 +48,7 @@ class RXGate(
             ],
         )
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 

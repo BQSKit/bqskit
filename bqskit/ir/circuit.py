@@ -42,6 +42,7 @@ from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -785,7 +786,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self,
         gate: Gate,
         location: CircuitLocationLike,
-        params: Sequence[float] = [],  # TODO: RealVector
+        params: RealVector = [],
     ) -> None:
         """
         Append the gate object to the circuit on the qudits in location.
@@ -795,7 +796,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             location (CircuitLocationLike): Apply the gate to these qudits.
 
-            params (Sequence[float]): The gate's parameters.
+            params (RealVector): The gate's parameters.
                 (Default: all zeros)
 
         Examples:
@@ -924,7 +925,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cycle_index: int,
         gate: Gate,
         location: CircuitLocationLike,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> None:
         """
         Insert the gate object in the circuit on the qudits in location.
@@ -940,7 +941,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             location (CircuitLocationLike): Apply the gate to this set of
                 qudits.
 
-            params (Sequence[float]): The gate's parameters.
+            params (RealVector): The gate's parameters.
 
         Raises:
             IndexError: If the specified cycle doesn't exist.
@@ -1272,7 +1273,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         point: CircuitPointLike,
         gate: Gate,
         location: CircuitLocationLike,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> None:
         """Replace the operation at 'point' with `gate`."""
         self.replace(point, Operation(gate, location, params))
@@ -1967,7 +1968,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cycle, qudit, param = self.get_param_location(param_index)
         self[cycle, qudit].params[param] = value
 
-    def set_params(self, params: Sequence[float] | np.ndarray) -> None:
+    def set_params(self, params: RealVector) -> None:
         """Set all parameters at once."""
         self.check_parameters(params)
         param_index = 0
@@ -2096,12 +2097,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     op._location = loc
                     qudits_to_skip.extend(loc)
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """
         Return the unitary matrix of the circuit.
 
         Args:
-            params (Sequence[float]): Optionally specify parameters
+            params (RealVector): Optionally specify parameters
                 overriding the ones stored in the circuit. (Default:
                 use parameters already in circuit.)
 
@@ -2139,12 +2140,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # TODO: Can be made a lot more efficient.
         return self.get_unitary().get_statevector(in_state)
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """Return the gradient of the circuit."""
         return self.get_unitary_and_grad(params)[1]
 
     def get_unitary_and_grad(
-        self, params: Sequence[float] = [],
+        self, params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """Return the unitary and gradient of the circuit."""
         if len(params) != 0:

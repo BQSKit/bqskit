@@ -1,6 +1,7 @@
 """This module implements the VariableLocationGate."""
 from __future__ import annotations
 
+from typing import cast
 from typing import Sequence
 
 import numpy as np
@@ -10,6 +11,8 @@ from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.permutation import PermutationMatrix
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import softmax
 
@@ -116,14 +119,14 @@ class VariableLocationGate(ComposedGate):
             for l in self.locations
         ])
 
-    def get_location(self, params: Sequence[float]) -> tuple[int, ...]:
+    def get_location(self, params: RealVector) -> tuple[int, ...]:
         """Returns the gate's location."""
         idx = int(np.argmax(self.split_params(params)[1]))
         return tuple(self.locations[idx])
 
     def split_params(
         self,
-        params: Sequence[float],
+        params: RealVector,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Split params into subgate params and location params."""
         return (
@@ -131,18 +134,18 @@ class VariableLocationGate(ComposedGate):
             np.array(params[self.gate.num_params:]),
         )
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
         a, l = self.split_params(params)
         l = softmax(l, 10)
 
         P = np.sum([a * s for a, s in zip(l, self.perms)], 0)
-        G = self.gate.get_unitary(a)  # type: ignore  # TODO: RealVector
+        G = self.gate.get_unitary(a)
         PGPT = P @ np.kron(G, self.I) @ P.T
         return UnitaryMatrix.closest_to(PGPT, self.radixes)
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this gate.
 
@@ -152,7 +155,7 @@ class VariableLocationGate(ComposedGate):
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return the unitary and gradient for this gate.
@@ -164,13 +167,13 @@ class VariableLocationGate(ComposedGate):
         l = softmax(l, 10)
 
         P = np.sum([a * s for a, s in zip(l, self.perms)], 0)
-        G = self.gate.get_unitary(a)  # type: ignore  # TODO: RealVector
+        G = self.gate.get_unitary(a)
         G = np.kron(G, self.I)
         PG = P @ G
         GPT = G @ P.T
         PGPT = P @ GPT
 
-        dG = self.gate.get_grad(a)  # type: ignore  # TODO: RealVector
+        dG = cast(DifferentiableUnitary, self.gate).get_grad(a)
         dG = np.kron(dG, self.I)
         dG = P @ dG @ P.T
 

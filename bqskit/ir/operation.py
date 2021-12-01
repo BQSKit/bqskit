@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import Any
-from typing import Sequence
 
 import numpy as np
 
@@ -11,6 +10,7 @@ from bqskit.ir.gates import FrozenParameterGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -21,7 +21,7 @@ class Operation(DifferentiableUnitary):
         self,
         gate: Gate,
         location: CircuitLocationLike,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> None:
         """
         Construct an operation.
@@ -32,7 +32,7 @@ class Operation(DifferentiableUnitary):
             location (CircuitLocationLike):  The set of qudits this gate
                 is applied to.
 
-            params (Sequence[float]): The parameters for the gate.
+            params (RealVector): The parameters for the gate.
 
         Raises:
             ValueError: If `gate`'s size doesn't match `location`'s length.
@@ -102,14 +102,14 @@ class Operation(DifferentiableUnitary):
             '], q['.join([str(q) for q in self.location]),
         ).replace('()', '')
 
-    def get_unitary(self, params: Sequence[float] = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         if len(params) != 0:
             return self.gate.get_unitary(params)
 
         return self.gate.get_unitary(self.params)
 
-    def get_grad(self, params: Sequence[float] = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> np.ndarray:
         """
         Return the gradient for this operation.
 
@@ -122,7 +122,7 @@ class Operation(DifferentiableUnitary):
 
     def get_unitary_and_grad(
         self,
-        params: Sequence[float] = [],
+        params: RealVector = [],
     ) -> tuple[UnitaryMatrix, np.ndarray]:
         """
         Return the unitary and gradient for this gate.
