@@ -87,9 +87,12 @@ class SeedLayerGenerator(LayerGenerator):
         # Generate successors
         successors = self.forward_generator.gen_successors(circuit, data)
 
-        for cycle, op in circuit.operations_with_cycles():
-            copied_circuit = circuit.copy()
-            copied_circuit.pop((cycle, op.location[0]))
-            successors.append(copied_circuit)
+        copied_circuit = circuit.copy()
+        copied_circuit.pop()
+        successors.insert(0, copied_circuit)
+        # for cycle, op in circuit.operations_with_cycles():
+        #     copied_circuit = circuit.copy()
+        #     copied_circuit.pop((cycle, op.location[0]))
+        #     successors.append(copied_circuit)
 
         return successors
