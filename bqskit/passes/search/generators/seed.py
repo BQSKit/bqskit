@@ -72,7 +72,7 @@ class SeedLayerGenerator(LayerGenerator):
         if target.dim != self.seed.dim:
             raise ValueError('Seed dimension mismatch with target.')
 
-        data['seed_seen_before'] = [self.hash_structure(self.seed)]
+        data['seed_seen_before'] = {self.hash_structure(self.seed)}
 
         return self.seed
 
@@ -113,12 +113,13 @@ class SeedLayerGenerator(LayerGenerator):
         for s in successors:
             h = self.hash_structure(s)
             if h not in data['seed_seen_before']:
-                data['seed_seen_before'].append(h)
+                data['seed_seen_before'].add(h)
                 filtered_successors.append(s)
 
         return filtered_successors
 
-    def hash_structure(self, circuit: Circuit) -> int:
+    @staticmethod
+    def hash_structure(circuit: Circuit) -> int:
         hashes = []
         for cycle, op in circuit.operations_with_cycles():
             hashes.append(hash((cycle, str(op))))
