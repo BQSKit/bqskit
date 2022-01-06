@@ -109,6 +109,7 @@ This objects are designed as conditions for use with control passes.
 
     LayerGenerator
     SimpleLayerGenerator
+    SeedLayerGenerator
 """
 from __future__ import annotations
 
@@ -129,6 +130,7 @@ from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.window import WindowOptimizationPass
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics.astar import AStarHeuristic
@@ -182,4 +184,5 @@ __all__ = [
     'Frontier',
     'LayerGenerator',
     'HeuristicFunction',
+    'SeedLayerGenerator',
 ]

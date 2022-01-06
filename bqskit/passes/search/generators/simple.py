@@ -15,7 +15,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 _logger = logging.getLogger(__name__)
 
 
-class SimpleLayerGenerator(LayerGenerator):  # TODO: Rename?
+class SimpleLayerGenerator(LayerGenerator):
     """
     The SimpleLayerGenerator class.
 
