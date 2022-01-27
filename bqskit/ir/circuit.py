@@ -153,7 +153,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
 
         self._circuit: list[list[Operation | None]] = []
-        self._gate_info: dict[Gate, int] = {}
+        self._gate_info: dict[str, dict[str, Any]] = {}
 
     # region Circuit Properties
 
@@ -161,16 +161,16 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def num_params(self) -> int:
         """The total number of parameters in the circuit."""
         num_params_acm = 0
-        for gate, count in self._gate_info.items():
-            num_params_acm += gate.num_params * count
+        for _, info in self._gate_info.items():
+            num_params_acm += info['gate'].num_params * info['count']
         return num_params_acm
 
     @property
     def num_operations(self) -> int:
         """The total number of operations in the circuit."""
         num_gates_acm = 0
-        for _, count in self._gate_info.items():
-            num_gates_acm += count
+        for _, info in self._gate_info.items():
+            num_gates_acm += info['count']
         return num_gates_acm
 
     @property
@@ -201,8 +201,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             return 0
 
         weighted_num_operations = np.sum([
-            gate.num_qudits * count
-            for gate, count in self._gate_info.items()
+            info['gate'].num_qudits * info['count']
+            for _, info in self._gate_info.items()
         ])
 
         return float(weighted_num_operations / depth)
@@ -234,7 +234,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     @property
     def gate_set(self) -> set[Gate]:
         """The set of gates in the circuit."""
-        return set(self._gate_info.keys())
+        return {info['gate'] for info in self._gate_info.values()}
 
     @property
     def active_qudits(self) -> list[int]:
@@ -460,9 +460,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for qudit_index, op in enumerate(self._circuit[cycle_index]):
             if op is not None and qudit_index not in qudits_to_skip:
                 qudits_to_skip.extend(op.location)
-                self._gate_info[op.gate] -= 1
-                if self._gate_info[op.gate] <= 0:
-                    del self._gate_info[op.gate]
+                self._gate_info[op.gate.name]['count'] -= 1
+                if self._gate_info[op.gate.name]['count'] <= 0:
+                    del self._gate_info[op.gate.name]
 
         self._circuit.pop(cycle_index)
 
@@ -724,11 +724,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if isinstance(op, Operation):
             self.check_valid_operation(op)
-            if op.gate not in self._gate_info:
+            if op.gate.name not in self._gate_info:
                 raise ValueError('No such operation exists in the circuit.')
 
         elif isinstance(op, Gate):
-            if op not in self._gate_info:
+            if op.name not in self._gate_info:
                 raise ValueError('No such operation exists in the circuit.')
 
         if not self.is_point_in_range(start):
@@ -773,9 +773,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         self.check_valid_operation(op)
 
-        if op.gate not in self._gate_info:
-            self._gate_info[op.gate] = 0
-        self._gate_info[op.gate] += 1
+        if op.gate.name not in self._gate_info:
+            self._gate_info[op.gate.name] = {'gate': op.gate, 'count': 0}
+        self._gate_info[op.gate.name]['count'] += 1
 
         cycle_index = self._find_available_or_append_cycle(op.location)
 
@@ -909,9 +909,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 cycle_index = self.num_cycles
                 self._append_cycle()
 
-        if op.gate not in self._gate_info:
-            self._gate_info[op.gate] = 0
-        self._gate_info[op.gate] += 1
+        if op.gate.name not in self._gate_info:
+            self._gate_info[op.gate.name] = {'gate': op.gate, 'count': 0}
+        self._gate_info[op.gate.name]['count'] += 1
 
         if not self.is_cycle_unoccupied(cycle_index, op.location):
             self._insert_cycle(cycle_index)
@@ -1073,7 +1073,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         count = 0
         if isinstance(op, Operation):
             self.check_valid_operation(op)
-            if op.gate not in self._gate_info:
+            if op.gate.name not in self._gate_info:
                 return 0
 
             qudit_index = op.location[0]
@@ -1081,9 +1081,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 if _op == op:
                     count += 1
         elif isinstance(op, Gate):
-            if op not in self._gate_info:
+            if op.name not in self._gate_info:
                 return 0
-            return self._gate_info[op]
+            return self._gate_info[op.name]['count']
         else:
             raise TypeError('Expected gate or operation, got %s.' % type(op))
 
@@ -1135,9 +1135,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for qudit_index in op.location:
             self._circuit[point[0]][qudit_index] = None
 
-        self._gate_info[op.gate] -= 1
-        if self._gate_info[op.gate] <= 0:
-            del self._gate_info[op.gate]
+        self._gate_info[op.gate.name]['count'] -= 1
+        if self._gate_info[op.gate.name]['count'] <= 0:
+            del self._gate_info[op.gate.name]
 
         if self._is_cycle_idle(point[0]):
             self.pop_cycle(point[0])
@@ -2507,7 +2507,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             except ValueError:
                 return False
 
-            if op.gate not in self._gate_info:
+            if op.gate.name not in self._gate_info:
                 return False
 
             for _op in self.operations(qudits_or_region=[op.location[0]]):
@@ -2517,7 +2517,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             return False
 
         elif isinstance(op, Gate):
-            return op in self._gate_info
+            return op.name in self._gate_info
 
         else:
             return False

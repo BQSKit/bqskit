@@ -74,7 +74,8 @@ class VariableLocationGate(ComposedGate):
             raise ValueError('VLGs require at least 1 locations.')
 
         self.gate = gate
-        self._name = 'VariableLocationGate(%s)' % gate.name
+        name_str_tuple = (gate.name, locations, radixes)
+        self._name = 'VariableLocationGate(%s, %s, %s)' % name_str_tuple
         self.locations = list(locations)
         self._num_qudits = len(set(sum((tuple(l) for l in locations), tuple())))
 

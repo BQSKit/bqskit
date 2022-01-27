@@ -43,7 +43,9 @@ class VariableUnitaryGate(
         self._dim = int(np.prod(self.radixes))
         self.shape = (self.dim, self.dim)
         self._num_params = 2 * self.dim**2
-        self._name = 'VariableUnitaryGate(%d)' % self.num_qudits
+        self._name = 'VariableUnitaryGate(%d, %s)' % (
+            self.num_qudits, str(radixes),
+        )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """

@@ -47,6 +47,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         if num_qudits <= 0:
             raise ValueError('Expected positive integer, got %d' % num_qudits)
 
+        self._name = 'PauliGate(%s)' % num_qudits
         self._num_qudits = num_qudits
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
