@@ -41,6 +41,8 @@ class QSearchSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
+        store_partial_solutions: bool = False,
+        partials_per_depth: int = 25,
         instantiate_options: dict[str, Any] = {},
     ) -> None:
         """
@@ -66,6 +68,13 @@ class QSearchSynthesisPass(SynthesisPass):
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
+
+            store_partial_solutions (bool): Whether to store partial solutions
+                at different depths inside of the data dict. (Default: False)
+
+            partials_per_depth (int): The maximum number of partials
+                to store per search depth. No effect if
+                `store_partial_solutions` is False. (Default: 25)
 
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
@@ -121,6 +130,8 @@ class QSearchSynthesisPass(SynthesisPass):
         self.max_layer = max_layer
         self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
         self.instantiate_options.update(instantiate_options)
+        self.store_partial_solutions = store_partial_solutions
+        self.partials_per_depth = partials_per_depth
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
@@ -140,6 +151,8 @@ class QSearchSynthesisPass(SynthesisPass):
         search_data['best_dist'] = self.cost.calc_cost(initial_layer, utry)
         search_data['best_circ'] = initial_layer
         search_data['best_layer'] = 0
+        if self.store_partial_solutions:
+            search_data['psols'] = {}
         _logger.info(
             'Search started, initial layer has cost: %e.' %
             search_data['best_dist'],
@@ -176,6 +189,8 @@ class QSearchSynthesisPass(SynthesisPass):
                             for future in futures:
                                 if not future.done:
                                     client.cancel(future)
+                            if self.store_partial_solutions:
+                                data['psols'] = search_data['psols']
                             return circuit
 
             else:  # Sequentially
@@ -189,6 +204,8 @@ class QSearchSynthesisPass(SynthesisPass):
                         layer,
                         search_data,
                     ):
+                        if self.store_partial_solutions:
+                            data['psols'] = search_data['psols']
                         return circuit
 
         _logger.info('Frontier emptied.')
@@ -199,6 +216,8 @@ class QSearchSynthesisPass(SynthesisPass):
                 else 's', search_data['best_dist'],
             ),
         )
+        if self.store_partial_solutions:
+            data['psols'] = search_data['psols']
 
         return search_data['best_circ']
 
@@ -225,6 +244,18 @@ class QSearchSynthesisPass(SynthesisPass):
             search_data['best_dist'] = dist
             search_data['best_circ'] = circuit
             search_data['best_layer'] = layer
+
+        if self.store_partial_solutions:
+            if layer not in search_data['psols']:
+                search_data['psols'][layer] = []
+
+            search_data['psols'][layer].append(
+                (circuit.copy(), dist),
+            )
+
+            if len(search_data['psols']) > self.partials_per_depth:
+                search_data['psols'].sort(key=lambda x: x[1])
+                del search_data['psols'][-1]
 
         if self.max_layer is None or layer + 1 < self.max_layer:
             frontier.add(circuit, layer + 1)

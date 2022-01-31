@@ -36,3 +36,4 @@ and algorithm framework that can run many algorithms efficiently.
    source/passes
    source/qis
    source/utils
+   source/exec
