@@ -9,6 +9,7 @@ import scipy as sp
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
@@ -73,3 +74,11 @@ class VariableUnitaryGate(
         U, _, Vh = sp.linalg.svd(env_matrix)
         x = np.reshape(Vh.conj().T @ U.conj().T, (self.num_params // 2,))
         return list(np.real(x)) + list(np.imag(x))
+
+    @staticmethod
+    def get_params(utry: UnitaryLike) -> RealVector:
+        """Return the params for this gate, given a unitary matrix."""
+        num_elems = len(utry) ** 2
+        real = np.reshape(np.real(utry), num_elems)
+        imag = np.reshape(np.imag(utry), num_elems)
+        return np.concatenate([real, imag])

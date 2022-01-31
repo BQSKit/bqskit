@@ -1227,7 +1227,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `point.qudit` is not in `op.location`
         """
-        if point[1] not in op.location:
+        if len(self[point].location.intersection(op.location)) == 0:
             raise ValueError("Point's qudit is not in operation's location.")
 
         self.pop(point)
