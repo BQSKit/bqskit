@@ -191,3 +191,14 @@ class VariableLocationGate(ComposedGate):
         See :class:`LocallyOptimizableUnitary` for more info.
         """
         raise NotImplementedError()
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, VariableLocationGate)
+            and self.gate == other.gate
+            and self.locations == other.locations
+            and self.radixes == other.radixes
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.gate, self.locations, self.radixes))

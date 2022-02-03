@@ -50,3 +50,13 @@ class IdentityGate(ConstantGate):
         body_stmts = ['\tU(0,0,0) %s;' % sym for sym in param_symbols]
         body = '\n'.join(body_stmts)
         return f'{header}\n{{\n{body}\n}}\n'
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, IdentityGate)
+            and self.num_qudits == other.num_qudits
+            and self.radixes == other.radixes
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.num_qudits, self.radixes))

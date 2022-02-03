@@ -39,13 +39,13 @@ class VariableUnitaryGate(
         if not is_valid_radixes(radixes, num_qudits):
             raise TypeError('Invalid radixes.')
 
-        self._num_qudits = num_qudits
+        self._num_qudits = int(num_qudits)
         self._radixes = tuple(radixes)
         self._dim = int(np.prod(self.radixes))
         self.shape = (self.dim, self.dim)
         self._num_params = 2 * self.dim**2
         self._name = 'VariableUnitaryGate(%d, %s)' % (
-            self.num_qudits, str(radixes),
+            self.num_qudits, str(self.radixes),
         )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
@@ -82,3 +82,13 @@ class VariableUnitaryGate(
         real = np.reshape(np.real(utry), num_elems)
         imag = np.reshape(np.imag(utry), num_elems)
         return np.concatenate([real, imag])
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, VariableUnitaryGate)
+            and self.num_qudits == other.num_qudits
+            and self.radixes == other.radixes
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.num_qudits, self.radixes))

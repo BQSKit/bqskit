@@ -127,6 +127,16 @@ class FrozenParameterGate(
             if i in self.unfixed_param_idxs
         ]
 
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, FrozenParameterGate)
+            and self.gate == other.gate
+            and self.frozen_params == other.frozen_params
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.gate, tuple(self.frozen_params.items())))
+
     @property
     def qasm_name(self) -> str:
         """The qasm command for this gate, see Gate for more info."""

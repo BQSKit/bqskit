@@ -95,3 +95,12 @@ class DaggerGate(
             return []
         self.check_env_matrix(env_matrix)
         return self.gate.optimize(env_matrix.conj().T)  # type: ignore
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, DaggerGate)
+            and self.gate == other.gate
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.gate)

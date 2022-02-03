@@ -91,3 +91,13 @@ class TaggedGate(
 
         self.check_env_matrix(env_matrix)
         return self.gate.optimize(env_matrix)  # type: ignore
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, TaggedGate)
+            and self.gate == other.gate
+            and self.tag == other.tag
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.gate, self.tag))
