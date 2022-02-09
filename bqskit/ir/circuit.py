@@ -2666,6 +2666,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         with open(filename, 'w') as f:
             f.write(language.encode(self))
 
+    def to(self, type: str) -> str:
+        """Convert circuit to language."""
+        return get_language(type).encode(self)
+
     @staticmethod
     def from_file(filename: str) -> Circuit:
         """Restore a circuit from a file."""

@@ -249,13 +249,11 @@ class QSearchSynthesisPass(SynthesisPass):
             if layer not in search_data['psols']:
                 search_data['psols'][layer] = []
 
-            search_data['psols'][layer].append(
-                (circuit.copy(), dist),
-            )
+            search_data['psols'][layer].append((circuit.copy(), dist))
 
-            if len(search_data['psols']) > self.partials_per_depth:
-                search_data['psols'].sort(key=lambda x: x[1])
-                del search_data['psols'][-1]
+            if len(search_data['psols'][layer]) > self.partials_per_depth:
+                search_data['psols'][layer].sort(key=lambda x: x[1])
+                del search_data['psols'][layer][-1]
 
         if self.max_layer is None or layer + 1 < self.max_layer:
             frontier.add(circuit, layer + 1)

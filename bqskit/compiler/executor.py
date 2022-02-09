@@ -31,10 +31,10 @@ class Executor:
         self.data: dict[str, Any] = {'executor': self}
         self.done = False
 
-    def run(self) -> Circuit:
+    def run(self) -> tuple[Circuit, dict[str, Any]]:
         """Execute the task."""
         with threadpool_limits(limits=1):
             for pass_obj in self.passes:
                 pass_obj.run(self.circuit, self.data)
         self.done = True
-        return self.circuit
+        return self.circuit, self.data

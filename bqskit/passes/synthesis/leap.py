@@ -48,6 +48,8 @@ class LEAPSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
+        store_partial_solutions: bool = False,
+        partials_per_depth: int = 25,
         min_prefix_size: int = 3,
         instantiate_options: dict[str, Any] = {},
     ) -> None:
@@ -74,6 +76,13 @@ class LEAPSynthesisPass(SynthesisPass):
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                  to unlimited. (Default: None)
+
+            store_partial_solutions (bool): Whether to store partial solutions
+                at different depths inside of the data dict. (Default: False)
+
+            partials_per_depth (int): The maximum number of partials
+                to store per search depth. No effect if
+                `store_partial_solutions` is False. (Default: 25)
 
             min_prefix_size (int): The minimum number of layers needed
                 to prefix the circuit.
@@ -145,6 +154,8 @@ class LEAPSynthesisPass(SynthesisPass):
         self.min_prefix_size = min_prefix_size
         self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
         self.instantiate_options.update(instantiate_options)
+        self.store_partial_solutions = store_partial_solutions
+        self.partials_per_depth = partials_per_depth
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
@@ -168,6 +179,13 @@ class LEAPSynthesisPass(SynthesisPass):
         leap_data['best_dists'] = [leap_data['best_dist']]
         leap_data['best_layers'] = [0]
         leap_data['last_prefix_layer'] = 0
+        if self.store_partial_solutions:
+            leap_data['psols'] = {}
+        _logger.info(
+            'Search started, initial layer has cost: %e.' %
+            leap_data['best_dist'],
+        )
+
         _logger.info(
             'Search started, initial layer has cost: %e.' %
             leap_data['best_dist'],
@@ -204,6 +222,8 @@ class LEAPSynthesisPass(SynthesisPass):
                             for future in futures:
                                 if not future.done:
                                     client.cancel(future)
+                            if self.store_partial_solutions:
+                                data['psols'] = leap_data['psols']
                             return circuit
 
             else:  # Sequentially
@@ -217,6 +237,8 @@ class LEAPSynthesisPass(SynthesisPass):
                         layer,
                         leap_data,
                     ):
+                        if self.store_partial_solutions:
+                            data['psols'] = leap_data['psols']
                         return circuit
 
         _logger.info('Frontier emptied.')
@@ -227,6 +249,8 @@ class LEAPSynthesisPass(SynthesisPass):
                 else 's', leap_data['best_dist'],
             ),
         )
+        if self.store_partial_solutions:
+            data['psols'] = leap_data['psols']
 
         return leap_data['best_circ']
 
@@ -266,6 +290,16 @@ class LEAPSynthesisPass(SynthesisPass):
                 data['window_markers'].append(circuit.num_cycles)
                 if self.max_layer is None or layer + 1 < self.max_layer:
                     frontier.add(circuit, layer + 1)
+
+        if self.store_partial_solutions:
+            if layer not in leap_data['psols']:
+                leap_data['psols'][layer] = []
+
+            leap_data['psols'][layer].append((circuit.copy(), dist))
+
+            if len(leap_data['psols'][layer]) > self.partials_per_depth:
+                leap_data['psols'][layer].sort(key=lambda x: x[1])
+                del leap_data['psols'][layer][-1]
 
         if self.max_layer is None or layer + 1 < self.max_layer:
             frontier.add(circuit, layer + 1)
