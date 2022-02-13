@@ -113,3 +113,13 @@ class ControlledGate(
         utry = UnitaryMatrix(self.left + right, self.radixes)
         grads = np.kron(self.OneProj, G)
         return utry, grads
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, ControlledGate)
+            and self.gate == other.gate
+            and self.num_controls == other.num_controls
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.gate, self.num_controls))
