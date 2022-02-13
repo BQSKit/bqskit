@@ -190,6 +190,7 @@ class ForEachBlockPass(BasePass):
             # Record Data Part 2
             block_data['subcircuit_post'] = subcircuit.copy()
             block_data['loop_body_data'] = subdata
+            block_data['point'] = CircuitPoint(cycle, op.location[0])
 
             # Calculate Errors
             if self.calculate_error_bound:

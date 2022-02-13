@@ -76,7 +76,7 @@ class Compiler:
 
     def result(self, task: CompilationTask) -> Circuit:
         """Block until the CompilationTask is finished, return its result."""
-        circ = self.tasks[task.task_id].result()
+        circ = self.tasks[task.task_id].result()[0]
         return circ
 
     def cancel(self, task: CompilationTask) -> None:
@@ -90,3 +90,9 @@ class Compiler:
         self.submit(task)
         result = self.result(task)
         return result
+
+    def analyze(self, task: CompilationTask, key: str) -> Any:
+        """Gather the value associated with `key` in the task's data."""
+        if task.task_id not in self.tasks:
+            self.submit(task)
+        return self.tasks[task.task_id].result()[1][key]
