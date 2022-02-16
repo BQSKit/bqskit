@@ -201,4 +201,4 @@ class VariableLocationGate(ComposedGate):
         )
 
     def __hash__(self) -> int:
-        return hash((self.gate, self.locations, self.radixes))
+        return hash((self.gate, tuple(self.locations), self.radixes))
