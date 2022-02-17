@@ -1,6 +1,7 @@
 """This package defines passes and objects that control pass execution flow."""
 from __future__ import annotations
 
+from bqskit.passes.control.dothendecide import DoThenDecide
 from bqskit.passes.control.dowhileloop import DoWhileLoopPass
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.passes.control.ifthenelse import IfThenElsePass
@@ -19,4 +20,5 @@ __all__ = [
     'GateCountPredicate',
     'NotPredicate',
     'WhileLoopPass',
+    'DoThenDecide',
 ]
