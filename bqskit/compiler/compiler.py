@@ -38,6 +38,9 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
+        if 'silence_logs' not in kwargs:
+            kwargs['silence_logs'] = logging.getLogger('bqskit').level
+
         self.client = Client(*args, **kwargs)
         self.tasks: dict[uuid.UUID, Future] = {}
         _logger.info('Started compiler process.')

@@ -1,10 +1,13 @@
 """This module implements the RecordStatsPass class."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
+
+_logger = logging.getLogger(__name__)
 
 
 class RecordStatsPass(BasePass):
@@ -32,3 +35,10 @@ class RecordStatsPass(BasePass):
             data[self.key] = []
 
         data[self.key].append(stats)
+
+        _logger.info('Circuit Current Stats')
+        _logger.info(f'{circuit.num_cycles} Cycles')
+        _logger.info(f'{circuit.num_operations} Operation Count')
+        _logger.info(f'{circuit.coupling_graph} Connectivity')
+        for gate in circuit.gate_set:
+            _logger.info(f'{circuit.count(gate)} {gate.name} Count')
