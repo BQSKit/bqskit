@@ -29,16 +29,19 @@ CircuitRunner.
 """
 from __future__ import annotations
 
-from bqskit.exec.results import RunnerResults
-from bqskit.exec.runner import CircuitRunner
-from bqskit.exec.runners.ibmq import IBMQRunner
-from bqskit.exec.runners.quest import QuestRunner
-from bqskit.exec.runners.sim import SimulationRunner
-
 __all__ = [
     'CircuitRunner',
     'RunnerResults',
     'QuestRunner',
-    'IBMQRunner',
     'SimulationRunner',
 ]
+
+from bqskit.exec.results import RunnerResults
+from bqskit.exec.runner import CircuitRunner
+try:
+    from bqskit.exec.runners.ibmq import IBMQRunner
+    __all__ += ['IBMQRunner']
+except ImportError:
+    pass
+from bqskit.exec.runners.quest import QuestRunner
+from bqskit.exec.runners.sim import SimulationRunner
