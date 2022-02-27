@@ -111,10 +111,8 @@ type_dict = {
     'float_9': np.longdouble(1234.0),
     'float_10': np.float32(1234.0),
     'float_11': np.float64(1234.0),
-    # Needs typeshed sync
-    'complex_1': complex(0.0j),  # type: ignore
-    # Needs typeshed sync
-    'complex_2': complex(0.0 + 0.0j),    # type: ignore
+    'complex_1': complex(0.0j),
+    'complex_2': complex(0.0 + 0.0j),
     'complex_3': 1.0j,
     'complex_4': 1.0 + 1.0j,
     'complex_5': 1.0 - 1.0j,
