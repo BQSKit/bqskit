@@ -39,6 +39,6 @@ if __name__ == '__main__':
         # Execute the circuit with Quest
         quest_runner = QuestRunner(SimulationRunner(), compiler=compiler)
         # Use IBMQRunner instead of SimulationRunner to run on a machine.
-        results = quest_runner.run(circuit)
+        results = quest_runner.run(compiled_circuit)
         print('Output Probability Distribution')
         print(results.probs)
