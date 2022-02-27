@@ -157,6 +157,8 @@ class ForEachBlockPass(BasePass):
 
         # Perform Work
         if 'executor' in data:  # In Parallel
+            for block_data in block_datas:
+                block_data['executor'] = data['executor']
             with worker_client() as client:
                 completed_subcircuits = []
                 completed_block_datas = []

@@ -57,6 +57,7 @@ compilation task.
     IfThenElsePass
     WhileLoopPass
     DoThenDecide
+    ParallelDo
 
 .. rubric:: Predicates
 
@@ -121,6 +122,7 @@ from bqskit.passes.control.dothendecide import DoThenDecide
 from bqskit.passes.control.dowhileloop import DoWhileLoopPass
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.passes.control.ifthenelse import IfThenElsePass
+from bqskit.passes.control.paralleldo import ParallelDo
 from bqskit.passes.control.predicate import PassPredicate
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
@@ -197,4 +199,5 @@ __all__ = [
     'StairLayerGenerator',
     'DoThenDecide',
     'SubstitutePass',
+    'ParallelDo',
 ]
