@@ -116,12 +116,15 @@ class SubstitutePass(BasePass):
 
         # Attempt substitution
         target = circuit.get_unitary()
+        shift = 0
         for point in points:
+            point = (point[0] - shift, point[1])
             _logger.info(f'Attempting substitution for operation at {point}.')
             _logger.info(f'Operation: {circuit[point]}')
 
             qudits = circuit[point].location
             locs = it.combinations(qudits, self.gate.num_qudits)
+            og_cycle_count = circuit.num_cycles
 
             for loc in locs:
                 _logger.debug(f'Trying location: {loc}')
@@ -132,4 +135,5 @@ class SubstitutePass(BasePass):
                 if self.cost(circuit_copy, target) < self.success_threshold:
                     _logger.info('Successfully substituted operation.')
                     circuit.become(circuit_copy)
+                    shift += og_cycle_count - circuit.num_cycles
                     break
