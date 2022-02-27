@@ -125,6 +125,9 @@ class QuestRunner(CircuitRunner):
             exact_utry = exact_block.get_unitary()
             psols.append([(exact_block, 0.0)])
 
+            if 'psols' not in block:
+                continue
+
             for depth, psol_list in block['psols'].items():
                 for psol in psol_list:
                     dist = psol[0].get_unitary().get_distance_from(exact_utry)
@@ -204,6 +207,10 @@ class QuestRunner(CircuitRunner):
             _logger.info(
                 'Generated approximate circuit with approximate distance:'
                 f' {approx_dist}.',
+            )
+            _logger.info(
+                f'Approximate circuit has {approx_circuit.count(CNOTGate())}'
+                ' cnots.',
             )
 
         return approx_circuits
