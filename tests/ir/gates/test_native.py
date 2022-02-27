@@ -9,6 +9,9 @@ from bqskitrs import Circuit
 from bqskit.ir import Circuit as Circ
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import CRXGate
+from bqskit.ir.gates import CRYGate
+from bqskit.ir.gates import CRZGate
 from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RXXGate
 from bqskit.ir.gates import RYGate
@@ -23,6 +26,9 @@ from bqskit.ir.gates.parameterized.pauli import PauliGate
 
 
 NATIVE_GATES: list[Gate] = [
+    CRXGate(),
+    CRYGate(),
+    CRZGate(),
     RXGate(),
     RYGate(),
     RZGate(),
