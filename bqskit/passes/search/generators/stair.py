@@ -27,9 +27,6 @@ class StairLayerGenerator(LayerGenerator):
         if not isinstance(gate, Gate):
             raise TypeError(f'Expected Gate for gate, got {type(gate)}')
 
-        if gate.num_qudits != 2:
-            raise ValueError('Expected two qudit gate.')
-
         self.gate = gate
 
     def gen_initial_layer(
@@ -53,8 +50,9 @@ class StairLayerGenerator(LayerGenerator):
         init_circuit = Circuit(target.num_qudits, target.radixes)
 
         # Place RXX Gates on consective pairs of qudits
-        for i in range(init_circuit.num_qudits - 1):
-            init_circuit.append_gate(self.gate, (i, i + 1))
+        nq = self.gate.num_qudits
+        for i in range(init_circuit.num_qudits - (nq - 1)):
+            init_circuit.append_gate(self.gate, [i + j for j in range(nq)])
 
         return init_circuit
 
@@ -73,8 +71,9 @@ class StairLayerGenerator(LayerGenerator):
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 
+        nq = self.gate.num_qudits
         successor = circuit.copy()
-        for i in range(circuit.num_qudits - 1):
-            successor.append_gate(self.gate, (i, i + 1))
+        for i in range(circuit.num_qudits - (nq - 1)):
+            successor.append_gate(self.gate, [i + j for j in range(nq)])
 
         return [successor]
