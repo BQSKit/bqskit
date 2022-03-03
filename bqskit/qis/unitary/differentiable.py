@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitary import Unitary
@@ -20,7 +21,7 @@ class DifferentiableUnitary(Unitary):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for the unitary map as an np.ndarray.
 
@@ -44,7 +45,7 @@ class DifferentiableUnitary(Unitary):
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return a tuple combining the outputs of `get_unitary` and `get_grad`.
 

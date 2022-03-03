@@ -6,6 +6,7 @@ import time
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 from scipy.optimize import dual_annealing
 
 from bqskit.compiler import CompilationTask
@@ -239,7 +240,7 @@ class QuestRunner(CircuitRunner):
         return copied_circuit
 
 
-def annealing_objective(x: np.ndarray, *args: Any) -> float:
+def annealing_objective(x: npt.NDArray[np.float64], *args: Any) -> float:
     """Compute the objective function used during approximation generation."""
     blocks = [int(ind) for ind in x]
 

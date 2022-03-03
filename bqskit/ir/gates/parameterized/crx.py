@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -50,7 +51,7 @@ class CRXGate(
             ],
         )
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 

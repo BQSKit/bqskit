@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.qis.unitary.unitary import RealVector
@@ -21,13 +22,13 @@ class ResidualsFunction(CostFunction):
     """
 
     @abc.abstractmethod
-    def get_residuals(self, params: RealVector) -> np.ndarray:
+    def get_residuals(self, params: RealVector) -> npt.NDArray[np.float64]:
         """Return the vector of residuals given the input parameters."""
 
     def __call__(  # type: ignore
         self,
         params: RealVector,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.float64]:
         """Return the vector of residuals given the input parameters."""
 
         if not is_sequence(params):

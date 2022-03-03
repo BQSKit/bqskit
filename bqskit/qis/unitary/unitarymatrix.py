@@ -8,6 +8,7 @@ from typing import Sequence
 from typing import Union
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 
 if 'READTHEDOCS' not in os.environ:
@@ -71,7 +72,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         # Stop any actual logic when building documentation
         if 'READTHEDOCS' in os.environ:
-            self._utry = np.array([])
+            self._utry: npt.NDArray[np.complex128] = np.array([])
             return
 
         # Copy constructor
@@ -119,7 +120,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     _num_params = 0
 
     @property
-    def numpy(self) -> np.ndarray:
+    def numpy(self) -> npt.NDArray[np.complex128]:
         """The NumPy array holding the unitary."""
         return self._utry
 
@@ -258,7 +259,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
     @staticmethod
     def closest_to(
-        M: np.ndarray,
+        M: npt.NDArray[np.complex128],
         radixes: Sequence[int] = [],
     ) -> UnitaryMatrix:
         """
@@ -341,7 +342,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Save the unitary to a file."""
         np.savetxt(filename, self.numpy)
 
-    def __getitem__(self, index: Any) -> np.complex128 | np.ndarray:
+    def __getitem__(
+            self, index: Any,
+    ) -> np.complex128 | npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         return self._utry[index]
 
@@ -400,7 +403,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the UnitaryMatrix class."""
         if dtype != np.complex128:
             raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
@@ -411,15 +414,15 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         self,
         ufunc: np.ufunc,
         method: str,
-        *inputs: np.ndarray,
+        *inputs: npt.NDArray[Any],
         **kwargs: Any,
-    ) -> UnitaryMatrix | np.ndarray:
+    ) -> UnitaryMatrix | npt.NDArray[np.complex128]:
         """Implements NumPy API for the UnitaryMatrix class."""
         if method != '__call__':
             return NotImplemented
 
         non_unitary_involved = False
-        args: list[np.ndarray] = []
+        args: list[npt.NDArray[Any]] = []
         for input in inputs:
             if isinstance(input, UnitaryMatrix):
                 args.append(input.numpy)

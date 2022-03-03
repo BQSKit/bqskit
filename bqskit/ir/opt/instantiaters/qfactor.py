@@ -6,6 +6,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 from bqskitrs import QFactorInstantiatorNative
 
 from bqskit.ir.opt.instantiater import Instantiater
@@ -32,8 +33,8 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
         self,
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
-        x0: np.ndarray,
-    ) -> np.ndarray:
+        x0: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""
         return super().instantiate(circuit, target, x0)
 

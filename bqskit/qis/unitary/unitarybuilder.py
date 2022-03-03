@@ -6,6 +6,7 @@ from typing import cast
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
@@ -75,7 +76,7 @@ class UnitaryBuilder(Unitary):
 
         self._num_params = 0
         self._dim = int(np.prod(self.radixes))
-        self.tensor = np.identity(self.dim)
+        self.tensor = np.identity(self.dim, dtype=np.complex128)
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
@@ -249,7 +250,9 @@ class UnitaryBuilder(Unitary):
         inv_perm = list(np.argsort(perm))
         self.tensor = self.tensor.transpose(inv_perm)
 
-    def calc_env_matrix(self, location: Sequence[int]) -> np.ndarray:
+    def calc_env_matrix(
+            self, location: Sequence[int],
+    ) -> npt.NDArray[np.complex128]:
         """
         Calculates the environment matrix w.r.t. the specified location.
 

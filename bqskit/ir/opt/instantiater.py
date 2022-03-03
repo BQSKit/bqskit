@@ -5,6 +5,7 @@ import abc
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -29,8 +30,8 @@ class Instantiater(abc.ABC):
         self,
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
-        x0: np.ndarray,
-    ) -> np.ndarray:
+        x0: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """
         Instantiate `circuit` to best implement `target`.
 
@@ -76,7 +77,7 @@ class Instantiater(abc.ABC):
         multistarts: int,
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
-    ) -> list[np.ndarray]:
+    ) -> list[npt.NDArray[np.float64]]:
         """
         Generate `multistarts` starting points for instantiation.
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import FrozenParameterGate
@@ -109,7 +110,7 @@ class Operation(DifferentiableUnitary):
 
         return self.gate.get_unitary(self.params)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this operation.
 
@@ -123,7 +124,7 @@ class Operation(DifferentiableUnitary):
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 

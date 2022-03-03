@@ -15,6 +15,7 @@ from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 from distributed import worker_client
 
 from bqskit.ir.gate import Gate
@@ -179,7 +180,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return len(self._circuit)
 
     @property
-    def params(self) -> np.ndarray:
+    def params(self) -> npt.NDArray[np.float64]:
         """The stored parameters for the circuit."""
         return np.array(sum((list(op.params) for op in self), []))
 
@@ -2140,13 +2141,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # TODO: Can be made a lot more efficient.
         return self.get_unitary().get_statevector(in_state)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """Return the gradient of the circuit."""
         return self.get_unitary_and_grad(params)[1]
 
     def get_unitary_and_grad(
         self, params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """Return the unitary and gradient of the circuit."""
         if len(params) != 0:
             self.check_parameters(params)

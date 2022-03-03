@@ -5,6 +5,7 @@ from typing import cast
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
@@ -128,7 +129,7 @@ class VariableLocationGate(ComposedGate):
     def split_params(
         self,
         params: RealVector,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Split params into subgate params and location params."""
         return (
             np.array(params[:self.gate.num_params]),
@@ -146,7 +147,7 @@ class VariableLocationGate(ComposedGate):
         PGPT = P @ np.kron(G, self.I) @ P.T
         return UnitaryMatrix.closest_to(PGPT, self.radixes)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -157,7 +158,7 @@ class VariableLocationGate(ComposedGate):
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 
@@ -184,7 +185,7 @@ class VariableLocationGate(ComposedGate):
         U = UnitaryMatrix.closest_to(PGPT, self.radixes)
         return U, np.concatenate([dG, dP])
 
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 

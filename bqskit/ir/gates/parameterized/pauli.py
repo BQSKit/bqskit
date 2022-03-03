@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -52,7 +54,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
         if 'READTHEDOCS' in os.environ:
-            self.sigmav = np.array([])
+            self.sigmav: npt.NDArray[Any] = np.array([])
         else:
             self.sigmav = (-1j / 2) * self.paulis.numpy
 
@@ -64,7 +66,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         eiH = sp.linalg.expm(H)
         return UnitaryMatrix(eiH, check_arguments=False)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -79,7 +81,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 
@@ -91,7 +93,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         U, dU = dexpmv(H, self.sigmav)
         return UnitaryMatrix(U, check_arguments=False), dU
 
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 

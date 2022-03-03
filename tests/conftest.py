@@ -12,6 +12,7 @@ from typing import Callable
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck
 from hypothesis import settings
@@ -119,10 +120,8 @@ type_dict = {
     'complex_7': np.csingle(1234 + 1234j),
     'complex_8': np.cdouble(1234 + 1234j),
     'complex_9': np.clongdouble(1234 + 1234j),
-    # needs newer numpy
-    'complex_10': np.complex64(1234 + 1234j),  # type: ignore
-    # needs newer numpy
-    'complex_11': np.complex128(1234 + 1234j),  # type: ignore
+    'complex_10': np.complex64(1234 + 1234j),
+    'complex_11': np.complex128(1234 + 1234j),
     'bool_1': False,
     'bool_2': True,
     'bool_3': np.bool_(False),
@@ -146,7 +145,7 @@ type_dict = {
         0.0j,
         1.23j,
         1.1 + 1.0j,
-        np.complex64(1.0 + 1.0j),  # type: ignore # needs newer numpy
+        np.complex64(1.0 + 1.0j),
     ],
     'seq-complex_4': [1.234e12j] * 10,
     'seq-bool_1': [],
@@ -453,7 +452,7 @@ def toffoli_unitary() -> UnitaryMatrix:
 
 
 @pytest.fixture
-def toffoli_unitary_np() -> np.ndarray:
+def toffoli_unitary_np() -> npt.NDArray[np.complex128]:
     return TOFFOLI
 
 
@@ -463,11 +462,11 @@ def swap_unitary() -> UnitaryMatrix:
 
 
 @pytest.fixture
-def swap_unitary_np() -> np.ndarray:
+def swap_unitary_np() -> npt.NDArray[np.complex128]:
     return SWAP
 
 
-def random_utry_gen(dims: int | Sequence[int]) -> np.ndarray:
+def random_utry_gen(dims: int | Sequence[int]) -> npt.NDArray[np.complex128]:
     """
     Generate a random unitary.
 
@@ -528,7 +527,8 @@ def invalid_utry_gen(dims: int | Sequence[int]) -> np.ndarray:
 
 
 @pytest.fixture
-def gen_invalid_utry_np() -> Callable[[int | Sequence[int]], np.ndarray]:
+def gen_invalid_utry_np(
+) -> Callable[[int | Sequence[int]], npt.NDArray[np.complex128]]:
     """Provide a method to generate random invalid unitaries."""
     return invalid_utry_gen
 
@@ -780,7 +780,7 @@ def circuit_gen(
 
         # 2a. Shuffle gates
         shuffled_gates = gateset
-        np.random.shuffle(shuffled_gates)
+        np.random.shuffle(shuffled_gates)  # type: ignore
 
         # 2b. Find first gate that is compatible
         for gate in shuffled_gates:

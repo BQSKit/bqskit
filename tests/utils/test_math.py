@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 import scipy as sp
 from scipy.stats import unitary_group
@@ -17,10 +18,10 @@ from bqskit.utils.math import unitary_log_no_i
 
 
 def dexpm_exact(
-    M: np.ndarray,
-    dM: np.ndarray,
+    M: npt.NDArray[np.complex128],
+    dM: npt.NDArray[np.complex128],
     term_count: int = 100,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[npt.NDArray[np.complex128], npt.NDArray[np.complex128]]:
     """
     Exact matrix exponential derivative calculation.
 
@@ -45,7 +46,7 @@ class TestDexpmv:
     @pytest.mark.parametrize(
         'alpha', [np.random.random(16) for i in range(100)],
     )
-    def test_single(self, alpha: np.ndarray) -> None:
+    def test_single(self, alpha: npt.NDArray[np.float64]) -> None:
         paulis = PauliMatrices(2)
         H = paulis.dot_product(alpha)
 
@@ -59,7 +60,7 @@ class TestDexpmv:
     @pytest.mark.parametrize(
         'alpha', [np.random.random(16) for i in range(100)],
     )
-    def test_vector(self, alpha: np.ndarray) -> None:
+    def test_vector(self, alpha: npt.NDArray[np.float64]) -> None:
         paulis = PauliMatrices(2)
         H = paulis.dot_product(alpha)
 
@@ -105,7 +106,7 @@ class TestDexpmv:
 class TestSoftmax:
 
     @pytest.mark.parametrize('x', [np.random.random(100) for i in range(100)])
-    def test_1(self, x: np.ndarray) -> None:
+    def test_1(self, x: npt.NDArray[np.float64]) -> None:
         assert np.abs(np.sum(softmax(10 * x)) - 1) < 1e-15
 
     def test_2(self) -> None:
@@ -155,7 +156,7 @@ class TestUnitaryLog:
         + PauliMatrices(4).paulis
         + [unitary_group.rvs(16) for _ in range(100)],
     )
-    def test_valid(self, reU: np.ndarray) -> None:
+    def test_valid(self, reU: npt.NDArray[np.complex128]) -> None:
         H = unitary_log_no_i(reU)
         assert np.allclose(H, H.conj().T, rtol=0, atol=1e-15)
         U = sp.linalg.expm(1j * H)
@@ -183,7 +184,7 @@ class TestPauliExpansion:
         + PauliMatrices(3).paulis
         + PauliMatrices(4).paulis,
     )
-    def test_valid(self, reH: np.ndarray) -> None:
+    def test_valid(self, reH: npt.NDArray[np.complex128]) -> None:
         alpha = pauli_expansion(reH)
         print(alpha)
         H = PauliMatrices(int(np.log2(reH.shape[0]))).dot_product(alpha)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
@@ -61,9 +62,9 @@ class ControlledGate(
         self._name = '%d-Controlled(%s)' % (num_controls, gate.name)
         self._num_params = gate.num_params
 
-        self.Ic = np.identity(2 ** num_controls)
-        self.It = np.identity(gate.dim)
-        self.OneProj = np.zeros(self.Ic.shape)
+        self.Ic = np.identity(2 ** num_controls, dtype=np.complex128)
+        self.It = np.identity(gate.dim, dtype=np.complex128)
+        self.OneProj = np.zeros(self.Ic.shape, dtype=np.complex128)
         self.OneProj[-1, -1] = 1
         self.left = np.kron((self.Ic - self.OneProj), self.It)
 
@@ -82,7 +83,7 @@ class ControlledGate(
         right = np.kron(self.OneProj, U)
         return UnitaryMatrix(self.left + right, self.radixes)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -98,7 +99,7 @@ class ControlledGate(
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 

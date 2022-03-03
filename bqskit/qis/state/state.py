@@ -8,6 +8,7 @@ from typing import Sequence
 from typing import Union
 
 import numpy as np
+import numpy.typing as npt
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy.stats import unitary_group
 
@@ -95,7 +96,7 @@ class StateVector(NDArrayOperatorsMixin):
         self._dim = dim
 
     @property
-    def numpy(self) -> np.ndarray:
+    def numpy(self) -> npt.NDArray[np.complex128]:
         """The NumPy array holding the vector."""
         return self._vec
 
@@ -132,7 +133,9 @@ class StateVector(NDArrayOperatorsMixin):
         """An iterator that iterates through the elements of the vector."""
         return self._vec.__iter__()
 
-    def __getitem__(self, index: Any) -> np.complex128 | np.ndarray:
+    def __getitem__(
+            self, index: Any,
+    ) -> np.complex128 | npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         return self._vec[index]
 
@@ -217,7 +220,7 @@ class StateVector(NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         if dtype != np.complex128:
             raise ValueError('StateVector only supports Complex128 dtype.')
@@ -228,15 +231,15 @@ class StateVector(NDArrayOperatorsMixin):
         self,
         ufunc: np.ufunc,
         method: str,
-        *inputs: np.ndarray,
+        *inputs: npt.NDArray[Any],
         **kwargs: Any,
-    ) -> StateVector | np.ndarray:
+    ) -> StateVector | npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         if method != '__call__':
             return NotImplemented
 
         non_state_involved = False
-        args: list[np.ndarray] = []
+        args: list[npt.NDArray[Any]] = []
         for input in inputs:
             if isinstance(input, StateVector):
                 args.append(input.numpy)

@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.cost.residual import ResidualsFunction
@@ -24,13 +25,13 @@ class DifferentiableCostFunction(CostFunction):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: RealVector) -> np.ndarray:
+    def get_grad(self, params: RealVector) -> npt.NDArray[np.float64]:
         """Return the cost gradient given the input parameters."""
 
     def get_cost_and_grad(
         self,
         params: RealVector,
-    ) -> tuple[float, np.ndarray]:
+    ) -> tuple[float, npt.NDArray[np.float64]]:
         """Return the cost and gradient given the input parameters."""
         return self.get_cost(params), self.get_grad(params)
 
@@ -50,12 +51,12 @@ class DifferentiableResidualsFunction(ResidualsFunction):
     """
 
     @abc.abstractmethod
-    def get_grad(self, params: RealVector) -> np.ndarray:
+    def get_grad(self, params: RealVector) -> npt.NDArray[np.float64]:
         """Return the residuals gradient given the input parameters."""
 
     def get_cost_and_grad(
         self,
         params: RealVector,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Return the residuals and gradient given the input parameters."""
         return self.get_residuals(params), self.get_grad(params)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
@@ -54,7 +55,7 @@ class DaggerGate(
 
         return self.gate.get_unitary(params).dagger
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -73,7 +74,7 @@ class DaggerGate(
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 
@@ -85,7 +86,7 @@ class DaggerGate(
         utry, grads = self.gate.get_unitary_and_grad(params)  # type: ignore
         return utry.dagger, np.transpose(grads.conj(), (0, 2, 1))
 
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 

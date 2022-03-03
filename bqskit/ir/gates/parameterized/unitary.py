@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 
 from bqskit.ir.gate import Gate
@@ -64,7 +65,7 @@ class VariableUnitaryGate(
         x = real + imag
         return UnitaryMatrix.closest_to(np.reshape(x, self.shape), self.radixes)
 
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 

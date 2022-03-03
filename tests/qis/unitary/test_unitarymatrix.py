@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 from hypothesis import given
 from hypothesis.extra.numpy import arrays
@@ -151,7 +152,7 @@ class TestIdentity:
         elements=complex_numbers(allow_infinity=False, allow_nan=False),
     ),
 )
-def test_closest_to(M: np.ndarray) -> None:
+def test_closest_to(M: npt.NDArray[np.complex128]) -> None:
     u = UnitaryMatrix.closest_to(M, (2, 2))
     assert isinstance(u, UnitaryMatrix)
 

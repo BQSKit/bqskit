@@ -8,6 +8,7 @@ from typing import overload
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.typing import is_integer
@@ -15,7 +16,7 @@ from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
 
 
-class PauliMatrices(Sequence[np.ndarray]):
+class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
     """
     Pauli group of matrices.
 
@@ -99,39 +100,44 @@ class PauliMatrices(Sequence[np.ndarray]):
             for pauli_n_1, pauli_1 in matrices:
                 self.paulis.append(np.kron(pauli_n_1, pauli_1))
 
-    def __iter__(self) -> Iterator[np.ndarray]:
+    def __iter__(self) -> Iterator[npt.NDArray[np.complex128]]:
         return self.paulis.__iter__()
 
     @overload
-    def __getitem__(self, index: int) -> np.ndarray:
+    def __getitem__(self, index: int) -> npt.NDArray[np.complex128]:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[np.ndarray]:
+    def __getitem__(self, index: slice) -> list[npt.NDArray[np.complex128]]:
         ...
 
-    def __getitem__(self, index: int | slice) -> np.ndarray | list[np.ndarray]:
+    def __getitem__(
+        self,
+        index: int | slice,
+    ) -> npt.NDArray[np.complex128] | list[npt.NDArray[np.complex128]]:
         return self.paulis[index]
 
     def __len__(self) -> int:
         return len(self.paulis)
 
     @property
-    def numpy(self) -> np.ndarray:
+    def numpy(self) -> npt.NDArray[np.complex128]:
         """The NumPy array holding the pauli matrices."""
         return np.array(self.paulis)
 
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the PauliMatrices class."""
         if dtype != np.complex128:
             raise ValueError('PauliMatrices only supports Complex128 dtype.')
 
         return np.array(self.paulis, dtype)
 
-    def get_projection_matrices(self, q_set: Iterable[int]) -> list[np.ndarray]:
+    def get_projection_matrices(
+            self, q_set: Iterable[int],
+    ) -> list[npt.NDArray[np.complex128]]:
         """
         Return the Pauli matrices that act only on qubits in `q_set`.
 
@@ -171,7 +177,7 @@ class PauliMatrices(Sequence[np.ndarray]):
 
         return pauli_n_qubit
 
-    def dot_product(self, alpha: RealVector) -> np.ndarray:
+    def dot_product(self, alpha: RealVector) -> npt.NDArray[np.complex128]:
         """
         Computes the standard dot product of `alpha` with the paulis.
 
@@ -200,7 +206,9 @@ class PauliMatrices(Sequence[np.ndarray]):
         return np.array(np.sum([a * s for a, s in zip(alpha, self.paulis)], 0))
 
     @staticmethod
-    def from_string(pauli_string: str) -> np.ndarray | list[np.ndarray]:
+    def from_string(
+            pauli_string: str,
+    ) -> npt.NDArray[np.complex128] | list[npt.NDArray[np.complex128]]:
         """
         Construct pauli matrices from a string description.
 
