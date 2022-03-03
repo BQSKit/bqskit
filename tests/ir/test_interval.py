@@ -99,17 +99,6 @@ def test_indices(interval: CycleInterval) -> None:
     assert is_sequence_of_int(indices)
 
 
-@given(cycle_intervals(), everything_except(int))
-def test_contains(interval: CycleInterval, other_type: Any) -> None:
-    for idx in interval:
-        assert idx in interval
-    assert interval.lower in interval
-    assert interval.upper in interval
-    assert interval.upper + 1 not in interval
-    assert interval.lower - 1 not in interval
-    assert other_type not in interval
-
-
 class TestCycleIntervalOverlaps:
 
     @valid_type_test(CycleInterval(0, 0).overlaps)
