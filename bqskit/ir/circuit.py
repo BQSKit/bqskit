@@ -47,6 +47,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int
@@ -2204,6 +2205,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         target: StateLike | UnitaryLike,
         method: str | None = None,
         multistarts: int = 1,
+        seed: int | None = None,
         **kwargs: Any,
     ) -> Circuit:
         """
@@ -2228,6 +2230,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             multistarts (int): The number of instantiation jobs to spawn
                 and manage. (Default: 1)
 
+            seed (int | None): The seed for any pseudo-random number generators
+                to use. Note that this is not guaranteed to make this method
+                reproducible.
+
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method constructor. For more info, see
                 `bqskit.ir.opt.instantiaters`.
@@ -2243,11 +2249,21 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             ValueError: If `target` dimension doesn't match with circuit.
 
             ValueError: If `multistarts` is not a positive integer.
+
+            ValueError: If `seed` is not an integer or `None`
         """
         # Check if should run in parallel
         parallel = 'parallel' in kwargs and kwargs['parallel']
         if 'parallel' in kwargs:
             kwargs.pop('parallel')
+
+        if seed is not None:
+            if not isinstance(seed, int):
+                raise ValueError(
+                    f'Expected seed to be an integer got {type(seed)}.',
+                )
+            else:
+                seed_random_sources(seed)
 
         # Assign method if unspecified
         if method is None:
