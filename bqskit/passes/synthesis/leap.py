@@ -195,14 +195,17 @@ class LEAPSynthesisPass(SynthesisPass):
             _logger.info('Successful synthesis.')
             return initial_layer
 
-        while not frontier.empty():
-            top_circuit, layer = frontier.pop()
+        if 'executor' in data:  # In Parallel
+            with worker_client() as client:
+                while not frontier.empty():
+                    top_circuit, layer = frontier.pop()
 
-            # Generate successors and evaluate each
-            successors = self.layer_gen.gen_successors(top_circuit, data)
+                    # Generate successors and evaluate each
+                    successors = self.layer_gen.gen_successors(
+                        top_circuit,
+                        data,
+                    )
 
-            if 'executor' in data:  # In Parallel
-                with worker_client() as client:
                     futures = client.map(
                         Circuit.instantiate,
                         successors,
@@ -226,7 +229,12 @@ class LEAPSynthesisPass(SynthesisPass):
                                 data['psols'] = leap_data['psols']
                             return circuit
 
-            else:  # Sequentially
+        else:  # Sequentially
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
+                # Generate successors and evaluate each
+                successors = self.layer_gen.gen_successors(top_circuit, data)
+
                 for circuit in successors:
                     circuit.instantiate(utry, **instantiate_options)
                     if self.evaluate_node(
