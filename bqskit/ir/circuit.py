@@ -16,7 +16,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from distributed import worker_client
+from dask.distributed import as_completed
+from dask.distributed import worker_client
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -2325,7 +2326,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         )
 
         # Instantiate the circuit
-        params = []
+        params_list = []
         if multistarts > 1 and parallel:
             with worker_client() as client:
                 futures = [
@@ -2337,18 +2338,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     )
                     for start in starts
                 ]
-                params = [future.result() for future in futures]
+                for _, params in as_completed(futures, with_results=True):
+                    params_list.append(params)
 
         else:
             for start in starts:
-                params.append(
+                params_list.append(
                     instantiater.instantiate(
                         self, typed_target, start,
                     ),
                 )
 
         cost_fn = HilbertSchmidtCost(self, typed_target)
-        self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
+        self.set_params(sorted(params_list, key=lambda x: cost_fn(x))[0])
         return self
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:

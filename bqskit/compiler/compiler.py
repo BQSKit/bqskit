@@ -63,7 +63,7 @@ class Compiler:
             self.client.close()
             self.tasks = {}
             _logger.info('Stopped compiler process.')
-        except AttributeError:
+        except (AttributeError, TypeError):
             pass
 
     def submit(self, task: CompilationTask) -> None:
