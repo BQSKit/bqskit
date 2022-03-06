@@ -94,7 +94,7 @@ class MachineModel:
             )
 
         if block_size <= 0:
-            raise ValueError('Nonpositive block_size; got {block_size}.')
+            raise ValueError(f'Nonpositive block_size; got {block_size}.')
 
         locations: set[CircuitLocation] = set()
 
