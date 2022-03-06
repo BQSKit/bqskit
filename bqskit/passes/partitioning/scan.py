@@ -114,6 +114,7 @@ class ScanPartitioner(BasePass):
             # Select best block from current potential blocks
             best_region = self.find_best_block(potential_blocks)
             regions.append(best_region)
+            _logger.info(f'Just formed region: {best_region}')
 
             # Update divider
             for qudit, interval in best_region.items():
@@ -171,7 +172,9 @@ class ScanPartitioner(BasePass):
         """Calculate the groups of qudits that grouped in a partition."""
         # Get initial set from circuit connectivity
         model = MachineModel(circuit.num_qudits, circuit.coupling_graph)
-        qudit_groups = [tuple(x) for x in model.get_locations(self.block_size)]
+        qudit_groups: list[tuple[int, ...]] = []
+        for i in range(self.block_size):
+            qudit_groups.extend(tuple(x) for x in model.get_locations(i + 1))
 
         # Prune groups
         active_qudits = circuit.active_qudits
