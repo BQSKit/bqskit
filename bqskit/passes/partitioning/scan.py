@@ -173,8 +173,16 @@ class ScanPartitioner(BasePass):
         # Get initial set from circuit connectivity
         model = MachineModel(circuit.num_qudits, circuit.coupling_graph)
         qudit_groups: list[tuple[int, ...]] = []
-        for i in range(self.block_size):
-            qudit_groups.extend(tuple(x) for x in model.get_locations(i + 1))
+        for i in reversed(range(self.block_size)):
+            potential_groups = [tuple(x) for x in model.get_locations(i + 1)]
+            for potential_group in potential_groups:
+                should_add_group = True
+                for qudit_group in qudit_groups:
+                    if all(x in qudit_group for x in potential_group):
+                        should_add_group = False
+                        break
+                if should_add_group:
+                    qudit_groups.append(potential_group)
 
         # Prune groups
         active_qudits = circuit.active_qudits
