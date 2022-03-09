@@ -7,7 +7,9 @@ from typing import Any
 from typing import Callable
 from typing import Sequence
 
-from distributed import worker_client
+from distributed import get_client
+from distributed import rejoin
+from distributed import secede
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -159,23 +161,25 @@ class ForEachBlockPass(BasePass):
         if 'executor' in data:  # In Parallel
             for block_data in block_datas:
                 block_data['executor'] = data['executor']
-            with worker_client() as client:
-                completed_subcircuits = []
-                completed_block_datas = []
-                futures = []
-                for subcircuit, block_data in zip(subcircuits, block_datas):
-                    future = client.submit(
-                        _sub_do_work,
-                        self.loop_body,
-                        subcircuit,
-                        block_data,
-                    )
-                    futures.append(future)
-
-                for future in futures:
-                    x, y = future.result()
-                    completed_subcircuits.append(x)
-                    completed_block_datas.append(y)
+            client = get_client()
+            completed_subcircuits = []
+            completed_block_datas = []
+            futures = []
+            for subcircuit, block_data in zip(subcircuits, block_datas):
+                future = client.submit(
+                    _sub_do_work,
+                    self.loop_body,
+                    subcircuit,
+                    block_data,
+                )
+                futures.append(future)
+            secede()
+            client.gather(futures)
+            rejoin()
+            for future in futures:
+                x, y = future.result()
+                completed_subcircuits.append(x)
+                completed_block_datas.append(y)
 
         else:  # Sequentially
             completed_subcircuits = []
