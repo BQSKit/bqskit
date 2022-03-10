@@ -165,7 +165,9 @@ class ForEachBlockPass(BasePass):
             completed_subcircuits = []
             completed_block_datas = []
             futures = []
-            for subcircuit, block_data in zip(subcircuits, block_datas):
+            subc_futures = client.scatter(subcircuits)
+            data_futures = client.scatter(block_datas)
+            for subcircuit, block_data in zip(subc_futures, data_futures):
                 future = client.submit(
                     _sub_do_work,
                     self.loop_body,

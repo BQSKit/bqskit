@@ -68,7 +68,7 @@ class Compiler:
 
     def submit(self, task: CompilationTask) -> None:
         """Submit a CompilationTask to the Compiler."""
-        executor = Executor(task)
+        executor = self.client.scatter(Executor(task))
         future = self.client.submit(Executor.run, executor, pure=False)
         self.tasks[task.task_id] = future
         _logger.info('Submitted task: %s' % task.task_id)

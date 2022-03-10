@@ -16,8 +16,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from dask.distributed import as_completed
-from dask.distributed import worker_client
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -32,8 +30,6 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
-from bqskit.ir.opt.instantiaters.minimization import Minimization
-from bqskit.ir.opt.instantiaters.qfactor import QFactor
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
@@ -52,7 +48,9 @@ from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int
+from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
+from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
@@ -2253,103 +2251,70 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `seed` is not an integer or `None`
         """
-        # Check if should run in parallel
-        parallel = 'parallel' in kwargs and kwargs['parallel']
-        if 'parallel' in kwargs:
-            kwargs.pop('parallel')
-
+        # Set seed if specified
         if seed is not None:
             if not isinstance(seed, int):
                 raise ValueError(
                     f'Expected seed to be an integer got {type(seed)}.',
                 )
-            else:
-                seed_random_sources(seed)
+            seed_random_sources(seed)
 
-        # Assign method if unspecified
-        if method is None:
-            error_msg = ''
-            for inst in instantiater_order:
-                if inst.is_capable(self):  # type: ignore
-                    method = inst.get_method_name()  # type: ignore
-                    break
-                else:
-                    report = inst.get_violation_report(self)  # type: ignore
-                    error_msg += report + '\n'
+        # Construct instantiater from method
+        instantiater: Instantiater | None = None
 
+        err = ''
+        for inst in instantiater_order:
+            # If method is specified; match it
+            if inst.get_method_name().lower() == method:  # type: ignore
+                if not inst.is_capable(self):  # type: ignore
+                    raise ValueError(
+                        'Circuit cannot be instantiated using the '
+                        f'{method} method.'
+                        f'\n{inst.get_violation_report(self)}',  # type: ignore
+                    )
+                instantiater = inst(**kwargs)
+                break
+
+            # If method is not specified; find first capable one
             if method is None:
-                raise ValueError(
-                    'No instantiation method works for this circuit.\n%s'
-                    % error_msg,
-                )
+                if inst.is_capable(self):  # type: ignore
+                    instantiater = inst(**kwargs)
+                    break
+                err += inst.get_violation_report(self) + '\n'  # type: ignore
 
-        # Create instantiater
-        instantiater: Instantiater
-
-        if method.lower() == 'qfactor':
-            instantiater = QFactor(**kwargs)
-
-        elif method.lower() == 'minimization':
-            instantiater = Minimization(**kwargs)
-
-        else:
-            raise ValueError(
-                'No such method %s; expected "qfactor" or "minimization".',
-            )
-
-        if not instantiater.is_capable(self):
-            raise ValueError(
-                'Circuit cannot be instantiated using the %s method.\n %s'
-                % (method, instantiater.get_violation_report(self)),
-            )
+        if instantiater is None:
+            if err != '':
+                raise ValueError(f'No capable instantiater.\n{err}')
+            raise ValueError(f'No such instantiatation method {method}.')
 
         # Check Target
-        try:
-            typed_target = UnitaryMatrix(target)  # type: ignore
-        except (ValueError, TypeError):
-            try:
-                typed_target = StateVector(target)  # type: ignore
-            except (ValueError, TypeError) as ex:
-                raise TypeError(
-                    'Expected either StateVector or UnitaryMatrix'
-                    ' for target, got %s.' % type(target),
-                ) from ex
+        if is_square_matrix(target):
+            target = UnitaryMatrix(target)  # type: ignore
+        elif is_vector(target):
+            target = StateVector(target)  # type: ignore
+        else:
+            raise TypeError(
+                'Expected either StateVector or UnitaryMatrix'
+                ' for target, got %s.' % type(target),
+            )
 
-        if typed_target.dim != self.dim:
+        if target.dim != self.dim:
             raise ValueError('Target dimension mismatch with circuit.')
 
         # Generate starting points
-        starts = instantiater.gen_starting_points(
-            multistarts,
-            self,
-            typed_target,
-        )
+        starts = instantiater.gen_starting_points(multistarts, self, target)
 
         # Instantiate the circuit
         params_list = []
-        if multistarts > 1 and parallel:
-            with worker_client() as client:
-                futures = [
-                    client.submit(
-                        instantiater.instantiate,
-                        self,
-                        typed_target,
-                        start,
-                    )
-                    for start in starts
-                ]
-                for _, params in as_completed(futures, with_results=True):
-                    params_list.append(params)
+        for start in starts:
+            params_list.append(instantiater.instantiate(self, target, start))
 
-        else:
-            for start in starts:
-                params_list.append(
-                    instantiater.instantiate(
-                        self, typed_target, start,
-                    ),
-                )
+        # Return best result
+        if multistarts == 1:
+            self.set_params(params_list[0])
+            return self
 
-        cost_fn = HilbertSchmidtCost(self, typed_target)
+        cost_fn = HilbertSchmidtCost(self, target)
         self.set_params(sorted(params_list, key=lambda x: cost_fn(x))[0])
         return self
 

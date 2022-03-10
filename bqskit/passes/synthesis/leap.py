@@ -5,8 +5,7 @@ import logging
 from typing import Any
 
 import numpy as np
-from dask.distributed import as_completed
-from dask.distributed import worker_client
+from dask.distributed import get_client
 from scipy.stats import linregress
 
 from bqskit.ir.circuit import Circuit
@@ -146,7 +145,9 @@ class LEAPSynthesisPass(SynthesisPass):
         self.cost = cost
         self.max_layer = max_layer
         self.min_prefix_size = min_prefix_size
-        self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
+        self.instantiate_options: dict[str, Any] = {
+            'cost_fn_gen': self.cost,
+        }
         self.instantiate_options.update(instantiate_options)
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
@@ -156,13 +157,9 @@ class LEAPSynthesisPass(SynthesisPass):
         frontier = Frontier(utry, self.heuristic_function)
         data['window_markers'] = []
 
-        instantiate_options = self.instantiate_options
-        if 'executor' in data:
-            instantiate_options['parallel'] = True
-
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(utry, **instantiate_options)
+        initial_layer.instantiate(utry, **self.instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -180,48 +177,46 @@ class LEAPSynthesisPass(SynthesisPass):
             leap_data['best_dist'],
         )
 
-        _logger.info(
-            'Search started, initial layer has cost: %e.' %
-            leap_data['best_dist'],
-        )
-
         if leap_data['best_dist'] < self.success_threshold:
             _logger.info('Successful synthesis.')
             return initial_layer
 
         if 'executor' in data:  # In Parallel
-            with worker_client() as client:
-                while not frontier.empty():
-                    top_circuit, layer = frontier.pop()
+            client = get_client()
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
 
-                    # Generate successors and evaluate each
-                    successors = self.layer_gen.gen_successors(
-                        top_circuit,
+                # Generate successors and evaluate each
+                successors = self.layer_gen.gen_successors(top_circuit, data)
+
+                # Submit instantiate jobs
+                futures = self.batched_instantiate(
+                    successors,
+                    utry,
+                    client,
+                    **self.instantiate_options,
+                )
+
+                # Wait for and gather results
+                circuits = self.gather_best_results(
+                    futures,
+                    client,
+                    self.cost.calc_cost,
+                    utry,
+                )
+
+                for circuit in circuits:
+                    if self.evaluate_node(
+                        circuit,
+                        utry,
                         data,
-                    )
-
-                    futures = client.map(
-                        Circuit.instantiate,
-                        successors,
-                        pure=False,
-                        target=utry,
-                        **instantiate_options,
-                    )
-                    for _, circuit in as_completed(futures, with_results=True):
-                        if self.evaluate_node(
-                            circuit,
-                            utry,
-                            data,
-                            frontier,
-                            layer,
-                            leap_data,
-                        ):
-                            for future in futures:
-                                if not future.done:
-                                    client.cancel(future)
-                            if self.store_partial_solutions:
-                                data['psols'] = leap_data['psols']
-                            return circuit
+                        frontier,
+                        layer,
+                        leap_data,
+                    ):
+                        if self.store_partial_solutions:
+                            data['psols'] = leap_data['psols']
+                        return circuit
 
         else:  # Sequentially
             while not frontier.empty():
@@ -230,7 +225,7 @@ class LEAPSynthesisPass(SynthesisPass):
                 successors = self.layer_gen.gen_successors(top_circuit, data)
 
                 for circuit in successors:
-                    circuit.instantiate(utry, **instantiate_options)
+                    circuit.instantiate(utry, **self.instantiate_options)
                     if self.evaluate_node(
                         circuit,
                         utry,

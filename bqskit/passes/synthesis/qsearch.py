@@ -4,8 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from dask.distributed import as_completed
-from dask.distributed import worker_client
+from dask.distributed import get_client
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
@@ -162,38 +161,50 @@ class QSearchSynthesisPass(SynthesisPass):
             _logger.info('Successful synthesis.')
             return initial_layer
 
-        while not frontier.empty():
-            top_circuit, layer = frontier.pop()
+        if 'executor' in data:  # In Parallel
+            client = get_client()
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
 
-            # Generate successors and evaluate each
-            successors = self.layer_gen.gen_successors(top_circuit, data)
+                # Generate successors and evaluate each
+                successors = self.layer_gen.gen_successors(top_circuit, data)
 
-            if 'executor' in data:  # In Parallel
-                with worker_client() as client:
-                    futures = client.map(
-                        Circuit.instantiate,
-                        successors,
-                        pure=False,
-                        target=utry,
-                        **instantiate_options,
-                    )
-                    for _, circuit in as_completed(futures, with_results=True):
-                        if self.evaluate_node(
-                            circuit,
-                            utry,
-                            data,
-                            frontier,
-                            layer,
-                            search_data,
-                        ):
-                            for future in futures:
-                                if not future.done:
-                                    client.cancel(future)
-                            if self.store_partial_solutions:
-                                data['psols'] = search_data['psols']
-                            return circuit
+                # Submit instantiate jobs
+                futures = self.batched_instantiate(
+                    successors,
+                    utry,
+                    client,
+                    **self.instantiate_options,
+                )
 
-            else:  # Sequentially
+                # Wait for and gather results
+                circuits = self.gather_best_results(
+                    futures,
+                    client,
+                    self.cost.calc_cost,
+                    utry,
+                )
+
+                for circuit in circuits:
+                    if self.evaluate_node(
+                        circuit,
+                        utry,
+                        data,
+                        frontier,
+                        layer,
+                        search_data,
+                    ):
+                        if self.store_partial_solutions:
+                            data['psols'] = search_data['psols']
+                        return circuit
+
+        else:  # Sequentially
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
+
+                # Generate successors and evaluate each
+                successors = self.layer_gen.gen_successors(top_circuit, data)
+
                 for circuit in successors:
                     circuit.instantiate(utry, **instantiate_options)
                     if self.evaluate_node(
