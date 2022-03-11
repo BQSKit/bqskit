@@ -331,7 +331,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""
         if isinstance(other, Unitary):
-            return np.allclose(self, other.get_unitary())
+            other_unitary = other.get_unitary()
+            if self.shape != other_unitary.shape:
+                return False
+            return np.allclose(self, other_unitary)
 
         if isinstance(other, np.ndarray):
             return np.allclose(self, other)
@@ -470,7 +473,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
     def __hash__(self) -> int:
         """Return the hash of the unitary."""
-        return hash(self._utry[0][0])
+        return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
 
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
