@@ -468,5 +468,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the repr representation of the unitary."""
         return repr(self._utry)
 
+    def __hash__(self) -> int:
+        """Return the hash of the unitary."""
+        return hash(self._utry[0][0])
+
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
