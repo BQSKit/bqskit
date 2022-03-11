@@ -1,7 +1,6 @@
 """This module implements the PauliGate."""
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import numpy as np
@@ -14,6 +13,7 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.docs import building_docs
 from bqskit.utils.math import dexpmv
 from bqskit.utils.math import dot_product
 from bqskit.utils.math import pauli_expansion
@@ -53,7 +53,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         self._num_qudits = num_qudits
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
-        if 'READTHEDOCS' in os.environ:
+        if building_docs():
             self.sigmav: npt.NDArray[Any] = np.array([])
         else:
             self.sigmav = (-1j / 2) * self.paulis.numpy

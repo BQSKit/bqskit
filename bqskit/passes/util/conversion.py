@@ -37,8 +37,8 @@ class BlockConversionPass(BasePass):
             convert_target (str): Either `variable` or `constant`.
                 Blocks will be converted to the form described here. If
                 this is `variable` all gates will be converted to
-                `VariableUnitaryGate`s. If this is `constant` blocks
-                will be converted to `ConstantUnitaryGate`s. Blocks
+                `VariableUnitaryGate` s. If this is `constant` blocks
+                will be converted to `ConstantUnitaryGate` s. Blocks
                 cannot be converted to circuit gates, that can be caried
                 out by synthesis.
 

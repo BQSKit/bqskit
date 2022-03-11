@@ -1,3 +1,4 @@
+"""This module implements helper methods for random generators."""
 from __future__ import annotations
 
 import ctypes

@@ -66,7 +66,7 @@ class QSearchSynthesisPass(SynthesisPass):
 
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
-                 to unlimited. (Default: None)
+                to unlimited. (Default: None)
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)

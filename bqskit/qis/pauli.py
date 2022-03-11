@@ -6,14 +6,17 @@ from typing import Iterable
 from typing import Iterator
 from typing import overload
 from typing import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_sequence
+
+if TYPE_CHECKING:
+    from bqskit.qis.unitary.unitary import RealVector
 
 
 class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):

@@ -21,6 +21,8 @@ BQSKit Utility Classes and Functions (:mod:`bqskit.utils`)
 
     math
     typing
+    random
+    docs
     test.strategies
     test.types
 """

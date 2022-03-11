@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 from typing import Sequence
 from typing import Union
@@ -10,21 +9,24 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import scipy as sp
-
-if 'READTHEDOCS' not in os.environ:
-    from numpy.lib.mixins import NDArrayOperatorsMixin
-else:
-    class NDArrayOperatorsMixin:  # type: ignore
-        pass
 from scipy.stats import unitary_group
 
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
-from bqskit.qis.unitary.unitary import RealVector, Unitary
+from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitary import Unitary
+from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
+
+if not building_docs():
+    from numpy.lib.mixins import NDArrayOperatorsMixin
+else:
+    class NDArrayOperatorsMixin:  # type: ignore
+        pass
+
 _logger = logging.getLogger(__name__)
 
 
@@ -71,7 +73,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """
 
         # Stop any actual logic when building documentation
-        if 'READTHEDOCS' in os.environ:
+        if building_docs():
             self._utry: npt.NDArray[np.complex128] = np.array([])
             return
 

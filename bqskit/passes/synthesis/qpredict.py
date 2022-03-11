@@ -75,7 +75,7 @@ class QPredictDecompositionPass(SynthesisPass):
 
             max_depth (int): The maximum number of gates to append without
                 success before termination. If left as None it will default
-                 to unlimited. (Default: None)
+                to unlimited. (Default: None)
 
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit

@@ -1,7 +1,7 @@
 """This module implements the SqrtISwapGate."""
 from __future__ import annotations
 
-import numpy as np
+import math
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -28,8 +28,8 @@ class SqrtISwapGate(ConstantGate, QubitGate):
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
-            [0, 1 / np.sqrt(2), 1j / np.sqrt(2), 0],
-            [0, 1j / np.sqrt(2), 1 / np.sqrt(2), 0],
+            [0, 1 / math.sqrt(2), 1j / math.sqrt(2), 0],
+            [0, 1j / math.sqrt(2), 1 / math.sqrt(2), 0],
             [0, 0, 0, 1],
         ],
     )
