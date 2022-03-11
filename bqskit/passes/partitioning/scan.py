@@ -187,15 +187,23 @@ class ScanPartitioner(BasePass):
         # Prune groups
         active_qudits = circuit.active_qudits
         qudits_in_groups: set[int] = set()
+        qudit_groups_to_remove = []
+        qudit_groups_to_append = []
         for qudit_group in qudit_groups:
-            if all([q not in active_qudits for q in qudit_group]):
-                qudit_groups.remove(qudit_group)
+            if all(q in active_qudits for q in qudit_group):
+                qudits_in_groups.update(qudit_group)
+            else:
+                qudit_groups_to_remove.append(qudit_group)
                 group = tuple(q for q in qudit_group if q in active_qudits)
                 if len(group) > 0:
-                    qudit_groups.append(group)
+                    qudit_groups_to_append.append(group)
                     qudits_in_groups.update(group)
-            else:
-                qudits_in_groups.update(qudit_group)
+
+        for qudit_group in qudit_groups_to_remove:
+            qudit_groups.remove(qudit_group)
+
+        for qudit_group in qudit_groups_to_append:
+            qudit_groups.append(qudit_group)
 
         # Add groups for individual active qudits
         for q in active_qudits:
