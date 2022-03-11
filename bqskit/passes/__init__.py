@@ -172,7 +172,6 @@ __all__ = [
     'QuickPartitioner',
     'SynthesisPass',
     'LEAPSynthesisPass',
-    'OptimizedLEAPPass',
     'QSearchSynthesisPass',
     'QFASTDecompositionPass',
     'QPredictDecompositionPass',
