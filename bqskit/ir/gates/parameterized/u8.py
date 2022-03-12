@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -58,7 +59,7 @@ class U8Gate(QutritGate, DifferentiableUnitary, CachedClass):
             ],
         )
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 

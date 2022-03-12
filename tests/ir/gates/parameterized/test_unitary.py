@@ -51,3 +51,10 @@ def test_optimize(utry: UnitaryMatrix) -> None:
     vug = VariableUnitaryGate(utry.num_qudits, utry.radixes)
     params = vug.optimize(np.array(utry))
     assert vug.get_unitary(params).get_distance_from(utry.conj().T) < 1e-7
+
+
+@given(unitaries(2, (2,), 2))
+def test_is(utry: UnitaryMatrix) -> None:
+    vug1 = VariableUnitaryGate(utry.num_qudits, utry.radixes)
+    vug2 = VariableUnitaryGate(utry.num_qudits)
+    assert vug1 == vug2

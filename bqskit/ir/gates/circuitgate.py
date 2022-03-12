@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -44,7 +45,7 @@ class CircuitGate(Gate):
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         return self._circuit.get_unitary(params)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -55,7 +56,7 @@ class CircuitGate(Gate):
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 

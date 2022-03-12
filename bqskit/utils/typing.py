@@ -10,6 +10,7 @@ from typing import Mapping
 from typing import Sized
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypeGuard
 
 
@@ -221,7 +222,7 @@ def is_square_matrix(M: np.typing.ArrayLike) -> bool:
     return True
 
 
-def is_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
+def is_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
     """Return true if H is a hermitian matrix."""
 
     if not is_square_matrix(H):
@@ -239,7 +240,7 @@ def is_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
     return True
 
 
-def is_skew_hermitian(H: np.ndarray, tol: float = 1e-8) -> bool:
+def is_skew_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
     """Return true if H is a skew hermitian matrix."""
 
     if not is_square_matrix(H):

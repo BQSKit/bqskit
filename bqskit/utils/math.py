@@ -1,14 +1,19 @@
 """This module implements numerical functions."""
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 
 from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.unitary.unitary import RealVector
 
 
-def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def dexpmv(
+    M: npt.NDArray[np.complex128], dM: npt.NDArray[np.complex128],
+) -> tuple[npt.NDArray[np.complex128], npt.NDArray[np.complex128]]:
     """
     Compute the Matrix exponential F = e^M and its derivative dF.
 
@@ -72,7 +77,10 @@ def dexpmv(M: np.ndarray, dM: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return F, dF
 
 
-def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
+def softmax(
+    x: npt.NDArray[np.float64],
+    beta: int = 20,
+) -> npt.NDArray[np.float64]:
     """
     Computes the softmax of vector x.
 
@@ -90,7 +98,7 @@ def softmax(x: np.ndarray, beta: int = 20) -> np.ndarray:
     return exps / np.sum(exps)
 
 
-def dot_product(alpha: RealVector, sigma: RealVector) -> np.ndarray:
+def dot_product(alpha: RealVector, sigma: RealVector) -> npt.NDArray[Any]:
     """
     Computes the standard dot product of `alpha` with `sigma`.
 
@@ -107,7 +115,9 @@ def dot_product(alpha: RealVector, sigma: RealVector) -> np.ndarray:
     return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))
 
 
-def unitary_log_no_i(U: np.ndarray) -> np.ndarray:
+def unitary_log_no_i(
+        U: npt.NDArray[np.complex128],
+) -> npt.NDArray[np.complex128]:
     """
     Solves for H in U = e^{iH}
 
@@ -130,7 +140,7 @@ def unitary_log_no_i(U: np.ndarray) -> np.ndarray:
     return 0.5 * H0 + 0.5 * H0.conj().T
 
 
-def pauli_expansion(H: np.ndarray) -> np.ndarray:
+def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     """
     Computes a Pauli expansion of the hermitian matrix H.
 

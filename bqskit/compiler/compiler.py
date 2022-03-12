@@ -38,6 +38,9 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
+        if 'silence_logs' not in kwargs:
+            kwargs['silence_logs'] = logging.getLogger('bqskit').level
+
         self.client = Client(*args, **kwargs)
         self.tasks: dict[uuid.UUID, Future] = {}
         _logger.info('Started compiler process.')
@@ -60,12 +63,12 @@ class Compiler:
             self.client.close()
             self.tasks = {}
             _logger.info('Stopped compiler process.')
-        except AttributeError:
+        except (AttributeError, TypeError):
             pass
 
     def submit(self, task: CompilationTask) -> None:
         """Submit a CompilationTask to the Compiler."""
-        executor = Executor(task)
+        executor = self.client.scatter(Executor(task))
         future = self.client.submit(Executor.run, executor, pure=False)
         self.tasks[task.task_id] = future
         _logger.info('Submitted task: %s' % task.task_id)
@@ -76,7 +79,7 @@ class Compiler:
 
     def result(self, task: CompilationTask) -> Circuit:
         """Block until the CompilationTask is finished, return its result."""
-        circ = self.tasks[task.task_id].result()
+        circ = self.tasks[task.task_id].result()[0]
         return circ
 
     def cancel(self, task: CompilationTask) -> None:
@@ -90,3 +93,9 @@ class Compiler:
         self.submit(task)
         result = self.result(task)
         return result
+
+    def analyze(self, task: CompilationTask, key: str) -> Any:
+        """Gather the value associated with `key` in the task's data."""
+        if task.task_id not in self.tasks:
+            self.submit(task)
+        return self.tasks[task.task_id].result()[1][key]

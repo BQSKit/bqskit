@@ -352,7 +352,7 @@ def circuit_locations(
     min_size: int = 1,
     max_size: int = 5,
 ) -> CircuitLocation:
-    """Hypothesis strategy for generating `CircuitLocation`s."""
+    """Hypothesis strategy for generating `CircuitLocation` s."""
     idxs = integers(min_qudit, max_qudit)
     locations = lists(idxs, min_size=min_size, max_size=max_size, unique=True)
     return CircuitLocation(draw(locations))
@@ -366,7 +366,7 @@ def circuit_location_likes(
     min_size: int = 1,
     max_size: int = 5,
 ) -> CircuitLocationLike:
-    """Hypothesis strategy for generating `CircuitLocationLike`s."""
+    """Hypothesis strategy for generating `CircuitLocationLike` s."""
     idxs = integers(min_qudit, max_qudit)
     locations = lists(idxs, min_size=min_size, max_size=max_size, unique=True)
     location = draw(locations)

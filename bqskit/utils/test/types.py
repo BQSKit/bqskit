@@ -472,7 +472,7 @@ def invalid_type_test(
     valids = []
     invalids = []
     for id, param in inspect.signature(func_to_test).parameters.items():
-        if param.annotation == inspect._empty:  # type: ignore
+        if param.annotation == inspect._empty:
             raise ValueError(
                 'Need type annotation to generate invalid type tests.',
             )
@@ -544,7 +544,7 @@ def valid_type_test(
 
     strategies = []
     for id, param in inspect.signature(func_to_test).parameters.items():
-        if param.annotation == inspect._empty:  # type: ignore
+        if param.annotation == inspect._empty:
             raise ValueError(
                 'Need type annotation to generate invalid type tests.',
             )

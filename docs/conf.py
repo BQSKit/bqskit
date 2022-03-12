@@ -12,13 +12,14 @@ from __future__ import annotations
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../bqskit'))
+sys.path.insert(0, os.path.abspath('..'))
 
+os.environ['__SPHINX_BUILD__'] = 'True'
 
 # -- Project information -----------------------------------------------------
 
 project = 'BQSKit'
-copyright = '2021, Lawrence Berkeley National Laboratory'
+copyright = '2022, Lawrence Berkeley National Laboratory'
 author = 'BQSKit Development Team'
 
 
@@ -94,9 +95,9 @@ autodoc_mock_imports = [
     'bqskitrs',
     'threadpoolctl',
     'dask',
-    'qsearch',
     'scipy',
     'numpy',
+    'qiskit',
     'lark-parser',
     'distributed',
 ]

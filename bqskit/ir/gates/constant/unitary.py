@@ -28,3 +28,12 @@ class ConstantUnitaryGate(ConstantGate):
         self._utry = UnitaryMatrix(utry, radixes)
         self._num_qudits = self._utry.num_qudits
         self._radixes = self._utry.radixes
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, ConstantUnitaryGate)
+            and self._utry == other._utry
+        )
+
+    def __hash__(self) -> int:
+        return hash(self._utry)

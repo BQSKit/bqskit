@@ -7,16 +7,17 @@ from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates import CircuitGate
+from bqskit.ir.gates import CNOTGate
+from bqskit.ir.operation import Operation
 from bqskit.passes.control import ForEachBlockPass
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.processing import ScanningGateRemovalPass
-from bqskit.passes.processing import WindowOptimizationPass
 from bqskit.passes.synthesis import QFASTDecompositionPass
-from bqskit.passes.synthesis.leap import OptimizedLEAPPass
+from bqskit.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.passes.util import UnfoldPass
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 
@@ -57,15 +58,19 @@ class CompilationTask():
             _logger.warning('Synthesis input size is very large.')
 
         inner_seq = [
-            OptimizedLEAPPass(),
-            WindowOptimizationPass(),
+            LEAPSynthesisPass(),
             ScanningGateRemovalPass(),
         ]
 
         passes: list[BasePass] = []
         if num_qudits >= 5:
             passes.append(QFASTDecompositionPass())
-            passes.append(ForEachBlockPass(inner_seq))
+            passes.append(
+                ForEachBlockPass(
+                    inner_seq,
+                    replace_filter=less_2q_gates,
+                ),
+            )
             passes.append(UnfoldPass())
         else:
             passes.extend(inner_seq)
@@ -81,23 +86,32 @@ class CompilationTask():
             return CompilationTask.synthesize(circuit.get_unitary())
 
         inner_seq = [
-            OptimizedLEAPPass(),
+            LEAPSynthesisPass(),
             ScanningGateRemovalPass(),
         ]
 
         passes: list[BasePass] = []
         passes.append(QuickPartitioner(3))
-        passes.append(ForEachBlockPass(inner_seq))
+        passes.append(ForEachBlockPass(inner_seq, replace_filter=less_2q_gates))
         passes.append(UnfoldPass())
 
         iterative_reopt = WhileLoopPass(
             GateCountPredicate(CNOTGate()),
             [
                 ClusteringPartitioner(3, 4),
-                ForEachBlockPass(inner_seq),
+                ForEachBlockPass(inner_seq, replace_filter=less_2q_gates),
                 UnfoldPass(),
             ],
         )
 
         passes.append(iterative_reopt)
         return CompilationTask(circuit, passes)
+
+
+def less_2q_gates(circuit: Circuit, op: Operation) -> bool:
+    """Replace `circuit' with `op` if has less 2 qubit gates."""
+    if not isinstance(op, CircuitGate):
+        return True
+    og_num_2q_gate = len([op for op in op._circuit if op.num_qudits >= 2])
+    new_num_2q_gate = len([op for op in circuit if op.num_qudits >= 2])
+    return new_num_2q_gate > og_num_2q_gate

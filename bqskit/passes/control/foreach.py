@@ -7,7 +7,9 @@ from typing import Any
 from typing import Callable
 from typing import Sequence
 
-from distributed import worker_client
+from distributed import get_client
+from distributed import rejoin
+from distributed import secede
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -157,23 +159,29 @@ class ForEachBlockPass(BasePass):
 
         # Perform Work
         if 'executor' in data:  # In Parallel
-            with worker_client() as client:
-                completed_subcircuits = []
-                completed_block_datas = []
-                futures = []
-                for subcircuit, block_data in zip(subcircuits, block_datas):
-                    future = client.submit(
-                        _sub_do_work,
-                        self.loop_body,
-                        subcircuit,
-                        block_data,
-                    )
-                    futures.append(future)
-
-                for future in futures:
-                    x, y = future.result()
-                    completed_subcircuits.append(x)
-                    completed_block_datas.append(y)
+            for block_data in block_datas:
+                block_data['executor'] = data['executor']
+            client = get_client()
+            completed_subcircuits = []
+            completed_block_datas = []
+            futures = []
+            subc_futures = client.scatter(subcircuits)
+            data_futures = client.scatter(block_datas)
+            for subcircuit, block_data in zip(subc_futures, data_futures):
+                future = client.submit(
+                    _sub_do_work,
+                    self.loop_body,
+                    subcircuit,
+                    block_data,
+                )
+                futures.append(future)
+            secede()
+            client.gather(futures)
+            rejoin()
+            for future in futures:
+                x, y = future.result()
+                completed_subcircuits.append(x)
+                completed_block_datas.append(y)
 
         else:  # Sequentially
             completed_subcircuits = []
@@ -190,6 +198,7 @@ class ForEachBlockPass(BasePass):
             # Record Data Part 2
             block_data['subcircuit_post'] = subcircuit.copy()
             block_data['loop_body_data'] = subdata
+            block_data['point'] = CircuitPoint(cycle, op.location[0])
 
             # Calculate Errors
             if self.calculate_error_bound:

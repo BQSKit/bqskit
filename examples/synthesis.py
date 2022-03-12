@@ -21,5 +21,7 @@ toffoli = np.array([
 task = CompilationTask.synthesize(toffoli)
 
 # Spawn a compiler and compile the task
-with Compiler() as compiler:
-    synthesized_circuit = compiler.compile(task)
+if __name__ == '__main__':
+    with Compiler() as compiler:
+        synthesized_circuit = compiler.compile(task)
+        print(synthesized_circuit)

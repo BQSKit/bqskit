@@ -195,13 +195,6 @@ class CircuitIterator(
 
     def step(self) -> None:
         """Move the iterator one step."""
-        if (
-            self.num_ops != self.circuit.num_operations
-            or self.num_cycles != self.circuit.num_cycles
-            or self.num_qudits != self.circuit.num_qudits
-        ):
-            raise RuntimeError('Circuit changed under iteration.')
-
         if not self.reverse:
             self.increment_iter()
         else:
@@ -212,6 +205,13 @@ class CircuitIterator(
             raise StopIteration
 
     def __next__(self) -> Operation | tuple[int, Operation]:
+        if (
+            self.num_ops != self.circuit.num_operations
+            or self.num_cycles != self.circuit.num_cycles
+            or self.num_qudits != self.circuit.num_qudits
+        ):
+            raise RuntimeError('Circuit changed under iteration.')
+
         while True:
             self.step()
             op = self.circuit._circuit[self.cycle][self.qudit]

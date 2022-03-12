@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 from hypothesis import given
 from hypothesis.strategies import integers
@@ -528,7 +529,7 @@ class TestPauliMatricesDotProduct:
             ),
         ],
     )
-    def test_size_1(self, alpha: RealVector, prod: np.ndarray) -> None:
+    def test_size_1(self, alpha: RealVector, prod: npt.NDArray[Any]) -> None:
         assert np.allclose(PauliMatrices(1).dot_product(alpha), prod)
 
     @pytest.mark.parametrize(
@@ -609,7 +610,10 @@ class TestPauliMatricesDotProduct:
             ),
         ],
     )
-    def test_size_2(self, alpha: RealVector, prod: np.ndarray) -> None:
+    def test_size_2(
+        self, alpha: RealVector,
+        prod: npt.NDArray[np.complex128],
+    ) -> None:
         assert np.allclose(PauliMatrices(2).dot_product(alpha), prod)
 
 
@@ -681,7 +685,10 @@ class TestPauliMatricesFromString:
             ('\t XY  ,,\n\r\t\t', np.kron(PauliMatrices.X, PauliMatrices.Y)),
         ],
     )
-    def test_single(self, pauli_str: str, pauli_mat: np.ndarray) -> None:
+    def test_single(
+        self, pauli_str: str,
+        pauli_mat: npt.NDArray[np.complex128],
+    ) -> None:
         assert isinstance(PauliMatrices.from_string(pauli_str), np.ndarray)
         assert np.allclose(
             np.array(PauliMatrices.from_string(pauli_str)),
@@ -788,7 +795,10 @@ class TestPauliMatricesFromString:
             ),
         ],
     )
-    def test_multi(self, pauli_str: str, pauli_mats: np.ndarray) -> None:
+    def test_multi(
+        self, pauli_str: str,
+        pauli_mats: list[npt.NDArray[np.complex128]],
+    ) -> None:
         paulis = PauliMatrices.from_string(pauli_str)
         assert isinstance(paulis, list)
         assert all(isinstance(pauli, np.ndarray) for pauli in paulis)

@@ -5,6 +5,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -58,8 +59,8 @@ class Minimization(Instantiater):
         self,
         circuit: Circuit,
         target: UnitaryMatrix | StateVector,
-        x0: np.ndarray,
-    ) -> np.ndarray:
+        x0: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""
         cost = self.cost_fn_gen.gen_cost(circuit, target)
         return self.minimizer.minimize(cost, x0)

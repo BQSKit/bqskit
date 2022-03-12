@@ -15,7 +15,7 @@ from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
-from distributed import worker_client
+import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -30,8 +30,6 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
-from bqskit.ir.opt.instantiaters.minimization import Minimization
-from bqskit.ir.opt.instantiaters.qfactor import QFactor
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
@@ -46,10 +44,13 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int
+from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
+from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
@@ -179,7 +180,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return len(self._circuit)
 
     @property
-    def params(self) -> np.ndarray:
+    def params(self) -> npt.NDArray[np.float64]:
         """The stored parameters for the circuit."""
         return np.array(sum((list(op.params) for op in self), []))
 
@@ -1227,7 +1228,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `point.qudit` is not in `op.location`
         """
-        if point[1] not in op.location:
+        if len(self[point].location.intersection(op.location)) == 0:
             raise ValueError("Point's qudit is not in operation's location.")
 
         self.pop(point)
@@ -2140,13 +2141,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # TODO: Can be made a lot more efficient.
         return self.get_unitary().get_statevector(in_state)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """Return the gradient of the circuit."""
         return self.get_unitary_and_grad(params)[1]
 
     def get_unitary_and_grad(
         self, params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """Return the unitary and gradient of the circuit."""
         if len(params) != 0:
             self.check_parameters(params)
@@ -2203,6 +2204,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         target: StateLike | UnitaryLike,
         method: str | None = None,
         multistarts: int = 1,
+        seed: int | None = None,
         **kwargs: Any,
     ) -> Circuit:
         """
@@ -2227,6 +2229,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             multistarts (int): The number of instantiation jobs to spawn
                 and manage. (Default: 1)
 
+            seed (int | None): The seed for any pseudo-random number generators
+                to use. Note that this is not guaranteed to make this method
+                reproducible.
+
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method constructor. For more info, see
                 `bqskit.ir.opt.instantiaters`.
@@ -2242,96 +2248,74 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             ValueError: If `target` dimension doesn't match with circuit.
 
             ValueError: If `multistarts` is not a positive integer.
+
+            ValueError: If `seed` is not an integer or `None`
         """
-        # Check if should run in parallel
-        parallel = 'parallel' in kwargs and kwargs['parallel']
-        if 'parallel' in kwargs:
-            kwargs.pop('parallel')
-
-        # Assign method if unspecified
-        if method is None:
-            error_msg = ''
-            for inst in instantiater_order:
-                if inst.is_capable(self):  # type: ignore
-                    method = inst.get_method_name()  # type: ignore
-                    break
-                else:
-                    report = inst.get_violation_report(self)  # type: ignore
-                    error_msg += report + '\n'
-
-            if method is None:
+        # Set seed if specified
+        if seed is not None:
+            if not isinstance(seed, int):
                 raise ValueError(
-                    'No instantiation method works for this circuit.\n%s'
-                    % error_msg,
+                    f'Expected seed to be an integer got {type(seed)}.',
                 )
+            seed_random_sources(seed)
 
-        # Create instantiater
-        instantiater: Instantiater
+        # Construct instantiater from method
+        instantiater: Instantiater | None = None
 
-        if method.lower() == 'qfactor':
-            instantiater = QFactor(**kwargs)
+        err = ''
+        for inst in instantiater_order:
+            # If method is specified; match it
+            if inst.get_method_name().lower() == method:  # type: ignore
+                if not inst.is_capable(self):  # type: ignore
+                    raise ValueError(
+                        'Circuit cannot be instantiated using the '
+                        f'{method} method.'
+                        f'\n{inst.get_violation_report(self)}',  # type: ignore
+                    )
+                instantiater = inst(**kwargs)
+                break
 
-        elif method.lower() == 'minimization':
-            instantiater = Minimization(**kwargs)
+            # If method is not specified; find first capable one
+            if method is None:
+                if inst.is_capable(self):  # type: ignore
+                    instantiater = inst(**kwargs)
+                    break
+                err += inst.get_violation_report(self) + '\n'  # type: ignore
 
-        else:
-            raise ValueError(
-                'No such method %s; expected "qfactor" or "minimization".',
-            )
-
-        if not instantiater.is_capable(self):
-            raise ValueError(
-                'Circuit cannot be instantiated using the %s method.\n %s'
-                % (method, instantiater.get_violation_report(self)),
-            )
+        if instantiater is None:
+            if err != '':
+                raise ValueError(f'No capable instantiater.\n{err}')
+            raise ValueError(f'No such instantiatation method {method}.')
 
         # Check Target
-        try:
-            typed_target = UnitaryMatrix(target)  # type: ignore
-        except (ValueError, TypeError):
-            try:
-                typed_target = StateVector(target)  # type: ignore
-            except (ValueError, TypeError) as ex:
-                raise TypeError(
-                    'Expected either StateVector or UnitaryMatrix'
-                    ' for target, got %s.' % type(target),
-                ) from ex
+        if is_square_matrix(target):
+            target = UnitaryMatrix(target)  # type: ignore
+        elif is_vector(target):
+            target = StateVector(target)  # type: ignore
+        else:
+            raise TypeError(
+                'Expected either StateVector or UnitaryMatrix'
+                ' for target, got %s.' % type(target),
+            )
 
-        if typed_target.dim != self.dim:
+        if target.dim != self.dim:
             raise ValueError('Target dimension mismatch with circuit.')
 
         # Generate starting points
-        starts = instantiater.gen_starting_points(
-            multistarts,
-            self,
-            typed_target,
-        )
+        starts = instantiater.gen_starting_points(multistarts, self, target)
 
         # Instantiate the circuit
-        params = []
-        if multistarts > 1 and parallel:
-            with worker_client() as client:
-                futures = [
-                    client.submit(
-                        instantiater.instantiate,
-                        self,
-                        typed_target,
-                        start,
-                    )
-                    for start in starts
-                ]
-                params = [future.result() for future in futures]
+        params_list = []
+        for start in starts:
+            params_list.append(instantiater.instantiate(self, target, start))
 
-        else:
-            for start in starts:
-                params.append(
-                    instantiater.instantiate(
-                        self, typed_target, start,
-                    ),
-                )
+        # Return best result
+        if multistarts == 1:
+            self.set_params(params_list[0])
+            return self
 
-        cost_fn = HilbertSchmidtCost(self, typed_target)
-        self.set_params(sorted(params, key=lambda x: cost_fn(x))[0])
+        cost_fn = HilbertSchmidtCost(self, target)
+        self.set_params(sorted(params_list, key=lambda x: cost_fn(x))[0])
         return self
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
@@ -2665,6 +2649,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         with open(filename, 'w') as f:
             f.write(language.encode(self))
+
+    def to(self, type: str) -> str:
+        """Convert circuit to language."""
+        return get_language(type).encode(self)
 
     @staticmethod
     def from_file(filename: str) -> Circuit:

@@ -108,10 +108,7 @@ class CycleInterval(Tuple[int, int]):
 
     def __contains__(self, cycle_index: object) -> bool:
         """Return true if `cycle_index` is inside this interval."""
-        if not is_integer(cycle_index):
-            return False
-
-        return self.lower <= cycle_index <= self.upper
+        return self.lower <= cycle_index <= self.upper  # type: ignore
 
     def __iter__(self) -> Iterator[int]:
         """Return an iterator for all indices contained in the interval."""

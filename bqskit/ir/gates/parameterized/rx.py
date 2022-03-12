@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -48,7 +49,7 @@ class RXGate(
             ],
         )
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -68,7 +69,7 @@ class RXGate(
             ], dtype=np.complex128,
         )
 
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 

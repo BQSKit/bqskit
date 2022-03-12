@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.meta import UnitaryMeta
@@ -17,7 +18,9 @@ class TestIsLocallyOptimizable:
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
                 pass
 
-            def optimize(self, env_matrix: np.ndarray) -> list[float]:
+            def optimize(
+                    self, env_matrix: npt.NDArray[np.complex128],
+            ) -> list[float]:
                 pass
 
         assert isinstance(test_class, UnitaryMeta)
@@ -28,7 +31,9 @@ class TestIsLocallyOptimizable:
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
                 pass
 
-            def optimize(self, env_matrix: np.ndarray) -> list[float]:
+            def optimize(
+                    self, env_matrix: npt.NDArray[np.complex128],
+            ) -> list[float]:
                 pass
 
             def is_locally_optimizable(self) -> bool:
@@ -42,7 +47,9 @@ class TestIsLocallyOptimizable:
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
                 pass
 
-            def optimize(self, env_matrix: np.ndarray) -> list[float]:
+            def optimize(
+                    self, env_matrix: npt.NDArray[np.complex128],
+            ) -> list[float]:
                 pass
 
             def is_locally_optimizable(self) -> bool:
@@ -59,7 +66,9 @@ class TestIsDifferentiable:
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
                 pass
 
-            def get_grad(self, params: RealVector = []) -> np.ndarray:
+            def get_grad(
+                self, params: RealVector = [],
+            ) -> npt.NDArray[np.complex128]:
                 pass
 
         assert isinstance(test_class, UnitaryMeta)
@@ -70,7 +79,9 @@ class TestIsDifferentiable:
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
                 pass
 
-            def get_grad(self, params: RealVector = []) -> np.ndarray:
+            def get_grad(
+                self, params: RealVector = [],
+            ) -> npt.NDArray[np.complex128]:
                 pass
 
             def is_differentiable(self) -> bool:
@@ -84,7 +95,9 @@ class TestIsDifferentiable:
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
                 pass
 
-            def get_grad(self, params: RealVector = []) -> np.ndarray:
+            def get_grad(
+                self, params: RealVector = [],
+            ) -> npt.NDArray[np.complex128]:
                 pass
 
             def is_differentiable(self) -> bool:

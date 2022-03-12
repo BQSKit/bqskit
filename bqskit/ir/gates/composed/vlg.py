@@ -5,6 +5,7 @@ from typing import cast
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
@@ -74,7 +75,8 @@ class VariableLocationGate(ComposedGate):
             raise ValueError('VLGs require at least 1 locations.')
 
         self.gate = gate
-        self._name = 'VariableLocationGate(%s)' % gate.name
+        name_str_tuple = (gate.name, locations, radixes)
+        self._name = 'VariableLocationGate(%s, %s, %s)' % name_str_tuple
         self.locations = list(locations)
         self._num_qudits = len(set(sum((tuple(l) for l in locations), tuple())))
 
@@ -127,7 +129,7 @@ class VariableLocationGate(ComposedGate):
     def split_params(
         self,
         params: RealVector,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Split params into subgate params and location params."""
         return (
             np.array(params[:self.gate.num_params]),
@@ -145,7 +147,7 @@ class VariableLocationGate(ComposedGate):
         PGPT = P @ np.kron(G, self.I) @ P.T
         return UnitaryMatrix.closest_to(PGPT, self.radixes)
 
-    def get_grad(self, params: RealVector = []) -> np.ndarray:
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -156,7 +158,7 @@ class VariableLocationGate(ComposedGate):
     def get_unitary_and_grad(
         self,
         params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, np.ndarray]:
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """
         Return the unitary and gradient for this gate.
 
@@ -183,10 +185,21 @@ class VariableLocationGate(ComposedGate):
         U = UnitaryMatrix.closest_to(PGPT, self.radixes)
         return U, np.concatenate([dG, dP])
 
-    def optimize(self, env_matrix: np.ndarray) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 
         See :class:`LocallyOptimizableUnitary` for more info.
         """
         raise NotImplementedError()
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, VariableLocationGate)
+            and self.gate == other.gate
+            and self.locations == other.locations
+            and self.radixes == other.radixes
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.gate, tuple(self.locations), self.radixes))

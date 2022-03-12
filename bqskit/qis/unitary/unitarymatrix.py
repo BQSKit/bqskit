@@ -2,28 +2,31 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 from typing import Sequence
 from typing import Union
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
-
-if 'READTHEDOCS' not in os.environ:
-    from numpy.lib.mixins import NDArrayOperatorsMixin
-else:
-    class NDArrayOperatorsMixin:  # type: ignore
-        pass
 from scipy.stats import unitary_group
 
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
-from bqskit.qis.unitary.unitary import RealVector, Unitary
+from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitary import Unitary
+from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
+
+if not building_docs():
+    from numpy.lib.mixins import NDArrayOperatorsMixin
+else:
+    class NDArrayOperatorsMixin:  # type: ignore
+        pass
+
 _logger = logging.getLogger(__name__)
 
 
@@ -70,8 +73,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """
 
         # Stop any actual logic when building documentation
-        if 'READTHEDOCS' in os.environ:
-            self._utry = np.array([])
+        if building_docs():
+            self._utry: npt.NDArray[np.complex128] = np.array([])
             return
 
         # Copy constructor
@@ -119,7 +122,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     _num_params = 0
 
     @property
-    def numpy(self) -> np.ndarray:
+    def numpy(self) -> npt.NDArray[np.complex128]:
         """The NumPy array holding the unitary."""
         return self._utry
 
@@ -258,7 +261,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
     @staticmethod
     def closest_to(
-        M: np.ndarray,
+        M: npt.NDArray[np.complex128],
         radixes: Sequence[int] = [],
     ) -> UnitaryMatrix:
         """
@@ -330,7 +333,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""
         if isinstance(other, Unitary):
-            return np.allclose(self, other.get_unitary())
+            other_unitary = other.get_unitary()
+            if self.shape != other_unitary.shape:
+                return False
+            return np.allclose(self, other_unitary)
 
         if isinstance(other, np.ndarray):
             return np.allclose(self, other)
@@ -341,7 +347,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Save the unitary to a file."""
         np.savetxt(filename, self.numpy)
 
-    def __getitem__(self, index: Any) -> np.complex128 | np.ndarray:
+    def __getitem__(
+            self, index: Any,
+    ) -> np.complex128 | npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         return self._utry[index]
 
@@ -400,7 +408,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
-    ) -> np.ndarray:
+    ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the UnitaryMatrix class."""
         if dtype != np.complex128:
             raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
@@ -411,15 +419,15 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         self,
         ufunc: np.ufunc,
         method: str,
-        *inputs: np.ndarray,
+        *inputs: npt.NDArray[Any],
         **kwargs: Any,
-    ) -> UnitaryMatrix | np.ndarray:
+    ) -> UnitaryMatrix | npt.NDArray[np.complex128]:
         """Implements NumPy API for the UnitaryMatrix class."""
         if method != '__call__':
             return NotImplemented
 
         non_unitary_involved = False
-        args: list[np.ndarray] = []
+        args: list[npt.NDArray[Any]] = []
         for input in inputs:
             if isinstance(input, UnitaryMatrix):
                 args.append(input.numpy)
@@ -464,6 +472,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __repr__(self) -> str:
         """Return the repr representation of the unitary."""
         return repr(self._utry)
+
+    def __hash__(self) -> int:
+        """Return the hash of the unitary."""
+        return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
 
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]

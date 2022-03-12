@@ -23,7 +23,7 @@ class SeedLayerGenerator(LayerGenerator):
         num_removed: int = 1,
     ) -> None:
         """
-        Construct a SimpleLayerGenerator.
+        Construct a SeedLayerGenerator.
 
         Args:
             seed (Circuit): The seed to start from.

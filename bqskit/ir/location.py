@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import Iterator
 from typing import overload
 from typing import Sequence
 from typing import Union
@@ -185,6 +186,9 @@ class CircuitLocation(Sequence[int]):
 
     def __hash__(self) -> int:
         return self._location.__hash__()
+
+    def __iter__(self) -> Iterator[int]:
+        return self._location.__iter__()
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, CircuitLocation):

@@ -5,17 +5,10 @@ import logging
 from typing import Any
 
 import numpy as np
-from dask.distributed import as_completed
-from dask.distributed import worker_client
-from qsearch import assemblers
-from qsearch import leap_compiler
-from qsearch import options
-from qsearch import parallelizers
-from qsearch import post_processing
+from dask.distributed import get_client
 from scipy.stats import linregress
 
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.lang.qasm2 import OPENQASM2Language
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
@@ -48,6 +41,8 @@ class LEAPSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
+        store_partial_solutions: bool = False,
+        partials_per_depth: int = 25,
         min_prefix_size: int = 3,
         instantiate_options: dict[str, Any] = {},
     ) -> None:
@@ -73,7 +68,14 @@ class LEAPSynthesisPass(SynthesisPass):
 
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
-                 to unlimited. (Default: None)
+                to unlimited. (Default: None)
+
+            store_partial_solutions (bool): Whether to store partial solutions
+                at different depths inside of the data dict. (Default: False)
+
+            partials_per_depth (int): The maximum number of partials
+                to store per search depth. No effect if
+                `store_partial_solutions` is False. (Default: 25)
 
             min_prefix_size (int): The minimum number of layers needed
                 to prefix the circuit.
@@ -143,21 +145,21 @@ class LEAPSynthesisPass(SynthesisPass):
         self.cost = cost
         self.max_layer = max_layer
         self.min_prefix_size = min_prefix_size
-        self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
+        self.instantiate_options: dict[str, Any] = {
+            'cost_fn_gen': self.cost,
+        }
         self.instantiate_options.update(instantiate_options)
+        self.store_partial_solutions = store_partial_solutions
+        self.partials_per_depth = partials_per_depth
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
         data['window_markers'] = []
 
-        instantiate_options = self.instantiate_options
-        if 'executor' in data:
-            instantiate_options['parallel'] = True
-
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(utry, **instantiate_options)
+        initial_layer.instantiate(utry, **self.instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -168,6 +170,8 @@ class LEAPSynthesisPass(SynthesisPass):
         leap_data['best_dists'] = [leap_data['best_dist']]
         leap_data['best_layers'] = [0]
         leap_data['last_prefix_layer'] = 0
+        if self.store_partial_solutions:
+            leap_data['psols'] = {}
         _logger.info(
             'Search started, initial layer has cost: %e.' %
             leap_data['best_dist'],
@@ -177,38 +181,31 @@ class LEAPSynthesisPass(SynthesisPass):
             _logger.info('Successful synthesis.')
             return initial_layer
 
-        while not frontier.empty():
-            top_circuit, layer = frontier.pop()
+        if 'executor' in data:  # In Parallel
+            client = get_client()
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
 
-            # Generate successors and evaluate each
-            successors = self.layer_gen.gen_successors(top_circuit, data)
+                # Generate successors and evaluate each
+                successors = self.layer_gen.gen_successors(top_circuit, data)
 
-            if 'executor' in data:  # In Parallel
-                with worker_client() as client:
-                    futures = client.map(
-                        Circuit.instantiate,
-                        successors,
-                        pure=False,
-                        target=utry,
-                        **instantiate_options,
-                    )
-                    for _, circuit in as_completed(futures, with_results=True):
-                        if self.evaluate_node(
-                            circuit,
-                            utry,
-                            data,
-                            frontier,
-                            layer,
-                            leap_data,
-                        ):
-                            for future in futures:
-                                if not future.done:
-                                    client.cancel(future)
-                            return circuit
+                # Submit instantiate jobs
+                futures = self.batched_instantiate(
+                    successors,
+                    utry,
+                    client,
+                    **self.instantiate_options,
+                )
 
-            else:  # Sequentially
-                for circuit in successors:
-                    circuit.instantiate(utry, **instantiate_options)
+                # Wait for and gather results
+                circuits = self.gather_best_results(
+                    futures,
+                    client,
+                    self.cost.calc_cost,
+                    utry,
+                )
+
+                for circuit in circuits:
                     if self.evaluate_node(
                         circuit,
                         utry,
@@ -217,6 +214,28 @@ class LEAPSynthesisPass(SynthesisPass):
                         layer,
                         leap_data,
                     ):
+                        if self.store_partial_solutions:
+                            data['psols'] = leap_data['psols']
+                        return circuit
+
+        else:  # Sequentially
+            while not frontier.empty():
+                top_circuit, layer = frontier.pop()
+                # Generate successors and evaluate each
+                successors = self.layer_gen.gen_successors(top_circuit, data)
+
+                for circuit in successors:
+                    circuit.instantiate(utry, **self.instantiate_options)
+                    if self.evaluate_node(
+                        circuit,
+                        utry,
+                        data,
+                        frontier,
+                        layer,
+                        leap_data,
+                    ):
+                        if self.store_partial_solutions:
+                            data['psols'] = leap_data['psols']
                         return circuit
 
         _logger.info('Frontier emptied.')
@@ -227,6 +246,8 @@ class LEAPSynthesisPass(SynthesisPass):
                 else 's', leap_data['best_dist'],
             ),
         )
+        if self.store_partial_solutions:
+            data['psols'] = leap_data['psols']
 
         return leap_data['best_circ']
 
@@ -266,6 +287,16 @@ class LEAPSynthesisPass(SynthesisPass):
                 data['window_markers'].append(circuit.num_cycles)
                 if self.max_layer is None or layer + 1 < self.max_layer:
                     frontier.add(circuit, layer + 1)
+
+        if self.store_partial_solutions:
+            if layer not in leap_data['psols']:
+                leap_data['psols'][layer] = []
+
+            leap_data['psols'][layer].append((circuit.copy(), dist))
+
+            if len(leap_data['psols'][layer]) > self.partials_per_depth:
+                leap_data['psols'][layer].sort(key=lambda x: x[1])
+                del leap_data['psols'][layer][-1]
 
         if self.max_layer is None or layer + 1 < self.max_layer:
             frontier.add(circuit, layer + 1)
@@ -348,38 +379,3 @@ class LEAPSynthesisPass(SynthesisPass):
 
         layers_added = new_layer - leap_data['last_prefix_layer']
         return delta < 0 and layers_added >= self.min_prefix_size
-
-
-# TODO: Improve quality of LEAPSynthesisPass and deprecate OptimizedLEAPPass
-
-class OptimizedLEAPPass(SynthesisPass):
-    """
-    An optimized version of LEAP.
-
-    This version of the LEAP algorithm is a translation layer to the
-    original implementation of LEAP. This version has more features
-    and generally produces higher-quality results than the LEAPSynthesisPass.
-    However, this one is not well integrated into the BQSKit tool suite,
-    and as a result lacks customizability.
-
-    As we continue to port over the features that make this implementation
-    slightly higher quality, we will deprecate this pass.
-    """
-
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
-        # Set leap options
-        opts = options.Options()
-        opts.target = utry.numpy
-        opts.verbosity = 0
-        opts.write_to_stdout = False
-        opts.reoptimize_size = 7
-        opts.parallelizer = parallelizers.SequentialParallelizer
-
-        # Run the LEAP algorithm and optimizations
-        intermediate = leap_compiler.LeapCompiler().compile(opts)
-        pp = post_processing.LEAPReoptimizing_PostProcessor()
-        output = pp.post_process_circuit(intermediate, opts)
-
-        # Translate back to BQSKit through QASM
-        output = assemblers.ASSEMBLER_IBMOPENQASM.assemble(output)
-        return OPENQASM2Language().decode(output)

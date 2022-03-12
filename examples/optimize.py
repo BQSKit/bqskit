@@ -11,5 +11,7 @@ circuit = Circuit.from_file('tfim.qasm')
 task = CompilationTask.optimize(circuit)
 
 # Spawn a compiler and compile the task
-with Compiler() as compiler:
-    optimized_circuit = compiler.compile(task)
+if __name__ == '__main__':
+    with Compiler() as compiler:
+        optimized_circuit = compiler.compile(task)
+        print(optimized_circuit)
