@@ -65,7 +65,7 @@ from bqskit.utils.typing import is_sequence
 
 settings.register_profile(
     'default',
-    suppress_health_check=(HealthCheck.too_slow,),
+    suppress_health_check=(HealthCheck.too_slow, HealthCheck.filter_too_much),
 )
 settings.load_profile('default')
 
