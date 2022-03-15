@@ -136,13 +136,9 @@ class QSearchSynthesisPass(SynthesisPass):
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
 
-        instantiate_options = self.instantiate_options
-        if 'executor' in data:
-            instantiate_options['parallel'] = True
-
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(utry, **instantiate_options)
+        initial_layer.instantiate(utry, **self.instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -206,7 +202,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 successors = self.layer_gen.gen_successors(top_circuit, data)
 
                 for circuit in successors:
-                    circuit.instantiate(utry, **instantiate_options)
+                    circuit.instantiate(utry, **self.instantiate_options)
                     if self.evaluate_node(
                         circuit,
                         utry,

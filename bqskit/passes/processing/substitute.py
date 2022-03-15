@@ -94,11 +94,6 @@ class SubstitutePass(BasePass):
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
-        # Update the instantiater to run in parallel
-        instantiate_options = self.instantiate_options
-        if 'executor' in data:
-            instantiate_options['parallel'] = True
-
         # Collect locations in circuit where self.init_gate exists
         points = [
             (cycle, op.location[0])
