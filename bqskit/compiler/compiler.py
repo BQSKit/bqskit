@@ -23,11 +23,16 @@ class Compiler:
     The compiler class spins up a Dask execution environment, which
     compilation tasks can then access to parallelize their operations.
     The compiler is implemented as a context manager and it is recommended
-    to use it as one.
+    to use it as one. If the compiler is not used in a context manager, it
+    is the responsibility of the user to call `close()`.
 
     Examples:
         >>> with Compiler() as compiler:
         ...     circuit = compiler.compile(task)
+
+        >>> compiler = Compiler()
+        >>> circuit = compiler.compile(task)
+        >>> compiler.close()
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -50,10 +55,6 @@ class Compiler:
         return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any) -> None:
-        """Shutdown compiler."""
-        self.close()
-
-    def __del__(self) -> None:
         """Shutdown compiler."""
         self.close()
 
