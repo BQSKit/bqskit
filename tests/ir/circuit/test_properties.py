@@ -26,10 +26,10 @@ from bqskit.ir.gates import TGate
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import XGate
 from bqskit.ir.gates import ZGate
+from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
-from bqskit.utils.typing import is_valid_coupling_graph
 from bqskit.utils.typing import is_valid_radixes
 
 
@@ -81,8 +81,8 @@ class TestSimpleCircuit:
 
     def test_coupling_graph(self, simple_circuit: Circuit) -> None:
         cgraph = simple_circuit.coupling_graph
-        assert isinstance(cgraph, set)
-        assert is_valid_coupling_graph(cgraph, 2)
+        assert isinstance(cgraph, CouplingGraph)
+        assert CouplingGraph.is_valid_coupling_graph(cgraph, 2)
         assert len(cgraph) == 1
         assert (0, 1) in cgraph
 
@@ -148,8 +148,8 @@ class TestSwapCircuit:
 
     def test_coupling_graph(self, swap_circuit: Circuit) -> None:
         cgraph = swap_circuit.coupling_graph
-        assert isinstance(cgraph, set)
-        assert is_valid_coupling_graph(cgraph, 2)
+        assert isinstance(cgraph, CouplingGraph)
+        assert CouplingGraph.is_valid_coupling_graph(cgraph, 2)
         assert len(cgraph) == 1
         assert (0, 1) in cgraph
 
@@ -214,8 +214,8 @@ class TestToffoliCircuit:
 
     def test_coupling_graph(self, toffoli_circuit: Circuit) -> None:
         cgraph = toffoli_circuit.coupling_graph
-        assert isinstance(cgraph, set)
-        assert is_valid_coupling_graph(cgraph, 3)
+        assert isinstance(cgraph, CouplingGraph)
+        assert CouplingGraph.is_valid_coupling_graph(cgraph, 3)
         assert len(cgraph) == 3
         assert (0, 1) in cgraph
         assert (1, 2) in cgraph
@@ -762,7 +762,7 @@ class TestGetCouplingGraph:
     """This tests `circuit.coupling_graph`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
-        assert is_valid_coupling_graph(
+        assert CouplingGraph.is_valid_coupling_graph(
             r6_qudit_circuit.coupling_graph, 6,
         )
 

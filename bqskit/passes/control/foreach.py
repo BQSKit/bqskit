@@ -146,7 +146,9 @@ class ForEachBlockPass(BasePass):
             subdata = {
                 'machine_model': MachineModel(
                     len(op.location),
-                    model.get_subgraph(op.location, subnumbering),
+                    model.coupling_graph.get_subgraph(
+                        op.location, subnumbering,
+                    ),
                 ),
             }
 

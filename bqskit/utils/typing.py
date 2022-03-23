@@ -118,61 +118,6 @@ def is_valid_radixes(
     return True
 
 
-def is_valid_coupling_graph(
-    coupling_graph: Any,
-    num_qudits: int | None = None,
-) -> bool:
-    """
-    Return true if the coupling graph is valid.
-
-    Args:
-        coupling_graph (Any): The coupling graph to check.
-
-        num_qudits (int | None): The total number of qudits. All qudits
-            should be less than this. If None, don't check.
-
-    Returns:
-        bool: Valid or not
-    """
-
-    if not is_iterable(coupling_graph):
-        _logger.debug('Coupling graph is not iterable.')
-        return False
-
-    if len(list(coupling_graph)) == 0:
-        return True
-
-    if not all(isinstance(pair, tuple) for pair in coupling_graph):
-        _logger.debug('Coupling graph is not a sequence of tuples.')
-        return False
-
-    if not all([len(pair) == 2 for pair in coupling_graph]):
-        _logger.debug('Coupling graph is not a sequence of pairs.')
-        return False
-
-    if num_qudits is not None:
-        if not (is_integer(num_qudits) and num_qudits > 0):
-            _logger.debug('Invalid num_qudits in coupling graph check.')
-            return False
-
-        if not all(
-            qudit < num_qudits
-            for pair in coupling_graph
-            for qudit in pair
-        ):
-            _logger.debug('Coupling graph has invalid qudits.')
-            return False
-
-    if not all([
-        len(pair) == len(set(pair))
-        for pair in coupling_graph
-    ]):
-        _logger.debug('Coupling graph has an invalid pair.')
-        return False
-
-    return True
-
-
 def is_vector(V: np.typing.ArrayLike) -> bool:
     """Return true if V is a vector."""
 

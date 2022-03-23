@@ -35,6 +35,7 @@ from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
+from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
@@ -209,7 +210,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return float(weighted_num_operations / depth)
 
     @property
-    def coupling_graph(self) -> set[tuple[int, int]]:
+    def coupling_graph(self) -> CouplingGraph:
         """
         The qudit connectivity in the circuit.
 
@@ -230,7 +231,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     if q1 == q2:
                         continue
                     coupling_graph.add((min(q1, q2), max(q1, q2)))
-        return coupling_graph
+        return CouplingGraph(coupling_graph)
 
     @property
     def gate_set(self) -> set[Gate]:
