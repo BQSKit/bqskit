@@ -35,6 +35,7 @@ represents a pure quantum operation in matrix form.
     StateVector
     PauliMatrices
     PermutationMatrix
+    CouplingGraph
 
 .. rubric:: Type Aliases
 
@@ -45,9 +46,12 @@ represents a pure quantum operation in matrix form.
     UnitaryLike
     StateLike
     RealVector
+    CouplingGraphLike
 """
 from __future__ import annotations
 
+from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.graph import CouplingGraphLike
 from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state import StateLike
@@ -74,4 +78,6 @@ __all__ = [
     'StateLike',
     'PermutationMatrix',
     'RealVector',
+    'CouplingGraph',
+    'CouplingGraphLike',
 ]
