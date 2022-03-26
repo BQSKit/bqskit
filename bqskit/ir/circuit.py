@@ -1553,14 +1553,20 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def unfold_all(self) -> None:
         """Unfold all CircuitGates in the circuit."""
-        while any(
-            isinstance(gate, CircuitGate)
-            for gate in self.gate_set
-        ):
-            for cycle, op in self.operations_with_cycles():
-                if isinstance(op.gate, CircuitGate):
-                    self.unfold((cycle, op.location[0]))
-                    break
+        cycle_index = 0
+        qudit_index = 0
+        while cycle_index < len(self._circuit):
+            op = self._circuit[cycle_index][qudit_index]
+
+            if op is not None and isinstance(op.gate, CircuitGate):
+                self.unfold((cycle_index, op.location[0]))
+                qudit_index = sorted(op.location)[0]
+                continue
+
+            qudit_index += 1
+            if qudit_index >= self.num_qudits:
+                qudit_index = 0
+                cycle_index += 1
 
     def surround(
         self,
