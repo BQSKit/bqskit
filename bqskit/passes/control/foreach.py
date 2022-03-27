@@ -168,7 +168,7 @@ class ForEachBlockPass(BasePass):
             data_futures = client.scatter(block_datas)
             futures = client.map(
                 _sub_do_work,
-                [self.loop_body]*len(subc_futures),
+                [self.loop_body] * len(subc_futures),
                 subc_futures,
                 data_futures,
             )
