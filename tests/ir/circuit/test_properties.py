@@ -81,8 +81,8 @@ class TestSimpleCircuit:
 
     def test_coupling_graph(self, simple_circuit: Circuit) -> None:
         cgraph = simple_circuit.coupling_graph
-        assert isinstance(cgraph, CouplingGraph)
         assert CouplingGraph.is_valid_coupling_graph(cgraph, 2)
+        assert isinstance(cgraph, CouplingGraph)
         assert len(cgraph) == 1
         assert (0, 1) in cgraph
 
@@ -148,8 +148,8 @@ class TestSwapCircuit:
 
     def test_coupling_graph(self, swap_circuit: Circuit) -> None:
         cgraph = swap_circuit.coupling_graph
-        assert isinstance(cgraph, CouplingGraph)
         assert CouplingGraph.is_valid_coupling_graph(cgraph, 2)
+        assert isinstance(cgraph, CouplingGraph)
         assert len(cgraph) == 1
         assert (0, 1) in cgraph
 
@@ -214,8 +214,8 @@ class TestToffoliCircuit:
 
     def test_coupling_graph(self, toffoli_circuit: Circuit) -> None:
         cgraph = toffoli_circuit.coupling_graph
-        assert isinstance(cgraph, CouplingGraph)
         assert CouplingGraph.is_valid_coupling_graph(cgraph, 3)
+        assert isinstance(cgraph, CouplingGraph)
         assert len(cgraph) == 3
         assert (0, 1) in cgraph
         assert (1, 2) in cgraph
