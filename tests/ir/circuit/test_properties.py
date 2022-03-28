@@ -769,7 +769,7 @@ class TestGetCouplingGraph:
     def test_empty(self) -> None:
         circuit = Circuit(4)
         assert len(circuit.coupling_graph) == 0
-        assert isinstance(circuit.coupling_graph, set)
+        assert isinstance(circuit.coupling_graph, CouplingGraph)
 
     def test_single_qubit_1(self) -> None:
         circuit = Circuit(1)
