@@ -157,7 +157,7 @@ class QSearchSynthesisPass(SynthesisPass):
             _logger.info('Successful synthesis.')
             return initial_layer
 
-        if 'executor' in data:  # In Parallel
+        if 'parallel' in data:  # In Parallel
             client = get_client()
             while not frontier.empty():
                 top_circuit, layer = frontier.pop()

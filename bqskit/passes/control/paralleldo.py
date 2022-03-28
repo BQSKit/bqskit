@@ -81,7 +81,7 @@ class ParallelDo(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Running pass sequences in parallel.')
 
-        if 'executor' not in data:
+        if 'parallel' not in data:
             raise RuntimeError(
                 'Parallel pass cannot be executed without a compiler.',
             )

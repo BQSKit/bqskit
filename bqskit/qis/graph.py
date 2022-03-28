@@ -5,15 +5,15 @@ import itertools as it
 import logging
 from functools import lru_cache
 from typing import Any
+from typing import Collection
 from typing import Iterable
 from typing import Iterator
-from typing import Set
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
 
 if TYPE_CHECKING:
-    from typing import TypeGuard
+    from typing_extensions import TypeGuard
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
@@ -23,27 +23,27 @@ from bqskit.utils.typing import is_iterable
 _logger = logging.getLogger(__name__)
 
 
-class CouplingGraph(Set[Tuple[int, int]]):
+class CouplingGraph(Collection[Tuple[int, int]]):
     """A graph representing connections in a qudit topology."""
 
     def __init__(self, graph: Iterable[tuple[int, int]]) -> None:
         if isinstance(graph, CouplingGraph):
-            self.num_qudits = graph.num_qudits
-            self._edges = graph._edges
-            self._adj = graph._adj
+            self.num_qudits: int = graph.num_qudits
+            self._edges: set[tuple[int, int]] = graph._edges
+            self._adj: list[list[int]] = graph._adj
             return
 
         if not CouplingGraph.is_valid_coupling_graph(graph):
             raise TypeError('Invalid coupling graph.')
 
-        self._edges: set[tuple[int, int]] = set(graph)
+        self._edges = set(graph)
 
         self.num_qudits = 0
         for q1, q2 in self._edges:
             self.num_qudits = max(self.num_qudits, max(q1, q2))
         self.num_qudits += 1
 
-        self._adj: list[list[int]] = [[] for _ in range(self.num_qudits)]
+        self._adj = [[] for _ in range(self.num_qudits)]
         for q1, q2 in self._edges:
             self._adj[q1].append(q2)
             self._adj[q2].append(q1)

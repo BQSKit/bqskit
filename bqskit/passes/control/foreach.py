@@ -160,23 +160,20 @@ class ForEachBlockPass(BasePass):
             block_datas.append(block_data)
 
         # Perform Work
-        if 'executor' in data:  # In Parallel
+        if 'parallel' in data:  # In Parallel
             for block_data in block_datas:
-                block_data['executor'] = data['executor']
+                block_data['parallel'] = data['parallel']
             client = get_client()
             completed_subcircuits = []
             completed_block_datas = []
-            futures = []
             subc_futures = client.scatter(subcircuits)
             data_futures = client.scatter(block_datas)
-            for subcircuit, block_data in zip(subc_futures, data_futures):
-                future = client.submit(
-                    _sub_do_work,
-                    self.loop_body,
-                    subcircuit,
-                    block_data,
-                )
-                futures.append(future)
+            futures = client.map(
+                _sub_do_work,
+                [self.loop_body] * len(subc_futures),
+                subc_futures,
+                data_futures,
+            )
             secede()
             client.gather(futures)
             rejoin()

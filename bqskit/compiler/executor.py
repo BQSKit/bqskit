@@ -28,7 +28,7 @@ class Executor:
         self.task_id = task.task_id
         self.circuit = task.input_circuit
         self.passes = task.passes
-        self.data: dict[str, Any] = {'executor': self}
+        self.data: dict[str, Any] = {'parallel': True}
         self.done = False
 
     def run(self) -> tuple[Circuit, dict[str, Any]]:

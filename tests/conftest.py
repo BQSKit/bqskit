@@ -494,12 +494,13 @@ def random_utry_gen(dims: int | Sequence[int]) -> npt.NDArray[np.complex128]:
 
 
 @pytest.fixture
-def gen_random_utry_np() -> Callable[[int | Sequence[int]], np.ndarray]:
+def gen_random_utry_np(
+) -> Callable[[int | Sequence[int]], npt.NDArray[np.complex128]]:
     """Provide a method to generate random unitaries."""
     return random_utry_gen
 
 
-def invalid_utry_gen(dims: int | Sequence[int]) -> np.ndarray:
+def invalid_utry_gen(dims: int | Sequence[int]) -> npt.NDArray[np.complex128]:
     """
     Generate a random invalid unitary.
 
@@ -906,7 +907,7 @@ def random_6_qudit_circuits() -> list[tuple[int, Circuit]]:
         seed = int(14e8 + i)
         np.random.seed(seed)
         radixes = np.random.choice([2, 3], 6)
-        circuits.append((seed, circuit_gen(6, radixes)))
+        circuits.append((seed, circuit_gen(6, radixes)))  # type: ignore
     return circuits
 
 

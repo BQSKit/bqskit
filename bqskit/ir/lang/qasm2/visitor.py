@@ -108,6 +108,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['rx'] = GateDef('rx', 1, 1, RXGate())
         self.gate_defs['ry'] = GateDef('ry', 1, 1, RYGate())
         self.gate_defs['rz'] = GateDef('rz', 1, 1, RZGate())
+        self.gate_defs['p'] = GateDef('p', 1, 1, RZGate())
         self.gate_defs['sx'] = GateDef('sx', 0, 1, SXGate())
         self.gate_defs['sxdg'] = GateDef('sxdg', 0, 1, DaggerGate(SXGate()))
         self.gate_defs['rxx'] = GateDef('rxx', 1, 2, RXXGate())

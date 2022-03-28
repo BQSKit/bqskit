@@ -87,22 +87,19 @@ class SynthesisPass(BasePass):
             multistarts = kwargs['multistarts']
             kwargs['multistarts'] = 1
 
-        futures: list[list[Future]] = []
+        flat_futures = client.map(
+            Circuit.instantiate,
+            [c.copy() for c in circuits * multistarts],
+            target=target,
+            pure=False,
+            priority=10000,
+            **kwargs,
+        )
 
-        client.scatter(circuits)
-
-        for circuit in circuits:
-            futures.append([])
-            for i in range(multistarts):
-                futures[-1].append(
-                    client.submit(
-                        Circuit.instantiate,
-                        circuit,
-                        pure=False,
-                        target=target,
-                        **kwargs,
-                    ),
-                )
+        futures: list[list[Future]] = [[] for _ in range(len(circuits))]
+        for i in range(len(circuits)):
+            for j in range(multistarts):
+                futures[i].append(flat_futures[i * len(circuits) + j])
 
         return futures
 
