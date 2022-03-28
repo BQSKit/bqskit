@@ -39,5 +39,9 @@ class SimpleLayoutPass(BasePass):
         if self.model.num_qudits < circuit.num_qudits:
             raise RuntimeError('Machine model is too small for circuit.')
 
-        graph = self.model.get_subgraph(list(range(circuit.num_qudits)))
+        qudits = list(range(circuit.num_qudits))
+        graph = self.model.coupling_graph.get_subgraph(qudits)
+        if not graph.is_fully_connected():
+            raise RuntimeError('Simple layout creates a disconnected graph.')
+
         data['machine_model'] = MachineModel(circuit.num_qudits, graph)
