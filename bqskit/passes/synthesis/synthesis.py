@@ -87,20 +87,18 @@ class SynthesisPass(BasePass):
             multistarts = kwargs['multistarts']
             kwargs['multistarts'] = 1
 
+        instantiater = kwargs["instantiater"] if "instantiater" in kwargs else None
+
         flat_futures = client.map(
-            Circuit.instantiate,
-            [c.copy() for c in circuits * multistarts],
-            target=target,
-            pure=False,
-            priority=10000,
-            **kwargs,
+            lambda circuit, starts: circuit.instantiate(target=target, pure=False, priority=10000, starts=starts, **kwargs),
+            [c.copy() for c in circuits for _ in range(multistarts)],
+            [[start] for c in circuits for start in instantiater.gen_starting_points(multistarts, c, target)] if instantiater is not None else [None]*multistarts*len(circuits),
         )
 
         futures: list[list[Future]] = [[] for _ in range(len(circuits))]
         for i in range(len(circuits)):
             for j in range(multistarts):
-                try:
-                    futures[i].append(flat_futures[i * multistarts + j])
+                futures[i].append(flat_futures[i * multistarts + j])
 
         return futures
 

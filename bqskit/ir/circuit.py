@@ -2212,6 +2212,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         method: str | None = None,
         multistarts: int = 1,
         seed: int | None = None,
+        starts: list[npt.NDArray[np.float64]] | None = None,
         cost_fn_gen: CostFunctionGenerator | None = None,
         instantiater: Instantiater | None = None,
         **kwargs: Any,
@@ -2310,7 +2311,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Target dimension mismatch with circuit.')
 
         # Generate starting points
-        starts = instantiater.gen_starting_points(multistarts, self, target)
+        if starts is None:
+            starts = instantiater.gen_starting_points(multistarts, self, target)
+        elif len(starts) != multistarts:
+            raise ValueError(f'Was told to expect {multistarts} starts but got {len(starts)}.')
 
         # Instantiate the circuit
         params_list = []
