@@ -2212,6 +2212,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         method: str | None = None,
         multistarts: int = 1,
         seed: int | None = None,
+        cost_fn_gen: CostFunctionGenerator | None = None,
+        instantiater: Instantiater | None = None,
         **kwargs: Any,
     ) -> Circuit:
         """
@@ -2266,28 +2268,27 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 )
             seed_random_sources(seed)
 
-        # Construct instantiater from method
-        instantiater: Instantiater | None = None
-
+        # Construct instantiater from method if it was not passed as an argument
         err = ''
-        for inst in instantiater_order:
-            # If method is specified; match it
-            if inst.get_method_name().lower() == method:  # type: ignore
-                if not inst.is_capable(self):  # type: ignore
-                    raise ValueError(
-                        'Circuit cannot be instantiated using the '
-                        f'{method} method.'
-                        f'\n{inst.get_violation_report(self)}',  # type: ignore
-                    )
-                instantiater = inst(**kwargs)
-                break
-
-            # If method is not specified; find first capable one
-            if method is None:
-                if inst.is_capable(self):  # type: ignore
+        if instantiater is None:
+            for inst in instantiater_order:
+                # If method is specified; match it
+                if inst.get_method_name().lower() == method:  # type: ignore
+                    if not inst.is_capable(self):  # type: ignore
+                        raise ValueError(
+                            'Circuit cannot be instantiated using the '
+                            f'{method} method.'
+                            f'\n{inst.get_violation_report(self)}',  # type: ignore
+                        )
                     instantiater = inst(**kwargs)
                     break
-                err += inst.get_violation_report(self) + '\n'  # type: ignore
+
+                # If method is not specified; find first capable one
+                if method is None:
+                    if inst.is_capable(self):  # type: ignore
+                        instantiater = inst(**kwargs)
+                        break
+                    err += inst.get_violation_report(self) + '\n'  # type: ignore
 
         if instantiater is None:
             if err != '':
@@ -2321,7 +2322,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self.set_params(params_list[0])
             return self
 
-        cost_fn = HilbertSchmidtCost(self, target)
+        if cost_fn_gen is not None:
+            if not isinstance(cost_fn_gen, CostFunctionGenerator):
+                raise TypeError(
+                        'Expected CostFunctionGenerator, got %s' % type(cost_fn_gen)
+                        )
+            cost_fn = cost_fn_gen.gen_cost(self, target)
+        else:
+            cost_fn = HilbertSchmidtCost(self, target)
+
         self.set_params(sorted(params_list, key=lambda x: cost_fn(x))[0])
         return self
 

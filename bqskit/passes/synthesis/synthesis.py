@@ -99,7 +99,8 @@ class SynthesisPass(BasePass):
         futures: list[list[Future]] = [[] for _ in range(len(circuits))]
         for i in range(len(circuits)):
             for j in range(multistarts):
-                futures[i].append(flat_futures[i * len(circuits) + j])
+                try:
+                    futures[i].append(flat_futures[i * multistarts + j])
 
         return futures
 
