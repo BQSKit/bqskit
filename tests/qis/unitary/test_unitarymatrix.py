@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+import scipy
 import pytest
 from hypothesis import given
 from hypothesis.extra.numpy import arrays
@@ -104,6 +105,11 @@ class TestGetDistanceFrom:
     def test_global_phase(self, utry: UnitaryMatrix, angle: float) -> None:
         u1 = np.exp(0 + 1j * angle) * UnitaryMatrix(utry)
         assert utry.get_distance_from(u1) <= 1e-7
+    
+    def test_numpy(self) -> None:
+        utry = UnitaryMatrix.random(2)
+        np_utry = scipy.stats.unitary_group.rvs(4)
+        assert isinstance(utry.get_distance_from(np_utry), float)
 
 
 class TestGetStateVector:
