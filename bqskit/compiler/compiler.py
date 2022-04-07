@@ -46,6 +46,9 @@ class Compiler:
         dask_options = {
             'silence_logs': logging.getLogger('bqskit').level,
         }
+        if 'address' not in kwargs and 'scheduler_file' not in kwargs:
+            dask_options['threads_per_worker'] = 1
+            
         dask_options.update(kwargs)
 
         self.client = Client(*args, **dask_options)
