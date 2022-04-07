@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 from dask.distributed import get_client
+from dask.distributed import rejoin
+from dask.distributed import secede
 from scipy.stats import linregress
 
 from bqskit.ir.circuit import Circuit
@@ -190,20 +192,19 @@ class LEAPSynthesisPass(SynthesisPass):
                 successors = self.layer_gen.gen_successors(top_circuit, data)
 
                 # Submit instantiate jobs
-                futures = self.batched_instantiate(
+                futures = client.map(
+                    Circuit.instantiate,
                     successors,
-                    utry,
-                    client,
+                    target=utry,
+                    parallel=True,
                     **self.instantiate_options,
+                    pure=False,
                 )
 
                 # Wait for and gather results
-                circuits = self.gather_best_results(
-                    futures,
-                    client,
-                    self.cost.calc_cost,
-                    utry,
-                )
+                secede()
+                circuits = client.gather(futures)
+                rejoin()
 
                 for circuit in circuits:
                     if self.evaluate_node(
