@@ -110,7 +110,7 @@ class SubstitutePass(BasePass):
                 )
 
         # Attempt substitution
-        target = circuit.get_unitary()
+        target = self.get_target(circuit, data)
         shift = 0
         for point in points:
             point = (point[0] - shift, point[1])
