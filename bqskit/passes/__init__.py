@@ -93,6 +93,17 @@ This objects are designed as conditions for use with control passes.
     ToU3Pass
     BlockConversionPass
 
+.. rubric:: IO Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    LoadCheckpointPass
+    SaveCheckpointPass
+    SaveIntermediatePass
+    RestoreIntermediatePass
+
 .. rubric:: Search Heuristics
 
 .. autosummary::
@@ -127,6 +138,10 @@ from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
+from bqskit.passes.io.checkpoint import LoadCheckpointPass
+from bqskit.passes.io.checkpoint import SaveCheckpointPass
+from bqskit.passes.io.intermediate import RestoreIntermediatePass
+from bqskit.passes.io.intermediate import SaveIntermediatePass
 from bqskit.passes.layout.simple import SimpleLayoutPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
@@ -197,4 +212,8 @@ __all__ = [
     'DoThenDecide',
     'SubstitutePass',
     'ParallelDo',
+    'LoadCheckpointPass',
+    'SaveCheckpointPass',
+    'SaveIntermediatePass',
+    'RestoreIntermediatePass',
 ]
