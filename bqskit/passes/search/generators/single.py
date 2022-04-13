@@ -16,8 +16,8 @@ class SingleQuditLayerGenerator(LayerGenerator):
     """
     The SingleQuditLayerGenerator class.
 
-    This module implements a layer generator for a single-qudit circuits
-    with hetergenous gate support.
+    This module implements a layer generator for a single-qudit circuits with
+    hetergenous gate support.
     """
 
     def __init__(self, gates: list[Gate], allow_repeats: bool = False) -> None:
@@ -28,7 +28,7 @@ class SingleQuditLayerGenerator(LayerGenerator):
             gates (Gate): The single-qudit gate set.
 
             allow_repeats (bool): By default this is set to False,
-                and the generator will not generate a circuit that 
+                and the generator will not generate a circuit that
                 has the same gate twice in a row. Some gates are not
                 closed under multiplication and it may be beneficial
                 to allow them to repeat. In this case, `allow_repeats`
@@ -46,18 +46,18 @@ class SingleQuditLayerGenerator(LayerGenerator):
         for gate in gates:
             if not isinstance(gate, Gate):
                 raise TypeError(f'Expected gate, got {type(gate)}.')
-            
+
             if gate.num_qudits > 1:
                 raise ValueError(f'Expected single-qudit gate, got {gate}.')
-            
+
             if self.radix is None:
                 self.radix = gate.radixes[0]
 
             elif gate.radixes[0] != self.radix:
-                raise ValueError(f'Gate set has a radix inconsistency.')
-        
+                raise ValueError('Gate set has a radix inconsistency.')
+
         if len(gates) == 0:
-            raise ValueError("Empty gate set.")
+            raise ValueError('Empty gate set.')
 
         self.gates = gates
         self.allow_repeats = allow_repeats
@@ -73,7 +73,7 @@ class SingleQuditLayerGenerator(LayerGenerator):
         Raises:
             ValueError: If `target` has a radix mismatch with
                 `self.gates`.
-            
+
             ValueError: If `target` is not single-qudit.
         """
 
@@ -83,10 +83,10 @@ class SingleQuditLayerGenerator(LayerGenerator):
             )
 
         if target.num_qudits > 1:
-            raise ValueError("Target is larger than a single-qudit.")
-        
+            raise ValueError('Target is larger than a single-qudit.')
+
         if target.radixes[0] != self.radix:
-            raise ValueError("Mismatch between generator and target radix.")
+            raise ValueError('Mismatch between generator and target radix.')
 
         init_circuit = Circuit(target.num_qudits, target.radixes)
         return init_circuit
