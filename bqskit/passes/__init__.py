@@ -16,6 +16,7 @@ to use the QuickPartitioner currently.
     GreedyPartitioner
     ScanPartitioner
     QuickPartitioner
+    GroupSingleQuditGatePass
 
 .. rubric:: Synthesis Passes
 
@@ -180,6 +181,7 @@ from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
+from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.rules.cnot2cz import CNOTToCZPass
 from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 
@@ -227,6 +229,7 @@ __all__ = [
     'SaveCheckpointPass',
     'SaveIntermediatePass',
     'RestoreIntermediatePass',
+    'GroupSingleQuditGatePass',
     'CNOTToCZPass',
     'ZXZXZDecomposition',
 ]
