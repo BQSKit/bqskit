@@ -43,6 +43,7 @@ class QuestRunner(CircuitRunner):
         pert: int = 100,
         approx_threshold: float | None = None,
         sample_size: int = 16,
+        instantiate_options: dict[str, Any] = {}
     ) -> None:
         """
         Run the QUEST algorithm using `sub_runner` to execute circuits.
@@ -69,26 +70,38 @@ class QuestRunner(CircuitRunner):
                 computed based on the number of blocks.
 
             sample_size (int): The number of approximations to generate.
+
+            instantiate_options (dict[str, Any]): Options passed directly
+                to instantiation.
         """
         self.sub_runner = sub_runner
         self.block_size = block_size
-        self.compiler = compiler if compiler is not None else Compiler()
+        self.compiler = compiler
         self.weit = weit
         self.pert = pert
         self.approx_threshold = approx_threshold
         self.sample_size = sample_size
+        self.instantiate_options = instantiate_options
 
     def run(self, circuit: Circuit) -> RunnerResults:
         """Execute the circuit, see CircuitRunner.run for more info."""
 
         # 1. Compile the circuit
-        synthesis_pass = LEAPSynthesisPass(store_partial_solutions=True)
+        synthesis_pass = LEAPSynthesisPass(
+            store_partial_solutions=True,
+            instantiate_options=self.instantiate_options
+        )
         task = CompilationTask(
             circuit.copy(), [
                 QuickPartitioner(self.block_size),
                 ForEachBlockPass(synthesis_pass),
             ],
         )
+
+        started = False
+        if compiler is None:
+            compiler = Compiler()
+            started = True
         blocked_circuit = self.compiler.compile(task)
 
         # 2. Gather partial solutions
@@ -96,6 +109,9 @@ class QuestRunner(CircuitRunner):
         psols, pts = self.parse_data(blocked_circuit, data)
         # psols: psols[i] = list[[circuit, dist]] -> block i's partial solutions
         # pts: pts[i] = CircuitPoint -> block i's locations
+
+        if started:
+            compiler.close()
 
         # 3. Approximate circuit
         approx_circuits = self.approximate_circuit(blocked_circuit, psols, pts)
@@ -204,6 +220,7 @@ class QuestRunner(CircuitRunner):
 
             psol_configs.append(blocks)
             approx_circuit = self.assemble_circuit(circuit, blocks, psols, pts)
+            approx_circuit.unfold_all()
             approx_circuits.append(approx_circuit)
             _logger.info(
                 'Generated approximate circuit with approximate distance:'
@@ -278,3 +295,81 @@ def annealing_objective(x: npt.NDArray[np.float64], *args: Any) -> float:
     b_dv = (1 - w) * np.percentile(distances, p)
 
     return n_cx + b_dv
+
+
+def gen_approximate_circuits(
+    circuit: Circuit,
+    block_size: int = 3,
+    compiler: Compiler | None = None,
+    weit: float = 0.5,
+    pert: int = 100,
+    approx_threshold: float | None = None,
+    sample_size: int = 16,
+    instantiate_options: dict[str, Any] = {}
+) -> list[Circuit]:
+    """
+    Use the QUEST algorithm to generate approximate circuits.
+
+    Args:
+        block_size (int): The maximum number of qudits in each
+            block. Defaults to 3.
+
+        compiler (Compiler | None): The compiler object used
+            to partitioning and synthesize the circuit. If left
+            as None, then a standard compiler will be created.
+
+        weit (float): The weight set on number of CNOTs versus
+            approximation dissimilarity. Default 0.5.
+
+        pert (int): The percentile of sample distances used to judge
+            approximation quality.
+
+        approx_threshold (float | None): The maximum allowed error
+            in the approximation. If left as None, then it will be
+            computed based on the number of blocks.
+
+        sample_size (int): The number of approximations to generate.
+
+        instantiate_options (dict[str, Any]): Options passed directly
+            to instantiation.
+    """
+    # 1. Compile the circuit
+    synthesis_pass = LEAPSynthesisPass(
+        store_partial_solutions=True,
+        instantiate_options=instantiate_options
+    )
+    task = CompilationTask(
+        circuit.copy(), [
+            QuickPartitioner(block_size),
+            ForEachBlockPass(synthesis_pass),
+        ],
+    )
+    start = False
+    if compiler is None:
+        compiler = Compiler()
+        started = True
+    blocked_circuit = compiler.compile(task)
+
+    # 2. Gather partial solutions
+    runner = QuestRunner(
+        None,
+        block_size,
+        compiler,
+        weit,
+        pert,
+        approx_threshold,
+        sample_size
+    )
+
+    data = compiler.analyze(task, ForEachBlockPass.key)
+    psols, pts = runner.parse_data(blocked_circuit, data)
+    # psols: psols[i] = list[[circuit, dist]] -> block i's partial solutions
+    # pts: pts[i] = CircuitPoint -> block i's locations
+
+    # 3. Approximate circuit
+    approx_circuits = runner.approximate_circuit(blocked_circuit, psols, pts)
+
+    if started:
+        compiler.close()
+    
+    return approx_circuits

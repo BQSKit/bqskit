@@ -34,6 +34,7 @@ __all__ = [
     'RunnerResults',
     'QuestRunner',
     'SimulationRunner',
+    'gen_approximate_circuits',
 ]
 
 from bqskit.exec.results import RunnerResults
@@ -45,3 +46,4 @@ except ImportError:
     pass
 from bqskit.exec.runners.quest import QuestRunner
 from bqskit.exec.runners.sim import SimulationRunner
+from bqskit.exec.runners.quest import gen_approximate_circuits
