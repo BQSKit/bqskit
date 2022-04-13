@@ -71,6 +71,15 @@ This objects are designed as conditions for use with control passes.
     GateCountPredicate
     NotPredicate
 
+.. rubric:: Rule-based Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    CNOTToCZPass
+    ZXZXZDecomposition
+
 .. rubric:: Layout Passes
 
 .. autosummary::
@@ -171,6 +180,8 @@ from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
+from bqskit.passes.rules.cnot2cz import CNOTToCZPass
+from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 
 __all__ = [
     'DoWhileLoopPass',
@@ -216,4 +227,6 @@ __all__ = [
     'SaveCheckpointPass',
     'SaveIntermediatePass',
     'RestoreIntermediatePass',
+    'CNOTToCZPass',
+    'ZXZXZDecomposition',
 ]
