@@ -135,6 +135,8 @@ This objects are designed as conditions for use with control passes.
     SimpleLayerGenerator
     SeedLayerGenerator
     StairLayerGenerator
+    SingleQuditLayerGenerator
+    MiddleOutLayerGenerator
 """
 from __future__ import annotations
 
@@ -182,6 +184,8 @@ from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
+from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
+from bqskit.passes.search.generators.middleout import MiddleOutLayerGenerator
 from bqskit.passes.rules.cnot2cz import CNOTToCZPass
 from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 
@@ -230,6 +234,8 @@ __all__ = [
     'SaveIntermediatePass',
     'RestoreIntermediatePass',
     'GroupSingleQuditGatePass',
+    'SingleQuditLayerGenerator',
+    'MiddleOutLayerGenerator',
     'CNOTToCZPass',
     'ZXZXZDecomposition',
 ]

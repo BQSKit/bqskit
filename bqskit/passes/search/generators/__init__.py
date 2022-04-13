@@ -6,6 +6,7 @@ from bqskit.passes.search.generators.middleout import MiddleOutLayerGenerator
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.passes.search.generators.stair import StairLayerGenerator
+from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
 
 __all__ = [
     'SimpleLayerGenerator',
@@ -13,4 +14,5 @@ __all__ = [
     'StairLayerGenerator',
     'MiddleOutLayerGenerator',
     'FourParamGenerator',
+    'SingleQuditLayerGenerator',
 ]
