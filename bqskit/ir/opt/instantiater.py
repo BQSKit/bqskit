@@ -9,7 +9,6 @@ import numpy.typing as npt
 
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_integer
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -71,44 +70,6 @@ class Instantiater(abc.ABC):
             ValueError: If `circuit` can be instantiated with this
                 instantiater.
         """
-
-    def gen_starting_points(
-        self,
-        multistarts: int,
-        circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
-    ) -> list[npt.NDArray[np.float64]]:
-        """
-        Generate `multistarts` starting points for instantiation.
-
-        Args:
-            multistarts (int): The number of starting points to generate.
-
-            circuit (Circuit): The circuit to generate the points for.
-
-            target (UnitaryMatrix | StateVector): The target.
-
-        Return:
-            (list[np.ndarray]): List of starting inputs for instantiation.
-
-        Raises:
-            ValueError: If `multistarts` is not a positive integer.
-        """
-        if not is_integer(multistarts):
-            raise TypeError(
-                'Expected int for multistarts, got %s.' % type(multistarts),
-            )
-
-        if multistarts <= 0:
-            raise ValueError(
-                'Expected positive integer for multistarts'
-                ', got %d' % multistarts,
-            )
-
-        return [  # [ circuit.params ] + [  # TODO: re-evaluate
-            np.random.random(circuit.num_params)
-            for i in range(multistarts)
-        ]
 
     def check_target(
         self,

@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import logging
 from typing import Any
+from typing import cast
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
@@ -16,6 +17,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
+from distributed import get_client
+from distributed import secede
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -27,10 +30,13 @@ from bqskit.ir.lang import get_language
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
+from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
+from bqskit.ir.opt.multistartgen import MultiStartGenerator
+from bqskit.ir.opt.multistartgens.random import RandomStartGenerator
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
@@ -2209,9 +2215,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def instantiate(
         self,
         target: StateLike | UnitaryLike,
-        method: str | None = None,
+        method: str | Instantiater | None = None,
         multistarts: int = 1,
         seed: int | None = None,
+        multistart_gen: MultiStartGenerator = RandomStartGenerator(),
+        score_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
+        parallel: bool = False,
         **kwargs: Any,
     ) -> Circuit:
         """
@@ -2229,16 +2238,32 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 circuit's parameters in an effort to get closer to producing
                 the target state when starting from the zero state.
 
-            method (str | None): The method with which to instantiate
-                the circuit. Currently, `"qfactor"` and `"minimization"`
-                are supported. If left None, attempts to pick best method.
+            method (str | Instantiater | None): The method with which to
+                instantiate the circuit. Currently, `"qfactor"` and
+                `"minimization"` are supported. If left None, attempts to
+                pick best method. You can also pass an :class:`Instantiater`
+                directly through this.
 
-            multistarts (int): The number of instantiation jobs to spawn
-                and manage. (Default: 1)
+            multistarts (int): The number of starting points to sample
+                instantiation with. If `parallel` is True and this is greater
+                than one, will spawn this many Dask tasks. (Default: 1)
 
             seed (int | None): The seed for any pseudo-random number generators
                 to use. Note that this is not guaranteed to make this method
                 reproducible.
+
+            multistart_gen (MultiStartGenerator): The generator used to
+                generate starting points for instantiation.
+                (Default: RandomStartGenerator())
+
+            score_fn_gen (CostFunctionGenerator): The generator used to produce
+                a cost function, which will be used to evaluate the best result
+                from the different starting points.
+                (Default: HilbertSchmidtCostGenerator())
+
+            parallel (bool): If True and `multistarts` is greater than 1,
+                this will attempt to connect to a dask cluster and submit
+                jobs to be run in parallel. (Default: False)
 
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method constructor. For more info, see
@@ -2262,37 +2287,56 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if seed is not None:
             if not isinstance(seed, int):
                 raise ValueError(
-                    f'Expected seed to be an integer got {type(seed)}.',
+                    f'Expected seed to be an integer, got {type(seed)}.',
                 )
             seed_random_sources(seed)
 
-        # Construct instantiater from method
-        instantiater: Instantiater | None = None
+        # Use given Instantiater if one is specified.
+        if isinstance(method, Instantiater):
+            instantiater = method
+            if not instantiater.is_capable(self):
+                raise ValueError(
+                    'Circuit cannot be instantiated using the '
+                    f'{method} method.'
+                    f'\n{instantiater.get_violation_report(self)}',
+                )
 
-        err = ''
-        for inst in instantiater_order:
-            # If method is specified; match it
-            if inst.get_method_name().lower() == method:  # type: ignore
-                if not inst.is_capable(self):  # type: ignore
-                    raise ValueError(
-                        'Circuit cannot be instantiated using the '
-                        f'{method} method.'
-                        f'\n{inst.get_violation_report(self)}',  # type: ignore
-                    )
-                instantiater = inst(**kwargs)
-                break
-
-            # If method is not specified; find first capable one
-            if method is None:
-                if inst.is_capable(self):  # type: ignore
-                    instantiater = inst(**kwargs)
+        # Find best Instantiater if none specified
+        elif method is None:
+            err = ''
+            instantiater = None
+            for inst in instantiater_order:
+                inst_t = cast(Instantiater, inst)
+                if inst_t.is_capable(self):
+                    instantiater = inst_t(**kwargs)  # type: ignore
                     break
-                err += inst.get_violation_report(self) + '\n'  # type: ignore
-
-        if instantiater is None:
-            if err != '':
+                err += inst_t.get_violation_report(self) + '\n'
+            if instantiater is None:
                 raise ValueError(f'No capable instantiater.\n{err}')
-            raise ValueError(f'No such instantiatation method {method}.')
+
+        # If method is specified by name; match it
+        elif isinstance(method, str):
+            for inst in instantiater_order:
+                inst_t = cast(Instantiater, inst)
+                if inst_t.get_method_name().lower() == method.lower():
+                    if not inst_t.is_capable(self):
+                        raise ValueError(
+                            'Circuit cannot be instantiated using the '
+                            f'{method} method.'
+                            f'\n{inst_t.get_violation_report(self)}',
+                        )
+                    instantiater = inst_t(**kwargs)  # type: ignore
+                    break
+            if instantiater is None:
+                raise ValueError(f'No such instantiatation method {method}.')
+
+        else:
+            raise TypeError(
+                'Expected a instantiater or name for method,'
+                f' got {type(method)}.',
+            )
+
+        instantiater = cast(Instantiater, instantiater)
 
         # Check Target
         if is_square_matrix(target):
@@ -2309,20 +2353,74 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Target dimension mismatch with circuit.')
 
         # Generate starting points
-        starts = instantiater.gen_starting_points(multistarts, self, target)
+        starts = multistart_gen.gen_starting_points(multistarts, self, target)
+
+        if len(starts) != multistarts:
+            raise ValueError(
+                'Error generating starting points for instantiation.\n'
+                f'Expected {multistarts} starts but got {len(starts)}.',
+            )
+
+        # Generate cost function
+        if not isinstance(score_fn_gen, CostFunctionGenerator):
+            raise TypeError(
+                'Expected CostFunctionGenerator, got %s.' % type(score_fn_gen),
+            )
+
+        cost_fn = score_fn_gen.gen_cost(self, target)
 
         # Instantiate the circuit
-        params_list = []
-        for start in starts:
-            params_list.append(instantiater.instantiate(self, target, start))
+        if parallel and multistarts > 1:
+            client = get_client()
+
+            def single_start_instantiate(
+                instantiater: Instantiater,
+                circuit: Circuit,
+                target: UnitaryMatrix,
+                start: npt.NDArray[np.float64],
+            ) -> npt.NDArray[np.float64]:
+                return instantiater.instantiate(circuit, target, start)
+
+            def scoring_fn(
+                fn_gen: CostFunctionGenerator,
+                circuit: Circuit,
+                target: UnitaryMatrix,
+                params: npt.NDArray[np.float64],
+            ) -> float:
+                return fn_gen.gen_cost(circuit, target).get_cost(params)
+
+            param_futures = client.map(
+                single_start_instantiate,
+                [instantiater] * multistarts,
+                [self] * multistarts,
+                [target] * multistarts,
+                starts,
+                pure=False,
+            )
+
+            score_futures = client.map(
+                scoring_fn,
+                [score_fn_gen] * multistarts,
+                [self] * multistarts,
+                [target] * multistarts,
+                param_futures,
+                pure=False,
+            )
+
+            secede()
+            scores = client.gather(score_futures)
+            best_index = scores.index(min(scores))
+            params = param_futures[best_index].result()
+
+        else:
+            params_list = [
+                instantiater.instantiate(self, target, start)
+                for start in starts
+            ]
+            params = sorted(params_list, key=lambda x: cost_fn(x))[0]
 
         # Return best result
-        if multistarts == 1:
-            self.set_params(params_list[0])
-            return self
-
-        cost_fn = HilbertSchmidtCost(self, target)
-        self.set_params(sorted(params_list, key=lambda x: cost_fn(x))[0])
+        self.set_params(params)
         return self
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
