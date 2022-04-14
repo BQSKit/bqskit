@@ -16,6 +16,7 @@ to use the QuickPartitioner currently.
     GreedyPartitioner
     ScanPartitioner
     QuickPartitioner
+    GroupSingleQuditGatePass
 
 .. rubric:: Synthesis Passes
 
@@ -71,6 +72,15 @@ This objects are designed as conditions for use with control passes.
     GateCountPredicate
     NotPredicate
 
+.. rubric:: Rule-based Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    CNOTToCZPass
+    ZXZXZDecomposition
+
 .. rubric:: Layout Passes
 
 .. autosummary::
@@ -125,6 +135,8 @@ This objects are designed as conditions for use with control passes.
     SimpleLayerGenerator
     SeedLayerGenerator
     StairLayerGenerator
+    SingleQuditLayerGenerator
+    MiddleOutLayerGenerator
 """
 from __future__ import annotations
 
@@ -147,13 +159,18 @@ from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
+from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
 from bqskit.passes.processing.window import WindowOptimizationPass
+from bqskit.passes.rules.cnot2cz import CNOTToCZPass
+from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.middleout import MiddleOutLayerGenerator
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
+from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
 from bqskit.passes.search.generators.stair import StairLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics.astar import AStarHeuristic
@@ -216,4 +233,9 @@ __all__ = [
     'SaveCheckpointPass',
     'SaveIntermediatePass',
     'RestoreIntermediatePass',
+    'GroupSingleQuditGatePass',
+    'SingleQuditLayerGenerator',
+    'MiddleOutLayerGenerator',
+    'CNOTToCZPass',
+    'ZXZXZDecomposition',
 ]
