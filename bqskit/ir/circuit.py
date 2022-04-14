@@ -2218,7 +2218,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         method: str | Instantiater | None = None,
         multistarts: int = 1,
         seed: int | None = None,
-        start_gen: MultiStartGenerator = RandomStartGenerator(),
+        multistart_gen: MultiStartGenerator = RandomStartGenerator(),
         score_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
         parallel: bool = False,
         **kwargs: Any,
