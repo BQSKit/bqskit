@@ -20,7 +20,7 @@ class CeresMinimizer(LeastSquaresMinimizerNative, Minimizer):
     """
 
     def __new__(
-        cls: type[Self], num_threads: int = 1, ftol: float = 1e-6,
+        cls: type[Self], num_threads: int = 1, ftol: float = 1e-6,  # type: ignore # Remove once updating to mypy 0.950
         gtol: float = 1e-10, report: bool = False,
-    ) -> Self:
+    ) -> Self:  # type: ignore # Remove once updating to mypy 0.950
         return super().__new__(cls, num_threads, ftol, gtol, report)
