@@ -43,7 +43,7 @@ class QuestRunner(CircuitRunner):
         pert: int = 100,
         approx_threshold: float | None = None,
         sample_size: int = 16,
-        instantiate_options: dict[str, Any] = {}
+        instantiate_options: dict[str, Any] = {},
     ) -> None:
         """
         Run the QUEST algorithm using `sub_runner` to execute circuits.
@@ -89,7 +89,7 @@ class QuestRunner(CircuitRunner):
         # 1. Compile the circuit
         synthesis_pass = LEAPSynthesisPass(
             store_partial_solutions=True,
-            instantiate_options=self.instantiate_options
+            instantiate_options=self.instantiate_options,
         )
         task = CompilationTask(
             circuit.copy(), [
@@ -99,9 +99,10 @@ class QuestRunner(CircuitRunner):
         )
 
         started = False
-        if compiler is None:
-            compiler = Compiler()
+        if self.compiler is None:
+            self.compiler = Compiler()
             started = True
+        # self.compiler = cast(Compiler, self.compiler)
         blocked_circuit = self.compiler.compile(task)
 
         # 2. Gather partial solutions
@@ -111,7 +112,8 @@ class QuestRunner(CircuitRunner):
         # pts: pts[i] = CircuitPoint -> block i's locations
 
         if started:
-            compiler.close()
+            self.compiler.close()
+            self.compiler = None
 
         # 3. Approximate circuit
         approx_circuits = self.approximate_circuit(blocked_circuit, psols, pts)
@@ -305,7 +307,7 @@ def gen_approximate_circuits(
     pert: int = 100,
     approx_threshold: float | None = None,
     sample_size: int = 16,
-    instantiate_options: dict[str, Any] = {}
+    instantiate_options: dict[str, Any] = {},
 ) -> list[Circuit]:
     """
     Use the QUEST algorithm to generate approximate circuits.
@@ -336,7 +338,7 @@ def gen_approximate_circuits(
     # 1. Compile the circuit
     synthesis_pass = LEAPSynthesisPass(
         store_partial_solutions=True,
-        instantiate_options=instantiate_options
+        instantiate_options=instantiate_options,
     )
     task = CompilationTask(
         circuit.copy(), [
@@ -344,21 +346,22 @@ def gen_approximate_circuits(
             ForEachBlockPass(synthesis_pass),
         ],
     )
-    start = False
+    started = False
     if compiler is None:
         compiler = Compiler()
         started = True
+    # compiler = cast(Compiler, compiler)
     blocked_circuit = compiler.compile(task)
 
     # 2. Gather partial solutions
     runner = QuestRunner(
-        None,
+        None,  # type: ignore
         block_size,
         compiler,
         weit,
         pert,
         approx_threshold,
-        sample_size
+        sample_size,
     )
 
     data = compiler.analyze(task, ForEachBlockPass.key)
@@ -371,5 +374,5 @@ def gen_approximate_circuits(
 
     if started:
         compiler.close()
-    
+
     return approx_circuits
