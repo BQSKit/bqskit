@@ -2252,8 +2252,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 to use. Note that this is not guaranteed to make this method
                 reproducible.
 
-            start_gen (MultiStartGenerator): The generator used to generate
-                starting points for instantiation.
+            multistart_gen (MultiStartGenerator): The generator used to
+                generate starting points for instantiation.
                 (Default: RandomStartGenerator())
 
             score_fn_gen (CostFunctionGenerator): The generator used to produce
@@ -2353,7 +2353,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Target dimension mismatch with circuit.')
 
         # Generate starting points
-        starts = start_gen.gen_starting_points(multistarts, self, target)
+        starts = multistart_gen.gen_starting_points(multistarts, self, target)
 
         if len(starts) != multistarts:
             raise ValueError(
