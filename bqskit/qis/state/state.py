@@ -143,6 +143,24 @@ class StateVector(NDArrayOperatorsMixin):
         """Return the probabilities for each classical outcome."""
         return tuple(np.abs(elem)**2 for elem in self)
 
+    def is_qubit_only(self) -> bool:
+        """Return true if this unitary can only act on qubits."""
+        return all([radix == 2 for radix in self.radixes])
+
+    def is_qutrit_only(self) -> bool:
+        """Return true if this unitary can only act on qutrits."""
+        return all([radix == 3 for radix in self.radixes])
+
+    def is_qudit_only(self, radix: int) -> bool:
+        """
+        Return true if this unitary can only act on `radix`-qudits.
+
+        Args:
+            radix (int): Check all qudits have this many orthogonal
+                states.
+        """
+        return all([r == radix for r in self.radixes])
+
     @staticmethod
     def is_pure_state(V: np.typing.ArrayLike, tol: float = 1e-8) -> bool:
         """

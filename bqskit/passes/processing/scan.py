@@ -98,7 +98,7 @@ class ScanningGateRemovalPass(BasePass):
         start = 'left' if self.start_from_left else 'right'
         _logger.debug(f'Starting scan gate removal from {start}.')
 
-        target = circuit.get_unitary()
+        target = self.get_target(circuit, data)
 
         circuit_copy = circuit.copy()
         reverse_iter = not self.start_from_left
