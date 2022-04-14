@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from bqskit.ir import Circuit
-from bqskit.qis import UnitaryMatrix
 from bqskit.passes import ZXZXZDecomposition
+from bqskit.qis import UnitaryMatrix
+
 
 def test_zxzxz_decomposition() -> None:
     for i in range(1000):

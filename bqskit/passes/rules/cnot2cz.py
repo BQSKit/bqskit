@@ -1,13 +1,16 @@
 """This module implements the CNOTToCZPass."""
+from __future__ import annotations
 
 from typing import Any
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.operation import Operation
 from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import HGate
-from bqskit.ir.gates import CZGate
 from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import CZGate
+from bqskit.ir.gates import HGate
+from bqskit.ir.operation import Operation
+
 
 class CNOTToCZPass(BasePass):
     """
@@ -38,7 +41,7 @@ class CNOTToCZPass(BasePass):
             Operation(
                 self.cg,
                 circuit[p].location,
-                self.cg._circuit.params
+                self.cg._circuit.params,
             )
             for p in cnot_points
         ]

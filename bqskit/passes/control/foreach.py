@@ -143,26 +143,24 @@ class ForEachBlockPass(BasePass):
 
             # Form Subtopology
             subnumbering = {op.location[i]: i for i in range(len(op.location))}
-            subdata = {
-                'machine_model': MachineModel(
-                    len(op.location),
-                    model.coupling_graph.get_subgraph(
-                        op.location, subnumbering,
-                    ),
-                ),
-            }
+            submodel = MachineModel(
+                len(op.location),
+                model.coupling_graph.get_subgraph(op.location, subnumbering),
+            )
 
             # Record Data Part 1
             block_data['op'] = copy.deepcopy(op)
             block_data['subcircuit_pre'] = subcircuit.copy()
+            block_data['subnumbering'] = subnumbering
+            block_data['machine_model'] = submodel
+            if 'parallel' in data:
+                block_data['parallel'] = data['parallel']
 
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
 
         # Perform Work
         if 'parallel' in data:  # In Parallel
-            for block_data in block_datas:
-                block_data['parallel'] = data['parallel']
             client = get_client()
             completed_subcircuits = []
             completed_block_datas = []
@@ -196,7 +194,7 @@ class ForEachBlockPass(BasePass):
             block_data = completed_block_datas[i]
             # Record Data Part 2
             block_data['subcircuit_post'] = subcircuit.copy()
-            block_data['loop_body_data'] = subdata
+            block_data['loop_body_data'] = block_data
             block_data['point'] = CircuitPoint(cycle, op.location[0])
 
             # Calculate Errors
