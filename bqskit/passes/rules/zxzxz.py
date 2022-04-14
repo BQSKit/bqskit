@@ -1,8 +1,11 @@
 """This module implements the ZXZXZDecomposition."""
+from __future__ import annotations
+
 import cmath
+from typing import Any
+
 import numpy as np
 
-from typing import Any
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import RZGate
@@ -21,14 +24,14 @@ class ZXZXZDecomposition(BasePass):
 
         if circuit.num_qudits != 1:
             raise ValueError(
-                "Cannot convert multi-qudit circuit into ZXZXZ sequence."
+                'Cannot convert multi-qudit circuit into ZXZXZ sequence.',
             )
 
         if circuit.radixes[0] != 2:
             raise ValueError(
-                "Cannot convert non-qubit circuit into ZXZXZ sequence."
+                'Cannot convert non-qubit circuit into ZXZXZ sequence.',
             )
-            
+
         utry = circuit.get_unitary()
 
         # Calculate params

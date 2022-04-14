@@ -1,4 +1,5 @@
 """This module implements the GroupSingleQuditGatePass."""
+from __future__ import annotations
 
 from typing import Any
 
@@ -19,7 +20,7 @@ class GroupSingleQuditGatePass(BasePass):
 
         # Go through each qudit individually
         for q in range(circuit.num_qudits):
-            
+
             single_qubit_regions = []
             region_start = None
 
@@ -32,14 +33,16 @@ class GroupSingleQuditGatePass(BasePass):
                         region_start = c
                 else:
                     if region_start is not None:
-                        region = CircuitRegion({q: (region_start, c-1)})
+                        region = CircuitRegion({q: (region_start, c - 1)})
                         single_qubit_regions.append(region)
                         region_start = None
 
             if region_start is not None:
-                region = CircuitRegion({q: (region_start, circuit.num_cycles-1)})
+                region = CircuitRegion(
+                    {q: (region_start, circuit.num_cycles - 1)},
+                )
                 single_qubit_regions.append(region)
                 region_start = None
-            
+
             for region in reversed(single_qubit_regions):
                 circuit.fold(region)
