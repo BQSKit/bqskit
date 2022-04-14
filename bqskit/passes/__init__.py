@@ -16,6 +16,7 @@ to use the QuickPartitioner currently.
     GreedyPartitioner
     ScanPartitioner
     QuickPartitioner
+    GroupSingleQuditGatePass
 
 .. rubric:: Synthesis Passes
 
@@ -71,6 +72,15 @@ This objects are designed as conditions for use with control passes.
     GateCountPredicate
     NotPredicate
 
+.. rubric:: Rule-based Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    CNOTToCZPass
+    ZXZXZDecomposition
+
 .. rubric:: Layout Passes
 
 .. autosummary::
@@ -93,6 +103,17 @@ This objects are designed as conditions for use with control passes.
     ToU3Pass
     BlockConversionPass
 
+.. rubric:: IO Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    LoadCheckpointPass
+    SaveCheckpointPass
+    SaveIntermediatePass
+    RestoreIntermediatePass
+
 .. rubric:: Search Heuristics
 
 .. autosummary::
@@ -114,6 +135,8 @@ This objects are designed as conditions for use with control passes.
     SimpleLayerGenerator
     SeedLayerGenerator
     StairLayerGenerator
+    SingleQuditLayerGenerator
+    MiddleOutLayerGenerator
 """
 from __future__ import annotations
 
@@ -127,18 +150,27 @@ from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
+from bqskit.passes.io.checkpoint import LoadCheckpointPass
+from bqskit.passes.io.checkpoint import SaveCheckpointPass
+from bqskit.passes.io.intermediate import RestoreIntermediatePass
+from bqskit.passes.io.intermediate import SaveIntermediatePass
 from bqskit.passes.layout.simple import SimpleLayoutPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
+from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
 from bqskit.passes.processing.window import WindowOptimizationPass
+from bqskit.passes.rules.cnot2cz import CNOTToCZPass
+from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.middleout import MiddleOutLayerGenerator
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
+from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
 from bqskit.passes.search.generators.stair import StairLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics.astar import AStarHeuristic
@@ -197,4 +229,13 @@ __all__ = [
     'DoThenDecide',
     'SubstitutePass',
     'ParallelDo',
+    'LoadCheckpointPass',
+    'SaveCheckpointPass',
+    'SaveIntermediatePass',
+    'RestoreIntermediatePass',
+    'GroupSingleQuditGatePass',
+    'SingleQuditLayerGenerator',
+    'MiddleOutLayerGenerator',
+    'CNOTToCZPass',
+    'ZXZXZDecomposition',
 ]

@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import abc
+import logging
 from typing import Any
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+_logger = logging.getLogger(__name__)
 
 
 class BasePass(abc.ABC):
@@ -52,19 +56,51 @@ class BasePass(abc.ABC):
         Retrieve the machine model from the data dictionary.
 
         Args:
+            circuit (Circuit): The pass circuit.
+
             data (dict[str, Any]): The data dictionary.
 
         Returns:
             MachineModel: The machine model in the data dictionary, or
                 a default one.
         """
-        model = None
-        if 'machine_model' in data:
-            model = data['machine_model']
+
+        if len(data) == 0:
+            return MachineModel(circuit.num_qudits)
+
+        if 'machine_model' not in data:
+            data['machine_model'] = MachineModel(circuit.num_qudits)
+
         if (
-            not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.num_qudits
+            not isinstance(data['machine_model'], MachineModel)
+            or data['machine_model'].num_qudits < circuit.num_qudits
         ):
-            model = MachineModel(circuit.num_qudits)
-            data['machine_model'] = model
-        return model
+            _logger.warning('Expected machine_model to be a valid model.')
+            return MachineModel(circuit.num_qudits)
+
+        return data['machine_model']
+
+    @staticmethod
+    def get_target(circuit: Circuit, data: dict[str, Any]) -> UnitaryMatrix:
+        """
+        Retrieve the target unitary from the data dictionary.
+
+        Args:
+            circuit (Circuit): The pass circuit.
+
+            data (dict[str, Any]): The data dictionary.
+
+        Returns:
+            UnitaryMatrix: The target unitary.
+        """
+        if len(data) == 0:
+            return circuit.get_unitary()
+
+        if 'target_unitary' not in data:
+            data['target_unitary'] = circuit.get_unitary()
+
+        if not isinstance(data['target_unitary'], UnitaryMatrix):
+            _logger.warning('Expected target_unitary to be a unitary.')
+            return circuit.get_unitary()
+
+        return data['target_unitary']
