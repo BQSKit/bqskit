@@ -1,4 +1,4 @@
-"""This module implements the NaiveStartGenerator base class."""
+"""This module implements the DiagonalStartGenerator base class."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
