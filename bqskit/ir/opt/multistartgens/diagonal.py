@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class NaiveStartGenerator(MultiStartGenerator):
+class DiagonalStartGenerator(MultiStartGenerator):
     """A generator that puts starts along the diagonal of the N-d space."""
 
     def gen_starting_points(
