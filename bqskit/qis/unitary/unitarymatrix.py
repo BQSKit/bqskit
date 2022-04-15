@@ -184,7 +184,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the same object, satisfies the :class:`Unitary` API."""
         return self
 
-    def get_distance_from(self, other: Unitary, degree: int = 2) -> float:
+    def get_distance_from(self, other: UnitaryLike, degree: int = 2) -> float:
         """
         Return the distance between `self` and `other`.
 
@@ -206,7 +206,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             are equal up to global phase and 1 means the two unitaries are
             very unsimilar or far apart.
         """
-        other = other.get_unitary()
+        other = UnitaryMatrix(other)
         num = np.abs(np.trace(self.conj().T @ other))
         dem = self.dim
         frac = min(num / dem, 1)
