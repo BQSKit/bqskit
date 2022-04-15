@@ -14,6 +14,7 @@ from bqskit.ir.opt.instantiaters import QFactor
 from bqskit.ir.opt.minimizer import Minimizer
 from bqskit.ir.opt.minimizers import LBFGSMinimizer
 from bqskit.ir.opt.multistartgen import MultiStartGenerator
+from bqskit.ir.opt.multistartgens import NaiveStartGenerator
 from bqskit.ir.opt.multistartgens import RandomStartGenerator
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     'HilbertSchmidtResiduals',
     'HilbertSchmidtResidualsGenerator',
     'MultiStartGenerator',
+    'NaiveStartGenerator',
     'RandomStartGenerator',
 ]
