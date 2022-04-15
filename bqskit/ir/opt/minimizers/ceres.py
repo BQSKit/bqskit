@@ -26,4 +26,23 @@ class CeresMinimizer(LeastSquaresMinimizerNative, Minimizer):
         cls: type[Self], num_threads: int = 1, ftol: float = 1e-6,
         gtol: float = 1e-10, report: bool = False,
     ) -> Self:
+        """Create a new CeresMinimizer.
+        
+        Args:
+            num_threads (int): The number of threads Ceres should use
+                for optimization (defaults to 1)
+            
+            ftol (float): Default 1e-6. The function tolerance stopping condition Ceres
+                should use, see the documentation about ftol here:
+                http://ceres-solver.org/nnls_solving.html#_CPPv4N5ceres6Solver7Options18function_toleranceE
+                
+            gtol (float): Default 1e-10. The gradient tolerance stopping condition Ceres
+                should use, see the documentation about gtol here:
+                http://ceres-solver.org/nnls_solving.html#_CPPv4N5ceres6Solver7Options18gradient_toleranceE
+                
+            report (bool): Whether to print the minimization summary Ceres can generate.
+                This is quite noisy so only enable this if you are certain you want it!
+                Defaults to false.
+        """
+
         return super().__new__(cls, num_threads, ftol, gtol, report)
