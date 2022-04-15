@@ -4,11 +4,14 @@ from __future__ import annotations
 import logging
 
 from bqskitrs import LeastSquaresMinimizerNative
-from typing_extensions import Self
+from typing import TypeVar
 
 from bqskit.ir.opt.minimizer import Minimizer
 
 _logger = logging.getLogger(__name__)
+
+# TODO: use PEP 673 Self type when mypy is upgraded
+Self = TypeVar('Self', bound='CeresMinimizer')
 
 
 class CeresMinimizer(LeastSquaresMinimizerNative, Minimizer):
@@ -20,7 +23,7 @@ class CeresMinimizer(LeastSquaresMinimizerNative, Minimizer):
     """
 
     def __new__(
-        cls: type[Self], num_threads: int = 1, ftol: float = 1e-6,  # type: ignore # Remove once updating to mypy 0.950
+        cls: type[Self], num_threads: int = 1, ftol: float = 1e-6,
         gtol: float = 1e-10, report: bool = False,
-    ) -> Self:  # type: ignore # Remove once updating to mypy 0.950
+    ) -> Self:
         return super().__new__(cls, num_threads, ftol, gtol, report)
