@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
+from typing import TypeVar
 
 from bqskitrs import LeastSquaresMinimizerNative
-from typing import TypeVar
 
 from bqskit.ir.opt.minimizer import Minimizer
 
