@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class RandomStartGenerator(MultiStartGenerator):
-    """A start generator that selects random points uniformily across [0, 1)"""
+    """A start generator that selects random points uniformily across [0, 2π)"""
 
     def gen_starting_points(
         self,
