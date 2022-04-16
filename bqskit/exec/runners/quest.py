@@ -11,6 +11,7 @@ from scipy.optimize import dual_annealing
 
 from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
+from bqskit.compiler import MachineModel
 from bqskit.exec.results import RunnerResults
 from bqskit.exec.runner import CircuitRunner
 from bqskit.ir.circuit import Circuit
@@ -19,6 +20,7 @@ from bqskit.ir.gates import CNOTGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control import ForEachBlockPass
+from bqskit.passes.layout import SimpleLayoutPass
 from bqskit.passes.partitioning import QuickPartitioner
 from bqskit.passes.synthesis import LEAPSynthesisPass
 
@@ -43,6 +45,7 @@ class QuestRunner(CircuitRunner):
         pert: int = 100,
         approx_threshold: float | None = None,
         sample_size: int = 16,
+        model: MachineModel | None = None,
         instantiate_options: dict[str, Any] = {},
     ) -> None:
         """
@@ -71,6 +74,8 @@ class QuestRunner(CircuitRunner):
 
             sample_size (int): The number of approximations to generate.
 
+            model (MachineModel | None): The model to compile to.
+
             instantiate_options (dict[str, Any]): Options passed directly
                 to instantiation.
         """
@@ -81,6 +86,7 @@ class QuestRunner(CircuitRunner):
         self.pert = pert
         self.approx_threshold = approx_threshold
         self.sample_size = sample_size
+        self.model = model
         self.instantiate_options = instantiate_options
 
     def run(self, circuit: Circuit) -> RunnerResults:
@@ -91,12 +97,14 @@ class QuestRunner(CircuitRunner):
             store_partial_solutions=True,
             instantiate_options=self.instantiate_options,
         )
-        task = CompilationTask(
-            circuit.copy(), [
-                QuickPartitioner(self.block_size),
-                ForEachBlockPass(synthesis_pass),
-            ],
-        )
+        pass_list = [
+            QuickPartitioner(self.block_size),
+            ForEachBlockPass(synthesis_pass),
+        ]
+        if self.model is not None:
+            pass_list.insert(0, SimpleLayoutPass(self.model))
+
+        task = CompilationTask(circuit.copy(), pass_list)
 
         started = False
         if self.compiler is None:
@@ -307,6 +315,7 @@ def gen_approximate_circuits(
     pert: int = 100,
     approx_threshold: float | None = None,
     sample_size: int = 16,
+    model: MachineModel | None = None,
     instantiate_options: dict[str, Any] = {},
 ) -> list[Circuit]:
     """
@@ -332,6 +341,8 @@ def gen_approximate_circuits(
 
         sample_size (int): The number of approximations to generate.
 
+        model (MachineModel | None): The model to compile to.
+
         instantiate_options (dict[str, Any]): Options passed directly
             to instantiation.
     """
@@ -340,12 +351,15 @@ def gen_approximate_circuits(
         store_partial_solutions=True,
         instantiate_options=instantiate_options,
     )
-    task = CompilationTask(
-        circuit.copy(), [
-            QuickPartitioner(block_size),
-            ForEachBlockPass(synthesis_pass),
-        ],
-    )
+    pass_list = [
+        QuickPartitioner(block_size),
+        ForEachBlockPass(synthesis_pass),
+    ]
+    if model is not None:
+        pass_list.insert(0, SimpleLayoutPass(model))
+
+    task = CompilationTask(circuit.copy(), pass_list)
+
     started = False
     if compiler is None:
         compiler = Compiler()
@@ -362,6 +376,8 @@ def gen_approximate_circuits(
         pert,
         approx_threshold,
         sample_size,
+        model,
+        instantiate_options,
     )
 
     data = compiler.analyze(task, ForEachBlockPass.key)
