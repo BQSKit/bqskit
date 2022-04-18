@@ -74,6 +74,7 @@ repos:
     rev: v0.942
     hooks:
     - id: mypy
+      exclude: tests/qis/test_pauli.py
       additional_dependencies: ["numpy>=1.21"]
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
