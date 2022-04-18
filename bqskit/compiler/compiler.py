@@ -7,7 +7,7 @@ from typing import Any
 
 from dask.distributed import Client
 from dask.distributed import Future
-from dask.distributed import LocalCluster
+from dask.distributed import SpecCluster
 
 from bqskit.compiler.executor import Executor
 from bqskit.compiler.task import CompilationTask
@@ -44,7 +44,7 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
-        if any(isinstance(arg, LocalCluster) for arg in args):
+        if any(isinstance(arg, SpecCluster) for arg in args):
             dask_options = {}
         else:
             dask_options = {
