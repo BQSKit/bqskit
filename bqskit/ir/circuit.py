@@ -2407,7 +2407,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 pure=False,
             )
 
-            secede()
+            # We only want to secede on worker threads, so try to recover if
+            # Circuit.instantiate is called from the main thread
+            try:
+                secede()
+            except ValueError:
+                pass
+
             scores = client.gather(score_futures)
             best_index = scores.index(min(scores))
             params = param_futures[best_index].result()
