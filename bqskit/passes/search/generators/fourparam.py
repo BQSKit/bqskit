@@ -84,7 +84,6 @@ class FourParamGenerator(LayerGenerator):
             successor.append_gate(CNOTGate(), [edge[0], edge[1]])
             successor.append_gate(RYGate(), edge[0])
             successor.append_gate(RZGate(), edge[0])
-            successor.append_gate(CNOTGate(), edge[1])
             successor.append_gate(RYGate(), edge[1])
             successor.append_gate(RXGate(), edge[1])
             successors.append(successor)

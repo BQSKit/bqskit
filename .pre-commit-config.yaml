@@ -1,6 +1,8 @@
+ci:
+    skip: [mypy]
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.2.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -38,7 +40,7 @@ repos:
             - -a
             - --max-line-length=80
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.1
+    rev: v2.32.0
     hooks:
     -   id: pyupgrade
         args:
@@ -53,13 +55,13 @@ repos:
             - from __future__ import annotations
             - --py3-plus
 -   repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.2.1
+    rev: v2.2.3
     hooks:
     -   id: add-trailing-comma
         args:
             - --py36-plus
 -   repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v1.20.0
+    rev: v1.20.1
     hooks:
     -   id: setup-cfg-fmt
 - repo: https://github.com/myint/autoflake
@@ -72,9 +74,10 @@ repos:
     rev: v0.942
     hooks:
     - id: mypy
+      exclude: tests/qis/test_pauli.py
       additional_dependencies: ["numpy>=1.21"]
--   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.2
+-   repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
     hooks:
     -   id: flake8
         args:
