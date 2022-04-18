@@ -44,7 +44,7 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
-        if any((isinstance(arg, LocalCluster) for arg in args)):
+        if any(isinstance(arg, LocalCluster) for arg in args):
             dask_options = {}
         else:
             dask_options = {
