@@ -13,7 +13,6 @@ from scipy.stats import linregress
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.ir.opt.multistartgens.diagonal import DiagonalStartGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.passes.search.generators import SimpleLayerGenerator
@@ -150,7 +149,6 @@ class LEAPSynthesisPass(SynthesisPass):
         self.min_prefix_size = min_prefix_size
         self.instantiate_options: dict[str, Any] = {
             'cost_fn_gen': self.cost,
-            'multistart_gen': DiagonalStartGenerator(),
         }
         self.instantiate_options.update(instantiate_options)
         self.store_partial_solutions = store_partial_solutions
