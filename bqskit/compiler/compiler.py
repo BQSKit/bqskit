@@ -7,6 +7,7 @@ from typing import Any
 
 from dask.distributed import Client
 from dask.distributed import Future
+from dask.distributed import SpecCluster
 
 from bqskit.compiler.executor import Executor
 from bqskit.compiler.task import CompilationTask
@@ -43,11 +44,14 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
-        dask_options = {
-            'silence_logs': logging.getLogger('bqskit').level,
-        }
-        if 'address' not in kwargs and 'scheduler_file' not in kwargs:
-            dask_options['threads_per_worker'] = 1
+        if any(isinstance(arg, SpecCluster) for arg in args):
+            dask_options = {}
+        else:
+            dask_options = {
+                'silence_logs': logging.getLogger('bqskit').level,
+            }
+            if 'address' not in kwargs and 'scheduler_file' not in kwargs:
+                dask_options['threads_per_worker'] = 1
 
         dask_options.update(kwargs)
 
