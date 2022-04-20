@@ -770,10 +770,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 either an invalid location or gate radix mismatch.
 
         Notes:
-            Due to the circuit being 
-            
-            
-            
+            Due to the circuit being
+
+
+
             esented as a matrix,
             `circuit.append(op)` does not imply `op` is last in simulation
             order but it implies `op` is in the last cycle of circuit.
