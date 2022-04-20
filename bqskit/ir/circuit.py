@@ -770,7 +770,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 either an invalid location or gate radix mismatch.
 
         Notes:
-            Due to the circuit being represented as a matrix,
+            Due to the circuit being 
+            
+            
+            
+            esented as a matrix,
             `circuit.append(op)` does not imply `op` is last in simulation
             order but it implies `op` is in the last cycle of circuit.
 
@@ -2747,7 +2751,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def __repr__(self) -> str:
         """Repr representation of the circuit."""
-        string = 'Circuit(self.num_qudits)'
+        string = f'Circuit({self.num_qudits})'
         for cycle in self._circuit[:100]:
             string += f'\n\t{cycle}'
         if self.num_cycles > 100:
