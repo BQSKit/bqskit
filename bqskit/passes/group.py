@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from typing import Sequence
 
-from bqskit.passes.alias import PassAlias
 from bqskit.compiler import BasePass
+from bqskit.passes.alias import PassAlias
 from bqskit.utils.typing import is_sequence
+
 
 class PassGroup(PassAlias):
     """A pass that is a group of other passes."""
@@ -13,8 +16,8 @@ class PassGroup(PassAlias):
 
         for p in self.passes:
             if not isinstance(p, BasePass):
-                raise TypeError(f"Expected a BasePass, got {type(p)}.")
-    
+                raise TypeError(f'Expected a BasePass, got {type(p)}.')
+
     def get_passes(self) -> list[BasePass]:
         """Return the passes to be run, see :class:`PassAlias` for more."""
         return self.passes

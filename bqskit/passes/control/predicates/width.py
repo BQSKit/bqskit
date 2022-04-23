@@ -12,8 +12,8 @@ class WidthPredicate(PassPredicate):
     """
     The WidthPredicate class.
 
-    The WidthPredicate class returns True if the circuit's width is less
-    than a specified number.
+    The WidthPredicate class returns True if the circuit's width is less than a
+    specified number.
     """
 
     def __init__(self, width: int) -> None:
