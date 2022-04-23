@@ -8,7 +8,8 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import CYGate
-from bqskit.ir.gates import SGate, SdgGate
+from bqskit.ir.gates import SdgGate
+from bqskit.ir.gates import SGate
 from bqskit.ir.operation import Operation
 
 

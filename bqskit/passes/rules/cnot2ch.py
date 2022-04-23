@@ -1,13 +1,15 @@
 """This module implements the CNOTToCHPass."""
 from __future__ import annotations
-import numpy as np
+
 from typing import Any
+
+import numpy as np
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import CHGate
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import CHGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.operation import Operation
 
@@ -22,9 +24,9 @@ class CNOTToCHPass(BasePass):
     def __init__(self) -> None:
         """Construct a CNOTToCHPass."""
         circuit = Circuit(2)
-        circuit.append_gate(RYGate(), 1, [-np.pi/4])
+        circuit.append_gate(RYGate(), 1, [-np.pi / 4])
         circuit.append_gate(CHGate(), (0, 1))
-        circuit.append_gate(RYGate(), 1, [np.pi/4])
+        circuit.append_gate(RYGate(), 1, [np.pi / 4])
         self.cg = CircuitGate(circuit)
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:

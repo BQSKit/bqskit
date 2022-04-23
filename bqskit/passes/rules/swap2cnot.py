@@ -1,7 +1,9 @@
 """This module implements the SwapToCNOTPass."""
 from __future__ import annotations
-import numpy as np
+
 from typing import Any
+
+import numpy as np
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
