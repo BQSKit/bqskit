@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 from typing import Callable
+
 import numpy as np
 
 from bqskit.compiler.basepass import BasePass
@@ -11,8 +12,8 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.utils.typing import is_real_number
 from bqskit.ir.structure import CircuitStructure
+from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
 
@@ -55,7 +56,7 @@ class ExhaustiveGateRemovalPass(BasePass):
                 in the circuit. If this returns true, this pass will
                 attempt to remove that operation. Defaults to all
                 operations.
-            
+
             scoring_fn (Callable[[Circuit], float]):
                 A scoring function for the circuits to determine which one
                 to select. Defaults to gate counts weighted by their size.
@@ -80,7 +81,7 @@ class ExhaustiveGateRemovalPass(BasePass):
             )
 
         self.collection_filter = collection_filter or default_collection_filter
-        
+
         if not callable(self.collection_filter):
             raise TypeError(
                 'Expected callable method that maps Operations to booleans for'
@@ -88,7 +89,7 @@ class ExhaustiveGateRemovalPass(BasePass):
             )
 
         self.scoring_fn = scoring_fn or default_scoring_fn
-        
+
         if not callable(self.scoring_fn):
             raise TypeError(
                 'Expected callable method that maps Circuits to floats for'
@@ -108,7 +109,7 @@ class ExhaustiveGateRemovalPass(BasePass):
         _logger.debug(f'Starting exhaustive gate removal.')
 
         target = self.get_target(circuit, data)
-        
+
         # Frontier tracks circuits successfully instantiated to target
         frontier = [circuit.copy()]
 
@@ -118,7 +119,7 @@ class ExhaustiveGateRemovalPass(BasePass):
 
         # Keep removing until no more successful circuits
         while len(frontier) > 0:
-            
+
             # Expand each element of frontier by removing gates
             expanded_circuits = []
 
@@ -134,7 +135,7 @@ class ExhaustiveGateRemovalPass(BasePass):
                     if structure not in circuits_seen:
                         expanded_circuits.append(copy)
                         circuits_seen.add(structure)
-            
+
             # Instantiate them all
             instantiated_circuits = self.execute(
                 data,
@@ -149,14 +150,14 @@ class ExhaustiveGateRemovalPass(BasePass):
             for c in instantiated_circuits:
                 if self.cost(c, target) < self.success_threshold:
                     next_frontier.append(c)
-                    
+
                     score = self.scoring_fn(c)
                     if score > best_score:
                         best_circuit = c
                         best_score = score
-            
+
             frontier = next_frontier
-        
+
         # Keep best circuit if one found
         if best_circuit is not None:
             circuit.become(best_circuit)
@@ -164,6 +165,7 @@ class ExhaustiveGateRemovalPass(BasePass):
 
 def default_collection_filter(op: Operation) -> bool:
     return True
+
 
 def default_scoring_fn(circuit: Circuit) -> float:
     """Default scoring function."""
