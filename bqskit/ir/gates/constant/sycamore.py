@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -19,7 +20,7 @@ class SycamoreGate(ConstantGate, QubitGate):
         1 & 0 & 0 & 0 \\\\
         0 & 0 & -i & 0 \\\\
         0 & -i & 0 & 0 \\\\
-        0 & 0 & 0 & e^{-i\frac{\pi}{6}} \\\\
+        0 & 0 & 0 & e^{-i\frac{\\pi}{6}} \\\\
         \\end{pmatrix}
     """
 

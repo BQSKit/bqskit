@@ -20,23 +20,23 @@ class FSIMGate(
     """
     Google's FSIM Gate.
 
-    Contains all two qubit interactions that preserve excitations,
-    up to single-qubit rotations and global phase.
+        Contains all two qubit interactions that preserve excitations,
+        up to single-qubit rotations and global phase.
 
-    It is given by the following parameterized unitary:
+        It is given by the following parameterized unitary:
 
-    .. math::
+        .. math::
 
-$
-        \\begin{pmatrix}
-        1 & 0 & 0 & 0 \\\\
-        0 & \\cos{\\theta} & -i\\sin{\\theta} & 0 \\\\
-        0 & -i\\sin{\\theta} & \\cos{\\theta} & 0 \\\\
-        0 & 0 & 0 & e^{-i\\phi} \\\\
-        \\end{pmatrix}
-    
-    References:
-        https://quantumai.google/reference/python/cirq/ops/FSimGate
+    $
+            \\begin{pmatrix}
+            1 & 0 & 0 & 0 \\\\
+            0 & \\cos{\\theta} & -i\\sin{\\theta} & 0 \\\\
+            0 & -i\\sin{\\theta} & \\cos{\\theta} & 0 \\\\
+            0 & 0 & 0 & e^{-i\\phi} \\\\
+            \\end{pmatrix}
+
+        References:
+            https://quantumai.google/reference/python/cirq/ops/FSimGate
     """
 
     _num_qudits = 2
