@@ -40,6 +40,7 @@ synthesis pass to convert the circuit to native gates.
     :recursive:
 
     ExhaustiveGateRemovalPass
+    IterativeScanningGateRemovalPass
     ScanningGateRemovalPass
     WindowOptimizationPass
     SubstitutePass
@@ -164,6 +165,7 @@ from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
+from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
 from bqskit.passes.processing.window import WindowOptimizationPass
@@ -244,4 +246,5 @@ __all__ = [
     'ZXZXZDecomposition',
     'ExhaustiveGateRemovalPass',
     'WidthPredicate',
+    'IterativeScanningGateRemovalPass',
 ]
