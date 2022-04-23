@@ -4,6 +4,7 @@ from __future__ import annotations
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
+from bqskit.ir.gates.parameterized.fsim import FSIMGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rxx import RXXGate
@@ -21,6 +22,7 @@ __all__ = [
     'CRXGate',
     'CRYGate',
     'CRZGate',
+    'FSIMGate',
     'PauliGate',
     'RXGate',
     'RXXGate',

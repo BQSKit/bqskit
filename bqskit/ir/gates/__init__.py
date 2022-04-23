@@ -32,12 +32,16 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CZGate
     HGate
     IdentityGate
+    ISwapGate
+    PermutationGate
     SGate
     SdgGate
     SqrtCNOTGate
+    SqrtISwapGate
     SwapGate
     SqrtXGate
     SXGate
+    SycamoreGate
     TGate
     TdgGate
     ConstantUnitaryGate
@@ -56,6 +60,10 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    CRXGate
+    CRYGate
+    CRZGate
+    FSIMGate
     PauliGate
     RXGate
     RXXGate
