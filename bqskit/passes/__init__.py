@@ -39,6 +39,7 @@ synthesis pass to convert the circuit to native gates.
     :toctree: autogen
     :recursive:
 
+    ExhaustiveGateRemovalPass
     ScanningGateRemovalPass
     WindowOptimizationPass
     SubstitutePass
@@ -71,6 +72,7 @@ This objects are designed as conditions for use with control passes.
     ChangePredicate
     GateCountPredicate
     NotPredicate
+    WidthPredicate
 
 .. rubric:: Rule-based Passes
 
@@ -149,6 +151,7 @@ from bqskit.passes.control.predicate import PassPredicate
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
+from bqskit.passes.control.predicates.width import WidthPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
 from bqskit.passes.io.checkpoint import LoadCheckpointPass
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
@@ -160,6 +163,7 @@ from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
+from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
 from bqskit.passes.processing.window import WindowOptimizationPass
@@ -238,4 +242,6 @@ __all__ = [
     'MiddleOutLayerGenerator',
     'CNOTToCZPass',
     'ZXZXZDecomposition',
+    'ExhaustiveGateRemovalPass',
+    'WidthPredicate',
 ]
