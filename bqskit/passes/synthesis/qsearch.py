@@ -129,7 +129,9 @@ class QSearchSynthesisPass(SynthesisPass):
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
-        self.instantiate_options: dict[str, Any] = {'cost_fn_gen': self.cost}
+        self.instantiate_options: dict[str, Any] = {
+            'cost_fn_gen': self.cost,
+        }
         self.instantiate_options.update(instantiate_options)
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
