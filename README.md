@@ -108,6 +108,8 @@ assert dist < 1e-10
 
 ## Copyright
 
+The software in this repository is licensed under the **BSD free software license** and can be used in source or binary form for any purpose as long as the relevant licensing information is reproduced.  See the **LICENSE** file for more information.
+
 Berkeley Quantum Synthesis Toolkit (BQSKit) Copyright (c) 2021,
 The Regents of the University of California, through Lawrence
 Berkeley National Laboratory (subject to receipt of any required
