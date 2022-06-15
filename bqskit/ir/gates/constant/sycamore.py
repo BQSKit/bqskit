@@ -1,6 +1,7 @@
 """This module implements the SycamoreGate."""
 from __future__ import annotations
 
+import cmath
 import math
 
 from bqskit.ir.gates.constantgate import ConstantGate
@@ -30,6 +31,6 @@ class SycamoreGate(ConstantGate, QubitGate):
             [1, 0, 0, 0],
             [0, 0, -1j, 0],
             [0, -1j, 1, 0],
-            [0, 0, 0, math.exp(-1j * math.pi / 6)],
+            [0, 0, 0, cmath.exp(-1j * math.pi / 6)],
         ],
     )
