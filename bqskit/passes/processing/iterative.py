@@ -5,10 +5,6 @@ import logging
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
-from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.alias import PassAlias
 from bqskit.passes.control import ChangePredicate
 from bqskit.passes.control import ForEachBlockPass
@@ -19,7 +15,6 @@ from bqskit.passes.partitioning import ScanPartitioner
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.util import UnfoldPass
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
 
@@ -84,7 +79,7 @@ class IterativeScanningGateRemovalPass(PassAlias):
             )
 
         scan = ScanningGateRemovalPass(*args, **kwargs)
-        self.passes = [
+        self.passes: list[BasePass] = [
             WhileLoopPass(
                 ChangePredicate(),
                 [

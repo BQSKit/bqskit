@@ -106,7 +106,7 @@ class ExhaustiveGateRemovalPass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        _logger.debug(f'Starting exhaustive gate removal.')
+        _logger.debug('Starting exhaustive gate removal.')
 
         target = self.get_target(circuit, data)
 

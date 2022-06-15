@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import cast
 from typing import Sequence
 
 from bqskit.compiler import BasePass
@@ -12,7 +13,13 @@ class PassGroup(PassAlias):
 
     def __init__(self, passes: BasePass | Sequence[BasePass]) -> None:
         """Group together one or more `passes`."""
-        self.passes = passes if is_sequence(passes) else [passes]
+        if not is_sequence(passes):
+            passes = [cast(BasePass, passes)]
+
+        if not isinstance(passes, list):
+            passes = list(passes)
+
+        self.passes: list[BasePass] = passes
 
         for p in self.passes:
             if not isinstance(p, BasePass):
