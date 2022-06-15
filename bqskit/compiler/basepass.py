@@ -4,12 +4,21 @@ from __future__ import annotations
 import abc
 import logging
 from typing import Any
+from typing import Callable
+from typing import TypeVar
+
+from distributed import get_client
+from distributed import rejoin
+from distributed import secede
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_iterable
 
 _logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 
 class BasePass(abc.ABC):
@@ -104,3 +113,45 @@ class BasePass(abc.ABC):
             return circuit.get_unitary()
 
         return data['target_unitary']
+
+    @staticmethod
+    def in_parallel(data: dict[str, Any]) -> bool:
+        """Return true if pass is being executed in a parallel environment."""
+        if 'parallel' not in data:
+            return False
+
+        if not isinstance(data['parallel'], bool):
+            _logger.warning('Expected parallel to be a bool.')
+            return False
+
+        return data['parallel']
+
+    @staticmethod
+    def execute(
+        data: dict[str, Any],
+        fn: Callable[..., T],
+        *args: Any,
+        **kwargs: Any,
+    ) -> list[T]:
+        """Execute a function potentially in parallel."""
+
+        if BasePass.in_parallel(data):
+            if fn == Circuit.instantiate:
+                kwargs['parallel'] = True
+
+            client = get_client()
+            futures = client.map(fn, *args, **kwargs)
+            secede()
+            results = client.gather(futures)
+            rejoin()
+            return results
+
+        else:
+            if all(is_iterable(arg) for arg in args):
+                if all(len(arg) == len(args[0]) for arg in args):
+                    results = []
+                    for subargs in zip(*args):
+                        results.append(fn(*subargs, **kwargs))
+                    return results
+
+            return [fn(*args, **kwargs)]
