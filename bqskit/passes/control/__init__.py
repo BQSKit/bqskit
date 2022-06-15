@@ -10,6 +10,7 @@ from bqskit.passes.control.predicate import PassPredicate
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
+from bqskit.passes.control.predicates.width import WidthPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     'WhileLoopPass',
     'DoThenDecide',
     'ParallelDo',
+    'WidthPredicate',
 ]
