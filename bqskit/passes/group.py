@@ -16,7 +16,7 @@ class PassGroup(PassAlias):
 
         for p in self.passes:
             if not isinstance(p, BasePass):
-                raise TypeError(f'Expected a BasePass, got {type(p)}.')
+                raise TypeError(f'Expected a Pass, got {type(p)}.')
 
     def get_passes(self) -> list[BasePass]:
         """Return the passes to be run, see :class:`PassAlias` for more."""
