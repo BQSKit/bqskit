@@ -87,7 +87,7 @@ class IterativeScanningGateRemovalPass(PassAlias):
         self.passes = [
             WhileLoopPass(
                 ChangePredicate(),
-                                             [
+                [
                     IfThenElsePass(
                         WidthPredicate(width_to_partition),
                         scan,
@@ -97,7 +97,7 @@ class IterativeScanningGateRemovalPass(PassAlias):
                             UnfoldPass(),
                         ],
                     ),
-                                             ],
+                ],
             ),
         ]
 
