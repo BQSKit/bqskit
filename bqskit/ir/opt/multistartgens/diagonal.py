@@ -1,4 +1,4 @@
-"""This module implements the RandomStartGenerator class."""
+"""This module implements the DiagonalStartGenerator base class."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class RandomStartGenerator(MultiStartGenerator):
-    """A start generator that selects random points uniformily across [0, 2π)"""
+class DiagonalStartGenerator(MultiStartGenerator):
+    """A generator that puts starts along the diagonal of the N-d space."""
 
     def gen_starting_points(
         self,
@@ -54,6 +54,10 @@ class RandomStartGenerator(MultiStartGenerator):
             )
 
         return [
-            2 * np.pi * np.random.random(circuit.num_params)
-            for i in range(multistarts)
+            2 * np.pi * np.random.uniform(
+                (i - 1) / multistarts,
+                i / multistarts,
+                (circuit.num_params,),
+            )
+            for i in range(1, multistarts + 1)
         ]

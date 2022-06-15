@@ -2058,8 +2058,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def compress(self) -> None:
         """Compress the circuit's cycles."""
-        # TODO
-        raise NotImplementedError('Compress is not currently implemented.')
+        compressed_circuit = Circuit(self.num_qudits, self.radixes)
+        for op in self:
+            compressed_circuit.append(op)
+        self.become(compressed_circuit)
 
     def renumber_qudits(self, qudit_permutation: Sequence[int]) -> None:
         """

@@ -23,6 +23,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    CCXGate
     CHGate
     CPIGate
     CSUMGate
@@ -32,14 +33,20 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CZGate
     HGate
     IdentityGate
+    ISwapGate
+    IToffoliGate
+    PermutationGate
     SGate
     SdgGate
     SqrtCNOTGate
+    SqrtISwapGate
     SwapGate
     SqrtXGate
     SXGate
+    SycamoreGate
     TGate
     TdgGate
+    ToffoliGate
     ConstantUnitaryGate
     XGate
     XXGate
@@ -56,6 +63,10 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    CRXGate
+    CRYGate
+    CRZGate
+    FSIMGate
     PauliGate
     RXGate
     RXXGate

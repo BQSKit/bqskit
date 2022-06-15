@@ -13,6 +13,7 @@ from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_sequence
 
 
 class Operation(DifferentiableUnitary):
@@ -48,7 +49,7 @@ class Operation(DifferentiableUnitary):
         if not CircuitLocation.is_location(location):
             raise TypeError('Invalid location.')
 
-        if len(params) == 0 and gate.num_params != 0:
+        if is_sequence(params) and len(params) == 0 and gate.num_params != 0:
             params = [0.0] * gate.num_params
 
         gate.check_parameters(params)
