@@ -4,5 +4,11 @@ from __future__ import annotations
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
+from bqskit.passes.control.predicates.width import WidthPredicate
 
-__all__ = ['ChangePredicate', 'GateCountPredicate', 'NotPredicate']
+__all__ = [
+    'ChangePredicate',
+    'GateCountPredicate',
+    'NotPredicate',
+    'WidthPredicate',
+]
