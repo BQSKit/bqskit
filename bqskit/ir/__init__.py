@@ -35,6 +35,7 @@ instantiatation, which is a very important primitive in quantum synthesis.
     CircuitLocation
     CircuitPoint
     CircuitRegion
+    CircuitStructure
 
 .. rubric:: Type Aliases
 
@@ -68,6 +69,7 @@ from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
+from bqskit.ir.structure import CircuitStructure
 
 __all__ = [
     'Operation',
@@ -82,4 +84,5 @@ __all__ = [
     'CircuitRegionLike',
     'CycleInterval',
     'IntervalLike',
+    'CircuitStructure',
 ]
