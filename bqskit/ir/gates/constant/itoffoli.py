@@ -24,7 +24,7 @@ class IToffoliGate(ConstantGate, QubitGate):
         0 & 0 & 0 & 0 & 0 & 0 & 0 & i \\\\
         0 & 0 & 0 & 0 & 0 & 0 & i & 0 \\\\
         \\end{pmatrix}
-    
+
     References:
         Kim, Y., Morvan, A., Nguyen, L.B. et al. High-fidelity three-qubit
         iToffoli gate for fixed-frequency superconducting qubits. Nat. Phys.
