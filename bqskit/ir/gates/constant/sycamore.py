@@ -30,7 +30,7 @@ class SycamoreGate(ConstantGate, QubitGate):
         [
             [1, 0, 0, 0],
             [0, 0, -1j, 0],
-            [0, -1j, 1, 0],
+            [0, -1j, 0, 0],
             [0, 0, 0, cmath.exp(-1j * math.pi / 6)],
         ],
     )
