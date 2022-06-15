@@ -2547,7 +2547,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if isinstance(indices, slice):
             start, stop, step = indices.indices(self.num_cycles)
-            return sum((self[index] for index in range(start, stop, step)), [])
+            acm: list[Operation] = []
+            return sum((self[index] for index in range(start, stop, step)), acm)
 
         if isinstance(indices, tuple) and len(indices) == 2:
             cycle_indices, qudit_indices = indices
