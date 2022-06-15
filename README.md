@@ -106,6 +106,14 @@ dist = synthesized_circuit.get_unitary().get_distance_from(toffoli)
 assert dist < 1e-10
 ```
 
+## License
+
+The software in this repository is licensed under a **BSD free software license**
+and can be used in source or binary form for any purpose as long as the simple
+licensing requirements are followed. See the
+**[LICENSE](https://github.com/BQSKit/bqskit/blob/master/LICENSE)** file
+for more information.
+
 ## Copyright
 
 Berkeley Quantum Synthesis Toolkit (BQSKit) Copyright (c) 2021,
