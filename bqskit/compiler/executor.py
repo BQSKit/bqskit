@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from threadpoolctl import threadpool_limits
-
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 
@@ -33,8 +31,7 @@ class Executor:
 
     def run(self) -> tuple[Circuit, dict[str, Any]]:
         """Execute the task."""
-        with threadpool_limits(limits=1):
-            for pass_obj in self.passes:
-                pass_obj.run(self.circuit, self.data)
+        for pass_obj in self.passes:
+            pass_obj.run(self.circuit, self.data)
         self.done = True
         return self.circuit, self.data
