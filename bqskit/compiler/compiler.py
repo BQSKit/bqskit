@@ -1,13 +1,15 @@
 """This module implements the Compiler class."""
 from __future__ import annotations
 
+import inspect
 import logging
 import uuid
 from typing import Any
+from typing import Callable
 
 from dask.distributed import Client
 from dask.distributed import Future
-from dask.distributed import SpecCluster
+from threadpoolctl import threadpool_limits
 
 from bqskit.compiler.executor import Executor
 from bqskit.compiler.task import CompilationTask
@@ -27,9 +29,13 @@ class Compiler:
     to use it as one. If the compiler is not used in a context manager, it
     is the responsibility of the user to call `close()`.
 
+    You will need to wrap construction and all uses of a compiler object
+    in a `if __name__ == '__main__':` clause when calling from a script.
+
     Examples:
-        >>> with Compiler() as compiler:
-        ...     circuit = compiler.compile(task)
+        >>> if __name__ == '__main__':
+        ...     with Compiler() as compiler:
+        ...         circuit = compiler.compile(task)
 
         >>> compiler = Compiler()
         >>> circuit = compiler.compile(task)
@@ -44,18 +50,36 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
-        if any(isinstance(arg, SpecCluster) for arg in args):
-            dask_options = {}
-        else:
-            dask_options = {
-                'silence_logs': logging.getLogger('bqskit').level,
-            }
-            if 'address' not in kwargs and 'scheduler_file' not in kwargs:
-                dask_options['threads_per_worker'] = 1
+        # Determine if being run from a dask worker
+        for frame in inspect.stack():
+            if 'spawn.py' in frame[1]:
+                self.is_worker = True
+                raise RuntimeError(
+                    '\n \n'
+                    'Fatal Error: Creating compiler object outside of a '
+                    "\"if __name__ == '__main__':\" clause."
+                    '\n \n',
+                    # TODO: Link to documentation explaining more
+                )
 
-        dask_options.update(kwargs)
+        # Connect to or start a Dask cluster
+        self.client = Client(*args, **kwargs)
 
-        self.client = Client(*args, **dask_options)
+        # Initialize workers for logging support
+        def get_setup_fn() -> Callable[[], None]:
+            x = logging.getLogger('bqskit').level
+
+            def setup_fn() -> None:
+                logging.getLogger('bqskit').setLevel(x)
+            return setup_fn
+        self.client.register_worker_callbacks(get_setup_fn())
+
+        # Limit threads for low level math calls on workers
+        def limit_threads() -> None:
+            threadpool_limits(limits=1)
+        self.client.register_worker_callbacks(limit_threads)
+
+        # Keep track of submitted compilation tasks
         self.tasks: dict[uuid.UUID, Future] = {}
         _logger.info('Started compiler process.')
 
