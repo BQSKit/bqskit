@@ -199,6 +199,53 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             new_depth = max(qudit_depths[list(op.location)]) + 1
             qudit_depths[list(op.location)] = new_depth
         return int(max(qudit_depths))
+    
+    @property
+    def supermarq_program_communication(self) -> float:
+        """SupermarQ program communication metric."""
+        n = self.num_qudits
+        degrees_sum = sum(self.coupling_graph.get_qudit_degrees())
+        return degrees_sum / (n*(n-1))
+    
+    @property
+    def supermarq_critical_depth(self) -> float:
+        """SupermarQ critical depth metric."""
+        qudit_depths = np.zeros(self.num_qudits, dtype=int)
+        num_multi_qubit_gates = 0
+        for op in self:
+            if len(op.location) > 1:
+                new_depth = max(qudit_depths[list(op.location)]) + 1
+                qudit_depths[list(op.location)] = new_depth
+                num_multi_qubit_gates += 1
+        return int(max(qudit_depths)) / num_multi_qubit_gates
+    
+    @property
+    def supermarq_entanglement_ratio(self) -> float:
+        """SupermarQ entanglement-ratio metric."""
+        num_multi_qubit_gates = 0
+        num_gates = 0
+        for op in self:
+            num_gates += 1
+            if len(op.location) > 1:
+                num_multi_qubit_gates += 1
+        return num_multi_qubit_gates / num_gates
+
+    @property
+    def supermarq_parallelism(self) -> float:
+        """SupermarQ parallelism metric."""
+        d  = self.depth
+        ng = self.num_operations
+        return (ng/d - 1) / (self.num_qudits - 1)
+    
+    @property
+    def supermarq_liveness(self) -> float:
+        """SupermarQ liveness metric."""
+        liveness_sum = 0
+        for i in range(self.num_qudits):
+            for j in range(self.num_cycles):
+                if self._circuit[j][i] is not None:
+                    liveness_sum += 1
+        return liveness_sum / (self.num_qudits * self.depth)
 
     @property
     def parallelism(self) -> float:
