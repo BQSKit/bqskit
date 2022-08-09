@@ -199,14 +199,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             new_depth = max(qudit_depths[list(op.location)]) + 1
             qudit_depths[list(op.location)] = new_depth
         return int(max(qudit_depths))
-    
+
     @property
     def supermarq_program_communication(self) -> float:
         """SupermarQ program communication metric."""
         n = self.num_qudits
         degrees_sum = sum(self.coupling_graph.get_qudit_degrees())
-        return degrees_sum / (n*(n-1))
-    
+        return degrees_sum / (n * (n - 1))
+
     @property
     def supermarq_critical_depth(self) -> float:
         """SupermarQ critical depth metric."""
@@ -218,7 +218,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 qudit_depths[list(op.location)] = new_depth
                 num_multi_qubit_gates += 1
         return int(max(qudit_depths)) / num_multi_qubit_gates
-    
+
     @property
     def supermarq_entanglement_ratio(self) -> float:
         """SupermarQ entanglement-ratio metric."""
@@ -233,10 +233,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     @property
     def supermarq_parallelism(self) -> float:
         """SupermarQ parallelism metric."""
-        d  = self.depth
+        d = self.depth
         ng = self.num_operations
-        return (ng/d - 1) / (self.num_qudits - 1)
-    
+        return (ng / d - 1) / (self.num_qudits - 1)
+
     @property
     def supermarq_liveness(self) -> float:
         """SupermarQ liveness metric."""

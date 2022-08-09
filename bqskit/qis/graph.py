@@ -293,7 +293,6 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             (u, v) for (u, v) in self._edges if (u, v) not in edges_to_ignore
             and (v, u) not in edges_to_ignore
         ]
-
         if randomize:
             shuffle(edge_list)
 
