@@ -267,10 +267,10 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         return CouplingGraph([(x, x + 1) for x in range(num_qudits - 1)])
 
     def maximal_matching(
-        self, 
-        edges_to_ignore : list[tuple[int,int]] = [],
-        randomize : bool = False,
-    ) -> list[tuple[int,int]]:
+        self,
+        edges_to_ignore: list[tuple[int, int]] = [],
+        randomize: bool = False,
+    ) -> list[tuple[int, int]]:
         """
         Generate a random graph matching for the coupling graph. Edges in the
         `ignored_edges` list will not be included.
@@ -278,7 +278,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         Arguments:
             edges_to_ignore (list[tuple[int]]): Edges not included in the
                 matching. (Default: [])
-            
+
             randomize (bool): Shuffle edges to create random matchings.
                 (Default: False)
 
@@ -288,14 +288,14 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         """
         matching = set()
         vertices = set()
-        
+
         edge_list = [e for e in self._edges if e not in edges_to_ignore]
 
         if randomize:
             shuffle(edge_list)
 
         for edge in edge_list:
-            u,v = edge
+            u, v = edge
             if u not in vertices and v not in vertices and u != v:
                 matching.add(edge)
                 vertices.update(edge)
