@@ -23,7 +23,6 @@ from distributed import secede
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
-from bqskit.ir.gates.composed.tagged import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.lang import get_language
@@ -52,6 +51,7 @@ from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.random import seed_random_sources
+from bqskit.utils.typing import is_bool
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int
@@ -162,6 +162,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         self._circuit: list[list[Operation | None]] = []
         self._gate_info: dict[Gate, int] = {}
+        self._graph_info: dict[tuple[int, int], int] = {}
+
+        _NodePtrs = dict[int, CircuitPoint | None]
+        self._front: _NodePtrs = {i: None for i in range(self.num_qudits)}
+        self._rear: _NodePtrs = {i: None for i in range(self.num_qudits)}
+        self._dag: dict[CircuitPoint, tuple[_NodePtrs, _NodePtrs]] = {}
 
     # region Circuit Properties
 
@@ -221,23 +227,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         The qudit connectivity in the circuit.
 
         Returns:
-            set[tuple[int, int]]: The coupling graph required by
-            the circuit. The graph is returned as an edge list.
+            (CouplingGraph): The coupling graph required by the circuit.
 
         Notes:
-            - Multi-qudit gates set participating qudits to have
-              all-to-all connectivity.
-
-            - The graph is undirected.
+            - Logical multi-qudit gates require participating qudits to
+                have all-to-all connectivity.
         """
-        coupling_graph = set()
-        for op in self:
-            for q1 in op.location:
-                for q2 in op.location:
-                    if q1 == q2:
-                        continue
-                    coupling_graph.add((min(q1, q2), max(q1, q2)))
-        return CouplingGraph(coupling_graph)
+        return CouplingGraph(self._graph_info.keys(), self.num_qudits)
 
     @property
     def gate_set(self) -> set[Gate]:
@@ -245,13 +241,21 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return set(self._gate_info.keys())
 
     @property
+    def gate_counts(self) -> dict[Gate, int]:
+        """The count of each type of gate in the circuit."""
+        return {gate: self.count(gate) for gate in self.gate_set}
+
+    @property
     def active_qudits(self) -> list[int]:
         """The qudits involved in at least one operation."""
-        return [
-            qudit
-            for qudit in range(self.num_qudits)
-            if not self.is_qudit_idle(qudit)
-        ]
+        active_qudits = set()  # TODO: add test case for single-qudit gates
+        for edge in self._graph_info.keys():
+            active_qudits.add(edge[0])
+            active_qudits.add(edge[1])
+        for qudit, point in self._front.items():
+            if point is not None:
+                active_qudits.add(qudit)
+        return list(sorted(active_qudits))
 
     def is_differentiable(self) -> bool:
         """Check if all gates are differentiable."""
@@ -286,6 +290,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         for cycle in self._circuit:
             cycle.append(None)
+
+        self._rear[self.num_qudits - 1] = None
+        self._front[self.num_qudits - 1] = None
 
     def extend_qudits(self, radixes: Iterable[int]) -> None:
         """
@@ -340,6 +347,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self._radixes = tuple(radix_list)
 
         # Insert qudit
+        shift_index = lambda q: q if q < qudit_index else q + 1
+        inc_point = lambda p: CircuitPoint(p.cycle, p.qudit + 1)
+        shift_point = lambda p: p if p.qudit < qudit_index else inc_point(p)
+        shift_point_or_none = lambda p: None if p is None else shift_point(p)
+        shift_edge = lambda e: (shift_index(e[0]), shift_index(e[1]))
+
         for cycle in self._circuit:
             cycle.insert(qudit_index, None)
 
@@ -348,11 +361,40 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             for i, op in enumerate(cycle[qudit_index:]):
                 if op is None or i + qudit_index in qudits_to_skip:
                     continue
-                op._location = CircuitLocation([
-                    index if index < qudit_index else index + 1
-                    for index in op.location
-                ])
+                shifted_location = [shift_index(i) for i in op.location]
+                op._location = CircuitLocation(shifted_location)
                 qudits_to_skip.extend(op.location)
+
+        # Shift _front, _rear, _graph_info, _dag
+        self._front = {
+            shift_index(q): shift_point_or_none(p)
+            for q, p in self._front.items()
+        }
+        self._front[qudit_index] = None
+        self._rear = {
+            shift_index(q): shift_point_or_none(p)
+            for q, p in self._rear.items()
+        }
+        self._rear[qudit_index] = None
+        self._graph_info = {
+            shift_edge(e): i
+            for e, i in self._graph_info.items()
+        }
+        self._dag = {
+            shift_point(p): (
+                # Prev
+                {
+                    shift_index(q): shift_point_or_none(p2)
+                    for q, p2 in ptr_map[0].items()
+                },
+                # Next
+                {
+                    shift_index(q): shift_point_or_none(p2)
+                    for q, p2 in ptr_map[1].items()
+                },
+            )
+            for p, ptr_map in self._dag.items()
+        }
 
     def pop_qudit(self, qudit_index: int) -> None:
         """
@@ -395,6 +437,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self._radixes = tuple(radix_list)
 
         # Remove qudit
+        shift_index = lambda q: q if q < qudit_index else q - 1
+        dec_point = lambda p: CircuitPoint(p.cycle, p.qudit - 1)
+        shift_point = lambda p: p if p.qudit < qudit_index else dec_point(p)
+        shift_point_or_none = lambda p: None if p is None else shift_point(p)
+        shift_edge = lambda e: (shift_index(e[0]), shift_index(e[1]))
+
         for cycle_index, cycle in enumerate(self._circuit):
             cycle.pop(qudit_index)
 
@@ -404,11 +452,40 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             for i, op in enumerate(cycle[qudit_index:]):
                 if op is None or i + qudit_index in qudits_to_skip:
                     continue
-                op._location = CircuitLocation([
-                    index if index < qudit_index else index - 1
-                    for index in op.location
-                ])
+                shifted_location = [shift_index(i) for i in op.location]
+                op._location = CircuitLocation(shifted_location)
                 qudits_to_skip.extend(op.location)
+
+        # Shift _front, _rear, _graph_info, _dag
+        self._front = {
+            shift_index(q): shift_point_or_none(p)
+            for q, p in self._front.items()
+            if q != qudit_index
+        }
+        self._rear = {
+            shift_index(q): shift_point_or_none(p)
+            for q, p in self._rear.items()
+            if q != qudit_index
+        }
+        self._graph_info = {
+            shift_edge(e): i
+            for e, i in self._graph_info.items()
+        }
+        self._dag = {
+            shift_point(p): (
+                # Prev
+                {
+                    shift_index(q): shift_point_or_none(p2)
+                    for q, p2 in ptr_map[0].items()
+                },
+                # Next
+                {
+                    shift_index(q): shift_point_or_none(p2)
+                    for q, p2 in ptr_map[1].items()
+                },
+            )
+            for p, ptr_map in self._dag.items()
+        }
 
     def is_qudit_in_range(self, qudit_index: int) -> bool:
         """Return true if `qudit_index` is in-range for the circuit."""
@@ -431,7 +508,88 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 f'Expected integer for qudit_index, got: {type(qudit_index)}',
             )
 
-        return all(cycle[qudit_index] is None for cycle in self._circuit)
+        return self._front[qudit_index] is None
+
+    def renumber_qudits(self, qudit_permutation: Sequence[int]) -> None:
+        """
+        Permute the qudits in the circuit.
+
+        Args:
+            qudit_permutation (Sequence[int]): A map from qudit indices
+                to qudit indices.
+
+        Raises:
+            IndexError: If any of the indices are out of range.
+
+            ValueError: If the `qudit_permutation` is not the same size
+                as the circuit.
+
+            ValueError: If the `qudit_permutation` is not a valid permutation.
+        """
+        if not is_sequence_of_int(qudit_permutation):
+            raise TypeError(
+                'Expected sequence of integers'
+                ', got %s' % type(qudit_permutation),
+            )
+
+        if len(qudit_permutation) != self.num_qudits:
+            raise ValueError(
+                'Expected qudit_permutation length equal to circuit num_qudits:'
+                '%d, got %d' % (self.num_qudits, len(qudit_permutation)),
+            )
+
+        if len(qudit_permutation) != len(set(qudit_permutation)):
+            raise ValueError('Invalid permutation.')
+
+        perm = [int(q) for q in qudit_permutation]
+
+        perm_point = lambda p: CircuitPoint(p.cycle, perm[p.qudit])
+        perm_point_or_none = lambda p: perm_point(p) if p is not None else p
+
+        self._graph_info = {
+            (perm[e[0]], perm[e[1]]): i
+            for e, i in self._graph_info.items()
+        }
+        self._front = {
+            perm[i]: perm_point_or_none(p)
+            for i, p in self._front.items()
+        }
+        self._rear = {
+            perm[i]: perm_point_or_none(p)
+            for i, p in self._rear.items()
+        }
+        self._dag = {
+            perm_point(p): (
+                # Prev
+                {
+                    perm[q]: perm_point_or_none(p2)
+                    for q, p2 in ptr_map[0].items()
+                },
+                # Next
+                {
+                    perm[q]: perm_point_or_none(p2)
+                    for q, p2 in ptr_map[1].items()
+                },
+            )
+            for p, ptr_map in self._dag.items()
+        }
+
+        for i in range(self.num_cycles):
+            self._circuit[i] = [
+                self._circuit[i][perm.index(q)]
+                for q in range(self.num_qudits)
+            ]
+
+            qudits_to_skip: list[int] = []
+            for j in range(self.num_qudits):
+                if j in qudits_to_skip:
+                    continue
+
+                op = self._circuit[i][j]
+                if op is not None:
+                    loc = CircuitLocation([perm[q] for q in op.location])
+                    op._location = loc
+                    qudits_to_skip.extend(loc)
 
     # endregion
 
@@ -444,6 +602,32 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     def _insert_cycle(self, cycle_index: int) -> None:
         """Inserts an idle cycle in the circuit."""
         self._circuit.insert(cycle_index, [None] * self.num_qudits)
+        inc_point = lambda p: CircuitPoint(p.cycle + 1, p.qudit)
+        shift_point = lambda p: p if p.cycle < cycle_index else inc_point(p)
+        shift_point_or_none = lambda p: None if p is None else shift_point(p)
+        self._front = {
+            q: shift_point_or_none(p)
+            for q, p in self._front.items()
+        }
+        self._rear = {
+            q: shift_point_or_none(p)
+            for q, p in self._rear.items()
+        }
+        self._dag = {
+            shift_point(p): (
+                # Prev
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in prevs.items()
+                },
+                # Next
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in nexts.items()
+                },
+            )
+            for p, (prevs, nexts) in self._dag.items()
+        }
 
     def pop_cycle(self, cycle_index: int) -> None:
         """
@@ -464,15 +648,41 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if not self.is_cycle_in_range(cycle_index):
             raise IndexError(f'Cycle index ({cycle_index}) is out-of-range.')
 
-        qudits_to_skip: list[int] = []
-        for qudit_index, op in enumerate(self._circuit[cycle_index]):
-            if op is not None and qudit_index not in qudits_to_skip:
-                qudits_to_skip.extend(op.location)
-                self._gate_info[op.gate] -= 1
-                if self._gate_info[op.gate] <= 0:
-                    del self._gate_info[op.gate]
+        ops = {op for op in self._circuit[cycle_index] if op is not None}
+        points = [(cycle_index, op.location[0]) for op in ops]
+        if len(points) != 0:
+            for point in points:
+                self.pop(point)
+            return
+        else:
+            self._circuit.pop(cycle_index)
 
-        self._circuit.pop(cycle_index)
+        dec_point = lambda p: CircuitPoint(p.cycle - 1, p.qudit)
+        shift_point = lambda p: p if p.cycle < cycle_index else dec_point(p)
+        shift_point_or_none = lambda p: None if p is None else shift_point(p)
+        self._front = {
+            q: shift_point_or_none(p)
+            for q, p in self._front.items()
+        }
+        self._rear = {
+            q: shift_point_or_none(p)
+            for q, p in self._rear.items()
+        }
+        self._dag = {
+            shift_point(p): (
+                # Prev
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in ptr_map[0].items()
+                },
+                # Next
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in ptr_map[1].items()
+                },
+            )
+            for p, ptr_map in self._dag.items()
+        }
 
     def _is_cycle_idle(self, cycle_index: int) -> bool:
         """Return true if the cycle is idle, that is it contains no gates."""
@@ -576,20 +786,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # No available cycle
         if self.num_cycles == 0:
-            return -1
+            return 0
 
-        # Iterate through cycles in reverse order
-        for cycle in range(self.num_cycles - 1, -1, -1):
-            # Find the first occupied cycle
-            if not self.is_cycle_unoccupied(cycle, location):
-                # The first available cycle is the previous one
-                if cycle == self.num_cycles - 1:
-                    return -1
-                return cycle + 1
-
-        # If we didn't find an occupied cycle,
-        # then they are all unoccupied.
-        return 0
+        cycle = 0
+        for q in location:
+            rear = self._rear[q]
+            if rear is not None:
+                cycle = max(cycle, rear.cycle + 1)
+        return cycle
 
     def _find_available_or_append_cycle(
         self,
@@ -600,7 +804,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         available_cycle = self.find_available_cycle(location)
 
         # If no available cycle
-        if available_cycle == -1:
+        if available_cycle == self.num_cycles:
             self._append_cycle()
             return self.num_cycles - 1
 
@@ -635,6 +839,36 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cycle = point[0] if point[0] >= 0 else self.num_cycles + point[0]
         qudit = point[1] if point[1] >= 0 else self.num_qudits + point[1]
         return CircuitPoint(cycle, qudit)
+
+    # endregion
+
+    # region DAG Methods
+
+    @property
+    def front(self) -> set[CircuitPoint]:
+        """The positions of operations with no dependencies."""
+        front_set = set()
+        for point in self._front.values():
+            if point is not None and len(self.prev(point)) == 0:
+                front_set.add(point)
+        return front_set
+
+    @property
+    def rear(self) -> set[CircuitPoint]:
+        """The positions of operations with nothing after them."""
+        rear_set = set()
+        for point in self._rear.values():
+            if point is not None and len(self.next(point)) == 0:
+                rear_set.add(point)
+        return rear_set
+
+    def next(self, point: CircuitPoint) -> set[CircuitPoint]:
+        """Return the points of operations dependent on the one at `point`."""
+        return {p for p in self._dag[point][1].values() if p is not None}
+
+    def prev(self, point: CircuitPoint) -> set[CircuitPoint]:
+        """Return the points of operations the one at `point` depends on."""
+        return {p for p in self._dag[point][0].values() if p is not None}
 
     # endregion
 
@@ -776,19 +1010,44 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Examples:
             >>> circ = Circuit(1)
-            >>> op = Operation(H(), [0])
+            >>> op = Operation(HGate(), [0])
             >>> circ.append(op) # Appends a Hadamard gate to qudit 0.
         """
         self.check_valid_operation(op)
+        cycle_index = self._find_available_or_append_cycle(op.location)
+        point = CircuitPoint(cycle_index, op.location[0])
 
+        prevs: dict[int, CircuitPoint | None] = {i: None for i in op.location}
+        for qudit_index in op.location:
+            # Add op to the circuit structure
+            self._circuit[cycle_index][qudit_index] = op
+
+            # Update necessary gates already in _dag to point to this one
+            rear = self._rear[qudit_index]
+            if rear is not None:
+                prevs[qudit_index] = rear
+                self._dag[rear][1][qudit_index] = point
+
+            # Update rear pointers
+            self._rear[qudit_index] = point
+
+            # Update front pointers
+            if self._front[qudit_index] is None:
+                self._front[qudit_index] = point
+
+        # Add new op to the dag
+        self._dag[point] = (prevs, {i: None for i in op.location})
+
+        # Update _graph_info
+        for pair in op.location.pairs:
+            if pair not in self._graph_info:
+                self._graph_info[pair] = 0
+            self._graph_info[pair] += 1
+
+        # Update _gate_info
         if op.gate not in self._gate_info:
             self._gate_info[op.gate] = 0
         self._gate_info[op.gate] += 1
-
-        cycle_index = self._find_available_or_append_cycle(op.location)
-
-        for qudit_index in op.location:
-            self._circuit[cycle_index][qudit_index] = op
 
     def append_gate(
         self,
@@ -815,15 +1074,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         See Also:
             :func:`append`
         """
-        if not isinstance(gate, Gate):
-            raise TypeError('Expected gate, got %s.' % type(gate))
-
         self.append(Operation(gate, location, params))
 
     def append_circuit(
         self,
         circuit: Circuit,
         location: CircuitLocationLike,
+        as_circuit_gate: bool = False,
     ) -> None:
         """
         Append `circuit` at the qudit location specified.
@@ -832,6 +1089,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             circuit (Circuit): The circuit to append.
 
             location (CircuitLocationLike): Apply the circuit to these qudits.
+
+            as_circuit_gate (bool): If true, append `circuit` as a unit
+                block (CircuitGate) rather than each operation in `circuit`
+                individually. (Default: False)
 
         Raises:
             ValueError: If `circuit` is not the same size as `location`.
@@ -847,8 +1108,16 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         location = CircuitLocation(location)
 
+        if not is_bool(as_circuit_gate):
+            raise TypeError(f'Expected bool, got: {type(as_circuit_gate)}.')
+
         if circuit.num_qudits != len(location):
             raise ValueError('Circuit and location size mismatch.')
+
+        if as_circuit_gate:
+            op = Operation(CircuitGate(circuit), location, circuit.params)
+            self.append(op)
+            return
 
         for op in circuit:
             mapped_location = [location[q] for q in op.location]
@@ -908,25 +1177,97 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self.check_valid_operation(op)
 
         if self.num_cycles == 0:
-            self._append_cycle()
+            self.append(op)
+            return
 
         if not self.is_cycle_in_range(cycle_index):
             if cycle_index < -self.num_cycles:
                 cycle_index = 0
             else:
-                cycle_index = self.num_cycles
-                self._append_cycle()
+                self.append(op)
+                return
 
-        if op.gate not in self._gate_info:
-            self._gate_info[op.gate] = 0
-        self._gate_info[op.gate] += 1
+        if cycle_index < 0:
+            cycle_index = self.num_cycles + cycle_index
 
         if not self.is_cycle_unoccupied(cycle_index, op.location):
             self._insert_cycle(cycle_index)
-            cycle_index -= 1 if cycle_index < 0 else 0
 
+        point = CircuitPoint(cycle_index, op.location[0])
+
+        prevs: dict[int, CircuitPoint | None] = {i: None for i in op.location}
+        nexts: dict[int, CircuitPoint | None] = {i: None for i in op.location}
+        for qudit_index in op.location:
+
+            # Update front pointers if necessary
+            if self._front[qudit_index] is None:
+                self._front[qudit_index] = point
+
+            # Update rear pointers if necessary
+            if self._rear[qudit_index] is None:
+                self._rear[qudit_index] = point
+
+            # Search to left of cycle_index on qudit_index
+            for c in reversed(range(cycle_index)):
+                prev_op = self._circuit[c][qudit_index]
+
+                # Find first op on qudit_index
+                if prev_op is not None:
+                    prev_point = CircuitPoint(c, prev_op.location[0])
+
+                    # Update its next to be this
+                    self._dag[prev_point][1][qudit_index] = point
+
+                    # Add it to this prev
+                    prevs[qudit_index] = prev_point
+
+                    # Stop searching to left
+                    break
+
+            # Search to right of cycle_index on qudit_index
+            for c in range(cycle_index, self.num_cycles):
+                next_op = self._circuit[c][qudit_index]
+
+                # Find first op on qudit_index
+                if next_op is not None:
+                    next_point = CircuitPoint(c, next_op.location[0])
+
+                    # Update its prev to be this
+                    self._dag[next_point][0][qudit_index] = point
+
+                    # Add it to this next
+                    nexts[qudit_index] = next_point
+
+                    # Stop searching to right
+                    break
+
+        # Update _front if this is new front
+        for qudit_index, _prev_point in prevs.items():
+            if _prev_point is None:
+                self._front[qudit_index] = point
+
+        # Update _rear if this is new rear
+        for qudit_index, _next_point in nexts.items():
+            if _next_point is None:
+                self._rear[qudit_index] = point
+
+        # Add this to _dag
+        self._dag[point] = (prevs, nexts)
+
+        # Add op to the circuit structure
         for qudit_index in op.location:
             self._circuit[cycle_index][qudit_index] = op
+
+        # Update _graph_info
+        for pair in op.location.pairs:
+            if pair not in self._graph_info:
+                self._graph_info[pair] = 0
+            self._graph_info[pair] += 1
+
+        # Update _gate_info
+        if op.gate not in self._gate_info:
+            self._gate_info[op.gate] = 0
+        self._gate_info[op.gate] += 1
 
     def insert_gate(
         self,
@@ -967,6 +1308,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cycle_index: int,
         circuit: Circuit,
         location: CircuitLocationLike,
+        as_circuit_gate: bool = False,
     ) -> None:
         """
         Insert `circuit` at the cycle and location specified.
@@ -978,6 +1320,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             location (CircuitLocationLike): Apply the circuit to these
                 qudits.
+
+            as_circuit_gate (bool): If true, append `circuit` as a unit
+                block (CircuitGate) rather than each operation in `circuit`
+                individually. (Default: False)
 
         Raises:
             ValueError: If `circuit` is not the same size as `location`.
@@ -991,6 +1337,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 f'Expected integer cycle index, got: {cycle_index}.',
             )
 
+        if not is_bool(as_circuit_gate):
+            raise TypeError(f'Expected bool, got: {type(as_circuit_gate)}.')
+
         if not CircuitLocation.is_location(location):
             raise TypeError('Invalid location.')
 
@@ -998,6 +1347,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if circuit.num_qudits != len(location):
             raise ValueError('Circuit and location size mismatch.')
+
+        if as_circuit_gate:
+            op = Operation(CircuitGate(circuit), location, circuit.params)
+            self.insert(cycle_index, op)
+            return
 
         for op in reversed(circuit):
             mapped_location = [location[q] for q in op.location]
@@ -1114,7 +1468,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         Examples:
             >>> circ = Circuit(1)
-            >>> circ.append_gate(H(), [0])
+            >>> circ.append_gate(HGate(), [0])
             >>> circ.get_num_gates()
             1
             >>> circ.pop(0, 0)
@@ -1139,25 +1493,52 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise IndexError('Pop from empty circuit.')
 
         op = self[point]
+        point = self.normalize_point(point)
+        point = CircuitPoint(point[0], op.location[0])
 
+        # Remove it from _dag
+        prevs, nexts = self._dag[point]
+        for q in op.location:
+            prev = prevs[q]
+            if prev is not None:
+                self._dag[prev][1][q] = nexts[q]
+
+            next = nexts[q]
+            if next is not None:
+                self._dag[next][0][q] = prevs[q]
+
+            if self._front[q] == point:
+                self._front[q] = nexts[q]
+
+            if self._rear[q] == point:
+                self._rear[q] = prevs[q]
+        self._dag.pop(point)
+
+        # Remove it from _circuit
         for qudit_index in op.location:
             self._circuit[point[0]][qudit_index] = None
 
+        if self._is_cycle_idle(point.cycle):
+            self.pop_cycle(point.cycle)
+
+        # Update gate and graph counts
         self._gate_info[op.gate] -= 1
         if self._gate_info[op.gate] <= 0:
-            del self._gate_info[op.gate]
+            self._gate_info.pop(op.gate)
 
-        if self._is_cycle_idle(point[0]):
-            self.pop_cycle(point[0])
+        for pair in op.location.pairs:
+            self._graph_info[pair] -= 1
+            if self._graph_info[pair] <= 0:
+                self._graph_info.pop(pair)
 
         return op
 
-    def batch_pop(self, points: Sequence[CircuitPointLike]) -> Circuit:
+    def batch_pop(self, points: Iterable[CircuitPointLike]) -> Circuit:
         """
         Pop all operatons at `points` at once.
 
         Args:
-            points (Sequence[CircuitPointLike]): Remove operations
+            points (Iterable[CircuitPointLike]): Remove operations
                 at these points all at the same time.
 
         Returns:
@@ -1172,42 +1553,20 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise IndexError('Out-of-range point.')
 
         # Sort points
-        points = sorted(points)
-
-        # Collect operations avoiding duplicates
-        points_to_skip: list[CircuitPointLike] = []
-        ops_and_cycles: list[tuple[Operation, int]] = []
-        for point in points:
-            if point in points_to_skip:
-                continue
-            if self.is_point_idle(point):
-                continue
-
-            op = self[point]
-            ops_and_cycles.append((op, point[0]))
-            points_to_skip.extend((point[0], q) for q in op.location)
-
-        ops = [op for op, _ in ops_and_cycles]
-        points = [(cycle, op.location[0]) for op, cycle in ops_and_cycles]
+        points = [self.normalize_point(point) for point in points]
+        points = [p for p in points if not self.is_point_idle(p)]
+        ops_and_cycles = {(self[point], point[0]) for point in points}
+        ops_and_cycles = sorted(list(ops_and_cycles), key=lambda x: x[1])
 
         if len(points) == 0:
-            raise IndexError('No operations exists at any of the points.')
+            raise IndexError('Must batch pop at least one point.')
 
-        # Pop gates, tracking if the circuit popped a cycle
-        num_cycles = self.num_cycles
-        for i, point in enumerate(points):
-
-            try:
-                self.pop(point)
-            except IndexError:  # Silently discard multi-points-one-op errors
-                pass
-
-            if num_cycles != self.num_cycles:
-                num_cycles = self.num_cycles
-                points[i + 1:] = [(point[0] - 1, point[1])
-                                  for point in points[i + 1:]]
+        # Pop from circuit
+        for op, cycle in reversed(ops_and_cycles):
+            self.pop((cycle, op.location[0]))
 
         # Form new circuit and return
+        ops = [op for op, _ in ops_and_cycles]
         qudits = list(set(sum((tuple(op.location) for op in ops), ())))
         qudits = sorted(qudits)
         radixes = [self.radixes[q] for q in qudits]
@@ -1237,6 +1596,39 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         if len(self[point].location.intersection(op.location)) == 0:
             raise ValueError("Point's qudit is not in operation's location.")
+
+        old_op = self._circuit[point[0]][point[1]]
+        if old_op is not None and set(old_op.location) == set(op.location):
+            if old_op.location[0] != op.location[0]:
+                old_point = CircuitPoint(point[0], old_op.location[0])
+                new_point = CircuitPoint(point[0], op.location[0])
+                prevs, nexts = self._dag[old_point]
+                for q in old_op.location:
+                    if self._front[q] == old_point:
+                        self._front[q] = new_point
+                    if self._rear[q] == old_point:
+                        self._rear[q] = new_point
+                    prev = prevs[q]
+                    if prev is not None:
+                        self._dag[prev][1][q] = new_point
+                    next = nexts[q]
+                    if next is not None:
+                        self._dag[next][0][q] = new_point
+                self._dag[new_point] = self._dag[old_point]
+                self._dag.pop(old_point)
+
+            self._gate_info[old_op.gate] -= 1
+            if self._gate_info[old_op.gate] <= 0:
+                self._gate_info.pop(old_op.gate)
+
+            if op.gate not in self._gate_info:
+                self._gate_info[op.gate] = 0
+            self._gate_info[op.gate] += 1
+
+            for q in old_op.location:
+                self._circuit[point[0]][q] = op
+
+            return
 
         self.pop(point)
         self.insert(point[0], op)
@@ -1290,6 +1682,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self,
         point: CircuitPointLike,
         circuit: Circuit,
+        as_circuit_gate: bool = False,
     ) -> None:
         """Replace the operation at 'point' with `circuit`."""
         op = self.pop(point)
@@ -1300,13 +1693,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if circuit.radixes != tuple(self.radixes[x] for x in op.location):
             raise ValueError('Cannot replace operation with circuit.')
 
-        self.insert_circuit(point[0], circuit, op.location)
+        self.insert_circuit(point[0], circuit, op.location, as_circuit_gate)
 
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
         circuit = Circuit(self.num_qudits, self.radixes)
         circuit._circuit = copy.deepcopy(self._circuit)
         circuit._gate_info = copy.deepcopy(self._gate_info)
+        circuit._graph_info = copy.deepcopy(self._graph_info)
+        circuit._front = copy.deepcopy(self._front)
+        circuit._rear = copy.deepcopy(self._rear)
+        circuit._dag = copy.deepcopy(self._dag)
         return circuit
 
     def become(self, circuit: Circuit, deepcopy: bool = True) -> None:
@@ -1316,16 +1713,34 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self._radixes = circuit.radixes
             self._circuit = copy.deepcopy(circuit._circuit)
             self._gate_info = copy.deepcopy(circuit._gate_info)
+            self._graph_info = copy.deepcopy(circuit._graph_info)
+            self._front = copy.deepcopy(circuit._front)
+            self._rear = copy.deepcopy(circuit._rear)
+            self._dag = copy.deepcopy(circuit._dag)
         else:
             self._num_qudits = circuit.num_qudits
             self._radixes = circuit.radixes
             self._circuit = copy.copy(circuit._circuit)
             self._gate_info = copy.copy(circuit._gate_info)
+            self._front = copy.copy(circuit._front)
+            self._rear = copy.copy(circuit._rear)
+            self._dag = copy.copy(circuit._dag)
 
     def clear(self) -> None:
         """Clear the circuit."""
         self._circuit = []
         self._gate_info = {}
+        self._graph_info = {}
+        self._front = {i: None for i in range(self.num_qudits)}
+        self._rear = {i: None for i in range(self.num_qudits)}
+        self._dag = {}
+
+    def compress(self) -> None:
+        """Compress the circuit's cycles."""
+        compressed_circuit = Circuit(self.num_qudits, self.radixes)
+        for op in self:
+            compressed_circuit.append(op)
+        self.become(compressed_circuit)
 
     # endregion
 
@@ -1482,9 +1897,25 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     op = self._circuit[old_cycle_index][qudit_index]
                     if op is not None:
                         gate_moved = True
+                        s_point = CircuitPoint(old_cycle_index, op.location[0])
+                        d_point = CircuitPoint(new_cycle_index, op.location[0])
+
+                        prevs, nexts = self._dag[s_point]
                         for qudit in op.location:
                             self._circuit[new_cycle_index][qudit] = op
                             self._circuit[old_cycle_index][qudit] = None
+                            prev = prevs[qudit]
+                            if prev is not None:
+                                self._dag[prev][1][qudit] = d_point
+                            next = nexts[qudit]
+                            if next is not None:
+                                self._dag[next][0][qudit] = d_point
+                            if self._front[qudit] == s_point:
+                                self._front[qudit] = d_point
+                            if self._rear[qudit] == s_point:
+                                self._rear[qudit] = d_point
+                            self._dag.pop(s_point)
+                            self._dag[d_point] = (prevs, nexts)
                         qudits_to_add_to_shadow.extend(op.location)
 
             shadow_qudits.update(qudits_to_add_to_shadow)
@@ -1533,22 +1964,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         region = self.straighten(region)[0]
         circuit = self.batch_pop(region.points)
 
-        # Remove placeholders if being called from batch_fold
-        placeholder_gate_points = [
-            (cycle, op.location[0])
-            for cycle, op in circuit.operations_with_cycles()
-            if isinstance(op.gate, TaggedGate)
-            and op.gate.tag == '__fold_placeholder__'
-        ]
-        if len(placeholder_gate_points) > 0:
-            circuit.batch_pop(placeholder_gate_points)
-
-        # Form and insert CircuitGate
-        self.insert_gate(
+        # Insert popped circuit as a CircuitGate
+        self.insert_circuit(
             region.min_cycle,
-            CircuitGate(circuit, True),
+            circuit,
             sorted(list(region.keys())),
-            list(circuit.params),
+            True,
         )
 
         return CircuitPoint(region.min_cycle, region.min_qudit)
@@ -1563,22 +1984,24 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit.set_params(op.params)
         self.replace_with_circuit(point, circuit)
 
+    def batch_unfold(self, points: Sequence[CircuitPointLike]) -> None:
+        """Unfold the CircuitGates at `points` into the circuit."""
+        points = {(point[0], self[point].location[0]) for point in points}
+        for point in reversed(sorted(points)):
+            self.unfold(point)
+
     def unfold_all(self) -> None:
         """Unfold all CircuitGates in the circuit."""
-        cycle_index = 0
-        qudit_index = 0
-        while cycle_index < len(self._circuit):
-            op = self._circuit[cycle_index][qudit_index]
-
-            if op is not None and isinstance(op.gate, CircuitGate):
-                self.unfold((cycle_index, op.location[0]))
-                qudit_index = sorted(op.location)[0]
-                continue
-
-            qudit_index += 1
-            if qudit_index >= self.num_qudits:
-                qudit_index = 0
-                cycle_index += 1
+        while any(isinstance(gate, CircuitGate) for gate in self.gate_set):
+            unfolded_circuit = Circuit(self.num_qudits, self.radixes)
+            for op in self:
+                if isinstance(op.gate, CircuitGate):
+                    circuit = op.gate._circuit
+                    circuit.set_params(op.params)
+                    unfolded_circuit.append_circuit(circuit, op.location)
+                else:
+                    unfolded_circuit.append(op)
+            self.become(unfolded_circuit)
 
     def surround(
         self,
@@ -1945,22 +2368,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         points = sorted(points)
 
         # Collect operations avoiding duplicates
-        points_to_skip: list[CircuitPointLike] = []
-        ops_and_cycles: list[tuple[Operation, int]] = []
-        for point in points:
-            if point in points_to_skip:
-                continue
-            if self.is_point_idle(point):
-                continue
+        ops_and_cycles: list[tuple[Operation, int]] = list({
+            (self[point], point[0])
+            for point in points
+            if not self.is_point_idle(point)
+        })
 
-            op = self[point]
-            ops_and_cycles.append((op, point[0]))
-            points_to_skip.extend((point[0], q) for q in op.location)
+        if len(ops_and_cycles) == 0:
+            raise IndexError('No operations exists at any of the points.')
 
+        ops_and_cycles.sort(key=lambda x: (x[1], *x[0].location))
         ops = [op for op, _ in ops_and_cycles]
-        points = [(cycle, op.location[0]) for op, cycle in ops_and_cycles]
 
-        if len(points) == 0:
+        if len(ops_and_cycles) == 0:
             raise IndexError('No operations exists at any of the points.')
 
         # Form new circuit and return
@@ -2061,63 +2481,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             )
         return circuit
 
-    def compress(self) -> None:
-        """Compress the circuit's cycles."""
-        compressed_circuit = Circuit(self.num_qudits, self.radixes)
-        for op in self:
-            compressed_circuit.append(op)
-        self.become(compressed_circuit)
-
-    def renumber_qudits(self, qudit_permutation: Sequence[int]) -> None:
-        """
-        Permute the qudits in the circuit.
-
-        Args:
-            qudit_permutation (Sequence[int]): A map from qudit indices
-                to qudit indices.
-
-        Raises:
-            IndexError: If any of the indices are out of range.
-
-            ValueError: If the `qudit_permutation` is not the same size
-                as the circuit.
-
-            ValueError: If the `qudit_permutation` is not a valid permutation.
-        """
-        if not is_sequence_of_int(qudit_permutation):
-            raise TypeError(
-                'Expected sequence of integers'
-                ', got %s' % type(qudit_permutation),
-            )
-
-        if len(qudit_permutation) != self.num_qudits:
-            raise ValueError(
-                'Expected qudit_permutation length equal to circuit num_qudits:'
-                '%d, got %d' % (self.num_qudits, len(qudit_permutation)),
-            )
-
-        if len(qudit_permutation) != len(set(qudit_permutation)):
-            raise ValueError('Invalid permutation.')
-
-        perm = [int(q) for q in qudit_permutation]
-
-        for i in range(self.num_cycles):
-            self._circuit[i] = [
-                self._circuit[i][perm.index(q)]
-                for q in range(self.num_qudits)
-            ]
-
-            qudits_to_skip: list[int] = []
-            for j in range(self.num_qudits):
-                if j in qudits_to_skip:
-                    continue
-
-                op = self._circuit[i][j]
-                if op is not None:
-                    loc = CircuitLocation([perm[q] for q in op.location])
-                    op._location = loc
-                    qudits_to_skip.extend(loc)
-
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """
         Return the unitary matrix of the circuit.
@@ -2213,7 +2576,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 # Should work fine with non unitary gradients
                 # TODO: Fix for non qubits
                 full_grad = np.kron(grad, iden)
-                full_grad = perm @ full_grad @ permT
+                full_grad = permT @ full_grad @ perm
                 full_gards.append(right_utry @ full_grad @ left_utry)
             left.apply_right(M, loc)
 
@@ -2323,6 +2686,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         # If method is specified by name; match it
         elif isinstance(method, str):
+            instantiater = None
             for inst in instantiater_order:
                 inst_t = cast(Instantiater, inst)
                 if inst_t.get_method_name().lower() == method.lower():

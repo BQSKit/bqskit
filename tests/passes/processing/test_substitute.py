@@ -9,10 +9,6 @@ from bqskit.passes import SubstitutePass
 from bqskit.qis import UnitaryMatrix
 
 
-def is_variable(op: Operation) -> bool:
-    return isinstance(op.gate, VariableUnitaryGate)
-
-
 class TestSubstitute:
 
     def test_small_qubit(self) -> None:
@@ -22,6 +18,8 @@ class TestSubstitute:
         circuit.instantiate(utry)
         assert circuit.get_unitary().get_distance_from(utry) < 1e-5
 
+        def is_variable(op: Operation) -> bool:
+            return isinstance(op.gate, VariableUnitaryGate)
         substitute = SubstitutePass(is_variable, VariableUnitaryGate(1))
         substitute.run(circuit)
         dist = circuit.get_unitary().get_distance_from(utry)
@@ -36,6 +34,8 @@ class TestSubstitute:
         circuit.instantiate(utry)
         assert circuit.get_unitary().get_distance_from(utry) < 1e-5
 
+        def is_variable(op: Operation) -> bool:
+            return isinstance(op.gate, VariableUnitaryGate)
         substitute = SubstitutePass(is_variable, VariableUnitaryGate(1))
         with Compiler() as compiler:
             circuit = compiler.compile(CompilationTask(circuit, [substitute]))

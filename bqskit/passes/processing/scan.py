@@ -108,7 +108,7 @@ class ScanningGateRemovalPass(BasePass):
                 _logger.debug(f'Skipping operation {op} at cycle {cycle}.')
                 continue
 
-            _logger.info(f'Attempting removal of operation at cycle {cycle}.')
+            _logger.debug(f'Attempting removal of operation at cycle {cycle}.')
             _logger.debug(f'Operation: {op}')
 
             working_copy = circuit_copy.copy()
@@ -120,10 +120,16 @@ class ScanningGateRemovalPass(BasePass):
                 cycle -= idx_shift
 
             working_copy.pop((cycle, op.location[0]))
-            working_copy.instantiate(target, **self.instantiate_options)
+            working_copy = self.execute(
+                data,
+                Circuit.instantiate,
+                [working_copy],
+                target=target,
+                **self.instantiate_options,
+            )[0]
 
             if self.cost(working_copy, target) < self.success_threshold:
-                _logger.info('Successfully removed operation.')
+                _logger.debug('Successfully removed operation.')
                 circuit_copy = working_copy
 
         circuit.become(circuit_copy)

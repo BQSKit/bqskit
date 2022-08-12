@@ -160,7 +160,6 @@ class Rebase2QuditGatePass(BasePass):
 
                 # Group together a 2-qubit block composed of gates from old set
                 point = self.group_near_gates(circuit, circuit.point(g))
-                print(point)
                 circuits_with_new_gate = []
                 for circ in self.circs:
                     circuit_copy = circuit.copy()

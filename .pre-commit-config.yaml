@@ -39,6 +39,7 @@ repos:
             - --in-place
             - -a
             - --max-line-length=80
+            - --ignore=E731
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.37.3
     hooks:
@@ -81,6 +82,6 @@ repos:
     hooks:
     -   id: flake8
         args:
-            - --ignore=E741,E241,E226,F405,F403,W503,F901
+            - --ignore=E741,E241,E226,F405,F403,W503,F901,E731
             - --max-line-length=80
         additional_dependencies: [flake8-typing-imports==1.7.0]

@@ -387,10 +387,6 @@ class TestInsert:
     def test_valid_type(self) -> None:
         pass
 
-    @invalid_type_test(Circuit(1).insert, [ValueError])
-    def test_invalid_type(self) -> None:
-        pass
-
     def test_empty(self) -> None:
         circuit = Circuit(2)
         circuit.insert(0, Operation(CXGate(), (0, 1)))
@@ -410,10 +406,6 @@ class TestInsertGate:
 
     @valid_type_test(Circuit(1).insert_gate)
     def test_valid_type(self) -> None:
-        pass
-
-    @invalid_type_test(Circuit(1).insert_gate, [ValueError])
-    def test_invalid_type(self) -> None:
         pass
 
     def test_empty(self) -> None:
@@ -578,14 +570,6 @@ class TestPop:
 
 class TestBatchPop:
     """This tests `circuit.batch_pop`."""
-
-    @valid_type_test(Circuit(1).batch_pop)
-    def test_valid_type(self) -> None:
-        pass
-
-    @invalid_type_test(Circuit(1).batch_pop, [IndexError])
-    def test_invalid_type(self) -> None:
-        pass
 
     @given(circuits((2, 2, 2, 2)))
     def test_batch_pop_all(self, circuit: Circuit) -> None:

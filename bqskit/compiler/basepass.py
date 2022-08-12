@@ -15,6 +15,7 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_iterable
+from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
 
@@ -60,7 +61,10 @@ class BasePass(abc.ABC):
         """
 
     @staticmethod
-    def get_model(circuit: Circuit, data: dict[str, Any]) -> MachineModel:
+    def get_model(
+        circuit: Circuit | UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> MachineModel:
         """
         Retrieve the machine model from the data dictionary.
 
@@ -88,6 +92,45 @@ class BasePass(abc.ABC):
             return MachineModel(circuit.num_qudits)
 
         return data['machine_model']
+
+    @staticmethod
+    def get_placement(circuit: Circuit, data: dict[str, Any]) -> list[int]:
+        """
+        Retrieve the logical to physical qubit map from the data dictionary.
+
+        Args:
+            circuit (Circuit): The pass circuit.
+
+            data (dict[str, Any]): The data dictionary.
+
+        Returns:
+            (list[int]): A list with length equal to circuit.num_qudits.
+            Logical qubit i is mapped to the physical qubit described
+            by the i-th element in the list.
+        """
+        # Default placement is trivial map: i -> i
+        default_placement = list(range(circuit.num_qudits))
+        model = BasePass.get_model(circuit, data)
+        sg = model.coupling_graph.get_subgraph(default_placement)
+
+        # Check in data for existing placement
+        if 'placement' in data:
+            p = data['placement']
+
+            # Check it's valid
+            if is_sequence(p) and len(p) == circuit.num_qudits:
+                return data['placement']
+
+        # If none found try to return default placement
+        if sg.is_fully_connected():
+            if len(data) != 0:
+                data['placement'] = default_placement
+            return default_placement
+
+        raise RuntimeError(
+            "No valid placement found and trivial one doesn't work."
+            '\nConsider running a placement pass before the current pass.',
+        )
 
     @staticmethod
     def get_target(circuit: Circuit, data: dict[str, Any]) -> UnitaryMatrix:
@@ -133,9 +176,16 @@ class BasePass(abc.ABC):
         *args: Any,
         **kwargs: Any,
     ) -> list[T]:
-        """Execute a function potentially in parallel."""
+        """Map a function over iterable arguments in parallel."""
 
-        if BasePass.in_parallel(data):
+        if not all(is_iterable(arg) for arg in args):
+            raise ValueError('Each argument must be a sized iterable')
+
+        if not all(len(arg) == len(args[0]) for arg in args):
+            raise ValueError('Each iterable argument must have same length.')
+
+        # Execute using dask if dask is started and there are multiple tasks
+        if BasePass.in_parallel(data) and len(args[0]) > 1:
             if fn == Circuit.instantiate:
                 kwargs['parallel'] = True
 
@@ -146,12 +196,13 @@ class BasePass(abc.ABC):
             rejoin()
             return results
 
+        # Otherwise execute in current process
         else:
-            if all(is_iterable(arg) for arg in args):
-                if all(len(arg) == len(args[0]) for arg in args):
-                    results = []
-                    for subargs in zip(*args):
-                        results.append(fn(*subargs, **kwargs))
-                    return results
-
-            return [fn(*args, **kwargs)]
+            results = []
+            if len(args) == 1:
+                for arg in args[0]:
+                    results.append(fn(arg, **kwargs))
+            else:
+                for subargs in zip(*args):
+                    results.append(fn(*subargs, **kwargs))
+            return results

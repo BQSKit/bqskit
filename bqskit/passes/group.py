@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import cast
 from typing import Sequence
 
-from bqskit.compiler import BasePass
+from bqskit.compiler.basepass import BasePass
 from bqskit.passes.alias import PassAlias
 from bqskit.utils.typing import is_sequence
 

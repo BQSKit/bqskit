@@ -143,6 +143,7 @@ This objects are designed as conditions for use with control passes.
 """
 from __future__ import annotations
 
+from bqskit.passes.alias import PassAlias
 from bqskit.passes.control.dothendecide import DoThenDecide
 from bqskit.passes.control.dowhileloop import DoWhileLoopPass
 from bqskit.passes.control.foreach import ForEachBlockPass
@@ -152,13 +153,21 @@ from bqskit.passes.control.predicate import PassPredicate
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
+from bqskit.passes.control.predicates.physical import PhysicalPredicate
+from bqskit.passes.control.predicates.single import SinglePhysicalPredicate
 from bqskit.passes.control.predicates.width import WidthPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
+from bqskit.passes.group import PassGroup
 from bqskit.passes.io.checkpoint import LoadCheckpointPass
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
 from bqskit.passes.io.intermediate import RestoreIntermediatePass
 from bqskit.passes.io.intermediate import SaveIntermediatePass
-from bqskit.passes.layout.simple import SimpleLayoutPass
+from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
+from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
+from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
+from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
+from bqskit.passes.mapping.setmodel import SetModelPass
+from bqskit.passes.noop import NOOPPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
@@ -166,18 +175,23 @@ from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
 from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
+from bqskit.passes.processing.rebase import Rebase2QuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
 from bqskit.passes.processing.window import WindowOptimizationPass
 from bqskit.passes.rules.cnot2cz import CNOTToCZPass
+from bqskit.passes.rules.swap2cnot import SwapToCNOTPass
+from bqskit.passes.rules.u3 import U3Decomposition
 from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.fourparam import FourParamGenerator
 from bqskit.passes.search.generators.middleout import MiddleOutLayerGenerator
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
 from bqskit.passes.search.generators.stair import StairLayerGenerator
+from bqskit.passes.search.generators.wide import WideLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics.astar import AStarHeuristic
 from bqskit.passes.search.heuristics.dijkstra import DijkstraHeuristic
@@ -194,6 +208,7 @@ from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
+
 
 __all__ = [
     'DoWhileLoopPass',
@@ -219,7 +234,6 @@ __all__ = [
     'UnfoldPass',
     'UpdateDataPass',
     'ToU3Pass',
-    'SimpleLayoutPass',
     'ScanningGateRemovalPass',
     'WindowOptimizationPass',
     'SimpleLayerGenerator',
@@ -247,4 +261,20 @@ __all__ = [
     'ExhaustiveGateRemovalPass',
     'WidthPredicate',
     'IterativeScanningGateRemovalPass',
+    'SetModelPass',
+    'PassAlias',
+    'PassGroup',
+    'NOOPPass',
+    'FourParamGenerator',
+    'WideLayerGenerator',
+    'SwapToCNOTPass',
+    'GeneralizedSabreLayoutPass',
+    'GreedyPlacementPass',
+    'TrivialPlacementPass',
+    'GeneralizedSabreRoutingPass',
+    'SetModelPass',
+    'U3Decomposition',
+    'PhysicalPredicate',
+    'SinglePhysicalPredicate',
+    'Rebase2QuditGatePass',
 ]

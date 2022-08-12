@@ -29,6 +29,7 @@ from bqskit.ir.gates.constant.tdg import TdgGate
 from bqskit.ir.gates.constant.x import XGate
 from bqskit.ir.gates.constant.y import YGate
 from bqskit.ir.gates.constant.z import ZGate
+from bqskit.ir.gates.parameterized.cp import CPGate
 from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rxx import RXXGate
 from bqskit.ir.gates.parameterized.ry import RYGate
@@ -117,6 +118,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cu1'] = GateDef('cu1', 1, 2, ControlledGate(U1Gate()))
         self.gate_defs['cu2'] = GateDef('cu2', 2, 2, ControlledGate(U2Gate()))
         self.gate_defs['cu3'] = GateDef('cu3', 3, 2, ControlledGate(U3Gate()))
+        self.gate_defs['cp'] = GateDef('cp', 1, 2, CPGate())
 
     def qreg(self, args: Any) -> None:
         reg_name = args.children[0]

@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import bisect
 import logging
+import warnings
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.interval import CycleInterval
+from bqskit.ir.point import CircuitPoint
 from bqskit.ir.region import CircuitRegion
 from bqskit.utils.typing import is_integer
 
@@ -32,7 +34,18 @@ class GreedyPartitioner(BasePass):
 
         Raises:
             ValueError: If `block_size` is less than 2.
+
+        Note:
+            GreedyPartitioner has been deprecated and will be removed in
+            a future update. See :class:`QuickPartitioner` for a
+            replacement partitioner.
         """
+        warnings.warn(
+            'GreedyPartitioner has been deprecated and will be '
+            'removed in a future update. See QuickPartitioner '
+            'for a replacement partitioner.',
+            DeprecationWarning,
+        )
 
         if not is_integer(block_size):
             raise TypeError(
@@ -68,7 +81,7 @@ class GreedyPartitioner(BasePass):
         ]
         potential_regions = {}
         for cycle, op in circuit.operations_with_cycles():
-            point = (cycle, op.location[0])
+            point = CircuitPoint(cycle, op.location[0])
             if len(op.location) > self.block_size:
                 regions.append(circuit.get_region([point]))
                 for qudit, bounds in circuit.get_region([point]).items():

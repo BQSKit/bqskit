@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bqskit.compiler import BasePass
+from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.region import CircuitRegion
 

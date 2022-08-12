@@ -1,19 +1,24 @@
 """This module implements the Compiler class."""
 from __future__ import annotations
 
-import inspect
 import logging
+import sys
+import time
 import uuid
-from typing import Any
-from typing import Callable
+from subprocess import DEVNULL
+from subprocess import Popen
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any
+    from dask.distributed import Future
+    from bqskit.compiler.task import CompilationTask
+    from bqskit.ir.circuit import Circuit
 
 from dask.distributed import Client
-from dask.distributed import Future
 from threadpoolctl import threadpool_limits
 
 from bqskit.compiler.executor import Executor
-from bqskit.compiler.task import CompilationTask
-from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
 
@@ -29,17 +34,23 @@ class Compiler:
     to use it as one. If the compiler is not used in a context manager, it
     is the responsibility of the user to call `close()`.
 
-    You will need to wrap construction and all uses of a compiler object
-    in a `if __name__ == '__main__':` clause when calling from a script.
-
     Examples:
-        >>> if __name__ == '__main__':
-        ...     with Compiler() as compiler:
-        ...         circuit = compiler.compile(task)
+        1. Use in a context manager:
+        >>> with Compiler() as compiler:
+        ...     circuit = compiler.compile(task)
 
+        2. Use compiler without context manager:
         >>> compiler = Compiler()
         >>> circuit = compiler.compile(task)
         >>> compiler.close()
+
+        3. Connect to an already running dask cluster:
+        >>> with Compiler('127.0.0.1:8786') as compiler:
+        ...     circuit = compiler.compile(task)
+
+        4. Connect to a dask cluster with a scheduler file:
+        >>> with Compiler(scheduler_file='/path/to/file/') as compiler:
+        ...     circuit = compiler.compile(task)
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -50,34 +61,24 @@ class Compiler:
             All arguments are passed directly to Dask. You can use
             these to connect to and configure a Dask cluster.
         """
-        # Determine if being run from a dask worker
-        for frame in inspect.stack():
-            if 'spawn.py' in frame[1]:
-                self.is_worker = True
-                raise RuntimeError(
-                    '\n \n'
-                    'Fatal Error: Creating compiler object outside of a '
-                    "\"if __name__ == '__main__':\" clause."
-                    '\n \n',
-                    # TODO: Link to documentation explaining more
-                )
-
         # Connect to or start a Dask cluster
-        self.client = Client(*args, **kwargs)
+        self.managed = len(args) == 0 and len(kwargs) == 0
+        if self.managed:
+            self.processes = start_dask_cluster()
+            self.client = Client('127.0.0.1:8786')
+        else:
+            self.client = Client(*args, **kwargs)
 
         # Initialize workers for logging support
-        def get_setup_fn() -> Callable[[], None]:
-            x = logging.getLogger('bqskit').level
+        def set_logging_level(level: int) -> None:
+            logging.getLogger('bqskit').setLevel(level)
 
-            def setup_fn() -> None:
-                logging.getLogger('bqskit').setLevel(x)
-            return setup_fn
-        self.client.register_worker_callbacks(get_setup_fn())
+        self.client.run(set_logging_level, logging.getLogger('bqskit').level)
 
         # Limit threads for low level math calls on workers
         def limit_threads() -> None:
             threadpool_limits(limits=1)
-        self.client.register_worker_callbacks(limit_threads)
+        self.client.run(limit_threads)
 
         # Keep track of submitted compilation tasks
         self.tasks: dict[uuid.UUID, Future] = {}
@@ -93,12 +94,19 @@ class Compiler:
 
     def close(self) -> None:
         """Shutdown compiler."""
-        try:
-            self.client.close()
-            self.tasks = {}
-            _logger.info('Stopped compiler process.')
-        except (AttributeError, TypeError):
-            pass
+        self.client.close()
+        self.tasks = {}
+        if self.managed:
+            for proc in self.processes:
+                proc.terminate()  # type: ignore
+                proc.wait()  # type: ignore
+        _logger.info('Stopped compiler process.')
+
+    def __del__(self) -> None:
+        if self.managed and hasattr(self, 'processes'):
+            for proc in self.processes:
+                proc.terminate()  # type: ignore
+                proc.wait()  # type: ignore
 
     def submit(self, task: CompilationTask) -> None:
         """Submit a CompilationTask to the Compiler."""
@@ -133,3 +141,36 @@ class Compiler:
         if task.task_id not in self.tasks:
             self.submit(task)
         return self.tasks[task.task_id].result()[1][key]
+
+
+def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
+    """Start a dask cluster and return the scheduler and worker processes."""
+    scheduler_proc = None
+    worker_proc = None
+
+    # Start a dask scheduler in another process
+    try:
+        scheduler_proc = Popen(
+            ['dask-scheduler', '--port', '8786'],
+            bufsize=1,
+            universal_newlines=True,
+            stdout=sys.stdout,
+            stderr=DEVNULL,
+        )
+    except Exception as e:
+        raise RuntimeError('Failed to start dask scheduler') from e
+
+    # Start dask workers in another process
+    try:
+        worker_proc = Popen(
+            ['dask-worker', '--nworkers', 'auto', '127.0.0.1:8786'],
+            stdout=sys.stdout,
+            stderr=DEVNULL,
+        )
+    except Exception as e:
+        scheduler_proc.terminate()
+        scheduler_proc.wait()
+        raise RuntimeError('Failed to start dask worker') from e
+
+    time.sleep(2)
+    return worker_proc, scheduler_proc

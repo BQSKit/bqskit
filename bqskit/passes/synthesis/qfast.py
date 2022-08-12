@@ -6,7 +6,6 @@ import logging
 from typing import Any
 from typing import Sequence
 
-from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
@@ -25,19 +24,23 @@ _logger = logging.getLogger(__name__)
 
 class QFASTDecompositionPass(SynthesisPass):
     """
-    The QFASTDecompositionPass class.
+    A pass performing one round of decomposition from the QFAST algorithm.
 
-    Performs one QFAST decomposition step breaking down a unitary into a
-    sequence of smaller operations.
+    References:
+        E. Younis, K. Sen, K. Yelick and C. Iancu, "QFAST: Conflating Search
+        and Numerical Optimization for Scalable Quantum Circuit Synthesis,"
+        2021 IEEE International Conference on Quantum Computing and
+        Engineering (QCE), 2021, pp. 232-243, doi: 10.1109/QCE52317.2021.00041.
     """
 
     def __init__(
         self,
         gate: Gate = PauliGate(2),
-        success_threshold: float = 1e-6,
+        success_threshold: float = 1e-10,
         progress_threshold: float = 5e-3,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
+        instantiate_options: dict[str, Any] = {},
     ) -> None:
         """
         QFASTDecompositionPass Constructor.
@@ -67,6 +70,10 @@ class QFASTDecompositionPass(SynthesisPass):
             max_depth (int): The maximum number of gates to append without
                 success before termination. If left as None it will default
                 to unlimited. (Default: None)
+
+            instantiate_options (dict[str: Any]): Options passed directly
+                to circuit.instantiate when instantiating circuit
+                templates. (Default: {})
 
         Raises:
             ValueError: If max_depth is nonpositive.
@@ -110,61 +117,55 @@ class QFASTDecompositionPass(SynthesisPass):
         self.progress_threshold = progress_threshold
         self.cost = cost
         self.max_depth = max_depth
+        self.instantiate_options: dict[str, Any] = {
+            'cost_fn_gen': self.cost,
+            'method': 'minimization',
+        }
+        self.instantiate_options.update(instantiate_options)
 
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
-        # 0. Skip any unitaries too small for the configured gate.
+        # Skip any unitaries too small for the configured gate.
         if self.gate.num_qudits > utry.num_qudits:
             _logger.warning('Skipping unitary synthesis since gate is larger.')
             return Circuit.from_unitary(utry)
 
-        # 1. Create empty circuit with same size and radixes as `utry`.
+        # Create empty circuit with same size and radixes as `utry`.
         circuit = Circuit(utry.num_qudits, utry.radixes)
 
-        # 2. Calculate relevant coupling_graph and create the VLG head.
-        # If a MachineModel is provided in the data dict, it will be used.
-        # Otherwise all-to-all connectivity is assumed.
-        model = None
-
-        if 'machine_model' in data:
-            model = data['machine_model']
-
-        if (
-            not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.num_qudits
-        ):
-            _logger.warning(
-                'MachineModel not specified or invalid;'
-                ' defaulting to all-to-all.',
-            )
-            model = MachineModel(circuit.num_qudits)
+        # Calculate relevant coupling_graph and create the VLG head.
+        model = self.get_model(utry, data)
         locations = model.get_locations(self.gate.num_qudits)
-        circuit.append_gate(
-            VariableLocationGate(self.gate, locations, circuit.radixes),
-            list(range(utry.num_qudits)),
-        )
+        vlg_head = VariableLocationGate(self.gate, locations, circuit.radixes)
+        circuit.append_gate(vlg_head, list(range(utry.num_qudits)))
 
-        # 3. Bottom-up synthesis: build circuit up one gate at a time
+        # Track depth and distances
         depth = 1
         last_dist = 1.0
         failed_locs: list[tuple[CircuitLocation, float]] = []
 
+        # Main loop
         while True:
-            circuit.instantiate(utry, cost_fn_gen=self.cost)
+
+            # Instantiate circuit
+            circuit = self.execute(
+                data,
+                Circuit.instantiate,
+                [circuit],
+                target=utry,
+                **self.instantiate_options,
+            )[0]
 
             dist = self.cost.calc_cost(circuit, utry)
-
-            _logger.info(
-                'Finished optimizing depth %d at %e cost.' % (depth, dist),
-            )
+            _logger.info(f'Instantiated depth {depth} at {dist} cost.')
 
             if dist < self.success_threshold:
-                _logger.info('Circuit found with cost: %e.' % dist)
+                self.finalize(circuit, utry, data)
                 _logger.info('Successful synthesis.')
-                self.finalize(utry, circuit)
                 return circuit
 
+            # Expand or restrict head
             location = self.get_location_of_head(circuit)
 
             if last_dist - dist >= self.progress_threshold:
@@ -193,6 +194,35 @@ class QFASTDecompositionPass(SynthesisPass):
         head_gate: VariableLocationGate = circuit[-1, 0].gate  # type: ignore
         return CircuitLocation(head_gate.get_location(circuit[-1, 0].params))
 
+    def finalize(
+        self,
+        circuit: Circuit,
+        utry: UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> None:
+        """Finalize the circuit by replacing the head with self.gate."""
+        # Replace Head with self.gate
+        location = self.get_location_of_head(circuit)
+        _logger.info(f'Final gate added at location {location}.')
+        circuit.pop()
+        circuit.append(Operation(self.gate, location))
+
+        # Reinstantiate
+        dist = self.cost.calc_cost(circuit, utry)
+        while dist > self.success_threshold:
+            circuit.become(
+                self.execute(
+                    data,
+                    Circuit.instantiate,
+                    [circuit],
+                    target=utry,
+                    **(self.instantiate_options),
+                )[0],
+            )
+            dist = self.cost.calc_cost(circuit, utry)
+
+        _logger.info(f'Final circuit found with cost: {dist}.')
+
     def expand(
         self,
         circuit: Circuit,
@@ -200,30 +230,10 @@ class QFASTDecompositionPass(SynthesisPass):
         locations: Sequence[CircuitLocation],
     ) -> None:
         """Expand the circuit after a successful layer."""
-
-        _logger.info(
-            'Expanding circuit by adding a gate at location %s.' % str(
-                location,
-            ),
-        )
-
+        _logger.info(f'Expanding by adding a gate on qubits {location}.')
         circuit.insert(-1, Operation(self.gate, location))
         self.lift_head_restrictions(circuit, locations)
         self.restrict_head(circuit, location)
-
-    def finalize(self, utry: UnitaryMatrix, circuit: Circuit) -> None:
-        """Finalize the circuit."""
-        location = self.get_location_of_head(circuit)
-        _logger.info('Final gate added at location %s.' % str(location))
-
-        circuit.insert(-1, Operation(self.gate, location))
-        circuit.pop()
-
-        # TODO: reconsider method arg to instantiate call
-        circuit.instantiate(utry, cost_fn_gen=self.cost, method='minimization')
-
-        dist = self.cost.gen_cost(circuit, utry).get_cost(circuit.params)
-        _logger.info('Final circuit distance: %e.' % dist)
 
     def can_restrict(self, head: Operation) -> bool:
         """Return true if the VLG head can be restricted further."""
@@ -244,18 +254,12 @@ class QFASTDecompositionPass(SynthesisPass):
             location (CircuitLocation): The location to remove from the
                 VLG head.
         """
-
-        _logger.debug(
-            'Removing location %s from the VLG head.' % str(location),
-        )
-
+        _logger.debug(f'Removing location {location} from the VLG head.')
         head_gate: VariableLocationGate = circuit[-1, 0].gate  # type: ignore
         locations = copy.deepcopy(head_gate.locations)
         locations.remove(location)
-        new_head = Operation(
-            VariableLocationGate(self.gate, locations, circuit.radixes),
-            list(range(circuit.num_qudits)),
-        )
+        new_vlg = VariableLocationGate(self.gate, locations, circuit.radixes)
+        new_head = Operation(new_vlg, list(range(circuit.num_qudits)))
         circuit.pop()
         circuit.append(new_head)
 
@@ -265,16 +269,9 @@ class QFASTDecompositionPass(SynthesisPass):
         locations: Sequence[CircuitLocation],
     ) -> None:
         """Set the `circuit`'s VLG head's valid locations to `locations`."""
-
-        _logger.debug(
-            'Lifting restrictions, setting VLG head location pool to %s.'
-            % str(locations),
-        )
-
-        new_head = Operation(
-            VariableLocationGate(self.gate, locations, circuit.radixes),
-            list(range(circuit.num_qudits)),
-        )
-
+        _logger.debug('Lifting restrictions.')
+        _logger.debug(f'Reset VLG head location pool to {locations}.')
+        vlg_gate = VariableLocationGate(self.gate, locations, circuit.radixes)
+        new_head = Operation(vlg_gate, list(range(circuit.num_qudits)))
         circuit.pop()
         circuit.append(new_head)

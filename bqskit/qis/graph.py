@@ -1,16 +1,20 @@
 """This module implements the CouplingGraph class."""
 from __future__ import annotations
 
+import copy
 import itertools as it
 import logging
 from functools import lru_cache
 from typing import Any
+from typing import cast
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
+
+import numpy as np
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
@@ -26,7 +30,11 @@ _logger = logging.getLogger(__name__)
 class CouplingGraph(Collection[Tuple[int, int]]):
     """A graph representing connections in a qudit topology."""
 
-    def __init__(self, graph: Iterable[tuple[int, int]]) -> None:
+    def __init__(
+        self,
+        graph: Iterable[tuple[int, int]],
+        num_qudits: int | None = None,
+    ) -> None:
         if isinstance(graph, CouplingGraph):
             self.num_qudits: int = graph.num_qudits
             self._edges: set[tuple[int, int]] = graph._edges
@@ -38,20 +46,35 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         self._edges = set(graph)
 
-        self.num_qudits = 0
+        calced_num_qudits = 0
         for q1, q2 in self._edges:
-            self.num_qudits = max(self.num_qudits, max(q1, q2))
-        self.num_qudits += 1
+            calced_num_qudits = max(calced_num_qudits, max(q1, q2))
+        calced_num_qudits += 1
+
+        if num_qudits is None:
+            self.num_qudits = calced_num_qudits
+        elif calced_num_qudits > num_qudits:
+            raise ValueError('Edges between invalid qudits.')
+        else:
+            self.num_qudits = num_qudits
 
         self._adj = [[] for _ in range(self.num_qudits)]
         for q1, q2 in self._edges:
             self._adj[q1].append(q2)
             self._adj[q2].append(q1)
 
+        self._mat = [
+            [np.inf for _ in range(self.num_qudits)]
+            for _ in range(self.num_qudits)
+        ]
+        for q1, q2 in self._edges:
+            self._mat[q1][q2] = 1
+            self._mat[q2][q1] = 1
+
     def is_fully_connected(self) -> bool:
         """Return true if the graph is fully connected."""
-        frontier = {0}
-        qudits_seen = {0}
+        frontier: set[int] = {0}
+        qudits_seen: set[int] = set()
 
         while len(frontier) > 0:
             expanded_qudits = set()
@@ -95,6 +118,53 @@ class CouplingGraph(Collection[Tuple[int, int]]):
     def get_qudit_degrees(self) -> list[int]:
         return [len(l) for l in self._adj]
 
+    def all_pairs_shortest_path(self) -> list[list[int]]:
+        """
+        Calculate all pairs shortest path matrix using Floyd-Warshall.
+
+        Returns:
+            D (list[list[int]]): D[i][j] is the length of the shortest
+                path from i to j.
+        """
+        D = copy.deepcopy(self._mat)
+        for k in range(self.num_qudits):
+            for i in range(self.num_qudits):
+                for j in range(self.num_qudits):
+                    D[i][j] = min(D[i][j], D[i][k] + D[k][j])
+        return cast(list[list[int]], D)
+
+    def get_shortest_path_tree(self, source: int) -> list[tuple[int, ...]]:
+        """Return shortest path from `source` to every other node in `self`."""
+        # Dijkstra's algorithm to build shortest-path tree
+        unvisited_qudits = set(range(self.num_qudits))
+        distances = {i: np.inf for i in range(self.num_qudits)}
+        paths: list[tuple[int, ...]] = [tuple() for i in range(self.num_qudits)]
+        distances[source] = 0
+        paths[source] = (source,)
+
+        while len(unvisited_qudits) > 0:
+            # Pick next unvisited qudit with shortest distance
+            unvisited_distances = [
+                (x, y) for x, y in distances.items() if x in unvisited_qudits
+            ]
+            unvisited_distances.sort(key=lambda x: x[1])
+            current_qudit = unvisited_distances[0][0]
+
+            if distances[current_qudit] == np.inf:
+                raise RuntimeError(f'No path found to qudit: {current_qudit}.')
+
+            neighbors = self.get_neighbors_of(current_qudit)
+            unvisted_neighbors = unvisited_qudits.intersection(neighbors)
+
+            for other_qudit in unvisted_neighbors:
+                if distances[current_qudit] + 1 < distances[other_qudit]:
+                    distances[other_qudit] = distances[current_qudit] + 1
+                    paths[other_qudit] = paths[current_qudit] + (other_qudit,)
+
+            unvisited_qudits.remove(current_qudit)
+
+        return [paths[i] for i in range(self.num_qudits)]
+
     def get_subgraph(
         self,
         location: CircuitLocationLike,
@@ -106,13 +176,13 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         location = CircuitLocation(location)
         if renumbering is None:
-            renumbering = {x: x for x in range(self.num_qudits)}
+            renumbering = {q: i for i, q in enumerate(location)}
 
         subgraph = []
         for q0, q1 in self._edges:
             if q0 in location and q1 in location:
                 subgraph.append((renumbering[q0], renumbering[q1]))
-        return CouplingGraph(subgraph)
+        return CouplingGraph(subgraph, len(location))
 
     @lru_cache(maxsize=None)
     def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:

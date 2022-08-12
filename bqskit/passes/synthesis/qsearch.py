@@ -4,10 +4,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from dask.distributed import get_client
-from dask.distributed import rejoin
-from dask.distributed import secede
-
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -142,130 +138,84 @@ class QSearchSynthesisPass(SynthesisPass):
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(utry, **self.instantiate_options)
+        initial_layer = self.execute(
+            data,
+            Circuit.instantiate,
+            [initial_layer],
+            target=utry,
+            **self.instantiate_options,
+        )[0]
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
-        search_data: dict[str, Any] = {}
-        search_data['best_dist'] = self.cost.calc_cost(initial_layer, utry)
-        search_data['best_circ'] = initial_layer
-        search_data['best_layer'] = 0
-        if self.store_partial_solutions:
-            search_data['psols'] = {}
-        _logger.info(
-            'Search started, initial layer has cost: %e.' %
-            search_data['best_dist'],
-        )
+        best_dist = self.cost.calc_cost(initial_layer, utry)
+        best_circ = initial_layer
+        best_layer = 0
 
-        if search_data['best_dist'] < self.success_threshold:
-            _logger.info('Successful synthesis.')
+        # Track partial solutions
+        psols: dict[int, list[tuple[Circuit, float]]] = {}
+
+        _logger.debug(f'Search started, initial layer has cost: {best_dist}.')
+
+        # Evalute initial layer
+        if best_dist < self.success_threshold:
+            _logger.debug('Successful synthesis.')
             return initial_layer
 
-        if 'parallel' in data:  # In Parallel
-            client = get_client()
-            while not frontier.empty():
-                top_circuit, layer = frontier.pop()
+        # Main loop
+        while not frontier.empty():
+            top_circuit, layer = frontier.pop()
 
-                # Generate successors and evaluate each
-                successors = self.layer_gen.gen_successors(top_circuit, data)
+            # Generate successors
+            successors = self.layer_gen.gen_successors(top_circuit, data)
 
-                # Submit instantiate jobs
-                futures = client.map(
-                    Circuit.instantiate,
-                    successors,
-                    target=utry,
-                    parallel=True,
-                    **self.instantiate_options,
-                    pure=False,
-                )
+            # Instantiate successors
+            circuits = self.execute(
+                data,
+                Circuit.instantiate,
+                successors,
+                target=utry,
+                **self.instantiate_options,
+            )
 
-                # Wait for and gather results
-                secede()
-                circuits = client.gather(futures)
-                rejoin()
+            # Evaluate successors
+            for circuit in circuits:
+                dist = self.cost.calc_cost(circuit, utry)
 
-                for circuit in circuits:
-                    if self.evaluate_node(
-                        circuit,
-                        utry,
-                        data,
-                        frontier,
-                        layer,
-                        search_data,
-                    ):
-                        if self.store_partial_solutions:
-                            data['psols'] = search_data['psols']
-                        return circuit
+                if dist < self.success_threshold:
+                    _logger.debug('Successful synthesis.')
+                    if self.store_partial_solutions:
+                        data['psols'] = psols
+                    return circuit
 
-        else:  # Sequentially
-            while not frontier.empty():
-                top_circuit, layer = frontier.pop()
+                if dist < best_dist:
+                    _logger.debug(
+                        'New best circuit found with %d layer%s and cost: %e.'
+                        % (layer + 1, '' if layer == 0 else 's', dist),
+                    )
+                    best_dist = dist
+                    best_circ = circuit
+                    best_layer = layer
 
-                # Generate successors and evaluate each
-                successors = self.layer_gen.gen_successors(top_circuit, data)
+                if self.store_partial_solutions:
+                    if layer not in psols:
+                        psols[layer] = []
 
-                for circuit in successors:
-                    circuit.instantiate(utry, **self.instantiate_options)
-                    if self.evaluate_node(
-                        circuit,
-                        utry,
-                        data,
-                        frontier,
-                        layer,
-                        search_data,
-                    ):
-                        if self.store_partial_solutions:
-                            data['psols'] = search_data['psols']
-                        return circuit
+                    psols[layer].append((circuit.copy(), dist))
 
-        _logger.info('Frontier emptied.')
-        _logger.info(
+                    if len(psols[layer]) > self.partials_per_depth:
+                        psols[layer].sort(key=lambda x: x[1])
+                        del psols[layer][-1]
+
+                if self.max_layer is None or layer + 1 < self.max_layer:
+                    frontier.add(circuit, layer + 1)
+
+        _logger.warning('Frontier emptied.')
+        _logger.warning(
             'Returning best known circuit with %d layer%s and cost: %e.'
-            % (
-                search_data['best_layer'], '' if search_data['best_layer'] == 1
-                else 's', search_data['best_dist'],
-            ),
+            % (best_layer, '' if best_layer == 1 else 's', best_dist),
         )
         if self.store_partial_solutions:
-            data['psols'] = search_data['psols']
+            data['psols'] = psols
 
-        return search_data['best_circ']
-
-    def evaluate_node(
-        self,
-        circuit: Circuit,
-        utry: UnitaryMatrix,
-        data: dict[str, Any],
-        frontier: Frontier,
-        layer: int,
-        search_data: dict[str, Any],
-    ) -> bool:
-        dist = self.cost.calc_cost(circuit, utry)
-
-        if dist < self.success_threshold:
-            _logger.info('Successful synthesis.')
-            return True
-
-        if dist < search_data['best_dist']:
-            _logger.info(
-                'New best circuit found with %d layer%s and cost: %e.'
-                % (layer + 1, '' if layer == 0 else 's', dist),
-            )
-            search_data['best_dist'] = dist
-            search_data['best_circ'] = circuit
-            search_data['best_layer'] = layer
-
-        if self.store_partial_solutions:
-            if layer not in search_data['psols']:
-                search_data['psols'][layer] = []
-
-            search_data['psols'][layer].append((circuit.copy(), dist))
-
-            if len(search_data['psols'][layer]) > self.partials_per_depth:
-                search_data['psols'][layer].sort(key=lambda x: x[1])
-                del search_data['psols'][layer][-1]
-
-        if self.max_layer is None or layer + 1 < self.max_layer:
-            frontier.add(circuit, layer + 1)
-
-        return False
+        return best_circ
