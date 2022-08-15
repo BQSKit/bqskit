@@ -212,7 +212,7 @@ class TestCycleIntervalLt:
         interval2: CycleInterval,
     ) -> None:
         if interval1.overlaps(interval2):
-            assert not(interval1 < interval2 or interval2 < interval1)
+            assert not (interval1 < interval2 or interval2 < interval1)
         else:
             assert interval1 < interval2 or interval2 < interval1
             if interval1 < interval2:
