@@ -37,7 +37,6 @@ repos:
     -   id: autopep8
         args:
             - --in-place
-            - -a
             - --max-line-length=80
             - --ignore=E731
 -   repo: https://github.com/asottile/pyupgrade

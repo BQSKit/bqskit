@@ -24,6 +24,7 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.lang import get_language
 from bqskit.ir.location import CircuitLocation
@@ -2816,6 +2817,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         minimizer = kwargs.get('minimizer', CeresMinimizer())
         self.set_params(minimizer.minimize(cost, self.params))
+
+    # endregion
+
+    # region Measurement Methods
+
+    def remove_all_measurements(self) -> None:
+        """Remove all measurement placeholders from the circuit."""
+        while any(isinstance(g, MeasurementPlaceholder) for g in self.gate_set):
+            for g in self.gate_set:
+                if isinstance(g, MeasurementPlaceholder):
+                    self.remove(g)
 
     # endregion
 

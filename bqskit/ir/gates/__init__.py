@@ -103,6 +103,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
 
     CircuitGate
+    MeasurementPlaceholder
 """
 from __future__ import annotations
 
@@ -113,6 +114,7 @@ from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.ir.gates.constant import *  # noqa
 from bqskit.ir.gates.constant import __all__ as constant_all
 from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized import *  # noqa
 from bqskit.ir.gates.parameterized import __all__ as parameterized_all
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -120,4 +122,4 @@ from bqskit.ir.gates.qutritgate import QutritGate
 
 __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
-__all__ += ['CircuitGate']
+__all__ += ['CircuitGate', 'MeasurementPlaceholder']
