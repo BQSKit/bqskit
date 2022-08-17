@@ -4,9 +4,11 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, List, Tuple
+from typing import Any
 from typing import cast
+from typing import List
 from typing import NamedTuple
+from typing import Tuple
 
 import lark
 import numpy as np

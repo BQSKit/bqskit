@@ -5,11 +5,12 @@ import copy
 import itertools as it
 import logging
 from functools import lru_cache
-from typing import Any, List
+from typing import Any
 from typing import cast
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
+from typing import List
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union

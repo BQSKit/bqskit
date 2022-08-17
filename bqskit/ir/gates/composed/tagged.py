@@ -40,7 +40,7 @@ class TaggedGate(
 
         self.gate = gate
         self.tag = tag
-        self._name = 'Tagged({}:{})'.format(gate.name, str(tag))
+        self._name = f'Tagged({gate.name}:{str(tag)})'
         self._num_params = gate.num_params
         self._num_qudits = gate.num_qudits
         self._radixes = gate.radixes

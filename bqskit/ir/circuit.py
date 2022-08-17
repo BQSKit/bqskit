@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 from typing import cast
 from typing import Collection
+from typing import Dict
 from typing import Iterable
 from typing import Iterator
 from typing import List
+from typing import Optional
 from typing import overload
 from typing import Sequence
 from typing import Set
