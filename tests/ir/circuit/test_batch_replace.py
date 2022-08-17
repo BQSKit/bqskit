@@ -106,7 +106,7 @@ class TestBatchReplace:
             (3, 1),
         ) == op_5b
 
-    def test_random_batch_remove(self) -> None:
+    def test_random_batch_replace(self) -> None:
         num_gates = 200
         num_q = 10
 

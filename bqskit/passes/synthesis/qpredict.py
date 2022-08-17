@@ -7,7 +7,6 @@ from typing import Sequence
 
 import numpy as np
 
-from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
@@ -35,9 +34,9 @@ class QPredictDecompositionPass(SynthesisPass):
         block_size_start: int = 2,
         block_size_limit: int | None = None,
         fail_limit: int = 3,
-        success_threshold: float = 1e-6,
+        success_threshold: float = 1e-8,
         progress_threshold_r: float = 5e-2,
-        progress_threshold_a: float = 1e-4,
+        progress_threshold_a: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
         instantiate_options: dict[str, Any] = {},
@@ -185,9 +184,9 @@ class QPredictDecompositionPass(SynthesisPass):
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # 0. Skip any unitaries too small for the configured block.
-        if self.block_size_start > utry.num_qudits:
+        if self.block_size_start >= utry.num_qudits:
             _logger.warning(
-                'Skipping synthesis: block size is larger than input unitary.',
+                'Skipping synthesis: block size is too large.',
             )
             return Circuit.from_unitary(utry)
 
@@ -200,22 +199,7 @@ class QPredictDecompositionPass(SynthesisPass):
             block_size_end = self.block_size_limit
 
         # 3. Calculate relevant coupling_graphs
-        # If a MachineModel is provided in the data dict, it will be used.
-        # Otherwise all-to-all connectivity is assumed.
-        model = None
-
-        if 'machine_model' in data:
-            model = data['machine_model']
-
-        if (
-            not isinstance(model, MachineModel)
-            or model.num_qudits < circuit.num_qudits
-        ):
-            _logger.warning(
-                'MachineModel not specified or invalid;'
-                ' defaulting to all-to-all.',
-            )
-            model = MachineModel(circuit.num_qudits)
+        model = self.get_model(utry, data)
         locations = [
             model.get_locations(i)
             for i in range(self.block_size_start, block_size_end + 1)
@@ -281,7 +265,7 @@ class QPredictDecompositionPass(SynthesisPass):
                 based on remainder analysis.
         """
         _logger.info('Performing remainder analysis.')
-        pauli_coefs = pauli_expansion(unitary_log_no_i(R.numpy))
+        pauli_coefs = pauli_expansion(unitary_log_no_i(R))  # type: ignore
 
         locations_by_index: dict[int, set[CircuitLocation]] = {}
         for location_group in locations:

@@ -58,7 +58,7 @@ class TestMachineGetSubgraph:
 
         assert len(l) == 2
         assert (0, 1) in l
-        assert (0, 3) in l
+        assert (0, 2) in l
 
     def test_invalid(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})

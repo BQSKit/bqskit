@@ -26,6 +26,7 @@ class SycamoreGate(ConstantGate, QubitGate):
     """
 
     _num_qudits = 2
+    _qasm_name = 'syc'
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],

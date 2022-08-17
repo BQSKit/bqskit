@@ -19,25 +19,26 @@ SQRT: "sqrt"
 mainprogram: "OPENQASM" REAL ";" program
 program: statement | program statement
 statement: decl
-            | gatedecl goplist "}"
-            | gatedecl "}"
+            | gatedecl goplist rbracket
+            | gatedecl rbracket
             | "opaque" ID idlist ";"
-            | "opaque" ID "( )" idlist ";"
+            | "opaque" ID "(" ")" idlist ";"
             | "opaque" ID "(" idlist ")" idlist ";"
             | qop
             | "if (" ID "==" NNINTEGER ")" qop
             | "barrier" anylist ";"
-            | "include" ESCAPED_STRING ";"
+            | incstmt
             | /\/\/+.*/
+incstmt: "include" ESCAPED_STRING ";"
 decl: qreg | creg
 creg: "creg" ID "[" NNINTEGER "]" ";"
 qreg: "qreg" ID "[" NNINTEGER "]" ";"
 gatedecl: "gate" ID idlist "{"
-            | "gate" ID "( )" idlist "{"
+            | "gate" ID "(" ")" idlist "{"
             | "gate" ID "(" idlist ")" idlist "{"
-goplist: uop
+goplist: uopp
             | "barrier" idlist ";"
-            | goplist uop
+            | goplist uopp
             | goplist "barrier" idlist ";"
 qop: uop
         | measure
@@ -48,10 +49,18 @@ uop: ugate
         | cxgate
         | gate
 gate: ID anylist ";"
-        | ID "( )" anylist ";"
+        | ID "(" ")" anylist ";"
         | ID "(" explist ")" anylist ";"
 ugate: "U (" explist ")" argument ";"
 cxgate: "CX" argument "," argument ";"
+uopp: ugatep
+        | cxgatep
+        | gatep
+gatep: ID anylist ";"
+        | ID "(" ")" anylist ";"
+        | ID "(" explist ")" anylist ";"
+ugatep: "U (" explist ")" argument ";"
+cxgatep: "CX" argument "," argument ";"
 anylist: idlist | mixedlist
 idlist: ID | idlist "," ID
 mixedlist: ID "[" NNINTEGER "]" | mixedlist "," ID
@@ -72,6 +81,7 @@ unaryop: SIN
         | EXP
         | LN
         | SQRT
+rbracket: "}"
 
 %import common.ESCAPED_STRING
 %import common.WS

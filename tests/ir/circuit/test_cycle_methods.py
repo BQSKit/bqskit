@@ -58,9 +58,14 @@ class TestPopCycle:
 
     def test_index_valid_1(self, r6_qudit_circuit: Circuit) -> None:
         num_cycles = r6_qudit_circuit.num_cycles
+        print('!' * 80)
         for i in range(num_cycles):
+            print('!' * 20)
+            for cycle in r6_qudit_circuit._circuit:
+                print(cycle)
             r6_qudit_circuit.pop_cycle(-1)
             assert r6_qudit_circuit.num_cycles == num_cycles - i - 1
+            print('!' * 20)
 
     @pytest.mark.parametrize('cycle_index', [-3, -2, -1, 0, 1, 2])
     def test_multi_qudit(self, cycle_index: int) -> None:

@@ -5,7 +5,9 @@ from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.ccx import ToffoliGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.cpi import CPIGate
+from bqskit.ir.gates.constant.cs import CSGate
 from bqskit.ir.gates.constant.csum import CSUMGate
+from bqskit.ir.gates.constant.ct import CTGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.gates.constant.cy import CYGate
@@ -38,7 +40,9 @@ __all__ = [
     'ToffoliGate',
     'CHGate',
     'CPIGate',
+    'CSGate',
     'CSUMGate',
+    'CTGate',
     'CNOTGate',
     'CXGate',
     'CYGate',

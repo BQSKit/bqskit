@@ -178,25 +178,28 @@ class CycleInterval(Tuple[int, int]):
             return True
 
         if not isinstance(interval, tuple):
-            _logger.debug('Bounds is not a tuple.')
+            _logger.log(0, 'Bounds is not a tuple.')
             return False
 
         if len(interval) != 2:
-            _logger.debug(
+            _logger.log(
+                0,
                 'Expected interval to contain two values'
                 f', got {len(interval)}.',
             )
             return False
 
         if not is_integer(interval[0]):
-            _logger.debug(
+            _logger.log(
+                0,
                 'Expected integer values in interval'
                 f', got {type(interval[0])}.',
             )
             return False
 
         if not is_integer(interval[1]):
-            _logger.debug(
+            _logger.log(
+                0,
                 'Expected integer values in interval'
                 f', got {type(interval[1])}.',
             )

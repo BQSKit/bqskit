@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import Any
 from typing import Callable
 
@@ -51,7 +52,18 @@ class WindowOptimizationPass(BasePass):
 
         Raises:
             ValueError: If `window_size` is <= 1.
+
+        Note:
+            This has been deprecated and will removed in a future update.
+            See :class:`ScanningGateRemovalPass` for a replacement
+            post-synthesis optimization pass.
         """
+        warnings.warn(
+            'WindowOptimizationPass has been deprecated and will be '
+            'removed in a future update. See ScanningGateRemovalpass '
+            'for a replacement post-synthesis optimization pass.',
+            DeprecationWarning,
+        )
 
         if not is_integer(window_size):
             raise TypeError(

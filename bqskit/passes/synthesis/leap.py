@@ -5,9 +5,6 @@ import logging
 from typing import Any
 
 import numpy as np
-from dask.distributed import get_client
-from dask.distributed import rejoin
-from dask.distributed import secede
 from scipy.stats import linregress
 
 from bqskit.ir.circuit import Circuit
@@ -28,12 +25,14 @@ _logger = logging.getLogger(__name__)
 
 class LEAPSynthesisPass(SynthesisPass):
     """
-    The LEAPSynthesisPass class.
+    A pass implementing the LEAP search synthesis algorithm.
 
     References:
-        Smith, Ethan, et al. “LEAP: Scaling Numerical Optimization Based
-        Synthesis Using an Incremental Approach.” International Workshop
-        of Quantum Computing Software at Supercomputing (2020).
+        Ethan Smith, Marc G. Davis, Jeffrey M. Larson, Ed Younis,
+        Lindsay Bassman, Wim Lavrijsen, and Costin Iancu. 2022. LEAP:
+        Scaling Numerical Optimization Based Synthesis Using an
+        Incremental Approach. ACM Transactions on Quantum Computing
+        (June 2022). https://doi.org/10.1145/3548693
     """
 
     def __init__(
@@ -161,147 +160,104 @@ class LEAPSynthesisPass(SynthesisPass):
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer.instantiate(utry, **self.instantiate_options)
+        initial_layer = self.execute(
+            data,
+            Circuit.instantiate,
+            [initial_layer],
+            target=utry,
+            **self.instantiate_options,
+        )[0]
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
-        leap_data: dict[str, Any] = {}
-        leap_data['best_dist'] = self.cost.calc_cost(initial_layer, utry)
-        leap_data['best_circ'] = initial_layer
-        leap_data['best_layer'] = 0
-        leap_data['best_dists'] = [leap_data['best_dist']]
-        leap_data['best_layers'] = [0]
-        leap_data['last_prefix_layer'] = 0
-        if self.store_partial_solutions:
-            leap_data['psols'] = {}
-        _logger.info(
-            'Search started, initial layer has cost: %e.' %
-            leap_data['best_dist'],
-        )
+        best_dist = self.cost.calc_cost(initial_layer, utry)
+        best_circ = initial_layer
+        best_layer = 0
+        best_dists = [best_dist]
+        best_layers = [0]
+        last_prefix_layer = 0
 
-        if leap_data['best_dist'] < self.success_threshold:
-            _logger.info('Successful synthesis.')
+        # Track partial solutions
+        psols: dict[int, list[tuple[Circuit, float]]] = {}
+
+        _logger.debug(f'Search started, initial layer has cost: {best_dist}.')
+
+        # Evalute initial layer
+        if best_dist < self.success_threshold:
+            _logger.debug('Successful synthesis.')
             return initial_layer
 
-        if 'parallel' in data:  # In Parallel
-            client = get_client()
-            while not frontier.empty():
-                top_circuit, layer = frontier.pop()
+        # Main loop
+        while not frontier.empty():
+            top_circuit, layer = frontier.pop()
 
-                # Generate successors and evaluate each
-                successors = self.layer_gen.gen_successors(top_circuit, data)
+            # Generate successors
+            successors = self.layer_gen.gen_successors(top_circuit, data)
 
-                # Submit instantiate jobs
-                futures = client.map(
-                    Circuit.instantiate,
-                    successors,
-                    target=utry,
-                    parallel=True,
-                    **self.instantiate_options,
-                    pure=False,
-                )
-
-                # Wait for and gather results
-                secede()
-                circuits = client.gather(futures)
-                rejoin()
-
-                for circuit in circuits:
-                    if self.evaluate_node(
-                        circuit,
-                        utry,
-                        data,
-                        frontier,
-                        layer,
-                        leap_data,
-                    ):
-                        if self.store_partial_solutions:
-                            data['psols'] = leap_data['psols']
-                        return circuit
-
-        else:  # Sequentially
-            while not frontier.empty():
-                top_circuit, layer = frontier.pop()
-                # Generate successors and evaluate each
-                successors = self.layer_gen.gen_successors(top_circuit, data)
-
-                for circuit in successors:
-                    circuit.instantiate(utry, **self.instantiate_options)
-                    if self.evaluate_node(
-                        circuit,
-                        utry,
-                        data,
-                        frontier,
-                        layer,
-                        leap_data,
-                    ):
-                        if self.store_partial_solutions:
-                            data['psols'] = leap_data['psols']
-                        return circuit
-
-        _logger.info('Frontier emptied.')
-        _logger.info(
-            'Returning best known circuit with %d layer%s and cost: %e.'
-            % (
-                leap_data['best_layer'], '' if leap_data['best_layer'] == 1
-                else 's', leap_data['best_dist'],
-            ),
-        )
-        if self.store_partial_solutions:
-            data['psols'] = leap_data['psols']
-
-        return leap_data['best_circ']
-
-    def evaluate_node(
-        self,
-        circuit: Circuit,
-        utry: UnitaryMatrix,
-        data: dict[str, Any],
-        frontier: Frontier,
-        layer: int,
-        leap_data: dict[str, Any],
-    ) -> bool:
-        dist = self.cost.calc_cost(circuit, utry)
-
-        if dist < self.success_threshold:
-            _logger.info('Successful synthesis.')
-            return True
-
-        if self.check_new_best(
-            layer + 1,
-            dist,
-            leap_data['best_layer'],
-            leap_data['best_dist'],
-        ):
-            _logger.info(
-                'New best circuit found with %d layer%s and cost: %e.'
-                % (layer + 1, '' if layer == 0 else 's', dist),
+            # Instantiate successors
+            circuits = self.execute(
+                data,
+                Circuit.instantiate,
+                successors,
+                target=utry,
+                **self.instantiate_options,
             )
-            leap_data['best_dist'] = dist
-            leap_data['best_circ'] = circuit
-            leap_data['best_layer'] = layer + 1
 
-            if self.check_leap_condition(layer + 1, leap_data):
-                _logger.info('Prefix formed at %d layers.' % (layer + 1))
-                leap_data['last_prefix_layer'] = layer + 1
-                frontier.clear()
-                data['window_markers'].append(circuit.num_cycles)
+            # Evaluate successors
+            for circuit in circuits:
+                dist = self.cost.calc_cost(circuit, utry)
+
+                if dist < self.success_threshold:
+                    _logger.debug('Successful synthesis.')
+                    if self.store_partial_solutions:
+                        data['psols'] = psols
+                    return circuit
+
+                if self.check_new_best(layer + 1, dist, best_layer, best_dist):
+                    _logger.debug(
+                        'New best circuit found with %d layer%s and cost: %e.'
+                        % (layer + 1, '' if layer == 0 else 's', dist),
+                    )
+                    best_dist = dist
+                    best_circ = circuit
+                    best_layer = layer + 1
+
+                    if self.check_leap_condition(
+                        layer + 1,
+                        best_dist,
+                        best_layers,
+                        best_dists,
+                        last_prefix_layer,
+                    ):
+                        _logger.debug(f'Prefix formed at {layer + 1} layers.')
+                        last_prefix_layer = layer + 1
+                        frontier.clear()
+                        data['window_markers'].append(circuit.num_cycles)
+                        if self.max_layer is None or layer + 1 < self.max_layer:
+                            frontier.add(circuit, layer + 1)
+
+                if self.store_partial_solutions:
+                    if layer not in psols:
+                        psols[layer] = []
+
+                    psols[layer].append((circuit.copy(), dist))
+
+                    if len(psols[layer]) > self.partials_per_depth:
+                        psols[layer].sort(key=lambda x: x[1])
+                        del psols[layer][-1]
+
                 if self.max_layer is None or layer + 1 < self.max_layer:
                     frontier.add(circuit, layer + 1)
 
+        _logger.warning('Frontier emptied.')
+        _logger.warning(
+            'Returning best known circuit with %d layer%s and cost: %e.'
+            % (best_layer, '' if best_layer == 1 else 's', best_dist),
+        )
         if self.store_partial_solutions:
-            if layer not in leap_data['psols']:
-                leap_data['psols'][layer] = []
+            data['psols'] = psols
 
-            leap_data['psols'][layer].append((circuit.copy(), dist))
-
-            if len(leap_data['psols'][layer]) > self.partials_per_depth:
-                leap_data['psols'][layer].sort(key=lambda x: x[1])
-                del leap_data['psols'][layer][-1]
-
-        if self.max_layer is None or layer + 1 < self.max_layer:
-            frontier.add(circuit, layer + 1)
-        return False
+        return best_circ
 
     def check_new_best(
         self,
@@ -337,7 +293,10 @@ class LEAPSynthesisPass(SynthesisPass):
     def check_leap_condition(
         self,
         new_layer: int,
-        leap_data: dict[str, Any],
+        best_dist: float,
+        best_layers: list[int],
+        best_dists: list[float],
+        last_prefix_layer: int,
     ) -> bool:
         """
         Return true if the leap condition is satisfied.
@@ -358,25 +317,24 @@ class LEAPSynthesisPass(SynthesisPass):
 
         with np.errstate(invalid='ignore', divide='ignore'):
             # Calculate predicted best value
-            m, y_int, _, _, _ = linregress(
-                leap_data['best_layers'], leap_data['best_dists'],
-            )
+            m, y_int, _, _, _ = linregress(best_layers, best_dists)
+
         predicted_best = m * (new_layer) + y_int
 
         # Track new values
-        leap_data['best_layers'].append(new_layer)
-        leap_data['best_dists'].append(leap_data['best_dist'])
+        best_layers.append(new_layer)
+        best_dists.append(best_dist)
 
         if np.isnan(predicted_best):
             return False
 
         # Compute difference between actual value
-        delta = predicted_best - leap_data['best_dist']
+        delta = predicted_best - best_dist
 
         _logger.debug(
             'Predicted best value %f for new best best with delta %f.'
             % (predicted_best, delta),
         )
 
-        layers_added = new_layer - leap_data['last_prefix_layer']
+        layers_added = new_layer - last_prefix_layer
         return delta < 0 and layers_added >= self.min_prefix_size

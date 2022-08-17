@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.language import Language
 from bqskit.ir.lang.qasm2.parser import parse
-from bqskit.ir.lang.qasm2.visitor import OPENQASMVisitor  # type: ignore
+from bqskit.ir.lang.qasm2.visitor import OPENQASMVisitor
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -34,5 +34,5 @@ class OPENQASM2Language(Language):
         """Parse `source` into a circuit."""
         tree = parse(source)
         visitor = OPENQASMVisitor()
-        visitor.visit(tree)
+        visitor.visit_topdown(tree)
         return visitor.get_circuit()

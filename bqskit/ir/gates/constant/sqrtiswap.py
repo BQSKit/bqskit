@@ -25,6 +25,7 @@ class SqrtISwapGate(ConstantGate, QubitGate):
     """
 
     _num_qudits = 2
+    _qasm_name = 'sqisw'
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],

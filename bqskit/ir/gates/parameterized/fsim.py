@@ -40,6 +40,7 @@ class FSIMGate(
 
     _num_qudits = 2
     _num_params = 2
+    _qasm_name = 'fsim'
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

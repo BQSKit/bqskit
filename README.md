@@ -6,7 +6,7 @@ a compiler-flow that suites your needs well.
 
 ## Installation
 
-BQSKit is available for Python 3.7+ on Linux, MacOS, and Windows. BQSKit
+BQSKit is available for Python 3.8+ on Linux, MacOS, and Windows. BQSKit
 and its dependencies are listed on the [Python Package Index](https://pypi.org),
 and as such, can be installed with pip:
 

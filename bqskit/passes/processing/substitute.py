@@ -125,7 +125,13 @@ class SubstitutePass(BasePass):
                 _logger.debug(f'Trying location: {loc}')
                 circuit_copy = circuit.copy()
                 circuit_copy.replace_gate(point, self.gate, loc)
-                circuit_copy.instantiate(target, **self.instantiate_options)
+                circuit_copy = self.execute(
+                    data,
+                    Circuit.instantiate,
+                    [circuit_copy],
+                    target=target,
+                    **self.instantiate_options,
+                )[0]
 
                 if self.cost(circuit_copy, target) < self.success_threshold:
                     _logger.info('Successfully substituted operation.')

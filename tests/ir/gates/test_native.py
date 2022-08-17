@@ -119,7 +119,7 @@ def test_random_circuit_qubit_gates(qubit_gate: Gate) -> None:
     py = circ.get_unitary(x)
     rs = circuit.get_unitary(x)
     assert py.shape == rs.shape
-    assert py.dtype is rs.dtype
+    assert py.dtype == rs.dtype
     np.testing.assert_allclose(py, rs, verbose=True)
 
 
@@ -135,5 +135,5 @@ def test_random_circuit_qutrit_gates(qutrit_gate: Gate) -> None:
     py = circ.get_unitary(x)
     rs = circuit.get_unitary(x)
     assert py.shape == rs.shape
-    assert py.dtype is rs.dtype
+    assert py.dtype == rs.dtype
     np.testing.assert_allclose(py, rs, verbose=True)

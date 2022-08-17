@@ -83,7 +83,7 @@ class FrozenParameterGate(
             i for i in range(gate.num_params)
             if i not in self.frozen_params.keys()
         ]
-        self._name = '%s(%s, %s)' % (
+        self._name = '{}({}, {})'.format(
             self.__class__.__name__,
             self.gate.name,
             str(self.frozen_params),

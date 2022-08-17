@@ -2,21 +2,21 @@
 from __future__ import annotations
 
 import logging
+from sys import stdout as _stdout
 
-from bqskit.compiler.compiler import Compiler
-from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.compile import compile
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.lang import register_language
-from bqskit.ir.lang.qasm2 import OPENQASM2Language
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
+from bqskit.ir.lang import register_language as _register_language
+from bqskit.ir.lang.qasm2 import OPENQASM2Language as _qasm
 
 # Initialize Logging
 _logger = logging.getLogger('bqskit')
-_logger.setLevel(logging.CRITICAL)
-_handler = logging.StreamHandler()
-_handler.setLevel(logging.DEBUG)
-_fmt = '%(asctime)s.%(msecs)03d - %(levelname)-8s | %(name)s: %(message)s'
+_handler = logging.StreamHandler(_stdout)
+_handler.setLevel(0)
+_fmt_header = '(%(thread)d): %(asctime)s.%(msecs)03d - %(levelname)-8s |'
+_fmt_message = ' %(name)s: %(message)s'
+_fmt = _fmt_header + _fmt_message
 _formatter = logging.Formatter(_fmt, '%H:%M:%S')
 _handler.setFormatter(_formatter)
 _logger.addHandler(_handler)
@@ -34,14 +34,12 @@ def enable_logging(verbose: bool = False) -> None:
     logging.getLogger('bqskit').setLevel(level)
 
 
-# Register supported languages
-register_language('qasm', OPENQASM2Language())
-
-
 __all__ = [
-    'CompilationTask',
-    'Compiler',
+    'compile',
+    'MachineModel',
     'Circuit',
-    'UnitaryMatrix',
     'enable_logging',
 ]
+
+# Register supported languages
+_register_language('qasm', _qasm())
