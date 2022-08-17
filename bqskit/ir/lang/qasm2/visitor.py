@@ -464,7 +464,7 @@ class OPENQASMVisitor(Visitor):
             )
             return
 
-        with open(file_name, 'r') as f:
+        with open(file_name) as f:
             filedata = f.read()
             if not filedata.startswith('OPENQASM'):
                 filedata = 'OPENQASM 2.0;\n' + filedata
