@@ -44,8 +44,7 @@ repos:
     hooks:
     -   id: pyupgrade
         args:
-            - --py36-plus
-            - --keep-percent-format
+            - --py38-plus
 -   repo: https://github.com/asottile/reorder_python_imports
     rev: v3.8.2
     hooks:
@@ -53,7 +52,7 @@ repos:
         args:
             - --add-import
             - from __future__ import annotations
-            - --py3-plus
+            - --py37-plus
 -   repo: https://github.com/asottile/add-trailing-comma
     rev: v2.2.3
     hooks:
