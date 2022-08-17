@@ -5,7 +5,7 @@ import copy
 import itertools as it
 import logging
 from functools import lru_cache
-from typing import Any
+from typing import Any, List
 from typing import cast
 from typing import Collection
 from typing import Iterable
@@ -131,7 +131,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             for i in range(self.num_qudits):
                 for j in range(self.num_qudits):
                     D[i][j] = min(D[i][j], D[i][k] + D[k][j])
-        return cast(list[list[int]], D)
+        return cast(List[List[int]], D)
 
     def get_shortest_path_tree(self, source: int) -> list[tuple[int, ...]]:
         """Return shortest path from `source` to every other node in `self`."""

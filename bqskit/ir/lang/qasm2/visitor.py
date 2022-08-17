@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List, Tuple
 from typing import cast
 from typing import NamedTuple
 
@@ -172,7 +172,7 @@ class OPENQASMVisitor(Visitor):
 
         # Add measurements
         if len(self.measurements) > 0:
-            cregs = cast(list[tuple[str, int]], self.classical_regs)
+            cregs = cast(List[Tuple[str, int]], self.classical_regs)
             mph = MeasurementPlaceholder(cregs, self.measurements)
             circuit.append_gate(mph, list(self.measurements.keys()))
 

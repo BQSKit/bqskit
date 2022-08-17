@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Any
+from typing import Any, Dict, Optional
 from typing import cast
 from typing import Collection
 from typing import Iterable
@@ -165,7 +165,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self._gate_info: dict[Gate, int] = {}
         self._graph_info: dict[tuple[int, int], int] = {}
 
-        _NodePtrs = dict[int, CircuitPoint | None]
+        _NodePtrs = Dict[int, Optional[CircuitPoint]]
         self._front: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._rear: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._dag: dict[CircuitPoint, tuple[_NodePtrs, _NodePtrs]] = {}
