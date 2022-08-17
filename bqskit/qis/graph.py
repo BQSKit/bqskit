@@ -5,6 +5,7 @@ import copy
 import itertools as it
 import logging
 from functools import lru_cache
+from random import shuffle
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -335,6 +336,43 @@ class CouplingGraph(Collection[Tuple[int, int]]):
     @staticmethod
     def linear(num_qudits: int) -> CouplingGraph:
         return CouplingGraph([(x, x + 1) for x in range(num_qudits - 1)])
+
+    def maximal_matching(
+        self,
+        edges_to_ignore: list[tuple[int, int]] = [],
+        randomize: bool = False,
+    ) -> list[tuple[int, int]]:
+        """
+        Generate a random graph matching for the coupling graph. Edges in the
+        `ignored_edges` list will not be included.
+
+        Arguments:
+            edges_to_ignore (list[tuple[int]]): Edges not included in the
+                matching. (Default: [])
+
+            randomize (bool): Shuffle edges to create random matchings.
+                (Default: False)
+
+        Returns:
+            matching (list[tuple[int]]): A maximal list of edges that share
+                no common verticies.
+        """
+        matching: set[tuple[int, int]] = set()
+        vertices: set[int] = set()
+
+        edge_list = [
+            (u, v) for (u, v) in self._edges if (u, v) not in edges_to_ignore
+            and (v, u) not in edges_to_ignore
+        ]
+        if randomize:
+            shuffle(edge_list)
+
+        for edge in edge_list:
+            u, v = edge
+            if u not in vertices and v not in vertices and u != v:
+                matching.add(edge)
+                vertices.update(edge)
+        return list(matching)
 
 
 CouplingGraphLike = Union[Iterable[Tuple[int, int]], CouplingGraph]
