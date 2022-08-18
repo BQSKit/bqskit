@@ -164,6 +164,10 @@ class GeneralizedSabreAlgorithm():
                             op.params,
                         )
 
+                    # Reset previous swap if executed gate overlaps it
+                    if any(pi[i] in prev_swap for i in circuit[n].location):
+                        prev_swap = (-1, -1)
+
                     for successor in circuit.next(n):
                         if successor not in prev_executed_counts:
                             prev_executed_counts[successor] = 1
@@ -241,6 +245,10 @@ class GeneralizedSabreAlgorithm():
                     next_executed_counts.pop(n)
                     _logger.debug(f'Executing gate at point {n}.')
 
+                    # Reset previous swap if executed gate overlaps it
+                    if any(pi[i] in prev_swap for i in circuit[n].location):
+                        prev_swap = (-1, -1)
+
                     for predessor in circuit.prev(n):
                         if predessor not in next_executed_counts:
                             next_executed_counts[predessor] = 1
@@ -275,6 +283,7 @@ class GeneralizedSabreAlgorithm():
 
     def _can_exe(self, op: Operation, pi: list[int], cg: CouplingGraph) -> bool:
         """Return true if `op` is executable given the current mapping `pi`."""
+        # TODO: check if circuitgate of only 1-qubit gates
         if op.num_qudits == 1:
             return True
         physical_qudits = [pi[i] for i in op.location]

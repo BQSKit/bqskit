@@ -8,6 +8,7 @@ from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
+from bqskit.passes.util.log import LogPass
 
 __all__ = [
     'CompressPass',
@@ -17,4 +18,5 @@ __all__ = [
     'UpdateDataPass',
     'ToU3Pass',
     'BlockConversionPass',
+    'LogPass',
 ]

@@ -44,36 +44,27 @@ class PermutationMatrix(UnitaryMatrix):
         location: Sequence[int],
     ) -> PermutationMatrix:
         """
-        Creates the permutation matrix specified by arguments.
-        The resulting matrix will move the first len(location) qubits
-        into positions defined by location.
+        Creates the permutation matrix specified by arguments. The resulting
+        matrix will move the location's qubits into positions defined by their
+        index in location.
+
+        P = Permutationmatrix.from_qubit_location(3, (1, 2, 0))
+
+                .-----.
+             0 -|     |- 1
+             1 -|  P  |- 2
+             2 -|     |- 0
+                '-----'
+
         Args:
             num_qubits (int): Total number of qubits
-            location (Sequence[int]): The desired locations to swap
-                the starting qubits to.
+
+            location (Sequence[int]): The desired qubits to swap
+                to their index.
+
         Returns:
-            (PermutationMatrix): A 2**num_qubits by 2**num_qubits permutation
-                matrix.
-        Examples:
-            calc_permutation_matrix( 2, (0, 1) ) =
-                [ [ 1, 0, 0, 0 ],
-                  [ 0, 1, 0, 0 ],
-                  [ 0, 0, 1, 0 ],
-                  [ 0, 0, 0, 1 ] ]
-            Here the 4x4 identity is returned because there are 2 total
-            qubits, specified by the first parameter, and the desired
-            permutation is [0, 1] -> [0, 1].
-            calc_permutation_matrix( 2, (1,) ) = # Also equals
-            calc_permutation_matrix( 2, (1, 0) ) =
-                [ [ 1, 0, 0, 0 ],
-                [ 0, 0, 1, 0 ],
-                [ 0, 1, 0, 0 ],
-                [ 0, 0, 0, 1 ] ]
-            This is a more interesting example. The swap gate is returned
-            here since we are working with 2 qubits and want the permutation
-            that swaps the two qubits, giving by the permutation [0] -> [1]
-            or in the second case [0, 1] -> [1, 0]. Both calls produce
-            identical permutations.
+            (PermutationMatrix): A 2**num_qubits by 2**num_qubits
+                permutation matrix.
         """
         current_perm = list(location)
         for i in range(num_qubits):

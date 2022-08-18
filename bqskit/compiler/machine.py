@@ -20,10 +20,10 @@ from bqskit.utils.typing import is_valid_radixes
 default_gate_set: set[Gate] = {
     CNOTGate(),
     U3Gate(),
-    RZGate(),
-    RYGate(),
-    RXGate(),
-    SqrtXGate(),
+    # RZGate(),
+    # RYGate(),
+    # RXGate(),
+    # SqrtXGate(),
 }
 
 

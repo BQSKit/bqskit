@@ -26,20 +26,13 @@ a quantum program. Here we can optimize a program given as a circuit in
 qasm:
 
 ```python
-from bqskit.compiler import Compiler
-from bqskit.compiler import CompilationTask
-from bqskit.ir import Circuit
+from bqskit import compile, Circuit
 
 # Load a circuit from QASM
 circuit = Circuit.from_file("tfim.qasm")
 
-# Create a standard CompilationTask to optimize the circuit
-task = CompilationTask.optimize(circuit)
-
-# Spawn a compiler and compile the task
-if __name__ == '__main__':
-    with Compiler() as compiler:
-        optimized_circuit = compiler.compile(task)
+# Compile the circuit
+compiled_circuit = compile(circuit)
 ```
 
 We first load the qasm program into a `Circuit` object. Then we create

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Callable
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
@@ -14,8 +14,10 @@ from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
 from bqskit.passes import *
@@ -85,17 +87,21 @@ def compile(
         >>> circuit = Circuit.from_file('input.qasm')
         >>> compiled_circuit = compile(circuit)
     """
-    if UnitaryMatrix.is_unitary(input):
+    if isinstance(input, Circuit):
+        pass
+
+    elif UnitaryMatrix.is_unitary(input):
         input = UnitaryMatrix(input)
 
     elif StateVector.is_pure_state(input):
         input = StateVector(input)
 
-    elif not isinstance(input, Circuit):
+    else:
         raise TypeError(
             'Input is neither a circuit, a unitary, nor a state.'
             f' Got {type(input)}.',
         )
+        
     assert isinstance(input, (Circuit, UnitaryMatrix, StateVector))
 
     if not all(r == 2 for r in input.radixes):
@@ -303,7 +309,7 @@ def _opt1_workflow(
         [qfast, ForEachBlockPass(leap), UnfoldPass()],
     )
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
-
+    
     return [
         IfThenElsePass(
             WidthPredicate(max_synthesis_size + 1),
@@ -316,13 +322,17 @@ def _opt1_workflow(
 
             [  # Partitioned Branch
                 SetModelPass(model),
-                GreedyPlacementPass(),
                 QuickPartitioner(block_size),
+                GreedyPlacementPass(),
                 GeneralizedSabreLayoutPass(),
                 GeneralizedSabreRoutingPass(),
                 QuickPartitioner(block_size),
-                ForEachBlockPass([direct_synthesis, single_qudit_gate_rebase]),
+                ForEachBlockPass(
+                    [direct_synthesis],
+                    replace_filter=_gen_replace_filter(model),
+                ),
                 UnfoldPass(),
+                single_qudit_gate_rebase,
             ],
         ),
     ]
@@ -336,7 +346,7 @@ def _opt2_workflow(
     block_size: int = 3,
 ) -> list[BasePass]:
     """Build Optimization Level 2 workflow for circuit compilation."""
-    inst_ops = {'multistarts': 4}
+    inst_ops = {'multistarts': 4, 'ftol':5e-12, 'gtol':1e-14}
     threshold = _get_threshold(approximation_level)
     layer_gen = _get_layer_gen(circuit, model)
     scan = ScanningGateRemovalPass(
@@ -371,13 +381,17 @@ def _opt2_workflow(
 
             [  # Partitioned Branch
                 SetModelPass(model),
-                GreedyPlacementPass(),
                 QuickPartitioner(block_size),
+                GreedyPlacementPass(),
                 GeneralizedSabreLayoutPass(),
                 GeneralizedSabreRoutingPass(),
                 QuickPartitioner(block_size),
-                ForEachBlockPass([direct_synthesis, single_qudit_gate_rebase]),
+                ForEachBlockPass(
+                    [direct_synthesis],
+                    replace_filter=_gen_replace_filter(model),
+                ),
                 UnfoldPass(),
+                single_qudit_gate_rebase,
             ],
         ),
     ]
@@ -391,7 +405,12 @@ def _opt3_workflow(
     block_size: int = 3,
 ) -> list[BasePass]:
     """Build optimization Level 3 workflow for circuit compilation."""
-    inst_ops = {'multistarts': 8}
+    inst_ops = {
+        'multistarts': 8,
+        'method':'minimization',
+        'ftol': 5e-16,
+        'gtol': 1e-15
+    }
     threshold = _get_threshold(approximation_level)
     layer_gen = _get_layer_gen(circuit, model)
     qsearch = QSearchSynthesisPass(
@@ -588,6 +607,7 @@ def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
         IfThenElsePass(
             NotPredicate(SinglePhysicalPredicate()),
             [
+                LogPass("Retargeting single-qudit gates."),
                 GroupSingleQuditGatePass(),
                 ForEachBlockPass([
                     IfThenElsePass(
@@ -608,3 +628,43 @@ def _less_tq_gates(c1: Circuit, c2: Circuit) -> bool:
     c2_sq_counts = sum(c2.count(g) for g in c2.gate_set if g.num_qudits == 1)
     c2_tq_counts = sum(c2.count(g) for g in c2.gate_set if g.num_qudits == 2)
     return (c1_tq_counts, c1_sq_counts) < (c2_tq_counts, c2_sq_counts)
+
+
+def _diff_gate_or_shorter_gates(org: Circuit, new: Circuit) -> bool:
+    """Return true if new has a different 2q gate than org or is shorter."""
+    org_mq_gates = [g for g in org.gate_set if g.num_qudits >=2]
+    if any(g not in new.gate_set for g in org_mq_gates):
+        return True
+    
+    org_sq_counts = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
+    org_mq_counts = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
+    new_sq_counts = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
+    new_mq_counts = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
+    return (new_mq_counts, new_sq_counts) < (org_mq_counts, org_sq_counts)
+
+
+def _gen_replace_filter(model: MachineModel) -> Callable:
+    """Generate a replace filter for use during the standard workflow."""
+    def _replace_filter(new: Circuit, old: Operation) -> bool:
+        # return true if old doesn't satisfy model
+        if not isinstance(old.gate, CircuitGate):
+            return True
+
+        org = old.gate._circuit
+
+        if any(g not in model.gate_set for g in org.gate_set):
+            return True
+        
+        if any(
+            (old.location[e[0]], old.location[e[1]]) not in model.coupling_graph
+            for e in org.coupling_graph
+        ):
+            return True
+
+        # else pick shortest circuit
+        org_sq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
+        org_mq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
+        new_sq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
+        new_mq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
+        return (new_mq_n, new_sq_n) < (org_mq_n, org_sq_n)
+    return _replace_filter

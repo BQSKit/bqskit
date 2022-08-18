@@ -6,6 +6,7 @@ import sys
 import time
 import uuid
 from subprocess import DEVNULL
+from subprocess import PIPE
 from subprocess import Popen
 from typing import TYPE_CHECKING
 
@@ -71,6 +72,7 @@ class Compiler:
 
         # Initialize workers for logging support
         def set_logging_level(level: int) -> None:
+            import bqskit  # noqa
             logging.getLogger('bqskit').setLevel(level)
 
         self.client.run(set_logging_level, logging.getLogger('bqskit').level)
@@ -155,8 +157,12 @@ def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
             bufsize=1,
             universal_newlines=True,
             stdout=sys.stdout,
-            stderr=DEVNULL,
+            stderr=PIPE,
         )
+        for line in iter(scheduler_proc.stderr.readline, ''):
+            if "Scheduler at:" in line:
+                break
+        scheduler_proc.stderr.close()
     except Exception as e:
         raise RuntimeError('Failed to start dask scheduler') from e
 
@@ -164,13 +170,19 @@ def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
     try:
         worker_proc = Popen(
             ['dask-worker', '--nworkers', 'auto', '127.0.0.1:8786'],
+            bufsize=1,
+            universal_newlines=True,
             stdout=sys.stdout,
-            stderr=DEVNULL,
+            stderr=PIPE,
         )
+        for line in iter(worker_proc.stderr.readline, ''):
+            if "Starting established connection" in line:
+                break
+        worker_proc.stderr.close()
     except Exception as e:
         scheduler_proc.terminate()
         scheduler_proc.wait()
         raise RuntimeError('Failed to start dask worker') from e
 
-    time.sleep(2)
+    time.sleep(1)
     return worker_proc, scheduler_proc

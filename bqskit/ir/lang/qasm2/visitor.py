@@ -460,10 +460,12 @@ class OPENQASMVisitor(Visitor):
             file_name = file_name[:-1]
 
         if not os.path.isfile(file_name):
-            _logger.warning(
-                f'Unable to find {file_name} used in a QASM include statement.'
-                ' Ignoring include file and continuing.',
-            )
+            if file_name != 'qelib1.inc':
+                # Suppress warnings over qelib1.inc due to high frequency
+                _logger.warning(
+                    f'Unable to find {file_name} used in a QASM include'
+                    ' statement. Ignoring include file and continuing.',
+                )
             return
 
         with open(file_name) as f:
