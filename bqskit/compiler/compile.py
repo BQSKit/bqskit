@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
@@ -101,7 +102,7 @@ def compile(
             'Input is neither a circuit, a unitary, nor a state.'
             f' Got {type(input)}.',
         )
-        
+
     assert isinstance(input, (Circuit, UnitaryMatrix, StateVector))
 
     if not all(r == 2 for r in input.radixes):
@@ -309,7 +310,7 @@ def _opt1_workflow(
         [qfast, ForEachBlockPass(leap), UnfoldPass()],
     )
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
-    
+
     return [
         IfThenElsePass(
             WidthPredicate(max_synthesis_size + 1),
@@ -346,7 +347,7 @@ def _opt2_workflow(
     block_size: int = 3,
 ) -> list[BasePass]:
     """Build Optimization Level 2 workflow for circuit compilation."""
-    inst_ops = {'multistarts': 4, 'ftol':5e-12, 'gtol':1e-14}
+    inst_ops = {'multistarts': 4, 'ftol': 5e-12, 'gtol': 1e-14}
     threshold = _get_threshold(approximation_level)
     layer_gen = _get_layer_gen(circuit, model)
     scan = ScanningGateRemovalPass(
@@ -407,9 +408,9 @@ def _opt3_workflow(
     """Build optimization Level 3 workflow for circuit compilation."""
     inst_ops = {
         'multistarts': 8,
-        'method':'minimization',
+        'method': 'minimization',
         'ftol': 5e-16,
-        'gtol': 1e-15
+        'gtol': 1e-15,
     }
     threshold = _get_threshold(approximation_level)
     layer_gen = _get_layer_gen(circuit, model)
@@ -607,7 +608,7 @@ def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
         IfThenElsePass(
             NotPredicate(SinglePhysicalPredicate()),
             [
-                LogPass("Retargeting single-qudit gates."),
+                LogPass('Retargeting single-qudit gates.'),
                 GroupSingleQuditGatePass(),
                 ForEachBlockPass([
                     IfThenElsePass(
@@ -632,10 +633,10 @@ def _less_tq_gates(c1: Circuit, c2: Circuit) -> bool:
 
 def _diff_gate_or_shorter_gates(org: Circuit, new: Circuit) -> bool:
     """Return true if new has a different 2q gate than org or is shorter."""
-    org_mq_gates = [g for g in org.gate_set if g.num_qudits >=2]
+    org_mq_gates = [g for g in org.gate_set if g.num_qudits >= 2]
     if any(g not in new.gate_set for g in org_mq_gates):
         return True
-    
+
     org_sq_counts = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
     org_mq_counts = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
     new_sq_counts = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
@@ -654,7 +655,7 @@ def _gen_replace_filter(model: MachineModel) -> Callable:
 
         if any(g not in model.gate_set for g in org.gate_set):
             return True
-        
+
         if any(
             (old.location[e[0]], old.location[e[1]]) not in model.coupling_graph
             for e in org.coupling_graph

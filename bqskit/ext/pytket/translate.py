@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import pytket
-from pytket.qasm import circuit_from_qasm_str, circuit_to_qasm_str
+from pytket.qasm import circuit_from_qasm_str
+from pytket.qasm import circuit_to_qasm_str
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
