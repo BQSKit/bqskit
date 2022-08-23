@@ -173,6 +173,7 @@ class QFASTDecompositionPass(SynthesisPass):
                 last_dist = dist
                 self.expand(circuit, location, locations)
                 depth += 1
+                failed_locs = []
 
             elif not self.can_restrict(circuit[-1, 0]):
                 _logger.info('Progress has not been made.')

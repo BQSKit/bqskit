@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 from typing import Any
 from typing import Callable
+from typing import Iterator
 from typing import Sequence
 
 import numpy as np
@@ -18,6 +19,7 @@ from hypothesis import HealthCheck
 from hypothesis import settings
 from scipy.stats import unitary_group
 
+from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
@@ -82,322 +84,6 @@ NUMBER_RANDOM_CIRCUITS = int(
 
 # endregion
 
-# region Types
-
-type_dict = {
-    'str_1': '',
-    'str_2': 'a',
-    'str_3': 'abc',
-    'str_4': "abc@!@$$&%^()!@*^<>[]mM,./_+-=\'\"",
-    'int_1': -1,
-    'int_2': 0,
-    'int_3': 1,
-    'int_4': -127649217,
-    'int_5': 212121212,
-    'int_6': np.byte(1234),
-    'int_7': np.short(1234),
-    'int_8': np.intc(1234),
-    'int_9': np.longlong(1234),
-    'int_10': np.int8(1234),
-    'int_11': np.int16(1234),
-    'int_12': np.int32(1234),
-    'int_13': np.int64(1234),
-    'float_1': 0.0,
-    'float_2': 1.0,
-    'float_3': 1e-15,
-    'float_4': 1.26738e14,
-    'float_5': 1.23,
-    'float_6': np.half(1234.0),
-    'float_7': np.single(1234.0),
-    'float_8': np.double(1234.0),
-    'float_9': np.longdouble(1234.0),
-    'float_10': np.float32(1234.0),
-    'float_11': np.float64(1234.0),
-    'complex_1': complex(0.0j),
-    'complex_2': complex(0.0 + 0.0j),
-    'complex_3': 1.0j,
-    'complex_4': 1.0 + 1.0j,
-    'complex_5': 1.0 - 1.0j,
-    'complex_7': np.csingle(1234 + 1234j),
-    'complex_8': np.cdouble(1234 + 1234j),
-    'complex_9': np.clongdouble(1234 + 1234j),
-    'complex_10': np.complex64(1234 + 1234j),
-    'complex_11': np.complex128(1234 + 1234j),
-    'bool_1': False,
-    'bool_2': True,
-    'bool_3': np.bool_(False),
-    'bool_4': np.bool_(True),
-    'seq-str_1': [],
-    'seq-str_2': ['0'],
-    'seq-str_3': ['0, 1', 'abc', '@#!$^%&(#'],
-    'seq-str_4': ['A'] * 10,
-    'seq-int_1': [],
-    'seq-int_2': [0],
-    'seq-int_3': [0, 1, np.int8(1), np.int16(1), np.int32(1), np.int64(1)],
-    'seq-int_4': [3] * 10,
-    'seq-float_1': [],
-    'seq-float_2': [0.0],
-    'seq-float_3': [0.0, 1.23, 1e-14, np.float32(1.0), np.float64(1.0)],
-    'seq-float_4': [1.234e12] * 10,
-    'seq-complex_1': [],
-    'seq-complex_2': [0.0j],
-
-    'seq-complex_3': [
-        0.0j,
-        1.23j,
-        1.1 + 1.0j,
-        np.complex64(1.0 + 1.0j),
-    ],
-    'seq-complex_4': [1.234e12j] * 10,
-    'seq-bool_1': [],
-    'seq-bool_2': [False],
-    'seq-bool_3': [True],
-    'seq-bool_4': [True, False, True, False, np.bool_(False), np.bool_(True)],
-    'seq-bool_5': [False] * 10,
-    'seq-bool_6': [True] * 10,
-}
-
-# str
-
-
-@pytest.fixture(
-    params=[(k, v) for k, v in type_dict.items() if k.split('_')[0] == 'str'],
-    ids=lambda tup: tup[0],
-)
-def a_str(request: Any) -> str:
-    """Provide random values that are strs."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[(k, v) for k, v in type_dict.items() if k.split('_')[0] != 'str'],
-    ids=lambda tup: tup[0],
-)
-def not_a_str(request: Any) -> Any:
-    """Provide random values that are not strs."""
-    return request.param[1]
-
-
-# int
-@pytest.fixture(
-    params=[(k, v) for k, v in type_dict.items() if k.split('_')[0] == 'int'],
-    ids=lambda tup: tup[0],
-)
-def an_int(request: Any) -> int:
-    """Provide random values that are ints."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[(k, v) for k, v in type_dict.items() if k.split('_')[0] != 'int'],
-    ids=lambda tup: tup[0],
-)
-def not_an_int(request: Any) -> Any:
-    """Provide random values that are not ints."""
-    return request.param[1]
-
-
-# float
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'float'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_float(request: Any) -> float:
-    """Provide random values that are floats."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'float'
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_float(request: Any) -> Any:
-    """Provide random values that are not floats."""
-    return request.param[1]
-
-
-# complex
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'complex'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_complex(request: Any) -> complex:
-    """Provide random values that are complexs."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'complex'
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_complex(request: Any) -> Any:
-    """Provide random values that are not complexs."""
-    return request.param[1]
-
-
-# bool
-@pytest.fixture(
-    params=[(k, v) for k, v in type_dict.items() if k.split('_')[0] == 'bool'],
-    ids=lambda tup: tup[0],
-)
-def a_bool(request: Any) -> bool:
-    """Provide random values that are bools."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[(k, v) for k, v in type_dict.items() if k.split('_')[0] != 'bool'],
-    ids=lambda tup: tup[0],
-)
-def not_a_bool(request: Any) -> Any:
-    """Provide random values that are not bools."""
-    return request.param[1]
-
-
-# seq-str
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'seq-str'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_seq_str(request: Any) -> Sequence[str]:
-    """Provide random values that are sequences of strs."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'seq-str'
-        and (not isinstance(v, list) or len(v) != 0)
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_seq_str(request: Any) -> Any:
-    """Provide random values that are not sequences of strs."""
-    return request.param[1]
-
-
-# seq-int
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'seq-int'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_seq_int(request: Any) -> Sequence[int]:
-    """Provide random values that are sequences of ints."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'seq-int'
-        and (not isinstance(v, list) or len(v) != 0)
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_seq_int(request: Any) -> Any:
-    """Provide random values that are not sequences of ints."""
-    return request.param[1]
-
-
-# seq-float
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'seq-float'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_seq_float(request: Any) -> Sequence[float]:
-    """Provide random values that are sequences of floats."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'seq-float'
-        and (not isinstance(v, list) or len(v) != 0)
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_seq_float(request: Any) -> Any:
-    """Provide random values that are not sequences of floats."""
-    return request.param[1]
-
-
-# seq-complex
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'seq-complex'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_seq_complex(request: Any) -> Sequence[complex]:
-    """Provide random values that are sequences of complexs."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'seq-complex'
-        and (not isinstance(v, list) or len(v) != 0)
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_seq_complex(request: Any) -> Any:
-    """Provide random values that are not sequences of complexs."""
-    return request.param[1]
-
-
-# seq-bool
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] == 'seq-bool'
-    ],
-    ids=lambda tup: tup[0],
-)
-def a_seq_bool(request: Any) -> Sequence[bool]:
-    """Provide random values that are sequences of bools."""
-    return request.param[1]
-
-
-@pytest.fixture(
-    params=[
-        (k, v) for k, v in type_dict.items()
-        if k.split('_')[0] != 'seq-bool'
-        and (not isinstance(v, list) or len(v) != 0)
-    ],
-    ids=lambda tup: tup[0],
-)
-def not_a_seq_bool(request: Any) -> Any:
-    """Provide random values that are not sequences of bools."""
-    return request.param[1]
-
-
-# endregion
-
 # region Unitaries
 
 TOFFOLI = np.asarray(
@@ -445,6 +131,13 @@ SWAP = np.asarray(
         [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j],
     ],
 )
+
+
+@pytest.fixture(scope='session')
+def compiler() -> Iterator[Compiler]:
+    compiler = Compiler()
+    yield compiler
+    compiler.close()
 
 
 @pytest.fixture

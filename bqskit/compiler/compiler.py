@@ -5,7 +5,6 @@ import logging
 import sys
 import time
 import uuid
-from subprocess import DEVNULL
 from subprocess import PIPE
 from subprocess import Popen
 from typing import TYPE_CHECKING
@@ -147,8 +146,8 @@ class Compiler:
 
 def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
     """Start a dask cluster and return the scheduler and worker processes."""
-    scheduler_proc = None
-    worker_proc = None
+    scheduler_proc: Any = None
+    worker_proc: Any = None
 
     # Start a dask scheduler in another process
     try:
@@ -160,7 +159,7 @@ def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
             stderr=PIPE,
         )
         for line in iter(scheduler_proc.stderr.readline, ''):
-            if "Scheduler at:" in line:
+            if 'Scheduler at:' in line:
                 break
         scheduler_proc.stderr.close()
     except Exception as e:
@@ -176,7 +175,7 @@ def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
             stderr=PIPE,
         )
         for line in iter(worker_proc.stderr.readline, ''):
-            if "Starting established connection" in line:
+            if 'Starting established connection' in line:
                 break
         worker_proc.stderr.close()
     except Exception as e:

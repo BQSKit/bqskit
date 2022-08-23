@@ -5,10 +5,6 @@ from typing import Sequence
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.cx import CNOTGate
-from bqskit.ir.gates.constant.sx import SqrtXGate
-from bqskit.ir.gates.parameterized.rx import RXGate
-from bqskit.ir.gates.parameterized.ry import RYGate
-from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.graph import CouplingGraph
@@ -20,10 +16,6 @@ from bqskit.utils.typing import is_valid_radixes
 default_gate_set: set[Gate] = {
     CNOTGate(),
     U3Gate(),
-    # RZGate(),
-    # RYGate(),
-    # RXGate(),
-    # SqrtXGate(),
 }
 
 

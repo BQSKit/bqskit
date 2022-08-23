@@ -13,8 +13,70 @@ from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
+from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+
+class TestComment:
+    def test_comment_header_1(self) -> None:
+        input = """
+            // This is a comment
+            OPENQASM 2.0;
+            qreg q[1];
+            u1(0.1) q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        assert circuit.get_unitary() == U1Gate().get_unitary([0.1])
+
+    def test_comment_header_2(self) -> None:
+        input = """
+
+            // This is a comment
+
+            OPENQASM 2.0;
+            qreg q[1];
+            u1(0.1) q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        assert circuit.get_unitary() == U1Gate().get_unitary([0.1])
+
+    def test_comment_footer_1(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            u1(0.1) q[0];
+            // This is a comment
+        """
+        circuit = OPENQASM2Language().decode(input)
+        assert circuit.get_unitary() == U1Gate().get_unitary([0.1])
+
+    def test_comment_footer_2(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            u1(0.1) q[0];
+
+            // This is a comment
+
+        """
+        circuit = OPENQASM2Language().decode(input)
+        assert circuit.get_unitary() == U1Gate().get_unitary([0.1])
+
+    def test_comment_gatedecl(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            gate gate_x q0 {
+                // This is a commment
+                u1(0.1) q0;
+                // This is a comment too
+            }
+            gate_x q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        assert circuit.get_unitary() == U1Gate().get_unitary([0.1])
 
 
 class TestGateDecl:
@@ -43,6 +105,27 @@ class TestGateDecl:
         bqskit_utry = circuit.get_unitary()
         qiskit_utry = qiskit_to_bqskit(qc).get_unitary()
         assert qiskit_utry.get_distance_from(bqskit_utry) < 1e-7
+
+    def test_gate_decl_UCX(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            include "qelib1.inc";
+            qreg q[2];
+            gate gate_x (p0) q0, q1 {
+                U(p0, 2, 3) q0;
+                CX q0, q1;
+            }
+            gate_x(1.2) q[0], q[1];
+        """
+
+        circuit = OPENQASM2Language().decode(input)
+        assert circuit.num_operations == 1
+        op = circuit[0, 0]
+        assert isinstance(op.gate, CircuitGate)
+        assert op.location == (0, 1)
+        U1 = U3Gate().get_unitary([1.2, 2, 3]).otimes(UnitaryMatrix.identity(2))
+        U2 = CNOTGate().get_unitary()
+        assert circuit.get_unitary().get_distance_from(U2 @ U1) < 1e-7
 
     def test_empty_gate_decl_1(self) -> None:
         input = """
@@ -244,3 +327,25 @@ class TestMeasure:
         """
         with pytest.raises(LangException):
             circuit = OPENQASM2Language().decode(input)  # noqa
+
+
+def test_U_gate() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[1];
+        U(1,2.1,3) q[0];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 1
+    assert circuit.get_unitary() == U3Gate().get_unitary([1, 2.1, 3])
+
+
+def test_CX_gate() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[2];
+        CX q[0],q[1];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 1
+    assert circuit[0, 0].gate == CNOTGate()

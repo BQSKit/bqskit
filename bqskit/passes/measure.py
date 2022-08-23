@@ -30,8 +30,9 @@ class ExtractMeasurements(BasePass):
                 for name, size in op.gate.classical_regs:
                     if name not in cregs:
                         cregs[name] = size
-        circuit.batch_pop(points_to_remove)
+
         if len(cregs) > 0:
+            circuit.batch_pop(points_to_remove)
             data[self.key] = (cregs, measurements)
             _logger.debug(f'Extracted classical registers: {cregs}.')
             _logger.debug(f'Extracted measurements: {measurements}.')

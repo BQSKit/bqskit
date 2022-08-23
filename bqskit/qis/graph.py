@@ -136,7 +136,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         return cast(List[List[int]], D)
 
     def get_shortest_path_tree(self, source: int) -> list[tuple[int, ...]]:
-        """Return shortest path from `source` to every other node in `self`."""
+        """Return shortest path from `source` to every node in `self`."""
         # Dijkstra's algorithm to build shortest-path tree
         unvisited_qudits = set(range(self.num_qudits))
         distances = {i: np.inf for i in range(self.num_qudits)}
@@ -331,11 +331,39 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
     @staticmethod
     def all_to_all(num_qudits: int) -> CouplingGraph:
+        """Return a coupling graph with all qudits connected."""
         return CouplingGraph(set(it.combinations(range(num_qudits), 2)))
 
     @staticmethod
     def linear(num_qudits: int) -> CouplingGraph:
+        """Return a coupling graph with nearest-neighbor connectivity."""
         return CouplingGraph([(x, x + 1) for x in range(num_qudits - 1)])
+
+    @staticmethod
+    def ring(num_qudits: int) -> CouplingGraph:
+        """Return a coupling graph with ring connectivity."""
+        ext = [(0, num_qudits - 1)]
+        return CouplingGraph([(x, x + 1) for x in range(num_qudits - 1)] + ext)
+
+    @staticmethod
+    def star(num_qudits: int) -> CouplingGraph:
+        """Return a coupling graph with one qudit connected to all else."""
+        return CouplingGraph([(0, x) for x in range(1, num_qudits)])
+
+    @staticmethod
+    def grid(num_rows: int, num_cols: int) -> CouplingGraph:
+        """Return a coupling graph with a grid of qubits."""
+        num_qudits = num_rows * num_cols
+        edges = set()
+
+        for i in range(num_qudits):
+            if i % num_cols != num_cols - 1:
+                edges.add((i, i + 1))
+
+            if i < (num_rows - 1) * num_cols:
+                edges.add((i, i + num_cols))
+
+        return CouplingGraph(edges)
 
     def maximal_matching(
         self,
@@ -373,6 +401,69 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 matching.add(edge)
                 vertices.update(edge)
         return list(matching)
+
+    def is_fully_connected_without(self, qudit: int) -> bool:
+        """Return true if the graph is fully connected without `qudit`."""
+        frontier = {0} if qudit != 0 else {1}
+        qudits_seen = {0} if qudit != 0 else {1}
+
+        while len(frontier) > 0:
+            expanded_qudits = set()
+
+            for q in frontier:
+                if q != qudit:
+                    neighbors = set(self.get_neighbors_of(q)) - {qudit}
+                    expanded_qudits.update(neighbors)
+
+            frontier = expanded_qudits - qudits_seen
+            qudits_seen.update(expanded_qudits)
+
+            if len(qudits_seen) == self.num_qudits - 1:
+                return True
+
+        return False
+
+    def get_rooted_minimum_span(self, root: int) -> list[tuple[int, int]]:
+        """
+        Connect `root` to every other node in the graph.
+
+        Args:
+            root (int): The qudit to start from.
+
+        Return:
+            (list[tuple[int, int]]): A list of minimal edges that
+                connects 'root' to every other qudit.
+        """
+        # Construct Minimum Spanning Tree using breadth-first search
+        mst = []
+        seen = {root}
+        frontier = [root]
+
+        while len(frontier) > 0 and len(seen) < self.num_qudits:
+            qudit = frontier.pop(0)
+            neighbors = set(self.get_neighbors_of(qudit))
+            unseen_neighbors = neighbors - seen
+            frontier.extend(unseen_neighbors)
+            seen.update(neighbors)
+            for neighbor in unseen_neighbors:
+                mst.append((qudit, neighbor))
+
+        mst = CouplingGraph(mst)
+
+        # Traverse MST depth-first to produce pairs of interacting qudits
+        interactions: list[tuple[int, int]] = []
+        frontier: list[tuple[int, tuple[int, int] | None]] = [(root, None)]
+
+        while len(frontier) > 0:
+            qudit, interaction = frontier.pop(0)
+            if interaction is not None:
+                interactions.append(interaction)
+
+            for neighbor in mst.get_neighbors_of(qudit):
+                if interaction is None or neighbor != interaction[0]:
+                    frontier.insert(0, (neighbor, (qudit, neighbor)))
+
+        return interactions
 
 
 CouplingGraphLike = Union[Iterable[Tuple[int, int]], CouplingGraph]

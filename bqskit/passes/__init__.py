@@ -167,6 +167,8 @@ from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
 from bqskit.passes.mapping.setmodel import SetModelPass
+from bqskit.passes.measure import ExtractMeasurements
+from bqskit.passes.measure import RestoreMeasurements
 from bqskit.passes.noop import NOOPPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
@@ -204,11 +206,11 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.passes.util.compress import CompressPass
 from bqskit.passes.util.conversion import BlockConversionPass
 from bqskit.passes.util.converttou3 import ToU3Pass
+from bqskit.passes.util.log import LogPass
 from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
-from bqskit.passes.util.log import LogPass
 
 
 __all__ = [
@@ -279,4 +281,6 @@ __all__ = [
     'SinglePhysicalPredicate',
     'Rebase2QuditGatePass',
     'LogPass',
+    'ExtractMeasurements',
+    'RestoreMeasurements',
 ]

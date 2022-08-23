@@ -210,6 +210,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cs'] = GateDef('cs', 0, 2, CSGate())
         self.gate_defs['ct'] = GateDef('ct', 0, 2, CTGate())
         self.gate_defs['cx'] = GateDef('cx', 0, 2, CXGate())
+        self.gate_defs['CX'] = GateDef('CX', 0, 2, CXGate())
         self.gate_defs['cy'] = GateDef('cy', 0, 2, CYGate())
         self.gate_defs['cz'] = GateDef('cz', 0, 2, CZGate())
         self.gate_defs['h'] = GateDef('h', 0, 1, HGate())
@@ -297,11 +298,53 @@ class OPENQASMVisitor(Visitor):
 
     def cxgate(self, tree: lark.Tree) -> None:
         """CX gate node visitor."""
-        self.gate(tree)
+        control = tree.children[0].children
+        target = tree.children[1].children
+        cname, cidx = str(control[0]), int(control[1])
+        tname, tidx = str(target[0]), int(target[1])
+
+        outer_idx = 0
+        cloc: int | None = None
+        tloc: int | None = None
+        for reg in self.qubit_regs:
+            if reg.name == cname:
+                cloc = outer_idx + cidx
+            if reg.name == tname:
+                tloc = outer_idx + tidx
+            outer_idx += reg.size
+
+        if cloc is None:
+            raise LangException(f'Qubit register not found: {cname}')
+
+        if tloc is None:
+            raise LangException(f'Qubit register not found: {tname}')
+
+        if cloc == tloc:
+            raise LangException('CX control and target qubit cannot be equal.')
+
+        loc = CircuitLocation([cloc, tloc])
+        self.op_list.append(Operation(CXGate(), loc))
 
     def ugate(self, tree: lark.Tree) -> None:
         """U gate node visitor."""
-        self.gate(tree)
+        exp_list = self.flatten_exps(tree.children[0])
+        params = [float(eval_exp(exp)) for exp in exp_list]
+        qubit = tree.children[1].children
+        name, idx = str(qubit[0]), int(qubit[1])
+
+        outer_idx = 0
+        location: int | None = None
+        for reg in self.qubit_regs:
+            if reg.name == name:
+                location = outer_idx + idx
+                break
+            outer_idx += reg.size
+
+        if location is None:
+            raise LangException(f'Qubit register not found: {name}')
+
+        location = CircuitLocation(location)
+        self.op_list.append(self.gate_defs['U'].build_op(location, params))
 
     def gatep(self, tree: lark.Tree) -> None:
         """Apply a gate to a currently-being-built gate declaration."""
@@ -353,11 +396,36 @@ class OPENQASMVisitor(Visitor):
 
     def cxgatep(self, tree: lark.Tree) -> None:
         """CX gate node visitor (while building custom gate)."""
-        self.gatep(tree)
+        control = tree.children[0].children
+        target = tree.children[1].children
+        cid = self.gate_def_parsing_obj['qubits'].index(str(control[0]))
+        tid = self.gate_def_parsing_obj['qubits'].index(str(target[0]))
+
+        if cid == tid:
+            raise LangException('CX control and target qubit cannot be equal.')
+
+        loc = CircuitLocation([cid, tid])
+        self.gate_def_parsing_obj['param_exp_list'].append([])
+        self.gate_def_parsing_obj['loc_list'].append(loc)
+        self.gate_def_parsing_obj['gate_def_list'].append(self.gate_defs['CX'])
 
     def ugatep(self, tree: lark.Tree) -> None:
         """U gate node visitor (while building custom gate)."""
-        self.gatep(tree)
+        param_exps = []
+        exp_list = self.flatten_exps(tree.children[0])
+        for exp in exp_list:
+            if self.has_param_variable(exp):
+                param_exps.append(self.replace_param_ids(exp))
+            else:
+                param_exps.append(float(eval_exp(exp)))
+
+        qubit = tree.children[1].children
+        qid = self.gate_def_parsing_obj['qubits'].index(str(qubit[0]))
+
+        location = CircuitLocation(qid)
+        self.gate_def_parsing_obj['param_exp_list'].append(param_exps)
+        self.gate_def_parsing_obj['loc_list'].append(location)
+        self.gate_def_parsing_obj['gate_def_list'].append(self.gate_defs['U'])
 
     def rbracket(self, tree: lark.Tree) -> None:
         """Finish a gate declaration block."""
@@ -618,5 +686,7 @@ def qubits_from_list(tree: lark.Tree) -> list[tuple[str, int]]:
             q1 = qubits_from_list(tree.children[0])
             return [*q1, q2]
         return [q2]
+    elif tree.data == 'argument':
+        return [(str(tree.children[0]), int(tree.children[1]))]
     else:
         raise Exception()

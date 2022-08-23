@@ -5,7 +5,6 @@ from qutip import QubitCircuit
 from qutip.qip.qasm import circuit_to_qasm_str
 from qutip.qip.qasm import read_qasm
 
-
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
 

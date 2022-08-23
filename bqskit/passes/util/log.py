@@ -17,7 +17,7 @@ class LogPass(BasePass):
     def __init__(self, msg: str, level: int = logging.INFO) -> None:
         """
         Construct a LogPass.
-        
+
         Args:
             msg (str): The message to log.
 

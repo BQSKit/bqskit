@@ -16,6 +16,7 @@ TAN: "tan"
 EXP: "EXP"
 LN: "ln"
 SQRT: "sqrt"
+COMMENT: /\/\/+.*/
 mainprogram: "OPENQASM" REAL ";" program
 program: statement | program statement
 statement: decl
@@ -25,10 +26,9 @@ statement: decl
             | "opaque" ID "(" ")" idlist ";"
             | "opaque" ID "(" idlist ")" idlist ";"
             | qop
-            | "if (" ID "==" NNINTEGER ")" qop
+            | "if" "(" ID "==" NNINTEGER ")" qop
             | "barrier" anylist ";"
             | incstmt
-            | /\/\/+.*/
 incstmt: "include" ESCAPED_STRING ";"
 decl: qreg | creg
 creg: "creg" ID "[" NNINTEGER "]" ";"
@@ -51,7 +51,7 @@ uop: ugate
 gate: ID anylist ";"
         | ID "(" ")" anylist ";"
         | ID "(" explist ")" anylist ";"
-ugate: "U (" explist ")" argument ";"
+ugate: "U" "(" explist ")" argument ";"
 cxgate: "CX" argument "," argument ";"
 uopp: ugatep
         | cxgatep
@@ -59,7 +59,7 @@ uopp: ugatep
 gatep: ID anylist ";"
         | ID "(" ")" anylist ";"
         | ID "(" explist ")" anylist ";"
-ugatep: "U (" explist ")" argument ";"
+ugatep: "U" "(" explist ")" argument ";"
 cxgatep: "CX" argument "," argument ";"
 anylist: idlist | mixedlist
 idlist: ID | idlist "," ID
@@ -86,6 +86,7 @@ rbracket: "}"
 %import common.ESCAPED_STRING
 %import common.WS
 %ignore WS
+%ignore COMMENT
 """,
     parser='lalr',
     start='mainprogram',
