@@ -218,7 +218,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if size > self.num_qudits:
             raise ValueError(
                 'The block_size is too large; '
-                f'expected <= {self.num_qudits}, got {size}.',
+                f'graph size is {self.num_qudits}, got {size}.',
             )
 
         if size <= 0:

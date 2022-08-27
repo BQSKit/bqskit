@@ -318,6 +318,10 @@ def _opt1_workflow(
         [qfast, ForEachBlockPass(leap), UnfoldPass()],
     )
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
+    smallest_entangler_size = min(
+        g.num_qudits for g in model.gate_set
+        if g.num_qudits != 1
+    )
 
     return [
         IfThenElsePass(
@@ -336,6 +340,7 @@ def _opt1_workflow(
                 GeneralizedSabreLayoutPass(),
                 GeneralizedSabreRoutingPass(),
                 QuickPartitioner(block_size),
+                ExtendBlockSizePass(smallest_entangler_size),
                 ForEachBlockPass(
                     [direct_synthesis],
                     replace_filter=_gen_replace_filter(model),
@@ -377,6 +382,10 @@ def _opt2_workflow(
         [qfast, ForEachBlockPass([leap, scan]), UnfoldPass()],
     )
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
+    smallest_entangler_size = min(
+        g.num_qudits for g in model.gate_set
+        if g.num_qudits != 1
+    )
 
     return [
         IfThenElsePass(
@@ -395,6 +404,7 @@ def _opt2_workflow(
                 GeneralizedSabreLayoutPass(),
                 GeneralizedSabreRoutingPass(),
                 QuickPartitioner(block_size),
+                ExtendBlockSizePass(smallest_entangler_size),
                 ForEachBlockPass(
                     [direct_synthesis],
                     replace_filter=_gen_replace_filter(model),
@@ -453,6 +463,10 @@ def _opt3_workflow(
             ForEachBlockPass(scan),
             UnfoldPass(),
         ],
+    )
+    smallest_entangler_size = min(
+        g.num_qudits for g in model.gate_set
+        if g.num_qudits != 1
     )
 
     if not any(g.num_qudits > 2 for g in model.gate_set):
@@ -522,9 +536,11 @@ def _opt3_workflow(
                 QuickPartitioner(block_size),
                 GeneralizedSabreLayoutPass(),
                 GeneralizedSabreRoutingPass(),
+                ExtendBlockSizePass(smallest_entangler_size),
                 ForEachBlockPass([direct_synthesis]),
                 UnfoldPass(),
                 QuickPartitioner(block_size),
+                ExtendBlockSizePass(smallest_entangler_size),
                 ForEachBlockPass([convert_swaps]),
                 UnfoldPass(),
                 single_qudit_gate_rebase,

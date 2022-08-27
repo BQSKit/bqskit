@@ -13,6 +13,7 @@ from distributed import secede
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
+from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence
@@ -94,12 +95,15 @@ class BasePass(abc.ABC):
         return data['machine_model']
 
     @staticmethod
-    def get_placement(circuit: Circuit, data: dict[str, Any]) -> list[int]:
+    def get_placement(
+        circuit: Circuit | UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> list[int]:
         """
         Retrieve the logical to physical qubit map from the data dictionary.
 
         Args:
-            circuit (Circuit): The pass circuit.
+            circuit (Circuit | UnitaryMatrix): The pass circuit.
 
             data (dict[str, Any]): The data dictionary.
 
@@ -131,6 +135,26 @@ class BasePass(abc.ABC):
             "No valid placement found and trivial one doesn't work."
             '\nConsider running a placement pass before the current pass.',
         )
+
+    @staticmethod
+    def get_connectivity(
+        circuit: Circuit | UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> CouplingGraph:
+        """
+        Retrieve the current connectivity of the circuit.
+
+        Args:
+            circuit (Circuit | UnitaryMatrix): The pass circuit.
+
+            data (dict[str, Any]): The data dictionary.
+
+        Returns:
+            (list[int]): A coupling graph of the connectivity.
+        """
+        model = BasePass.get_model(circuit, data)
+        placement = BasePass.get_placement(circuit, data)
+        return model.coupling_graph.get_subgraph(placement)
 
     @staticmethod
     def get_target(circuit: Circuit, data: dict[str, Any]) -> UnitaryMatrix:

@@ -127,14 +127,15 @@ class WideLayerGenerator(LayerGenerator):
         if circuit.num_qudits < 2:
             raise ValueError('Cannot expand a single-qudit circuit.')
 
-        # Get the machine model
-        model = BasePass.get_model(circuit, data)
+        # Get the coupling graph
+        cg = BasePass.get_connectivity(circuit, data)
 
         # Generate successors
         successors = []
         for mg in self.multi_qudit_gates:
-            width = mg.num_qudits
-            for loc in model.coupling_graph.get_subgraphs_of_size(width):
+            if mg.num_qudits > circuit.num_qudits:
+                continue
+            for loc in cg.get_subgraphs_of_size(mg.num_qudits):
                 successor = circuit.copy()
                 successor.append_gate(mg, loc)
                 for q in loc:
