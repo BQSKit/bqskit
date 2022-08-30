@@ -162,6 +162,7 @@ from bqskit.passes.io.checkpoint import LoadCheckpointPass
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
 from bqskit.passes.io.intermediate import RestoreIntermediatePass
 from bqskit.passes.io.intermediate import SaveIntermediatePass
+from bqskit.passes.mapping.apply import ApplyPlacement
 from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
@@ -285,4 +286,5 @@ __all__ = [
     'ExtractMeasurements',
     'RestoreMeasurements',
     'ExtendBlockSizePass',
+    'ApplyPlacement',
 ]

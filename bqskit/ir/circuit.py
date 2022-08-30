@@ -1084,6 +1084,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit: Circuit,
         location: CircuitLocationLike,
         as_circuit_gate: bool = False,
+        move: bool = False,
     ) -> None:
         """
         Append `circuit` at the qudit location specified.
@@ -1096,6 +1097,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             as_circuit_gate (bool): If true, append `circuit` as a unit
                 block (CircuitGate) rather than each operation in `circuit`
                 individually. (Default: False)
+
+            move (bool): Move circuit into circuit gate rather than copy.
+                (Default: False)
 
         Raises:
             ValueError: If `circuit` is not the same size as `location`.
@@ -1118,7 +1122,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Circuit and location size mismatch.')
 
         if as_circuit_gate:
-            op = Operation(CircuitGate(circuit), location, circuit.params)
+            op = Operation(CircuitGate(circuit, move), location, circuit.params)
             self.append(op)
             return
 
@@ -1312,6 +1316,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit: Circuit,
         location: CircuitLocationLike,
         as_circuit_gate: bool = False,
+        move: bool = False,
     ) -> None:
         """
         Insert `circuit` at the cycle and location specified.
@@ -1327,6 +1332,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             as_circuit_gate (bool): If true, append `circuit` as a unit
                 block (CircuitGate) rather than each operation in `circuit`
                 individually. (Default: False)
+
+            move (bool): Move circuit into circuit gate rather than copy.
+                (Default: False)
 
         Raises:
             ValueError: If `circuit` is not the same size as `location`.
@@ -1352,7 +1360,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError('Circuit and location size mismatch.')
 
         if as_circuit_gate:
-            op = Operation(CircuitGate(circuit), location, circuit.params)
+            op = Operation(CircuitGate(circuit, move), location, circuit.params)
             self.insert(cycle_index, op)
             return
 
@@ -1686,6 +1694,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         point: CircuitPointLike,
         circuit: Circuit,
         as_circuit_gate: bool = False,
+        move: bool = False,
     ) -> None:
         """Replace the operation at 'point' with `circuit`."""
         op = self.pop(point)
@@ -1696,7 +1705,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         if circuit.radixes != tuple(self.radixes[x] for x in op.location):
             raise ValueError('Cannot replace operation with circuit.')
 
-        self.insert_circuit(point[0], circuit, op.location, as_circuit_gate)
+        self.insert_circuit(
+            point[0],
+            circuit,
+            op.location,
+            as_circuit_gate,
+            move,
+        )
 
     def copy(self) -> Circuit:
         """Return a deep copy of this circuit."""
@@ -1725,6 +1740,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self._radixes = circuit.radixes
             self._circuit = copy.copy(circuit._circuit)
             self._gate_info = copy.copy(circuit._gate_info)
+            self._graph_info = copy.copy(circuit._graph_info)
             self._front = copy.copy(circuit._front)
             self._rear = copy.copy(circuit._rear)
             self._dag = copy.copy(circuit._dag)
@@ -2364,9 +2380,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
-        if not all(self.is_point_in_range(point) for point in points):
-            raise IndexError('Out-of-range point.')
-
         # Sort points
         points = sorted(points)
 

@@ -62,7 +62,7 @@ def is_real_number(x: Any) -> TypeGuard[float]:
 
 def is_integer(x: Any) -> TypeGuard[int]:
     """Return true if x is an integer."""
-    return isinstance(x, numbers.Integral) and not isinstance(x, bool)
+    return isinstance(x, (int, np.int_))
 
 
 def is_bool(x: Any) -> TypeGuard[bool]:

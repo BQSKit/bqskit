@@ -31,7 +31,8 @@ class GreedyPlacementPass(BasePass):
             best_neighbor = None
             for q in neighbors:
                 inter = [n for n in graph.get_neighbors_of(q) if n in placement]
-                score = (len(inter), degrees[q])
+                lookahead = sum(degrees[n] for n in graph.get_neighbors_of(q))
+                score = (len(inter), degrees[q], lookahead)
                 if best_score is None or score > best_score:
                     best_score = score
                     best_neighbor = q
@@ -44,11 +45,11 @@ class GreedyPlacementPass(BasePass):
                 if n not in placement and n not in neighbors:
                     neighbors.append(n)
 
-        data['physical_qudits'] = sorted(placement)
+        data['placement'] = sorted(placement)
 
-        _logger.info(f'Placed qudits on {data["physical_qudits"]}')
+        _logger.info(f'Placed qudits on {data["placement"]}')
 
         # Raise an error if this is not a valid placement
-        sg = graph.get_subgraph(data['physical_qudits'])
+        sg = graph.get_subgraph(data['placement'])
         if not sg.is_fully_connected():
             raise RuntimeError('No valid placement found.')

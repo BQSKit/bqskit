@@ -18,11 +18,11 @@ class TrivialPlacementPass(BasePass):
         # Select the first n physical qubits for placement
         trivial_placement = list(range(circuit.num_qudits))
         model = BasePass.get_model(circuit, data)
-        data['physical_qudits'] = trivial_placement
+        data['placement'] = trivial_placement
 
-        _logger.info(f'Placed qudits on {data["physical_qudits"]}')
+        _logger.info(f'Placed qudits on {data["placement"]}')
 
         # Raise an error if this is not a valid placement
-        sg = model.coupling_graph.get_subgraph(data['physical_qudits'])
+        sg = model.coupling_graph.get_subgraph(data['placement'])
         if not sg.is_fully_connected():
             raise RuntimeError('The trivial placement is not valid.')

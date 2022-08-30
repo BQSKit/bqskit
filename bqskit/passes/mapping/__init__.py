@@ -1,6 +1,7 @@
 """This package implements passes that perform qudit assignment."""
 from __future__ import annotations
 
+from bqskit.passes.mapping.apply import ApplyPlacement
 from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
@@ -13,4 +14,5 @@ __all__ = [
     'TrivialPlacementPass',
     'GeneralizedSabreRoutingPass',
     'SetModelPass',
+    'ApplyPlacement',
 ]

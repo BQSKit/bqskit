@@ -337,14 +337,6 @@ class TestAppendGate:
 class TestAppendCircuit:
     """This tests `circuit.append_circuit`."""
 
-    @valid_type_test(Circuit(1).append_circuit)
-    def test_valid_type(self) -> None:
-        pass
-
-    @invalid_type_test(Circuit(1).append_circuit)
-    def test_invalid_type(self) -> None:
-        pass
-
     @given(circuits())
     def test_reconstruct(self, circuit: Circuit) -> None:
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
@@ -424,14 +416,6 @@ class TestInsertGate:
 
 class TestInsertCircuit:
     """This tests `circuit.insert_circuit`."""
-
-    @valid_type_test(Circuit(1).insert_circuit)
-    def test_valid_type(self) -> None:
-        pass
-
-    @invalid_type_test(Circuit(1).insert_circuit, [ValueError, AttributeError])
-    def test_invalid_type(self) -> None:
-        pass
 
     @given(circuits((2, 2, 2, 2)))
     def test_apply(self, circuit: Circuit) -> None:

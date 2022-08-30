@@ -235,13 +235,16 @@ class TestGateDecl:
         op = circuit[1, 1]
         assert isinstance(op.gate, CircuitGate)
         assert op.location == (0, 1)
-        assert op.params == [1.2, 4.2, 2.4, 8.4, 0.1]
 
         subcircuit = op.gate._circuit
         assert isinstance(subcircuit[0, 0].gate, CircuitGate)
         assert subcircuit[0, 0].gate._circuit[0, 0].gate == U2Gate()
+        assert subcircuit[0, 0].gate._circuit[0, 0].params == [1.2, 4.2]
         assert isinstance(subcircuit[0, 1].gate, CircuitGate)
+        assert subcircuit[0, 1].gate._circuit[0, 0].gate == U2Gate()
+        assert subcircuit[0, 1].gate._circuit[0, 0].params == [2.4, 8.4]
         assert subcircuit[1, 0].gate == U1Gate()
+        assert subcircuit[1, 0].params == [0.1]
 
         # Unable to verify this one with qiskit
         # https://github.com/Qiskit/qiskit-terra/issues/8558
