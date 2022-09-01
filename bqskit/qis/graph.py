@@ -46,7 +46,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if not CouplingGraph.is_valid_coupling_graph(graph):
             raise TypeError('Invalid coupling graph.')
 
-        self._edges = set(graph)
+        self._edges = {g if g[0] <= g[1] else (g[1], g[0]) for g in graph}
 
         calced_num_qudits = 0
         for q1, q2 in self._edges:
@@ -100,13 +100,22 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         return self._edges.__contains__(__o)
 
     def __eq__(self, __o: object) -> bool:
-        return self._edges.__eq__(__o)
+        if not isinstance(__o, CouplingGraph):
+            return False
+
+        if self.num_qudits != __o.num_qudits:
+            return False
+
+        if self._mat != __o._mat:
+            return False
+
+        return True
 
     def __iter__(self) -> Iterator[tuple[int, int]]:
         return self._edges.__iter__()
 
     def __hash__(self) -> int:
-        return hash(tuple(self._edges))
+        return hash((self.num_qudits, tuple(self._edges)))
 
     def __len__(self) -> int:
         return self._edges.__len__()

@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import cast
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import CircuitGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_integer
@@ -117,10 +119,45 @@ class QuickPartitioner(BasePass):
                         for qudit, start in bin.starts.items()
                     ):
                         to_remove.append(bin)
-                        subcircuit = circuit.get_slice(bin.op_list)
+                        subc = circuit.get_slice(bin.op_list)
+                        loc = list(sorted(bin.qudits))
+
+                        # Merge previously placed blocks if possible
+                        merging = True
+                        while merging:
+                            merging = False
+                            for p in partitioned_circuit.rear:
+                                qudits = partitioned_circuit[p].location
+
+                                # if qudits is subset of bin.qudits
+                                if all(q in bin.qudits for q in qudits):
+                                    prev_op = partitioned_circuit.pop(p)
+                                    pg = cast(CircuitGate, prev_op.gate)
+                                    prev_circ = pg._circuit
+                                    local_loc = [loc.index(q) for q in qudits]
+                                    subc.insert_circuit(0, prev_circ, local_loc)
+
+                                    # retry merging
+                                    merging = True
+                                    break
+
+                                # if bin.qudits is a subset of qudits
+                                if all(q in qudits for q in bin.qudits):
+                                    prev_op = partitioned_circuit.pop(p)
+                                    pg = cast(CircuitGate, prev_op.gate)
+                                    prev_circ = pg._circuit
+                                    lloc = [qudits.index(q) for q in bin.qudits]
+                                    prev_circ.append_circuit(subc, lloc)
+                                    subc.become(prev_circ)
+
+                                    # retry merging
+                                    merging = True
+                                    break
+
+                        # Place circuit
                         partitioned_circuit.append_circuit(
-                            subcircuit,
-                            sorted(bin.qudits),
+                            subc,
+                            loc,
                             True,
                             True,
                         )
@@ -160,6 +197,10 @@ class QuickPartitioner(BasePass):
                 new_bin = Bin(point, location)
                 for q in location:
                     active_bins[q] = new_bin
+
+                # Block qudits to prevent circular dependencies
+                for bin in overlapping_bins:
+                    bin.blocked_qudits.update(new_bin.qudits)
 
             else:
                 # Add to first admissible bin
