@@ -79,9 +79,7 @@ class TestTranslate:
         qc = cirq_circuit
         in_utry = UnitaryMatrix(cirq.unitary(qc))
         bqskit_circuit = cirq_to_bqskit(qc)
-        bqskit_out_circuit = compile(
-            bqskit_circuit, block_size=2, max_synthesis_size=2,
-        )
+        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
         out_circuit = bqskit_to_cirq(bqskit_out_circuit)
         out_utry = UnitaryMatrix(cirq.unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-5

@@ -79,9 +79,7 @@ class TestTranslate:
         qc = qiskit_circuit
         in_utry = UnitaryMatrix(qi.Operator(qc).data)
         bqskit_circuit = qiskit_to_bqskit(qc)
-        bqskit_out_circuit = compile(
-            bqskit_circuit, block_size=2, max_synthesis_size=2,
-        )
+        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
         out_circuit = bqskit_to_qiskit(bqskit_out_circuit)
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-5

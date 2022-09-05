@@ -51,6 +51,7 @@ from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
+from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
 from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rxx import RXXGate
 from bqskit.ir.gates.parameterized.ry import RYGate
@@ -58,6 +59,7 @@ from bqskit.ir.gates.parameterized.ryy import RYYGate
 from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.rzz import RZZGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
+from bqskit.ir.gates.parameterized.u1q import U1qGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.lang.language import LangException
@@ -190,12 +192,15 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['crz'] = GateDef('crz', 1, 2, CRZGate())
         self.gate_defs['fsim'] = GateDef('fsim', 2, 2, FSIMGate())
         self.gate_defs['rx'] = GateDef('rx', 1, 1, RXGate())
+        self.gate_defs['pxz'] = GateDef('pxz', 1, 3, PhasedXZGate())
         self.gate_defs['rxx'] = GateDef('rxx', 1, 2, RXXGate())
         self.gate_defs['ry'] = GateDef('ry', 1, 1, RYGate())
         self.gate_defs['ryy'] = GateDef('ryy', 1, 2, RYYGate())
         self.gate_defs['rz'] = GateDef('rz', 1, 1, RZGate())
         self.gate_defs['rzz'] = GateDef('rzz', 1, 2, RZZGate())
         self.gate_defs['u1'] = GateDef('u1', 1, 1, U1Gate())
+        self.gate_defs['u1q'] = GateDef('u1q', 1, 2, U1qGate())
+        self.gate_defs['U1q'] = GateDef('u1q', 1, 2, U1qGate())
         self.gate_defs['u2'] = GateDef('u2', 2, 1, U2Gate())
         self.gate_defs['u3'] = GateDef('u3', 3, 1, U3Gate())
         self.gate_defs['U'] = GateDef('U', 3, 1, U3Gate())
@@ -224,6 +229,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['sqisw'] = GateDef('sqisw', 0, 2, SqrtISwapGate())
         self.gate_defs['swap'] = GateDef('swap', 0, 2, SwapGate())
         self.gate_defs['sx'] = GateDef('sx', 0, 1, SXGate())
+        self.gate_defs['v'] = GateDef('v', 0, 1, SXGate())
         self.gate_defs['syc'] = GateDef('syc', 0, 2, SycamoreGate())
         self.gate_defs['t'] = GateDef('t', 0, 1, TGate())
         self.gate_defs['tdg'] = GateDef('tdg', 0, 1, TdgGate())

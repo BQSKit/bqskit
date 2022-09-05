@@ -84,9 +84,7 @@ class TestTranslate:
     def test_compile_bqskit(self, pytket_circuit: QubitCircuit) -> None:
         in_utry = UnitaryMatrix(self.get_unitary(pytket_circuit))
         bqskit_circuit = pytket_to_bqskit(pytket_circuit)
-        bqskit_out_circuit = compile(
-            bqskit_circuit, block_size=2, max_synthesis_size=2,
-        )
+        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
         out_circuit = bqskit_to_pytket(bqskit_out_circuit)
         out_utry = UnitaryMatrix(self.get_unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-5

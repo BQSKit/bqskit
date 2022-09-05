@@ -152,6 +152,7 @@ from bqskit.passes.control.paralleldo import ParallelDo
 from bqskit.passes.control.predicate import PassPredicate
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
+from bqskit.passes.control.predicates.multi import MultiPhysicalPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
 from bqskit.passes.control.predicates.physical import PhysicalPredicate
 from bqskit.passes.control.predicates.single import SinglePhysicalPredicate
@@ -208,6 +209,8 @@ from bqskit.passes.util.compress import CompressPass
 from bqskit.passes.util.conversion import BlockConversionPass
 from bqskit.passes.util.converttou3 import ToU3Pass
 from bqskit.passes.util.extend import ExtendBlockSizePass
+from bqskit.passes.util.fill import FillSingleQuditGatesPass
+from bqskit.passes.util.log import LogErrorPass
 from bqskit.passes.util.log import LogPass
 from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
@@ -287,4 +290,7 @@ __all__ = [
     'RestoreMeasurements',
     'ExtendBlockSizePass',
     'ApplyPlacement',
+    'MultiPhysicalPredicate',
+    'LogErrorPass',
+    'FillSingleQuditGatesPass',
 ]

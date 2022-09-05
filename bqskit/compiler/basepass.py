@@ -153,7 +153,10 @@ class BasePass(abc.ABC):
             (list[int]): A coupling graph of the connectivity.
         """
         model = BasePass.get_model(circuit, data)
-        placement = BasePass.get_placement(circuit, data)
+        try:
+            placement = BasePass.get_placement(circuit, data)
+        except RuntimeError:
+            placement = list(range(circuit.num_qudits))
         return model.coupling_graph.get_subgraph(placement)
 
     @staticmethod

@@ -36,6 +36,10 @@ from bqskit.ext.supermarq import supermarq_critical_depth
 from bqskit.ext.supermarq import supermarq_entanglement_ratio
 from bqskit.ext.supermarq import supermarq_parallelism
 from bqskit.ext.supermarq import supermarq_liveness
+from bqskit.ext.rigetti import Aspen11Model
+from bqskit.ext.rigetti import AspenM2Model
+from bqskit.ext.honeywell import H1_1Model
+from bqskit.ext.cirq.models import Sycamore23Model, SycamoreModel
 
 
 __all__ = [
@@ -53,4 +57,9 @@ __all__ = [
     'supermarq_entanglement_ratio',
     'supermarq_parallelism',
     'supermarq_liveness',
+    'Aspen11Model',
+    'AspenM2Model',
+    'H1_1Model',
+    'Sycamore23Model',
+    'SycamoreModel',
 ]

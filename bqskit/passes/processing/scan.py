@@ -96,7 +96,7 @@ class ScanningGateRemovalPass(BasePass):
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         start = 'left' if self.start_from_left else 'right'
-        _logger.debug(f'Starting scan gate removal from {start}.')
+        _logger.debug(f'Starting scanning gate removal on the {start}.')
 
         target = self.get_target(circuit, data)
 

@@ -81,9 +81,7 @@ class TestTranslate:
         utry = CircuitSimulator(qc, precompute_unitary=True).ops[0].data
         in_utry = UnitaryMatrix(utry.todense())
         bqskit_circuit = qutip_to_bqskit(qc)
-        bqskit_out_circuit = compile(
-            bqskit_circuit, block_size=2, max_synthesis_size=2,
-        )
+        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
         oc = bqskit_to_qutip(bqskit_out_circuit)
         utry = CircuitSimulator(oc, precompute_unitary=True).ops[0].data
         out_utry = UnitaryMatrix(utry.todense())

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
@@ -92,3 +93,19 @@ class MachineModel:
     def get_locations(self, block_size: int) -> list[CircuitLocation]:
         """Return all `block_size` connected blocks of qudit indicies."""
         return self.coupling_graph.get_subgraphs_of_size(block_size)
+
+    def is_compatible(self, circuit: Circuit) -> bool:
+        """Check if a circuit is compatible with this model."""
+        if circuit.num_qudits > self.num_qudits:
+            return False
+
+        if any(g not in self.gate_set for g in circuit.gate_set):
+            return False
+
+        if any(e not in self.coupling_graph for e in circuit.coupling_graph):
+            return False
+
+        if any(r != self.radixes[i] for i, r in enumerate(circuit.radixes)):
+            return False
+
+        return True

@@ -1,6 +1,7 @@
 """This module implements the CircuitIterator class."""
 from __future__ import annotations
 
+import heapq
 from typing import Iterator
 from typing import Sequence
 from typing import Tuple
@@ -104,16 +105,17 @@ class CircuitDagIterator(CircuitIterator):
         self.and_cycles = and_cycles
 
         # Track frontier for topological traversal
-        self.frontier = circuit.front
+        self.frontier = list(circuit.front)
+        heapq.heapify(self.frontier)
 
         # Tracks how many of a gate's dependencies have been partitioned
-        self.prev_binned_counts = {n: 0 for n in self.frontier}
+        self.prev_binned_counts = {n: 0 for n in circuit.front}
 
     def __next__(self) -> Operation | tuple[int, Operation]:
         if len(self.frontier) == 0:
             raise StopIteration
 
-        point = self.frontier.pop()
+        point = heapq.heappop(self.frontier)
         self.prev_binned_counts.pop(point)
 
         # Update frontier
@@ -125,7 +127,7 @@ class CircuitDagIterator(CircuitIterator):
             num_prev_binned = self.prev_binned_counts[successor]
             total_num_prev = len(self.circuit.prev(successor))
             if num_prev_binned == total_num_prev:
-                self.frontier.add(successor)
+                heapq.heappush(self.frontier, successor)
 
         op = self.circuit[point]
         return (point.cycle, op) if self.and_cycles else op

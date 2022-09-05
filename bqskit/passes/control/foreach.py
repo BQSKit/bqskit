@@ -136,8 +136,7 @@ class ForEachBlockPass(BasePass):
 
         # Get the machine model
         model = self.get_model(circuit, data)
-        placement = self.get_placement(circuit, data)
-        subgraph = model.coupling_graph.get_subgraph(placement)
+        coupling_graph = self.get_connectivity(circuit, data)
 
         # Preprocess blocks
         subcircuits: list[Circuit] = []
@@ -157,7 +156,7 @@ class ForEachBlockPass(BasePass):
             subnumbering = {op.location[i]: i for i in range(len(op.location))}
             submodel = MachineModel(
                 len(op.location),
-                subgraph.get_subgraph(op.location, subnumbering),
+                coupling_graph.get_subgraph(op.location, subnumbering),
                 model.gate_set,
                 subradixes,
             )
@@ -221,12 +220,12 @@ class ForEachBlockPass(BasePass):
                     ),
                 )
                 block_data['replaced'] = True
+
+                # Calculate Error
+                if self.calculate_error_bound:
+                    error_sum += block_data['error']
             else:
                 block_data['replaced'] = False
-
-            # Calculate Error
-            if self.calculate_error_bound:
-                error_sum += block_data['error']
 
         # Replace blocks
         circuit.batch_replace(points, ops)
@@ -237,10 +236,10 @@ class ForEachBlockPass(BasePass):
         # Record error
         if self.calculate_error_bound:
             if 'error' in data:
-                data['error'] *= error_sum
+                data['error'] += error_sum
             else:
                 data['error'] = error_sum
-            _logger.info(f"New circuit error is {data['error']}.")
+            _logger.debug(f"New circuit error is {data['error']}.")
 
 
 def default_collection_filter(op: Operation) -> bool:

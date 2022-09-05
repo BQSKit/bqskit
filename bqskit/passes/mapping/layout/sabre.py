@@ -69,10 +69,7 @@ class GeneralizedSabreLayoutPass(BasePass, GeneralizedSabreAlgorithm):
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        model = self.get_model(circuit, data)
-        placement = self.get_placement(circuit, data)
-        subgraph = model.coupling_graph.get_subgraph(placement)
-
+        subgraph = self.get_connectivity(circuit, data)
         if not subgraph.is_fully_connected():
             raise RuntimeError('Cannot layout circuit on disconnected qudits.')
 
