@@ -20,12 +20,11 @@ class TestLeap:
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
-    def test_small_qubit_with_compiler(self) -> None:
+    def test_small_qubit_with_compiler(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         leap = LEAPSynthesisPass()
-        with Compiler() as compiler:
-            circuit = compiler.compile(CompilationTask(circuit, [leap]))
+        circuit = compiler.compile(CompilationTask(circuit, [leap]))
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 

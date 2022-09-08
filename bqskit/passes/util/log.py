@@ -4,6 +4,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import numpy as np
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
 
@@ -49,10 +51,11 @@ class LogErrorPass(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if 'error' in data:
             error = data['error']
-            if self.threshold is not None and error > self.threshold:
+            nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
+            if self.threshold is not None and nonsq_error > self.threshold:
                 _logger.warn(
                     'Upper bound on error is greater than set threshold:'
-                    f' {error} > {self.threshold}.',
+                    f' {nonsq_error} > {self.threshold}.',
                 )
             else:
-                _logger.info(f'Upper bound on error is {error}.')
+                _logger.info(f'Upper bound on error is {nonsq_error}.')

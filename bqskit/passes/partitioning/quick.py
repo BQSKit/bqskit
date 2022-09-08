@@ -203,6 +203,15 @@ class QuickPartitioner(BasePass):
                 for bin in overlapping_bins:
                     bin.blocked_qudits.update(new_bin.qudits)
 
+                    for active_bin in active_bins:
+                        if active_bin is None or active_bin == bin:
+                            continue
+
+                        indirect = active_bin.blocked_qudits
+                        indirect = indirect.intersection(bin.qudits)
+                        if len(indirect) != 0:
+                            active_bin.blocked_qudits.update(new_bin.qudits)
+
             else:
                 # Add to first admissible bin
                 selected_bin = admissible_bins[0]
@@ -222,8 +231,18 @@ class QuickPartitioner(BasePass):
 
                 # Block qudits to prevent circular dependencies
                 for bin in overlapping_bins:
-                    if bin != selected_bin:
-                        bin.blocked_qudits.update(selected_bin.qudits)
+                    if bin == selected_bin:
+                        continue
+                    bin.blocked_qudits.update(selected_bin.qudits)
+
+                    for active_bin in active_bins:
+                        if active_bin is None or active_bin == bin:
+                            continue
+
+                        indirect = active_bin.blocked_qudits
+                        indirect = indirect.intersection(bin.qudits)
+                        if len(indirect) != 0:
+                            active_bin.blocked_qudits.update(new_bin.qudits)
 
             # If a new bin was finalized, reprocess pending bins
             if num_closed >= 5:

@@ -17,12 +17,11 @@ class TestQPredict:
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
-    def test_small_qubit_with_compiler(self) -> None:
+    def test_small_qubit_with_compiler(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         qpredict = QPredictDecompositionPass()
-        with Compiler() as compiler:
-            circuit = compiler.compile(CompilationTask(circuit, [qpredict]))
+        circuit = compiler.compile(CompilationTask(circuit, [qpredict]))
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
@@ -34,11 +33,10 @@ class TestQPredict:
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-4
 
-    def test_3_qubit_with_compiler(self) -> None:
+    def test_3_qubit_with_compiler(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(3)
         circuit = Circuit.from_unitary(utry)
         qpredict = QPredictDecompositionPass()
-        with Compiler() as compiler:
-            circuit = compiler.compile(CompilationTask(circuit, [qpredict]))
+        circuit = compiler.compile(CompilationTask(circuit, [qpredict]))
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-4

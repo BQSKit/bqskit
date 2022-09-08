@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import Any
 from typing import Callable
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
@@ -25,8 +28,8 @@ from bqskit.passes import *
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
-
 if TYPE_CHECKING:
     from bqskit.qis.unitary import UnitaryLike
     from bqskit.qis.state import StateLike
@@ -40,6 +43,7 @@ def compile(
     synthesis_epsilon: float = 1e-10,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
+    compiler: Compiler | None = None,
     *compiler_args: Any,
     **compiler_kwargs: Any,
 ) -> Circuit:
@@ -59,20 +63,31 @@ def compile(
             performance with a higher number.  An optimization_level
             of 0 is not supported due to inherit optimization in any
             workflow containing synthesis. Valid inputs are 1, 2, 3, or 4.
-            Be cautious, an optimization level of 4 can lead to extremely
-            long runtimes with diminishing returns. (Default: 1)
-
-        approximation_level (int): The degree of approximation in the workflow.
-            A larger number allows for a greater degree of error in final
-            solution. Valid inputs are 0, 1, 2, 3, 4. An approximation level
-            of zero implies an exact circuit is desired, while a level of 4
-            allows for very large error. (Default: 1)
+            (Default: 1)
 
         max_synthesis_size (int): The maximum size of a unitary to
-            synthesize. Larger circuits will need to be partitioned.
+            synthesize or instantiate. Larger circuits will be partitioned.
+            Increasing this will most likely lead to better results with
+            an exponential time trade-off. (Default: 3)
 
-        block_size (int): If a circuit is partitioned, it will be divided
-            into circuits of at most this many number of qudits.
+        synthesis_epsilon (float): The maximum distance between target
+            and circuit unitary during any instantiation or synthesis
+            algorithms. (Default: 1e-10)
+
+        error_threshold (float | None): This parameter controls the
+            verification mechanism in this compile function. By default,
+            it is set to None, so no verification is done. If you set
+            this to a float, the upper bound on compilation error
+            is calculated. If the upper bound is larger than this number,
+            a warning will be logged. (Default: None)
+
+        error_sim_size (int): If an `error_threshold` is set, the error
+            upper bound is calculated by simulating blocks of this size.
+            As you increase `error_sim_size`, the upper bound on error
+            becomes more accurate. (Default: 8)
+
+        compiler (Compiler | None): Pass a compiler to prevent creating
+            one. (Default: None)
 
         compiler_args (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a dask cluster can go here.
@@ -87,7 +102,9 @@ def compile(
         >>> from bqskit import Circuit, compile
         >>> circuit = Circuit.from_file('input.qasm')
         >>> compiled_circuit = compile(circuit)
+        >>> compiled_circuit.save('output.qasm')
     """
+    # Check `input`
     if isinstance(input, Circuit):
         pass
 
@@ -111,6 +128,7 @@ def compile(
             'for qubit-only systems.',
         )  # TODO
 
+    # Check `model`
     if model is None:
         model = MachineModel(input.num_qudits)
 
@@ -126,17 +144,20 @@ def compile(
             'for qubit-only systems.',
         )  # TODO
 
-    model_mq_gates = len([g for g in model.gate_set if g.num_qudits >= 2])
+    model_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
-    if model_mq_gates == 0 and input.num_qudits > 1:
+    if len(model_mq_gates) == 0 and input.num_qudits > 1:
         raise ValueError('No entangling gates in native gate set.')
 
-    if model_mq_gates >= 2 and optimization_level > 2:
-        _logger.warning(
-            'Multiple entangling gates in native gate set.\n'
-            'Expect longer compile times.',
+    if all(g.num_qudits > input.num_qudits for g in model.gate_set):
+        raise ValueError(
+            'Model gate set does not contain any entangling gates'
+            ' that is less than or equal to input size.'
+            f' Cannot compile {input.num_qudits}-qudit input without'
+            f' {input.num_qudits}-qudit or smaller gates.',
         )
 
+    # Check `optimization_level`
     if not is_integer(optimization_level):
         raise TypeError(
             'Expected integer for optimization_level'
@@ -149,61 +170,70 @@ def compile(
             f' Got {optimization_level}.',
         )
 
-    # if not is_integer(approximation_level):
-    #     raise TypeError(
-    #         'Expected integer for approximation_level'
-    #         f', got{type(approximation_level)}.',
-    #     )
+    if len(model_mq_gates) >= 2 and optimization_level > 2:
+        _logger.warning(
+            'Multiple entangling gates in native gate set.\n'
+            'Expect longer compile times.',
+        )
 
-    # if approximation_level < 0 or approximation_level > 4:
-    #     raise ValueError(
-    #         'The approximation level should be either 0, 1, 2, 3, or 4.'
-    #         f' Got {approximation_level}.',
-    #     )
-
+    # Check `max_synthesis_size`
     if not is_integer(max_synthesis_size):
         raise TypeError(
             'Expected integer for max_synthesis_size'
             f', got{type(max_synthesis_size)}.',
         )
 
-    if max_synthesis_size < 2:
+    if max_synthesis_size < max(g.num_qudits for g in model.gate_set):
+        value = max(g.num_qudits for g in model.gate_set)
         raise ValueError(
-            'The maximum synthesis size needs to be greater than 2.'
-            f' Got {max_synthesis_size}.',
+            'The maximum synthesis size needs to be greater than or equal to'
+            f' the largest native gate size: {max_synthesis_size} < {value}.',
         )
 
-    # if not is_integer(block_size):
-    #     raise TypeError(
-    #         'Expected integer for block_size'
-    #         f', got{type(block_size)}.',
-    #     )
+    if max_synthesis_size > 6:
+        _logger.warning('Large max synthesis size; expect long compile times.')
 
-    # if block_size < 2:
-    #     raise ValueError(
-    #         'The block size needs to be greater than 2.'
-    #         f' Got {block_size}.',
-    #     )
+    # Check `synthesis_epsilon`
+    if not is_real_number(synthesis_epsilon):
+        raise TypeError(
+            'Expected float for synthesis_epsilon'
+            f', got {type(synthesis_epsilon)}.',
+        )
 
-    # if max_synthesis_size < block_size:
-    #     raise ValueError(
-    #         'The maximum synthesis size needs to be greater than the block '
-    #         f' size. Got {max_synthesis_size} < {block_size}.',
-    #     )
+    if synthesis_epsilon < 0 or synthesis_epsilon > 1:
+        raise ValueError(
+            'Out-of-bounds synthesis_epsilon, it must be between 0 and 1,'
+            f' got {synthesis_epsilon}.',
+        )
 
-    # if max_synthesis_size > 6 or block_size > 6:
-    #     _logger.warning(
-    #         'Large synthesis size limit or large block size.\n'
-    #         'Expect long compile times.',
-    #     )
+    # Check `error_threshold`
+    if error_threshold is not None:
+        if not is_real_number(error_threshold):
+            raise TypeError(
+                'Expected float for error_threshold'
+                f', got {type(error_threshold)}.',
+            )
 
-    # if any(g.num_qudits > block_size for g in model.gate_set):
-        # raise ValueError(
-        #     'Unable to compile circuit to machine model with native gate'
-        #     'larger than block_size.\nConsider adjusting block_size '
-        #     'and max_synthesis_size or the machine model native set.',
-        # )
+        if error_threshold < 0 or error_threshold > 1:
+            raise ValueError(
+                'Out-of-bounds error_threshold, it must be between 0 and 1,'
+                f' got {error_threshold}.',
+            )
 
+    # Check `error_sim_size`
+    if not is_integer(error_sim_size):
+        raise TypeError(
+            'Expected integer for error_sim_size'
+            f', got{type(error_sim_size)}.',
+        )
+
+    if error_sim_size < max_synthesis_size:
+        raise ValueError(
+            'Simulation size for error calculation cannot be less than the'
+            f'maximum synthesis size: {error_sim_size} < {max_synthesis_size}.',
+        )
+
+    # Build workflow
     if isinstance(input, Circuit):
         if input.num_qudits > max_synthesis_size:
             if any(
@@ -264,8 +294,36 @@ def compile(
             error_sim_size,
         )
 
-    with Compiler(*compiler_args, **compiler_kwargs) as compiler:
-        return compiler.compile(task)
+    # Connect to or construct a Compiler
+    managed_compiler = compiler is None
+
+    if managed_compiler:
+        compiler = Compiler(*compiler_args, **compiler_kwargs)
+
+    elif not isinstance(compiler, Compiler):
+        raise TypeError(
+            'Expected Compiler object for compiler parameter'
+            f', got {type(compiler)}.',
+        )
+
+    # Perform the compilation
+    out = compiler.compile(task)
+
+    # Log error if necessary
+    if error_threshold is not None:
+        error = compiler.analyze(task, 'error')
+        nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
+        if nonsq_error > error_threshold:
+            warnings.warn(
+                'Upper bound on error is greater than set threshold:'
+                f' {nonsq_error} > {error_threshold}.',
+            )
+
+    # Close managed compiler
+    if managed_compiler:
+        compiler.close()
+
+    return out
 
 
 def _circuit_workflow(
@@ -307,11 +365,10 @@ def _opt1_workflow(
     error_sim_size: int = 8,
 ) -> list[BasePass]:
     """Build Optimization Level 1 workflow for circuit compilation."""
-    layer_gen = _get_layer_gen(circuit, model)
+    layer_gen = _get_layer_gen(model)
     scan_mq = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
         collection_filter=_mq_gate_collection_filter,
-        instantiate_options={'multistarts': 4, 'ftol': 5e-16, 'gtol': 1e-15},
     )
     qsearch = QSearchSynthesisPass(
         success_threshold=synthesis_epsilon,
@@ -324,22 +381,65 @@ def _opt1_workflow(
     )
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
-    smallest_entangler_size = min(
-        g.num_qudits for g in model.gate_set
-        if g.num_qudits != 1
-    )
-    non_native_gates = [g for g in circuit.gate_set if g not in model.gate_set]
-    non_native_tq_gates = [g for g in non_native_gates if g.num_qudits == 2]
-    if SwapGate() not in model.gate_set:
-        non_native_tq_gates.append(SwapGate())
-    native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
+    if circuit.num_qudits > 1:
+        smallest_entangler_size = min(
+            g.num_qudits for g in model.gate_set
+            if g.num_qudits != 1
+        )
+        non_native_gates = [
+            g for g in circuit.gate_set
+            if g not in model.gate_set
+        ]
+        non_native_tq_gates = [
+            g for g in non_native_gates
+            if g.num_qudits == 2
+        ]
+        if SwapGate() not in model.gate_set:
+            non_native_tq_gates.append(SwapGate())
+        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
-    non_native_mq = any(g.num_qudits > 2 for g in non_native_gates)
-    irebase = Rebase2QuditGatePass(non_native_tq_gates, native_tq_gates, 3, 5)
-    multi_qudit_gate_rebase = direct_synthesis if non_native_mq else irebase
+        all_gates = model.gate_set.union(circuit.gate_set)
+        if any(g.num_qudits > 2 for g in all_gates):
+            multi_qudit_gate_rebase: BasePass = direct_synthesis
+        else:
+            multi_qudit_gate_rebase = Rebase2QuditGatePass(
+                non_native_tq_gates,
+                native_tq_gates,
+                max_depth=3,
+                max_retries=5,
+            )
+    else:
+        smallest_entangler_size = 1
+        multi_qudit_gate_rebase = NOOPPass()
 
     return [
         SetModelPass(model),
+
+        # Multi-qudit gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                LogPass('Retargeting multi-qudit gates.'),
+                QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                                scan_mq,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
+                    calculate_error_bound=(error_threshold is not None),
+                ),
+                UnfoldPass(),
+            ],
+        ),
 
         # Mapping via Sabre
         LogPass('Mapping circuit.'),
@@ -347,23 +447,30 @@ def _opt1_workflow(
         GeneralizedSabreLayoutPass(),
         GeneralizedSabreRoutingPass(),
 
-        # Multi-qudit gate retargeting
-        LogPass('Retargeting multi-qudit gates.'),
-        QuickPartitioner(max_synthesis_size),
-        ExtendBlockSizePass(smallest_entangler_size),
-        QuickPartitioner(error_sim_size),
-        ForEachBlockPass(
-            ForEachBlockPass(
-                IfThenElsePass(
-                    NotPredicate(MultiPhysicalPredicate()),
-                    multi_qudit_gate_rebase,
-                    [FillSingleQuditGatesPass(synthesis_epsilon), scan_mq],
+        # Swap gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                LogPass('Retargeting swap gates.'),
+                QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
+                    calculate_error_bound=(error_threshold is not None),
                 ),
-                replace_filter=_gen_replace_filter(model),
-            ),
-            calculate_error_bound=(error_threshold is not None),
+                UnfoldPass(),
+            ],
         ),
-        UnfoldPass(),
 
         # Single-qudit gate retargeting
         LogPass('Retargeting single-qudit gates.'),
@@ -385,7 +492,11 @@ def _opt2_workflow(
 ) -> list[BasePass]:
     """Build Optimization Level 2 workflow for circuit compilation."""
     inst_ops = {'multistarts': 4, 'ftol': 5e-12, 'gtol': 1e-14}
-    layer_gen = _get_layer_gen(circuit, model)
+    layer_gen = _get_layer_gen(model)
+    scan_mq = ScanningGateRemovalPass(
+        success_threshold=synthesis_epsilon,
+        collection_filter=_mq_gate_collection_filter,
+    )
     scan = ScanningGateRemovalPass(success_threshold=synthesis_epsilon)
     qsearch = QSearchSynthesisPass(
         success_threshold=synthesis_epsilon,
@@ -400,22 +511,65 @@ def _opt2_workflow(
     )
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
-    smallest_entangler_size = min(
-        g.num_qudits for g in model.gate_set
-        if g.num_qudits != 1
-    )
-    non_native_gates = [g for g in circuit.gate_set if g not in model.gate_set]
-    non_native_tq_gates = [g for g in non_native_gates if g.num_qudits == 2]
-    if SwapGate() not in model.gate_set:
-        non_native_tq_gates.append(SwapGate())
-    native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
+    if circuit.num_qudits > 1:
+        smallest_entangler_size = min(
+            g.num_qudits for g in model.gate_set
+            if g.num_qudits != 1
+        )
+        non_native_gates = [
+            g for g in circuit.gate_set
+            if g not in model.gate_set
+        ]
+        non_native_tq_gates = [
+            g for g in non_native_gates
+            if g.num_qudits == 2
+        ]
+        if SwapGate() not in model.gate_set:
+            non_native_tq_gates.append(SwapGate())
+        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
-    non_native_mq = any(g.num_qudits > 2 for g in non_native_gates)
-    irebase = Rebase2QuditGatePass(non_native_tq_gates, native_tq_gates, 3, 5)
-    multi_qudit_gate_rebase = direct_synthesis if non_native_mq else irebase
+        all_gates = model.gate_set.union(circuit.gate_set)
+        if any(g.num_qudits > 2 for g in all_gates):
+            multi_qudit_gate_rebase: BasePass = direct_synthesis
+        else:
+            multi_qudit_gate_rebase = Rebase2QuditGatePass(
+                non_native_tq_gates,
+                native_tq_gates,
+                max_depth=3,
+                max_retries=5,
+            )
+    else:
+        smallest_entangler_size = 1
+        multi_qudit_gate_rebase = NOOPPass()
 
     return [
         SetModelPass(model),
+
+        # Multi-qudit gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                LogPass('Retargeting multi-qudit gates.'),
+                QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                                scan_mq,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
+                    calculate_error_bound=(error_threshold is not None),
+                ),
+                UnfoldPass(),
+            ],
+        ),
 
         # Mapping via Sabre
         LogPass('Mapping circuit.'),
@@ -423,22 +577,30 @@ def _opt2_workflow(
         GeneralizedSabreLayoutPass(),
         GeneralizedSabreRoutingPass(),
 
-        # Multi-qudit gate retargeting
-        LogPass('Retargeting multi-qudit gates.'),
-        QuickPartitioner(max_synthesis_size),
-        ExtendBlockSizePass(smallest_entangler_size),
-        QuickPartitioner(error_sim_size),
-        ForEachBlockPass(
-            ForEachBlockPass(
-                IfThenElsePass(
-                    NotPredicate(MultiPhysicalPredicate()),
-                    multi_qudit_gate_rebase,
+        # Swap gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                LogPass('Retargeting swap gates.'),
+                QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
+                    calculate_error_bound=(error_threshold is not None),
                 ),
-                replace_filter=_gen_replace_filter(model),
-            ),
-            calculate_error_bound=(error_threshold is not None),
+                UnfoldPass(),
+            ],
         ),
-        UnfoldPass(),
 
         # Single-qudit gate retargeting
         LogPass('Retargeting single-qudit gates.'),
@@ -476,7 +638,7 @@ def _opt3_workflow(
         'ftol': 5e-16,
         'gtol': 1e-15,
     }
-    layer_gen = _get_layer_gen(circuit, model)
+    layer_gen = _get_layer_gen(model)
     scan = ScanningGateRemovalPass(success_threshold=synthesis_epsilon)
     scan_mq = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
@@ -495,33 +657,62 @@ def _opt3_workflow(
     )
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
-    smallest_entangler_size = min(
-        g.num_qudits for g in model.gate_set
-        if g.num_qudits != 1
-    )
-    non_native_gates = [g for g in circuit.gate_set if g not in model.gate_set]
-    non_native_tq_gates = [g for g in non_native_gates if g.num_qudits == 2]
-    if SwapGate() not in model.gate_set:
-        non_native_tq_gates.append(SwapGate())
-    native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
-    native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
+    if circuit.num_qudits > 1:
+        smallest_entangler_size = min(
+            g.num_qudits for g in model.gate_set
+            if g.num_qudits != 1
+        )
+        non_native_gates = [
+            g for g in circuit.gate_set
+            if g not in model.gate_set
+        ]
+        non_native_tq_gates = [
+            g for g in non_native_gates
+            if g.num_qudits == 2
+        ]
+        if SwapGate() not in model.gate_set:
+            non_native_tq_gates.append(SwapGate())
+        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
+        native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
-    non_native_mq = any(g.num_qudits > 2 for g in non_native_gates)
-    irebase = Rebase2QuditGatePass(non_native_tq_gates, native_tq_gates, 3, 5)
-    multi_qudit_gate_rebase = direct_synthesis if non_native_mq else irebase
+        all_gates = model.gate_set.union(circuit.gate_set)
+        if any(g.num_qudits > 2 for g in all_gates):
+            multi_qudit_gate_rebase: BasePass = direct_synthesis
+        else:
+            multi_qudit_gate_rebase = Rebase2QuditGatePass(
+                non_native_tq_gates,
+                native_tq_gates,
+                max_depth=3,
+                max_retries=5,
+            )
+    else:
+        smallest_entangler_size = 1
+        multi_qudit_gate_rebase = NOOPPass()
+        native_mq_gates = []
 
     return [
         SetModelPass(model),
 
-        # Iterative gate deletion on multi-qudit gates
-        LogPass('Attempting to delete multi-qudit gates.'),
-        WhileLoopPass(
-            ChangePredicate(),
+        # Multi-qudit gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
             [
+                LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
-                    ForEachBlockPass(scan_mq),
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                                scan_mq,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
                     calculate_error_bound=(error_threshold is not None),
                 ),
                 UnfoldPass(),
@@ -534,39 +725,52 @@ def _opt3_workflow(
         GeneralizedSabreLayoutPass(),
         GeneralizedSabreRoutingPass(),
 
-        # Multi-qudit gate retargeting
-        LogPass('Retargeting multi-qudit gates.'),
-        QuickPartitioner(max_synthesis_size),
-        ExtendBlockSizePass(smallest_entangler_size),
-        QuickPartitioner(error_sim_size),
-        ForEachBlockPass(
-            ForEachBlockPass(
-                IfThenElsePass(
-                    NotPredicate(MultiPhysicalPredicate()),
-                    multi_qudit_gate_rebase,
-                ),
-                replace_filter=_gen_replace_filter(model),
-            ),
-            calculate_error_bound=(error_threshold is not None),
-        ),
-        UnfoldPass(),
-
-        # Optimization: Iterative Resynthesis
-        WhileLoopPass(
-            GateCountPredicate(native_mq_gates),
+        # Swap gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
             [
-                LogPass('Resynthesizing blocks.'),
+                LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
                 ExtendBlockSizePass(smallest_entangler_size),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
-                        direct_synthesis,
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                            ),
+                        ],
                         replace_filter=_gen_replace_filter(model),
                     ),
                     calculate_error_bound=(error_threshold is not None),
                 ),
                 UnfoldPass(),
+            ],
+        ),
+
+        # Optimization: Iterative Resynthesis
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                WhileLoopPass(
+                    GateCountPredicate(native_mq_gates),
+                    [
+                        LogPass('Resynthesizing blocks.'),
+                        QuickPartitioner(max_synthesis_size),
+                        ExtendBlockSizePass(smallest_entangler_size),
+                        QuickPartitioner(error_sim_size),
+                        ForEachBlockPass(
+                            ForEachBlockPass(
+                                direct_synthesis,
+                                replace_filter=_gen_replace_filter(model),
+                            ),
+                            calculate_error_bound=(error_threshold is not None),
+                        ),
+                        UnfoldPass(),
+                    ],
+                ),
             ],
         ),
 
@@ -621,7 +825,7 @@ def _stateprep_workflow(
     raise NotImplementedError('State preparation is not yet implemented.')
 
 
-def _get_layer_gen(circuit: Circuit, model: MachineModel) -> LayerGenerator:
+def _get_layer_gen(model: MachineModel) -> LayerGenerator:
     """Build a `model`-compliant layer generator."""
     tq_gates = [gate for gate in model.gate_set if gate.num_qudits == 2]
     mq_gates = [gate for gate in model.gate_set if gate.num_qudits > 2]

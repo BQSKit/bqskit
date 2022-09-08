@@ -5,6 +5,7 @@ from qutip import CircuitSimulator
 from qutip import QubitCircuit
 
 from bqskit.compiler.compile import compile
+from bqskit.compiler.compiler import Compiler
 from bqskit.ext import bqskit_to_qutip
 from bqskit.ext import qutip_to_bqskit
 from bqskit.ir.circuit import Circuit
@@ -76,23 +77,33 @@ class TestTranslate:
         out_utry = UnitaryMatrix(utry.todense())
         assert in_utry.get_distance_from(out_utry) < 1e-7
 
-    def test_compile_bqskit(self, qutip_circuit: QubitCircuit) -> None:
+    def test_compile_bqskit(
+        self,
+        qutip_circuit: QubitCircuit,
+        compiler: Compiler,
+    ) -> None:
         qc = qutip_circuit
         utry = CircuitSimulator(qc, precompute_unitary=True).ops[0].data
         in_utry = UnitaryMatrix(utry.todense())
         bqskit_circuit = qutip_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
+        bqskit_out_circuit = compile(
+            bqskit_circuit, max_synthesis_size=2, compiler=compiler,
+        )
         oc = bqskit_to_qutip(bqskit_out_circuit)
         utry = CircuitSimulator(oc, precompute_unitary=True).ops[0].data
         out_utry = UnitaryMatrix(utry.todense())
         assert in_utry.get_distance_from(out_utry) < 1e-5
 
-    def test_synthesis_bqskit(self, qutip_circuit: QubitCircuit) -> None:
+    def test_synthesis_bqskit(
+        self,
+        qutip_circuit: QubitCircuit,
+        compiler: Compiler,
+    ) -> None:
         qc = qutip_circuit
         utry = CircuitSimulator(qc, precompute_unitary=True).ops[0].data
         in_utry = UnitaryMatrix(utry.todense())
         bqskit_circuit = qutip_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit)
+        bqskit_out_circuit = compile(bqskit_circuit, compiler=compiler)
         oc = bqskit_to_qutip(bqskit_out_circuit)
         utry = CircuitSimulator(oc, precompute_unitary=True).ops[0].data
         out_utry = UnitaryMatrix(utry.todense())

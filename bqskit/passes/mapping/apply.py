@@ -20,4 +20,7 @@ class ApplyPlacement(BasePass):
         physical_circuit = Circuit(model.num_qudits, model.radixes)
         physical_circuit.append_circuit(circuit, placement)
         circuit.become(physical_circuit)
+        if 'final_mapping' in data:
+            pi = data['final_mapping']
+            data['final_mapping'] = [placement[p] for p in pi]
         data['placement'] = list(i for i in range(model.num_qudits))

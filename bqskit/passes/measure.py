@@ -48,8 +48,8 @@ class RestoreMeasurements(BasePass):
             cregs, measurements = data[ExtractMeasurements.key]
 
             # permute for final layout
-            if 'final_layout' in data:
-                pi = data['final_layout']
+            if 'final_mapping' in data:
+                pi = data['final_mapping']
                 measurements = {pi[q]: c for q, c in measurements.items()}
 
             mph = MeasurementPlaceholder(list(cregs.items()), measurements)

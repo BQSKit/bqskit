@@ -36,7 +36,7 @@ class GateCountPredicate(PassPredicate):
 
     def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
-        gate_count = [circuit.count(g) for g in self.gate]
+        gate_count = sum(circuit.count(g) for g in self.gate)
 
         # If first call, record data and return true
         if self.key not in data:

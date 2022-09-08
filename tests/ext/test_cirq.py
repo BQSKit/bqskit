@@ -5,6 +5,7 @@ import pytest
 from cirq import Circuit as QuantumCircuit
 
 from bqskit.compiler.compile import compile
+from bqskit.compiler.compiler import Compiler
 from bqskit.ext import bqskit_to_cirq
 from bqskit.ext import cirq_to_bqskit
 from bqskit.ir.circuit import Circuit
@@ -75,20 +76,35 @@ class TestTranslate:
         out_utry = UnitaryMatrix(cirq.unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-7
 
-    def test_compile_bqskit(self, cirq_circuit: QuantumCircuit) -> None:
+    def test_compile_bqskit(
+        self,
+        cirq_circuit: QuantumCircuit,
+        compiler: Compiler,
+    ) -> None:
         qc = cirq_circuit
         in_utry = UnitaryMatrix(cirq.unitary(qc))
         bqskit_circuit = cirq_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
+        bqskit_out_circuit = compile(
+            bqskit_circuit,
+            max_synthesis_size=2,
+            compiler=compiler,
+        )
         out_circuit = bqskit_to_cirq(bqskit_out_circuit)
         out_utry = UnitaryMatrix(cirq.unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-5
 
-    def test_synthesis_bqskit(self, cirq_circuit: QuantumCircuit) -> None:
+    def test_synthesis_bqskit(
+        self,
+        cirq_circuit: QuantumCircuit,
+        compiler: Compiler,
+    ) -> None:
         qc = cirq_circuit
         in_utry = UnitaryMatrix(cirq.unitary(qc))
         bqskit_circuit = cirq_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit)
+        bqskit_out_circuit = compile(
+            bqskit_circuit,
+            compiler=compiler,
+        )
         out_circuit = bqskit_to_cirq(bqskit_out_circuit)
         out_utry = UnitaryMatrix(cirq.unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-5

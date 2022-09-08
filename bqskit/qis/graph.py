@@ -4,7 +4,6 @@ from __future__ import annotations
 import copy
 import itertools as it
 import logging
-from functools import lru_cache
 from random import shuffle
 from typing import Any
 from typing import cast
@@ -82,6 +81,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             expanded_qudits = set()
 
             for qudit in frontier:
+                expanded_qudits.add(qudit)
                 expanded_qudits.update(self._adj[qudit])
 
             frontier = expanded_qudits - qudits_seen
@@ -195,7 +195,6 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 subgraph.append((renumbering[q0], renumbering[q1]))
         return CouplingGraph(subgraph, len(location))
 
-    @lru_cache(maxsize=None)
     def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:
         """
         Find all sets of indices that form connected subgraphs on their own.

@@ -39,6 +39,7 @@ from bqskit.ext.supermarq import supermarq_liveness
 from bqskit.ext.rigetti import Aspen11Model
 from bqskit.ext.rigetti import AspenM2Model
 from bqskit.ext.honeywell import H1_1Model
+from bqskit.ext.honeywell import H1_2Model
 from bqskit.ext.cirq.models import Sycamore23Model, SycamoreModel
 
 
@@ -60,6 +61,7 @@ __all__ = [
     'Aspen11Model',
     'AspenM2Model',
     'H1_1Model',
+    'H1_2Model',
     'Sycamore23Model',
     'SycamoreModel',
 ]

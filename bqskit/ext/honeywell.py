@@ -10,3 +10,4 @@ from bqskit.ir.gates.parameterized.u1q import U1qPiGate
 honeywell_gate_set: set[Gate] = {U1qPiGate, U1qPi2Gate, RZGate(), ZZGate()}
 
 H1_1Model = MachineModel(20, None, honeywell_gate_set)
+H1_2Model = MachineModel(12, None, honeywell_gate_set)

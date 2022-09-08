@@ -1933,8 +1933,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                                 self._front[qudit] = d_point
                             if self._rear[qudit] == s_point:
                                 self._rear[qudit] = d_point
-                            self._dag.pop(s_point)
-                            self._dag[d_point] = (prevs, nexts)
+                        self._dag.pop(s_point)
+                        self._dag[d_point] = (prevs, nexts)
                         qudits_to_add_to_shadow.extend(op.location)
 
             shadow_qudits.update(qudits_to_add_to_shadow)

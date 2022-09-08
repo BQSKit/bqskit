@@ -39,7 +39,7 @@ class TestGraphGetSubgraphsOfSize:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
 
         with pytest.raises(TypeError):
-            coupling_graph.get_subgraphs_of_size('a')
+            coupling_graph.get_subgraphs_of_size('a')  # type: ignore
 
 
 class TestMachineGetSubgraph:

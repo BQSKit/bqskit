@@ -45,6 +45,6 @@ class FillSingleQuditGatesPass(BasePass):
         dist = 1.0
         while dist > self.success_threshold:
             complete_circuit.instantiate(target)
-            dist = complete_circuit.get_unitary().get_distance_from(target)
+            dist = complete_circuit.get_unitary().get_distance_from(target, 1)
 
         circuit.become(complete_circuit)

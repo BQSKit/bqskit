@@ -33,6 +33,9 @@ class ExtendBlockSizePass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        if circuit.num_qudits < self.minimum_size:
+            raise RuntimeError('Cannot extend block larger than circuit.')
+
         cg = self.get_connectivity(circuit, data)
 
         # Find all small blocks
