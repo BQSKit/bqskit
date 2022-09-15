@@ -34,6 +34,40 @@ def enable_logging(verbose: bool = False) -> None:
     logging.getLogger('bqskit').setLevel(level)
 
 
+def disable_parallelism() -> None:
+    """
+    Disables the default parallelism in BQSKit.
+
+    If parallelism is disabled, everything will run single threaded. Performance
+    will degrade drastically but will free up computer resources. This setting
+    is ignored if connecting to an external cluster.
+    """
+    from bqskit.compiler import Compiler
+    Compiler._parallelism_enabled = False
+
+
+def enable_parallelism() -> None:
+    """
+    Enables parallelism; it is enabled by default.
+
+    See `disable_parallelism` for more info.
+    """
+    from bqskit.compiler import Compiler
+    Compiler._parallelism_enabled = True
+
+
+def enable_dashboard() -> None:
+    """Enables the dask dashboard."""
+    from bqskit.compiler import Compiler
+    Compiler._dashboard = True
+
+
+def disable_dashboard() -> None:
+    """Enables the dask dashboard."""
+    from bqskit.compiler import Compiler
+    Compiler._dashboard = False
+
+
 __all__ = [
     'compile',
     'MachineModel',

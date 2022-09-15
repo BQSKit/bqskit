@@ -105,20 +105,27 @@ def compile(
         >>> compiled_circuit.save('output.qasm')
     """
     # Check `input`
-    if isinstance(input, Circuit):
-        pass
+    try:
+        if isinstance(input, Circuit):
+            pass
 
-    elif UnitaryMatrix.is_unitary(input):
-        input = UnitaryMatrix(input)
+        elif UnitaryMatrix.is_unitary(input):
+            input = UnitaryMatrix(input)
 
-    elif StateVector.is_pure_state(input):
-        input = StateVector(input)
+        elif StateVector.is_pure_state(input):
+            input = StateVector(input)
 
-    else:
+        else:
+            raise TypeError(
+                'Input is neither a circuit, a unitary, nor a state.'
+                f' Got {type(input)}.',
+            )
+    except Exception as e:
         raise TypeError(
-            'Input is neither a circuit, a unitary, nor a state.'
-            f' Got {type(input)}.',
-        )
+            'Unable to determine type of input.'
+            ' Ensure that you are trying to compile a valid'
+            ' circuit, unitary, or state.',
+        ) from e
 
     assert isinstance(input, (Circuit, UnitaryMatrix, StateVector))
 

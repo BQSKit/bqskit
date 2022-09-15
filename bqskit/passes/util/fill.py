@@ -31,6 +31,13 @@ class FillSingleQuditGatesPass(BasePass):
         target = self.get_target(circuit, data)
 
         complete_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+
+        if target.num_qudits == 1:
+            params = U3Gate.calc_params(target)
+            complete_circuit.append_gate(U3Gate(), 0, params)
+            circuit.become(complete_circuit)
+            return
+
         for q in range(circuit.num_qudits):
             complete_circuit.append_gate(U3Gate(), q)
 

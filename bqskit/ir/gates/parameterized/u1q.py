@@ -1,6 +1,8 @@
 """This module implements the U1qGate."""
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import numpy.typing as npt
 
@@ -75,5 +77,5 @@ class U1qGate(QubitGate, DifferentiableUnitary, CachedClass):
         )
 
 
-U1qPiGate = U1qGate().with_frozen_params({0: np.pi})
-U1qPi2Gate = U1qGate().with_frozen_params({0: np.pi / 2})
+U1qPiGate = U1qGate().with_frozen_params({0: math.pi})
+U1qPi2Gate = U1qGate().with_frozen_params({0: math.pi / 2})

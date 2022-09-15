@@ -53,6 +53,12 @@ class Compiler:
         ...     circuit = compiler.compile(task)
     """
 
+    _parallelism_enabled = True
+    """Used to to limit default parallelism; see bqskit.disable_parallelism."""
+
+    _dashboard = False
+    """Used to enable the dask dashboard; see bqskit.enable_dashboard."""
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Construct a Compiler object.
@@ -151,8 +157,14 @@ def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
 
     # Start a dask scheduler in another process
     try:
+        dashboard = '--dashboard' if Compiler._dashboard else '--no-dashboard'
         scheduler_proc = Popen(
-            ['dask-scheduler', '--port', '8786'],
+            [
+                'dask-scheduler',
+                '--host', 'localhost',
+                '--port', '8786',
+                dashboard,
+            ],
             bufsize=1,
             universal_newlines=True,
             stdout=sys.stdout,
@@ -167,8 +179,16 @@ def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
 
     # Start dask workers in another process
     try:
+        workers = []
+        if Compiler._parallelism_enabled:
+            workers.append('auto')
+        else:
+            workers.append('1')
+            workers.append('--nthreads')
+            workers.append('1')
+
         worker_proc = Popen(
-            ['dask-worker', '--nworkers', 'auto', '127.0.0.1:8786'],
+            ['dask-worker', '--nworkers', *workers, 'localhost:8786'],
             bufsize=1,
             universal_newlines=True,
             stdout=sys.stdout,
