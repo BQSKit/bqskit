@@ -50,8 +50,9 @@ class FillSingleQuditGatesPass(BasePass):
                 complete_circuit.append_gate(U3Gate(), q)
 
         dist = 1.0
-        while dist > self.success_threshold:
+        for i in range(10):
             complete_circuit.instantiate(target)
             dist = complete_circuit.get_unitary().get_distance_from(target, 1)
 
-        circuit.become(complete_circuit)
+        if dist <= self.success_threshold:
+            circuit.become(complete_circuit)

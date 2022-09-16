@@ -910,8 +910,9 @@ def _gen_replace_filter(
             return True
 
         org = old.gate._circuit
+        org_mq_gates = [g for g in org.gate_set if g.num_qudits > 1]
 
-        if any(g not in model.gate_set for g in org.gate_set):
+        if any(g not in model.gate_set for g in org_mq_gates):
             return True
 
         if any(
