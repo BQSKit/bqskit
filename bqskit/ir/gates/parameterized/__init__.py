@@ -16,6 +16,8 @@ from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.rzz import RZZGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u1q import U1qGate
+from bqskit.ir.gates.parameterized.u1q import U1qPi2Gate
+from bqskit.ir.gates.parameterized.u1q import U1qPiGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.u8 import U8Gate
@@ -37,6 +39,8 @@ __all__ = [
     'RZZGate',
     'U1Gate',
     'U1qGate',
+    'U1qPiGate',
+    'U1qPi2Gate',
     'U2Gate',
     'U3Gate',
     'U8Gate',

@@ -1,12 +1,16 @@
 Welcome to BQSKit's documentation!
 ==================================
 
-BQSKit is a superoptimizing quantum compiler that aims to provide an
-easy-to-use and quick-to-extend software package around quantum synthesis.
-This is accomplished by first building a quantum circuit intermediate
-representation designed to work efficiently with numerical optimizer
-based synthesis algorithms, and second bundling a compiler infrastructure
-and algorithm framework that can run many algorithms efficiently.
+The Berkeley Quantum Synthesis Toolkit (BQSKit) \[bis • kit\] is a
+powerful and portable quantum compiler framework. It can be used with
+ease to compile quantum programs to efficient physical circuits for any
+QPU. BQSKit achieves its superior portability by utilizing a novel
+quantum circuit intermediate representation designed to facilitate
+numerical instantiation. On top of this IR, we built an algorithm
+framework and compiler infrastructure to efficiently accomplish any
+quantum compilation goal. You will find some guides and API documentation
+below, and you can learn how to use BQSKit to solve your problems with
+our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
 
 
 .. toctree::
@@ -14,18 +18,8 @@ and algorithm framework that can run many algorithms efficiently.
    :maxdepth: 1
 
    intro/start
-   intro/synthesis
    intro/CONTRIBUTING
    intro/license
-
-.. toctree::
-   :caption: BQSKit Tutorials
-   :maxdepth: 1
-
-   tutorials/Introduction to BQSKit IR.ipynb
-   tutorials/Search Synthesis.ipynb
-   tutorials/Searchless Synthesis.ipynb
-   tutorials/Partitioning and Optimization.ipynb
 
 .. toctree::
    :caption: API Reference

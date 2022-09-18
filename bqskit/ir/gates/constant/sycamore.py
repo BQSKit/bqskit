@@ -21,7 +21,7 @@ class SycamoreGate(ConstantGate, QubitGate):
         1 & 0 & 0 & 0 \\\\
         0 & 0 & -i & 0 \\\\
         0 & -i & 0 & 0 \\\\
-        0 & 0 & 0 & e^{-i\frac{\\pi}{6}} \\\\
+        0 & 0 & 0 & e^{-i\\frac{\\pi}{6}} \\\\
         \\end{pmatrix}
     """
 

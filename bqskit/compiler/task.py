@@ -29,10 +29,8 @@ class CompilationTask():
     """
     A complete description of a quantum compilation task.
 
-    The CompilationTask class describes a compilation workflow completely.
-    These can be submitted to a BQSKit compiler to be efficiently executed.
-
-    There are static constructors for the most common use cases.
+    The CompilationTask class describes a compilation workflow completely. These
+    can be submitted to a BQSKit compiler to be efficiently executed.
     """
 
     def __init__(self, input: Circuit, passes: Sequence[BasePass]) -> None:

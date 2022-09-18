@@ -5,7 +5,19 @@ Compiler Infrastructure (:mod:`bqskit.compiler`)
 
 The `bqskit.compiler` package implements the BQSKit's compiler framework.
 This includes classes for defining, combining, executing, and managing
-compilation algorithms.
+compilation algorithms. It also includes the standard :func:`compile`
+function definition.
+
+.. rubric:: Standard BQSKit Compile Function
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+    :nosignatures:
+
+    compile
+
+.. rubric:: Compiler Infrastructure
 
 .. autosummary::
     :toctree: autogen
@@ -27,10 +39,10 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.task import CompilationTask
 
 __all__ = [
-    'compile',
     'BasePass',
+    'compile',
     'Compiler',
     'Executor',
-    'CompilationTask',
     'MachineModel',
+    'CompilationTask',
 ]

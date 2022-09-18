@@ -25,11 +25,10 @@ _logger = logging.getLogger(__name__)
 
 class Compiler:
     """
-    The BQSKit compiler class.
-
     A compiler is responsible for accepting and managing compilation tasks.
-    The compiler class spins up a Dask execution environment, which
-    compilation tasks can then access to parallelize their operations.
+
+    The compiler class spins up or connects to a Dask execution environment,
+    which compilation tasks can then access to parallelize their operations.
     The compiler is implemented as a context manager and it is recommended
     to use it as one. If the compiler is not used in a context manager, it
     is the responsibility of the user to call `close()`.
@@ -45,7 +44,7 @@ class Compiler:
         >>> compiler.close()
 
         3. Connect to an already running dask cluster:
-        >>> with Compiler('127.0.0.1:8786') as compiler:
+        >>> with Compiler('localhost:8786') as compiler:
         ...     circuit = compiler.compile(task)
 
         4. Connect to a dask cluster with a scheduler file:
@@ -71,7 +70,7 @@ class Compiler:
         self.managed = len(args) == 0 and len(kwargs) == 0
         if self.managed:
             self.processes = start_dask_cluster()
-            self.client = Client('127.0.0.1:8786')
+            self.client = Client('localhost:8786')
         else:
             self.client = Client(*args, **kwargs)
 

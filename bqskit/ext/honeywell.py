@@ -1,3 +1,4 @@
+"""This module implemenets Honeywell QPU models."""
 from __future__ import annotations
 
 from bqskit.compiler.machine import MachineModel

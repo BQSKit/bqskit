@@ -70,8 +70,6 @@ _logger = logging.getLogger(__name__)
 
 class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     """
-    Circuit class.
-
     A Circuit is a quantum program composed of operation objects.
 
     The operations are organized in 2-dimensions, and are indexed by

@@ -16,5 +16,5 @@ def pytket_to_bqskit(qc: pytket.Circuit) -> Circuit:
 
 
 def bqskit_to_pytket(circuit: Circuit) -> pytket.Circuit:
-    """Convert a BQSKit Circuit to PyTKet's QubitCircuit."""
+    """Convert a BQSKit Circuit to a PyTKet Circuit."""
     return circuit_from_qasm_str(OPENQASM2Language().encode(circuit))

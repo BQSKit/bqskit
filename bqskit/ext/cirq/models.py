@@ -1,3 +1,4 @@
+"""This module implements pre-built models for Google's QPUs."""
 from __future__ import annotations
 
 import cirq_google

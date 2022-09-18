@@ -1,4 +1,4 @@
-"""This module defines a pre-built `compile` function using BQSKit."""
+"""This module defines a standard `compile` function using BQSKit."""
 from __future__ import annotations
 
 import logging
@@ -86,14 +86,17 @@ def compile(
             As you increase `error_sim_size`, the upper bound on error
             becomes more accurate. (Default: 8)
 
-        compiler (Compiler | None): Pass a compiler to prevent creating
-            one. (Default: None)
+        compiler (Compiler | None): Pass a :class:`Compiler` to prevent
+            creating one. Save on startup time by passing a compiler in
+            when calling `compile` multiple times. (Default: None)
 
         compiler_args (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a dask cluster can go here.
+            See :class:`Compiler` for more info.
 
         compiler_kwargs (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a dask cluster can go here.
+            See :class:`Compiler` for more info.
 
     Returns:
         (Circuit): The compiled circuit.
@@ -828,6 +831,7 @@ def _stateprep_workflow(
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> CompilationTask:
+    """Build a workflow for state preparation."""
     # TODO
     raise NotImplementedError('State preparation is not yet implemented.')
 

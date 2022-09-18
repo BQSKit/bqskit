@@ -44,9 +44,10 @@ class PermutationMatrix(UnitaryMatrix):
         location: Sequence[int],
     ) -> PermutationMatrix:
         """
-        Creates the permutation matrix specified by arguments. The resulting
-        matrix will move the location's qubits into positions defined by their
-        index in location.
+        Creates the permutation matrix specified by arguments.
+
+        The resulting matrix will move the location's qubits into positions
+        defined by their index in location. For example:
 
         P = Permutationmatrix.from_qubit_location(3, (1, 2, 0))
 

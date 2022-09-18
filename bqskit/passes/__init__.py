@@ -32,6 +32,7 @@ synthesis pass to convert the circuit to native gates.
     QSearchSynthesisPass
     QFASTDecompositionPass
     QPredictDecompositionPass
+    SynthesisPass
 
 .. rubric:: Processing Passes
 
@@ -41,14 +42,14 @@ synthesis pass to convert the circuit to native gates.
 
     ExhaustiveGateRemovalPass
     IterativeScanningGateRemovalPass
+    Rebase2QuditGatePass
     ScanningGateRemovalPass
-    WindowOptimizationPass
     SubstitutePass
+    WindowOptimizationPass
 
 .. rubric:: Control Passes
 
-This are passes that are used to manage control flow inside of a
-compilation task.
+This are passes that are used to manage control flow inside of a workflow.
 
 .. autosummary::
     :toctree: autogen
@@ -74,23 +75,42 @@ This objects are designed as conditions for use with control passes.
     GateCountPredicate
     NotPredicate
     WidthPredicate
+    PhysicalPredicate
+    SinglePhysicalPredicate
+    MultiPhysicalPredicate
 
 .. rubric:: Rule-based Passes
 
+These passes apply fixed rules to a circuit to transform it.
+
 .. autosummary::
     :toctree: autogen
     :recursive:
 
+    CHToCNOTPass
     CNOTToCZPass
+    CNOTToCHPass
+    CNOTToCYPass
+    CYToCNOTPass
+    SwapToCNOTPass
+    U3Decomposition
     ZXZXZDecomposition
 
-.. rubric:: Layout Passes
+.. rubric:: Mapping Passes
+
+These passes either perform qubit placement, layout, routing or otherwise
+are involved the qubit mapping process.
 
 .. autosummary::
     :toctree: autogen
     :recursive:
 
-    SimpleLayoutPass
+    GeneralizedSabreLayoutPass
+    GreedyPlacementPass
+    TrivialPlacementPass
+    GeneralizedSabreRoutingPass
+    SetModelPass
+    ApplyPlacement
 
 .. rubric:: Utility Passes
 
@@ -105,6 +125,10 @@ This objects are designed as conditions for use with control passes.
     UpdateDataPass
     ToU3Pass
     BlockConversionPass
+    LogPass
+    ExtendBlockSizePass
+    LogErrorPass
+    FillSingleQuditGatesPass
 
 .. rubric:: IO Passes
 
@@ -130,16 +154,20 @@ This objects are designed as conditions for use with control passes.
 
 .. rubric:: Search Layer Generators
 
+Layer generators can be used to modify how search based synthesis
+algorithms extend circuit templates.
+
 .. autosummary::
     :toctree: autogen
     :recursive:
 
-    LayerGenerator
-    SimpleLayerGenerator
-    SeedLayerGenerator
-    StairLayerGenerator
-    SingleQuditLayerGenerator
+    FourParamGenerator
     MiddleOutLayerGenerator
+    SeedLayerGenerator
+    SimpleLayerGenerator
+    SingleQuditLayerGenerator
+    StairLayerGenerator
+    WideLayerGenerator
 """
 from __future__ import annotations
 

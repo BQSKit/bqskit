@@ -15,5 +15,5 @@ def cirq_to_bqskit(cc: cirq.Circuit) -> Circuit:
 
 
 def bqskit_to_cirq(circuit: Circuit) -> cirq.Circuit:
-    """Convert a BQSKit Circuit to Cirq's QubitCircuit."""
+    """Convert a BQSKit Circuit to Cirq's Circuit."""
     return circuit_from_qasm(OPENQASM2Language().encode(circuit))

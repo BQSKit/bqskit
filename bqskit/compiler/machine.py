@@ -21,7 +21,7 @@ default_gate_set: set[Gate] = {
 
 
 class MachineModel:
-    """A model of a quantum processing unit's connectivity."""
+    """A model of a quantum processing unit."""
 
     def __init__(
         self,

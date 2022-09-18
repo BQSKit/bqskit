@@ -5,7 +5,8 @@ BQSKit Extensions (:mod:`bqskit.ext`)
 
 .. currentmodule:: bqskit.ext
 
-This subpackage provides integrations with other popular frameworks.
+This subpackage provides integrations with other popular frameworks
+and pre-built MachineModels for many QPUs.
 """
 from __future__ import annotations
 
