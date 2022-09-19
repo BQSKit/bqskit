@@ -1158,6 +1158,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         After this, if cycle was in range, you can expect:
         `all([self[cycle_index, idx] == op for idx in op.location])`
 
+        Unless cycle_index was out-of-bounds, in which case, it will
+        be appended ASAP rather than inserted.
+
         Args:
             cycle_index (int): The cycle to insert the operation.
 
