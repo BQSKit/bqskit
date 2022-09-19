@@ -211,7 +211,11 @@ from bqskit.passes.processing.rebase import Rebase2QuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
 from bqskit.passes.processing.window import WindowOptimizationPass
+from bqskit.passes.rules.ch2cnot import CHToCNOTPass
+from bqskit.passes.rules.cnot2ch import CNOTToCHPass
+from bqskit.passes.rules.cnot2cy import CNOTToCYPass
 from bqskit.passes.rules.cnot2cz import CNOTToCZPass
+from bqskit.passes.rules.cy2cnot import CYToCNOTPass
 from bqskit.passes.rules.swap2cnot import SwapToCNOTPass
 from bqskit.passes.rules.u3 import U3Decomposition
 from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
@@ -321,4 +325,8 @@ __all__ = [
     'MultiPhysicalPredicate',
     'LogErrorPass',
     'FillSingleQuditGatesPass',
+    'CHToCNOTPass',
+    'CNOTToCHPass',
+    'CNOTToCYPass',
+    'CYToCNOTPass',
 ]

@@ -12,4 +12,4 @@ myst-parser>=0.15.2
 jupyter-sphinx>=0.3.2
 nbsphinx>=0.8.7
 pandoc>=2.1
-bqskit
+bqskit>=1.0.0b2
