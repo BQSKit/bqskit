@@ -23,7 +23,7 @@ repos:
         args: ['--remove']
     -   id: no-commit-to-branch
         args: [--branch, master]
--   repo: https://github.com/myint/docformatter
+-   repo: https://github.com/PyCQA/docformatter
     rev: v1.5.0
     hooks:
     -   id: docformatter
@@ -64,8 +64,8 @@ repos:
     rev: v2.0.0
     hooks:
     -   id: setup-cfg-fmt
-- repo: https://github.com/myint/autoflake
-  rev: v1.5.3
+- repo: https://github.com/PyCQA/autoflake
+  rev: v1.6.0
   hooks:
     - id: autoflake
       args:
