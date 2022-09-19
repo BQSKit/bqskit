@@ -389,7 +389,9 @@ class TestInsert:
         circuit.insert(0, op)
         assert circuit[0, op.location[0]] == op
         circuit.insert(circuit.num_cycles, op)
-        assert circuit[circuit._rear[op.location[0]]] == op
+        point = circuit._rear[op.location[0]]
+        assert point is not None
+        assert circuit[point] == op
         check_no_idle_cycles(circuit)
 
 
