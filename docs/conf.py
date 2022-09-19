@@ -60,7 +60,7 @@ html_theme_options = {'navigation_depth': 2}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 autodoc_type_aliases = {
     'tuple': 'tuple',
@@ -100,6 +100,11 @@ autodoc_mock_imports = [
     'qiskit',
     'lark-parser',
     'distributed',
+    'hypothesis',
+    'pytket',
+    'cirq',
+    'qutip',
+    'qiskit',
 ]
 nbsphinx_allow_errors = True
 nbsphinx_execute = 'never'

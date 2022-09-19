@@ -50,7 +50,7 @@ def test_single_qudit_synthesis(
         assert out_circuit.num_operations == 1
     assert out_circuit.num_qudits == 1
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    assert out_circuit.get_unitary().get_distance_from(sq_utry) < 5e-6
+    assert out_circuit.get_unitary().get_distance_from(sq_utry, 1) < 1e-10
 
 
 @pytest.mark.parametrize('tq_utry', [UnitaryMatrix.random(2) for i in range(5)])
@@ -77,7 +77,7 @@ def test_two_qudit_synthesis(
     )
     assert out_circuit.num_qudits == 2
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    assert out_circuit.get_unitary().get_distance_from(tq_utry) < 5e-6
+    assert out_circuit.get_unitary().get_distance_from(tq_utry, 1) < 1e-10
 
 
 @pytest.mark.parametrize(
@@ -103,7 +103,8 @@ def test_three_qudit_synthesis(
     )
     assert out_circuit.num_qudits == 3
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    assert out_circuit.get_unitary().get_distance_from(toffoli_unitary) < 5e-6
+    utry = toffoli_unitary
+    assert out_circuit.get_unitary().get_distance_from(utry, 1) < 1e-10
 
 
 def test_fail_on_larger_max_synthesis_size(compiler: Compiler) -> None:
