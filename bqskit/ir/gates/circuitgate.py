@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -94,3 +95,60 @@ class CircuitGate(Gate):
             op1.gate == op2.gate and op1.location == op2.location
             for op1, op2 in zip(self._circuit, other._circuit)
         )
+
+    def get_qasm_gate_def(self) -> str:
+        """Returns a qasm gate definition block for this gate."""
+        ret = ''
+        for gate in self._circuit.gate_set:
+            ret += gate.get_qasm_gate_def()
+
+        # TODO: replace use of hash
+        id = hash(self)
+        if id < 0:
+            id = -id
+        ret += f'gate circuitgate_{id} '
+
+        if self.num_params > 0:
+            ret += '(p'
+            ret += ', p'.join([str(i) for i in range(self.num_params)])
+            ret += ') '
+
+        ret += 'q' + ', q'.join([str(i) for i in range(self.num_qudits)])
+
+        ret += ' {\n'
+        param_index = 0
+        for op in self._circuit:
+            params = [
+                f'p{i}'
+                for i in range(param_index, param_index + op.num_params)
+            ]
+            if isinstance(op.gate, CircuitGate):
+                op_id = hash(op.gate)
+                if op_id < 0:
+                    op_id = -op_id
+                ret += '\t{}({}) q{};\n'.format(
+                    f'circuitgate_{op_id}',
+                    ', '.join([str(p) for p in params]),
+                    ', q'.join([str(q) for q in op.location]),
+                ).replace('()', '')
+            else:
+                ret += '\t{}({}) q{};\n'.format(
+                    op.gate.qasm_name,
+                    ', '.join([str(p) for p in params]),
+                    ', q'.join([str(q) for q in op.location]),
+                ).replace('()', '')
+        ret += '}\n'
+        return ret
+
+    def get_qasm(self, params: RealVector, location: CircuitLocation) -> str:
+        """Returns the qasm string for this gate."""
+        # TODO: replace use of hash
+        id = hash(self)
+        if id < 0:
+            id = -id
+
+        return '{}({}) q[{}];\n'.format(
+            f'circuitgate_{id}',
+            ', '.join([str(p) for p in params]),
+            '], q['.join([str(q) for q in location]),
+        ).replace('()', '')

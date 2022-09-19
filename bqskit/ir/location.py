@@ -111,6 +111,19 @@ class CircuitLocation(Sequence[int]):
             return CircuitLocation([other] if other in self else [])
         return CircuitLocation([x for x in self if x in other])  # type: ignore
 
+    @property
+    def pairs(self) -> set[tuple[int, int]]:
+        """Return all pairs of unique elements in the location."""
+        _pairs = set()
+        for q1 in self:
+            for q2 in self:
+                if q1 == q2:
+                    continue
+                a = min(q1, q2)
+                b = max(q1, q2)
+                _pairs.add((a, b))
+        return _pairs
+
     @staticmethod
     def is_location(
         location: Any,
@@ -146,14 +159,16 @@ class CircuitLocation(Sequence[int]):
             location = list(location)
 
         else:
-            _logger.debug(
+            _logger.log(
+                0,
                 f'Expected integer(s) for location, got {type(location)}.',
             )
             return False
 
         if not is_sequence_of_int(location):
             checks = [is_integer(q) for q in location]
-            _logger.debug(
+            _logger.log(
+                0,
                 'Expected iterable of positive integers for location'
                 f', got atleast one {type(location[checks.index(False)])}.',
             )
@@ -161,19 +176,20 @@ class CircuitLocation(Sequence[int]):
 
         if not all(qudit_index >= 0 for qudit_index in location):
             checks = [qudit_index >= 0 for qudit_index in location]
-            _logger.debug(
+            _logger.log(
+                0,
                 'Expected iterable of positive integers for location'
                 f', got atleast one {location[checks.index(False)]}.',
             )
             return False
 
         if len(set(location)) != len(location):
-            _logger.debug('Location has duplicate qudit indices.')
+            _logger.log(0, 'Location has duplicate qudit indices.')
             return False
 
         if num_qudits is not None:
             if not all([qudit < num_qudits for qudit in location]):
-                _logger.debug('Location has an erroneously large qudit.')
+                _logger.log(0, 'Location has an erroneously large qudit.')
                 return False
 
         return True

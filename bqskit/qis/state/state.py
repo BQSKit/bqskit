@@ -5,6 +5,7 @@ import logging
 from typing import Any
 from typing import Iterator
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
@@ -15,6 +16,10 @@ from scipy.stats import unitary_group
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
 from bqskit.utils.typing import is_vector
+
+
+if TYPE_CHECKING:
+    from typing import TypeGuard
 
 
 _logger = logging.getLogger(__name__)
@@ -162,12 +167,12 @@ class StateVector(NDArrayOperatorsMixin):
         return all([r == radix for r in self.radixes])
 
     @staticmethod
-    def is_pure_state(V: np.typing.ArrayLike, tol: float = 1e-8) -> bool:
+    def is_pure_state(V: Any, tol: float = 1e-8) -> TypeGuard[StateLike]:
         """
         Check if V is a pure state vector.
 
         Args:
-            V (np.typing.ArrayLike): The vector to check.
+            V (Any): The vector to check.
 
             tol (float): The numerical precision of the check.
 

@@ -1,14 +1,16 @@
 """This module defines the QuickPartitioner pass."""
 from __future__ import annotations
 
-import heapq
 import logging
 from typing import Any
+from typing import cast
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.region import CircuitRegion
+from bqskit.ir.gates import CircuitGate
+from bqskit.ir.location import CircuitLocation
+from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_integer
 
 _logger = logging.getLogger(__name__)
@@ -16,16 +18,13 @@ _logger = logging.getLogger(__name__)
 
 class QuickPartitioner(BasePass):
     """
-    The QuickPartitioner Pass.
+    A partitioner that iterates over circuit gates only once.
 
     This pass forms partitions in the circuit by iterating over the operations
     in a topological order and binning them into blocks.
     """
 
-    def __init__(
-        self,
-        block_size: int = 3,
-    ) -> None:
+    def __init__(self, block_size: int = 3) -> None:
         """
         Construct a QuickPartitioner.
 
@@ -58,323 +57,279 @@ class QuickPartitioner(BasePass):
 
             data (dict[str,Any]): Optional data unique to specific run.
         """
+        # The partitioned circuit that will be built and returned
+        partitioned_circuit = Circuit(circuit.num_qudits, circuit.radixes)
 
-        # Number of qudits in the circuit
-        num_qudits = circuit.num_qudits
-
-        # If block size > circuit size, return the circuit as a block
-        if self.block_size > num_qudits:
-            _logger.warning(
-                'Configured block size is greater than circuit size; '
-                'blocking entire circuit.',
+        # If block size >= circuit size, return the circuit as a block
+        if self.block_size >= circuit.num_qudits:
+            _logger.debug(
+                'Configured block size is greater than or equal to'
+                'circuit size; blocking entire circuit.',
             )
-            circuit.fold({
-                qudit_index: (0, circuit.num_cycles)
-                for qudit_index in range(circuit.num_qudits)
-            })
+            partitioned_circuit.append_circuit(
+                circuit,
+                list(range(circuit.num_qudits)),
+                True,
+            )
+            circuit.become(partitioned_circuit)
             return
 
-        # List to hold the active blocks
-        active_blocks: Any = []
+        # Tracks bins with at least one active_qudit
+        active_bins: list[Bin | None] = [
+            None for _ in range(circuit.num_qudits)
+        ]
+        # Tracks the first cycle in circuit not included in partitioned_circuit
+        dividing_line: dict[int, int] = {
+            i: 0 if circuit._front[i] is None else circuit._front[i].cycle  # type: ignore  # noqa
+            for i in range(circuit.num_qudits)
+        }
 
-        # List to hold the finished blocks
-        finished_blocks: Any = {}
-        block_id = 0
+        # Inactive bins that cannot yet be put on partitioned_circuit
+        pending_bins: list[Bin] = []
 
-        # Active qudit cycles and block-qudit dependencies
-        qudit_actives: Any = [{} for _ in range(num_qudits)]
-        qudit_dependencies: Any = [{} for _ in range(num_qudits)]
+        # Track how many bins have been closed without processing
+        num_closed = 0
 
-        # The partitioned circuit
-        partitioned_circuit = Circuit(num_qudits, circuit.radixes)
+        def close_bin_qudits(bin: Bin, loc: Sequence[int], cycle: int) -> bool:
+            """Deactivate `qudits` in `bin`; return True if bin is inactive."""
+            to_return = False
+            for q in loc:
+                if q in bin.active_qudits:
+                    bin.active_qudits.remove(q)
+                    bin.ends[q] = cycle - 1
 
-        # For each cycle, operation in topological order
+                if active_bins[q] == bin:
+                    active_bins[q] = None
+
+            # Check if the bin is completely inactive now
+            if len(bin.active_qudits) == 0:
+                pending_bins.append(bin)
+                to_return = True
+            return to_return
+
+        def process_pending_bins() -> None:
+            """Add pending bins that can be added to the partitioned circuit."""
+            need_to_reprocess = True
+            while need_to_reprocess:
+                need_to_reprocess = False
+                to_remove = []
+
+                for bin in pending_bins:
+                    if all(
+                        dividing_line[qudit] == start
+                        for qudit, start in bin.starts.items()
+                    ):
+                        to_remove.append(bin)
+                        subc = circuit.get_slice(bin.op_list)
+                        loc = list(sorted(bin.qudits))
+
+                        # Merge previously placed blocks if possible
+                        merging = True
+                        while merging:
+                            merging = False
+                            for p in partitioned_circuit.rear:
+                                qudits = partitioned_circuit[p].location
+
+                                # if qudits is subset of bin.qudits
+                                if all(q in bin.qudits for q in qudits):
+                                    prev_op = partitioned_circuit.pop(p)
+                                    pg = cast(CircuitGate, prev_op.gate)
+                                    prev_circ = pg._circuit
+                                    local_loc = [loc.index(q) for q in qudits]
+                                    subc.insert_circuit(0, prev_circ, local_loc)
+
+                                    # retry merging
+                                    merging = True
+                                    break
+
+                                # if bin.qudits is a subset of qudits
+                                if all(q in qudits for q in bin.qudits):
+                                    prev_op = partitioned_circuit.pop(p)
+                                    pg = cast(CircuitGate, prev_op.gate)
+                                    prev_circ = pg._circuit
+                                    lloc = [qudits.index(q) for q in bin.qudits]
+                                    prev_circ.append_circuit(subc, lloc)
+                                    subc.become(prev_circ)
+
+                                    # retry merging
+                                    merging = True
+                                    break
+
+                        # Place circuit
+                        partitioned_circuit.append_circuit(
+                            subc,
+                            loc,
+                            True,
+                            True,
+                        )
+                        for qudit in bin.qudits:
+                            dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore  # noqa
+                        need_to_reprocess = True
+
+                for bin in to_remove:
+                    pending_bins.remove(bin)
+
+        # Main loop
         for cycle, op in circuit.operations_with_cycles():
+            point = CircuitPoint(cycle, op.location[0])
+            location = op.location
 
-            # Get the qudits of the operation
-            qudits = op.location._location
+            # Get all currently active bins that share atleast one qudit
+            overlapping_bins: list[Bin] = list({
+                active_bins[q] for q in location  # type: ignore
+                if active_bins[q] is not None
+            })
 
-            # Update the active locations of the qudits
-            for qudit in qudits:
-                qudit_actives[qudit][cycle] = None
+            # Get all the currently active bins that can have op added to them
+            admissible_bins = [
+                b for b in overlapping_bins
+                if b.can_accommodate(location, self.block_size)
+            ]
 
-            # Compile a list of admissible blocks out of the
-            # active blocks for the operation
-            admissible_blocks = []
-            for index, block in enumerate(active_blocks):
-                if all([qudit not in block[-1] for qudit in qudits]):
-                    admissible_blocks.append(index)
+            # Close location on inadmissible overlapping bins
+            for bin in overlapping_bins:
+                if bin not in admissible_bins:
+                    if close_bin_qudits(bin, location, cycle):
+                        num_closed += 1
 
-            # Boolean indicator to capture if an active block
-            # has been found for the operation
-            found = False
+            # If we cannot add this op to any bin, make a new one
+            if len(admissible_bins) == 0:
+                assert all(active_bins[q] is None for q in location)
+                new_bin = Bin(point, location)
+                for q in location:
+                    active_bins[q] = new_bin
 
-            # For all admissible blocks, check if all operation
-            # qudits are in the block. If such a block is found,
-            # update the upper region bound for the corresponding
-            # qudits, and raise the found boolean
-            for block in [active_blocks[index] for index in admissible_blocks]:
-                if all([qudit in block for qudit in qudits]):
-                    for qudit in qudits:
-                        block[qudit][1] = cycle
-                    found = True
-                    break
+                # Block qudits to prevent circular dependencies
+                for bin in overlapping_bins:
+                    bin.blocked_qudits.update(new_bin.qudits)
 
-            updated_qudits = set()
+                    for active_bin in active_bins:
+                        if active_bin is None or active_bin == bin:
+                            continue
 
-            # If such a block is not found
-            if not found:
+                        indirect = active_bin.blocked_qudits
+                        indirect = indirect.intersection(bin.qudits)
+                        if len(indirect) != 0:
+                            active_bin.blocked_qudits.update(new_bin.qudits)
 
-                # For all admissible blocks, check if the operation
-                # qudits can be added to the block without breaching
-                # the size limit. If such a block is found, add the
-                # new qudits, update the region bounds, check if any
-                # blocks are finished, and raise the found boolean
-                for block in [
-                    active_blocks[index]
-                    for index in admissible_blocks
-                ]:
-                    if len(set(list(qudits) + list(block.keys()))) - \
-                            1 <= self.block_size:
-                        for qudit in qudits:
-                            if qudit not in block:
-                                block[qudit] = [cycle, cycle]
-                            else:
-                                block[qudit][1] = cycle
-                        block_id, updated_qudits = self.compute_finished_blocks(
-                            block, qudits, active_blocks,
-                            finished_blocks, block_id, qudit_dependencies, cycle, num_qudits,  # noqa
-                        )
-                        found = True
-                        break
+            else:
+                # Add to first admissible bin
+                selected_bin = admissible_bins[0]
 
-            # If a block is still not found, check if any blocks are finished
-            # with the new operation qudits, create a new block, and add it
-            # to the list of active blocks
-            if not found:
-                block_id, updated_qudits = self.compute_finished_blocks(
-                    None, qudits, active_blocks,
-                    finished_blocks, block_id, qudit_dependencies, cycle, num_qudits,  # noqa
-                )
-                block = {qudit: [cycle, cycle] for qudit in qudits}
-                block[-1] = set()
-                active_blocks.append(block)
+                # Deactivate the rest
+                for bin in admissible_bins[1:]:
+                    if close_bin_qudits(bin, location, cycle):
+                        num_closed += 1
 
-            # Where the active qudit cycles keep getting updated
-            while updated_qudits:
+                # Add op to selected_bin
+                selected_bin.add_op(point, location)
+                for q in location:
+                    if active_bins[q] is None:
+                        active_bins[q] = selected_bin
+                    else:
+                        assert active_bins[q] == selected_bin
 
-                # Check if any blocks corresponding to updated qudits
-                # are eligible to be added to the circuit. If eligible,
-                # update actives, dependencies, and updated qudits.
-                final_regions = []
-                new_updated_qudits = set()
-                for qudit in updated_qudits:
-                    blk_ids = list(qudit_dependencies[qudit].keys())
-                    for blk_id in blk_ids:
-                        num_passed = 0
-                        for qdt, bounds in finished_blocks[blk_id].items():
-                            if len(qudit_actives[qdt]) == 0:
-                                num_passed += 1
-                            elif next(iter(qudit_actives[qdt])) == bounds[0]:
-                                num_passed += 1
-                        if num_passed == len(finished_blocks[blk_id]):
-                            for qdt, bounds in finished_blocks[blk_id].items():
-                                for cycle in range(bounds[0], bounds[1] + 1):
-                                    if cycle in qudit_actives[qdt]:
-                                        del qudit_actives[qdt][cycle]
-                                del qudit_dependencies[qdt][blk_id]
-                                new_updated_qudits.add(qdt)
-                            final_regions.append(
-                                CircuitRegion(
-                                {qdt: (bounds[0], bounds[1]) for qdt, bounds in finished_blocks[blk_id].items()},  # noqa
-                                ),
-                            )
-                            del finished_blocks[blk_id]
+                # Block qudits to prevent circular dependencies
+                for bin in overlapping_bins:
+                    if bin == selected_bin:
+                        continue
+                    bin.blocked_qudits.update(selected_bin.qudits)
 
-                # If there are any regions
-                if final_regions:
+                    for active_bin in active_bins:
+                        if active_bin is None or active_bin == bin:
+                            continue
 
-                    # Sort the regions if multiple exist
-                    if len(final_regions) > 1:
-                        final_regions = self.topo_sort(final_regions)
+                        indirect = active_bin.blocked_qudits
+                        indirect = indirect.intersection(bin.qudits)
+                        if len(indirect) != 0:
+                            active_bin.blocked_qudits.update(new_bin.qudits)
 
-                    # Fold the final regions into a partitioned circuit
-                    for region in final_regions:
-                        region = circuit.downsize_region(region)
-                        cgc = circuit.get_slice(region.points)
-                        partitioned_circuit.append_gate(
-                            CircuitGate(
-                                cgc, True,
-                            ), sorted(
-                                list(
-                                    region.keys(),
-                                ),
-                            ), list(
-                                cgc.params,
-                            ),
-                        )
+            # If a new bin was finalized, reprocess pending bins
+            if num_closed >= 5:
+                process_pending_bins()
+                num_closed = 0
 
-                updated_qudits = new_updated_qudits
+        # Close remaining active bins
+        for b in active_bins:
+            if b is not None:
+                close_bin_qudits(b, b.qudits, circuit.num_cycles)
 
-        # Convert all remaining finished blocks and active blocks
-        # into circuit regions
-        final_regions = []
-        for block in finished_blocks.values():
-            final_regions.append(
-                CircuitRegion(
-                {qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()},  # noqa
-                ),
-            )
-        for block in active_blocks:
-            del block[-1]
-            final_regions.append(
-                CircuitRegion(
-                {qdt: (bounds[0], bounds[1]) for qdt, bounds in block.items()},  # noqa
-                ),
-            )
+        # Process remaining bins
+        process_pending_bins()
 
-        # If there are any regions
-        if final_regions:
+        # Become partitioned circuit
+        circuit.become(partitioned_circuit, False)
 
-            # Sort the regions if multiple exist
-            if len(final_regions) > 1:
-                final_regions = self.topo_sort(final_regions)
 
-            # Fold the final regions into a partitioned circuit
-            for region in final_regions:
-                region = circuit.downsize_region(region)
-                cgc = circuit.get_slice(region.points)
-                partitioned_circuit.append_gate(
-                    CircuitGate(
-                        cgc, True,
-                    ), sorted(
-                        list(
-                            region.keys(),
-                        ),
-                    ), list(
-                        cgc.params,
-                    ),
-                )
+class Bin:
+    """A Bin is where gates go as the QuickPartitioner sweeps a circuit."""
 
-        # Copy the partitioned circuit to the original circuit
-        circuit.become(partitioned_circuit)
+    id: int = 0
+    """Unique ID counter for Bin instances."""
 
-    def compute_finished_blocks(  # type: ignore
-        self, block, qudits, active_blocks, finished_blocks,
-        block_id, qudit_dependencies, cycle, num_qudits,
-    ):
-        """Add blocks with all inactive qudits to the finished_blocks list and
-        remove them from the active_blocks list."""
+    def __init__(
+        self,
+        point: CircuitPoint,
+        location: CircuitLocation,
+    ) -> None:
+        """Can start a new bin from an operation."""
 
-        # Compile the qudits from the new operation,
-        # the active qudits of the block being updated,
-        # and the qudits in the block's inadmissible list
-        qudits = set(qudits)
-        if block:
-            qudits.update([qudit for qudit in block if qudit != -1])
-            qudits.update(block[-1])
+        # The qudits in the bin
+        self.qudits: list[int] = list(location)
 
-        remove_blocks = []
+        # The starting cycles for each qudit (inclusive)
+        self.starts: dict[int, int] = {q: point.cycle for q in location}
 
-        # For all active blocks
-        for active_block in active_blocks:
+        # The ending cycles for each qudit (inclusive)
+        self.ends: dict[int, int | None] = {q: None for q in location}
 
-            # If the active block is different than the block being updated
-            if active_block != block:
+        # The qudits that can still accept new gates
+        self.active_qudits: list[int] = list(location)
 
-                # If any of the qudits are in the active block or its
-                # inadmissible list, then add those qudits to the
-                # inadmissible list of the active block
-                if any([
-                    qudit in active_block or qudit in active_block[-1]
-                    for qudit in qudits
-                ]):
-                    active_block[-1].update(qudits)
+        # Qudits that cannot be added to the bin
+        self.blocked_qudits: set[int] = set()
 
-                # If the active block has reached its maximum size
-                # and/or all of its qudits are inadmissible,
-                # then add it to the remove list
-                if (
-                    len(active_block) - 1 == self.block_size and  # noqa
-                    all([
-                        qudit in active_block[-1]
-                        for qudit in active_block if qudit != -1
-                    ])
-                ) or (
-                    cycle - max(
-                        active_block[qudit][1]
-                        for qudit in active_block
-                        if qudit != -1
-                    ) > 200
-                ) or len(active_block[-1]) == num_qudits:
-                    remove_blocks.append(active_block)
+        # Points for each operation in this bin
+        self.op_list: list[CircuitPoint] = [point]
 
-        # Remove all blocks in the remove list from the active list
-        # and add them to the finished blocks list after deleting
-        # their inadmissible list and update qudit dependencies
-        updated_qudits = set()
-        for remove_block in remove_blocks:
-            del remove_block[-1]
-            finished_blocks[block_id] = remove_block
-            for qudit in remove_block:
-                qudit_dependencies[qudit][block_id] = None
-                updated_qudits.add(qudit)
-            active_blocks.remove(remove_block)
-            block_id += 1
+        self.id = Bin.id
+        Bin.id += 1
 
-        return block_id, updated_qudits
+    def __hash__(self) -> int:
+        return hash(self.id)
 
-    def topo_sort(self, regions):  # type: ignore
-        """Topologically sort circuit regions."""
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Bin) and self.id == other.id
 
-        # Number of regions in the circuit
-        num_regions = len(regions)
+    def add_op(
+        self,
+        point: CircuitPoint,
+        location: CircuitLocation,
+    ) -> None:
+        """Add an operation the bin."""
+        for q in location:
+            if q not in self.qudits:
+                self.qudits.append(q)
+                self.active_qudits.append(q)
+                self.starts[q] = point.cycle
+        self.op_list.append(point)
 
-        # For each region, generate the number of in edges
-        # and the list of all out edges
-        in_edges = [0] * num_regions
-        out_edges: Any = [[] for _ in range(num_regions)]
-        for i in range(num_regions - 1):
-            for j in range(i + 1, num_regions):
-                dependency = regions[i].dependency(regions[j])
-                if dependency == 1:
-                    in_edges[i] += 1
-                    out_edges[j].append(i)
-                elif dependency == -1:
-                    in_edges[j] += 1
-                    out_edges[i].append(j)
+    def can_accommodate(self, loc: CircuitLocation, block_size: int) -> bool:
+        """
+        Return true if the op can be added to this bin.
 
-        # Convert the list of number of in edges in to a min-heap
-        in_edges = [[num_edges, i] for i, num_edges in enumerate(in_edges)]
-        heapq.heapify(in_edges)
+        An op can be added to the bin if all overlapping qudits are active in
+        the bin and if the new bin won't be too large.
+        """
+        if any(q in loc for q in self.blocked_qudits):
+            return False
 
-        index = 0
-        sorted_regions = []
+        overlapping_qudits_are_active = all(
+            q not in self.qudits or q in self.active_qudits
+            for q in loc
+        )
 
-        # While there are regions remaining to be sorted
-        while index < num_regions:
+        size_limit = max(block_size, len(self.qudits))
+        too_big = len(set(self.qudits + list(loc))) > size_limit
 
-            # Select the regions with zero remaining in edges
-            selections = []
-            while in_edges and not in_edges[0][0]:
-                selections.append(heapq.heappop(in_edges))
-
-            if not selections:
-                raise RuntimeError('Unable to topologically sort regions.')
-
-            # Add the regions to the sorted list
-            for region in selections:
-                sorted_regions.append(regions[region[1]])
-                index += 1
-
-            # Remove the regions from all other regions' in edges counts
-            for i in range(len(in_edges)):
-                in_edges[i][0] -= sum(
-                    in_edges[i][1] in out_edges[region[1]]
-                    for region in selections
-                )
-
-            # Convert in edges into a min-heap
-            heapq.heapify(in_edges)
-
-        return sorted_regions
+        return overlapping_qudits_are_active and not too_big

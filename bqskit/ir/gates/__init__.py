@@ -24,9 +24,12 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :template: autosummary/gate.rst
 
     CCXGate
+    ToffoliGate
     CHGate
     CPIGate
+    CSGate
     CSUMGate
+    CTGate
     CNOTGate
     CXGate
     CYGate
@@ -39,14 +42,13 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     SGate
     SdgGate
     SqrtCNOTGate
-    SqrtISwapGate
     SwapGate
     SqrtXGate
+    SqrtISwapGate
     SXGate
     SycamoreGate
     TGate
     TdgGate
-    ToffoliGate
     ConstantUnitaryGate
     XGate
     XXGate
@@ -63,11 +65,13 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    CPGate
     CRXGate
     CRYGate
     CRZGate
     FSIMGate
     PauliGate
+    PhasedXZGate
     RXGate
     RXXGate
     RYGate
@@ -75,6 +79,9 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     RZGate
     RZZGate
     U1Gate
+    U1qGate
+    U1qPiGate
+    U1qPi2Gate
     U2Gate
     U3Gate
     U8Gate
@@ -102,6 +109,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
 
     CircuitGate
+    MeasurementPlaceholder
 """
 from __future__ import annotations
 
@@ -112,6 +120,7 @@ from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.ir.gates.constant import *  # noqa
 from bqskit.ir.gates.constant import __all__ as constant_all
 from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized import *  # noqa
 from bqskit.ir.gates.parameterized import __all__ as parameterized_all
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -119,4 +128,4 @@ from bqskit.ir.gates.qutritgate import QutritGate
 
 __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
-__all__ += ['CircuitGate']
+__all__ += ['CircuitGate', 'MeasurementPlaceholder']

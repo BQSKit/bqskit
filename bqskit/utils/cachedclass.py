@@ -6,8 +6,17 @@ from typing import Any
 from typing import Hashable
 from typing import TypeVar
 
+from bqskit.utils.docs import building_docs
+
+if not building_docs():
+    from numpy.lib.mixins import NDArrayOperatorsMixin
+else:
+    class NDArrayOperatorsMixin:  # type: ignore
+        pass
+
 
 _logger = logging.getLogger(__name__)
+
 
 T = TypeVar('T')
 
@@ -33,11 +42,21 @@ class CachedClass:
     _instances: dict[Any, CachedClass] = {}
 
     def __new__(cls: type[T], *args: Any, **kwargs: Any) -> T:
-        hash_a = all(isinstance(arg, Hashable) for arg in args)
-        hash_kw = all(isinstance(arg, Hashable) for arg in kwargs.values())
+        hash_a = all(
+            isinstance(arg, Hashable)
+            and not isinstance(arg, NDArrayOperatorsMixin)
+            for arg in args
+        )
+        hash_kw = all(
+            isinstance(arg, Hashable)
+            and not isinstance(arg, NDArrayOperatorsMixin)
+            for arg in kwargs.values()
+        )
 
         if not hash_a or not hash_kw:
-            return object.__new__(cls)
+            obj = object.__new__(cls)
+            obj.__cache_key__ = (cls, args, kwargs)  # type: ignore
+            return obj
 
         key = (cls, args, tuple(kwargs.items()))
 
@@ -52,6 +71,7 @@ class CachedClass:
                 % (cls.__name__, args, kwargs),
             )
             _instances[key] = object.__new__(cls)
+            _instances[key].__cache_key__ = (cls, args, kwargs)
 
         return _instances[key]
 
@@ -60,3 +80,6 @@ class CachedClass:
 
     def __deepcopy__(self, memo: Any) -> CachedClass:
         return self.__copy__()
+
+    def __getnewargs_ex__(self) -> tuple[Any, Any]:
+        return self.__cache_key__[1], self.__cache_key__[2]  # type: ignore

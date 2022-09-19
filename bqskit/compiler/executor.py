@@ -1,10 +1,12 @@
 """This module implements the Executor class."""
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from bqskit.compiler.task import CompilationTask
-from bqskit.ir.circuit import Circuit
+if TYPE_CHECKING:
+    from typing import Any
+    from bqskit.ir.circuit import Circuit
 
 
 class Executor:

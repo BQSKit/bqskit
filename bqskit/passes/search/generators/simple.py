@@ -188,12 +188,12 @@ class SimpleLayerGenerator(LayerGenerator):
         if circuit.num_qudits < 2:
             raise ValueError('Cannot expand a single-qudit circuit.')
 
-        # Get the machine model
-        model = BasePass.get_model(circuit, data)
+        # Get the coupling graph
+        coupling_graph = BasePass.get_connectivity(circuit, data)
 
         # Generate successors
         successors = []
-        for edge in model.coupling_graph:
+        for edge in coupling_graph:
             successor = circuit.copy()
             successor.append_gate(self.two_qudit_gate, [edge[0], edge[1]])
             successor.append_gate(self.single_qudit_gate_1, edge[0])

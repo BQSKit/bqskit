@@ -79,6 +79,9 @@ class IfThenElsePass(BasePass):
                         'Expected at least one pass for false branch.',
                     )
 
+        if on_false is None:
+            on_false = []
+
         self.condition = condition
         self.on_true = on_true if is_sequence(on_true) else [on_true]
         self.on_false = on_false if is_sequence(on_false) else [on_false]

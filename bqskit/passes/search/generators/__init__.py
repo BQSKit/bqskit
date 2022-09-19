@@ -7,12 +7,14 @@ from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
 from bqskit.passes.search.generators.stair import StairLayerGenerator
+from bqskit.passes.search.generators.wide import WideLayerGenerator
 
 __all__ = [
-    'SimpleLayerGenerator',
-    'SeedLayerGenerator',
-    'StairLayerGenerator',
-    'MiddleOutLayerGenerator',
     'FourParamGenerator',
+    'MiddleOutLayerGenerator',
+    'SeedLayerGenerator',
+    'SimpleLayerGenerator',
     'SingleQuditLayerGenerator',
+    'StairLayerGenerator',
+    'WideLayerGenerator',
 ]

@@ -23,14 +23,7 @@ You will want to install BQSKit from source, by cloning the repository from gith
 ```
 git clone https://github.com/BQSKit/BQSKit.git
 cd bqskit
-pip install -e .
-```
-
-Once you clone the repository, you will want to install `tox`. The easiest
-way is with pip:
-
-```sh
-pip install tox
+pip install -e '.[dev]'
 ```
 
 You can run `tox` to install all development packages, setup virtual
@@ -62,7 +55,7 @@ top level package's `__init__.py`, e.g. `bqskit.ir.__init__`.
 early with static code analysis tools like [Mypy](http://mypy-lang.org/).
 You can see [PEP 484: Type Annotations](https://www.python.org/dev/peps/pep-0484/)
 for more information. Please do annotate your contribution with types.
-Sometimes this can be tricky, if you need help, feel free to ask.
+Sometimes this can be tricky, if you need help, please don't hesitate to ask.
 
 
 ## Testing

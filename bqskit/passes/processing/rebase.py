@@ -160,7 +160,6 @@ class Rebase2QuditGatePass(BasePass):
 
                 # Group together a 2-qubit block composed of gates from old set
                 point = self.group_near_gates(circuit, circuit.point(g))
-                print(point)
                 circuits_with_new_gate = []
                 for circ in self.circs:
                     circuit_copy = circuit.copy()
@@ -169,7 +168,7 @@ class Rebase2QuditGatePass(BasePass):
 
                 # If we have exceeded the number of retries, up the max depth
                 if self.max_retries >= 0 and num_retries > self.max_retries:
-                    _logger.info('Exceeded max retries, increasing depth.')
+                    _logger.debug('Exceeded max retries, increasing depth.')
                     circuit_copy = circuit.copy()
                     circuit_copy.replace_with_circuit(point, self.overdrive)
                     circuits_with_new_gate.append(circuit_copy)
@@ -197,7 +196,7 @@ class Rebase2QuditGatePass(BasePass):
                     circuit.unfold(point)
                     continue
 
-                _logger.info(self.replaced_log_messages[best_index])
+                _logger.debug(self.replaced_log_messages[best_index])
                 circuit.become(instantiated_circuits[best_index])
 
     def group_near_gates(self, circuit: Circuit, center: Point) -> Point:
@@ -257,7 +256,7 @@ class Rebase2QuditGatePass(BasePass):
             f'{int(c)} {g}' + ('s' if c > 1 else '')
             for g, c in counts.items()
         ])
-        _logger.info(f'Grouped together {grouped_gate_str}.')
+        _logger.debug(f'Grouped together {grouped_gate_str}.')
         return circuit.fold(region)
 
     def generate_new_gate_templates(self) -> None:

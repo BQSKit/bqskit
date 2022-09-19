@@ -50,7 +50,7 @@ from bqskit.utils.typing import is_sequence_of_int
 def num_qudits(
     draw: Any,
     max_num_qudits: int = 8,
-    min_num_qudits: int = 1,
+    min_num_qudits: int = 1,  # TODO: Param order should be swapped
 ) -> int:
     """Hypothesis strategy for generating a valid number of qudits."""
     return draw(integers(min_num_qudits, max_num_qudits))
