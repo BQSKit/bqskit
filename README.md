@@ -41,6 +41,12 @@ compiled_circuit.save("output.qasm")
 
 To learn more about BQSKit, follow the [tutorial series](https://github.com/BQSKit/bqskit-tutorial/blob/master/1_comping_with_bqskit.ipynb) or refer to the [documentation](https://bqskit.readthedocs.io/en/latest/).
 
+## How to Cite
+
+You can use the [software disclosure](https://www.osti.gov/biblio/1785933) to cite the BQSKit package.
+
+Additionally, if you used or extended a specific algorithm, you can cite that individually. BQSKit passes will include a relevant reference in their documentation.
+
 ## License
 
 The software in this repository is licensed under a **BSD free software license**
