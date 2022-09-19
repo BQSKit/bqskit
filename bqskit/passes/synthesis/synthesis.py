@@ -1,20 +1,20 @@
 """This module implements the SynthesisPass abstract class."""
 from __future__ import annotations
 
-import logging
 from abc import abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
-_logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from typing import Any
+    from bqskit.ir.circuit import Circuit
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class SynthesisPass(BasePass):
     """
-    SynthesisPass class.
+    SynthesisPass abstract class.
 
     The SynthesisPass is a base class that exposes an abstract
     synthesize function. Inherit from this class and implement the
@@ -43,6 +43,8 @@ class SynthesisPass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        if len(data) == 0:
+            data = dict()
 
         target_utry = self.get_target(circuit, data)
         circuit.become(self.synthesize(target_utry, data))

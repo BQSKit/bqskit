@@ -649,6 +649,7 @@ class TestIsQuditInRange:
     def test_invalid_type(self) -> None:
         pass
 
+    @given(integers())
     def test_return_type(self, an_int: int) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         assert isinstance(circuit.is_qudit_in_range(an_int), (bool, np.bool_))

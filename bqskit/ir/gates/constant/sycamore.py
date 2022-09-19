@@ -21,11 +21,12 @@ class SycamoreGate(ConstantGate, QubitGate):
         1 & 0 & 0 & 0 \\\\
         0 & 0 & -i & 0 \\\\
         0 & -i & 0 & 0 \\\\
-        0 & 0 & 0 & e^{-i\frac{\\pi}{6}} \\\\
+        0 & 0 & 0 & e^{-i\\frac{\\pi}{6}} \\\\
         \\end{pmatrix}
     """
 
     _num_qudits = 2
+    _qasm_name = 'syc'
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],

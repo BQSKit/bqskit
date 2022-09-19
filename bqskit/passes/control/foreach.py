@@ -1,15 +1,10 @@
 """This module implements the ForEachBlockPass class."""
 from __future__ import annotations
 
-import copy
 import logging
 from typing import Any
 from typing import Callable
 from typing import Sequence
-
-from distributed import get_client
-from distributed import rejoin
-from distributed import secede
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -20,6 +15,7 @@ from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
+from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
@@ -27,11 +23,10 @@ _logger = logging.getLogger(__name__)
 
 class ForEachBlockPass(BasePass):
     """
-    The ForEachBlockPass class.
+    A pass that executes other passes on each block in the circuit.
 
     This is a control pass that executes another pass or passes on every block
-    in the circuit. This will be done in parallel if executed in the compiler
-    framework.
+    in the circuit. This will be done in parallel if run from a compiler.
     """
 
     key = 'ForEachBlockPass_data'
@@ -43,6 +38,7 @@ class ForEachBlockPass(BasePass):
         calculate_error_bound: bool = False,
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: Callable[[Circuit, Operation], bool] | None = None,
+        batch_size: int = 1,
     ) -> None:
         """
         Construct a ForEachBlockPass.
@@ -72,6 +68,9 @@ class ForEachBlockPass(BasePass):
                 operation will be replaced with the new circuit.
                 Defaults to always replace.
 
+            batch_size (int): The amount of blocks to batch in one job.
+                If zero, batch all blocks in one job. (Default: 1).
+
         Raises:
             ValueError: If a Sequence[BasePass] is given, but it is empty.
         """
@@ -92,10 +91,23 @@ class ForEachBlockPass(BasePass):
             if len(loop_body) == 0:
                 raise ValueError('Expected at least one pass.')
 
+        if not is_integer(batch_size):
+            raise TypeError(
+                'Expected integer for batch_size'
+                f', got {type(batch_size)}',
+            )
+
+        if batch_size < 0:
+            raise ValueError(
+                'Expected nonnegative integer for batch_size'
+                f', got {batch_size}',
+            )
+
         self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
         self.calculate_error_bound = calculate_error_bound
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
+        self.batch_size = batch_size
 
         if not callable(self.collection_filter):
             raise TypeError(
@@ -115,7 +127,6 @@ class ForEachBlockPass(BasePass):
         # Make room in data for block data
         if self.key not in data:
             data[self.key] = []
-        data[self.key].append([])
 
         # Collect blocks
         blocks: list[tuple[int, Operation]] = []
@@ -124,11 +135,10 @@ class ForEachBlockPass(BasePass):
                 blocks.append((cycle, op))
 
         # Get the machine model
-        model = BasePass.get_model(circuit, data)
+        model = self.get_model(circuit, data)
+        coupling_graph = self.get_connectivity(circuit, data)
 
-        # Go through the blocks
-        points: list[CircuitPoint] = []
-        ops: list[Operation] = []
+        # Preprocess blocks
         subcircuits: list[Circuit] = []
         block_datas: list[dict[str, Any]] = []
         for i, (cycle, op) in enumerate(blocks):
@@ -142,72 +152,65 @@ class ForEachBlockPass(BasePass):
                 subcircuit = Circuit.from_operation(op)
 
             # Form Subtopology
+            subradixes = [circuit.radixes[q] for q in op.location]
             subnumbering = {op.location[i]: i for i in range(len(op.location))}
             submodel = MachineModel(
                 len(op.location),
-                model.coupling_graph.get_subgraph(op.location, subnumbering),
+                coupling_graph.get_subgraph(op.location, subnumbering),
+                model.gate_set,
+                subradixes,
             )
 
-            # Record Data Part 1
-            block_data['op'] = copy.deepcopy(op)
-            block_data['subcircuit_pre'] = subcircuit.copy()
+            # Form subdata
             block_data['subnumbering'] = subnumbering
             block_data['machine_model'] = submodel
-            if 'parallel' in data:
-                block_data['parallel'] = data['parallel']
+            block_data['parallel'] = self.in_parallel(data)
+            block_data['point'] = CircuitPoint(cycle, op.location[0])
+            block_data['calculate_error_bound'] = self.calculate_error_bound
 
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
 
-        # Perform Work
-        if 'parallel' in data:  # In Parallel
-            client = get_client()
-            completed_subcircuits = []
-            completed_block_datas = []
-            subc_futures = client.scatter(subcircuits)
-            data_futures = client.scatter(block_datas)
-            futures = client.map(
-                _sub_do_work,
-                [self.loop_body] * len(subc_futures),
-                subc_futures,
-                data_futures,
-            )
-            secede()
-            client.gather(futures)
-            rejoin()
-            for future in futures:
-                x, y = future.result()
-                completed_subcircuits.append(x)
-                completed_block_datas.append(y)
+        # Group them into batches
+        if self.batch_size == 0:
+            batched_subcircuits = [subcircuits]
+            batched_block_datas = [block_datas]
+        else:
+            batched_subcircuits = [
+                subcircuits[i:i + self.batch_size]
+                for i in range(0, len(blocks), self.batch_size)
+            ]
+            batched_block_datas = [
+                block_datas[i:i + self.batch_size]
+                for i in range(0, len(blocks), self.batch_size)
+            ]
 
-        else:  # Sequentially
-            completed_subcircuits = []
-            completed_block_datas = []
-            for subcircuit, block_data in zip(subcircuits, block_datas):
-                x, y = _sub_do_work(self.loop_body, subcircuit, block_data)
-                completed_subcircuits.append(x)
-                completed_block_datas.append(y)
+        # Do the work
+        results = self.execute(
+            data,
+            _sub_do_work,
+            [self.loop_body] * len(batched_subcircuits),
+            batched_subcircuits,
+            batched_block_datas,
+        )
 
-        # Process work
+        # Unpack results
+        completed_subcircuits, completed_block_datas = [], []
+        for batch in results:
+            completed_subcircuits.extend(list(zip(*batch))[0])
+            completed_block_datas.extend(list(zip(*batch))[1])
+
+        # Postprocess blocks
+        points: list[CircuitPoint] = []
+        ops: list[Operation] = []
+        error_sum = 0.0
         for i, (cycle, op) in enumerate(blocks):
             subcircuit = completed_subcircuits[i]
             block_data = completed_block_datas[i]
-            # Record Data Part 2
-            block_data['subcircuit_post'] = subcircuit.copy()
-            block_data['loop_body_data'] = block_data
-            block_data['point'] = CircuitPoint(cycle, op.location[0])
-
-            # Calculate Errors
-            if self.calculate_error_bound:
-                new_utry = subcircuit.get_unitary()
-                old_utry = op.get_unitary()
-                error = new_utry.get_distance_from(old_utry)
-                block_data['error'] = error
-                _logger.info(f'Block {i} has error {error}.')
 
             # Mark Blocks to be Replaced
             if self.replace_filter(subcircuit, op):
-                _logger.info(f'Replacing block {i}.')
+                _logger.debug(f'Replacing block {i}.')
                 points.append(CircuitPoint(cycle, op.location[0]))
                 ops.append(
                     Operation(
@@ -217,14 +220,26 @@ class ForEachBlockPass(BasePass):
                     ),
                 )
                 block_data['replaced'] = True
+
+                # Calculate Error
+                if self.calculate_error_bound:
+                    error_sum += block_data['error']
             else:
                 block_data['replaced'] = False
 
-            # Record block data into pass data
-            data[self.key][-1].append(block_data)
-
         # Replace blocks
         circuit.batch_replace(points, ops)
+
+        # Record block data into pass data
+        data[self.key].append(completed_block_datas)
+
+        # Record error
+        if self.calculate_error_bound:
+            if 'error' in data:
+                data['error'] += error_sum
+            else:
+                data['error'] = error_sum
+            _logger.debug(f"New circuit error is {data['error']}.")
 
 
 def default_collection_filter(op: Operation) -> bool:
@@ -244,9 +259,21 @@ def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
 
 def _sub_do_work(
     loop_body: Sequence[BasePass],
-    subcircuit: Circuit,
-    subdata: dict[str, Any],
-) -> tuple[Circuit, dict[str, Any]]:
-    for loop_pass in loop_body:
-        loop_pass.run(subcircuit, subdata)
-    return subcircuit, subdata
+    subcircuits: list[Circuit],
+    subdatas: list[dict[str, Any]],
+) -> list[tuple[Circuit, dict[str, Any]]]:
+    results = []
+    for subcircuit, subdata in zip(subcircuits, subdatas):
+        if subdata['calculate_error_bound']:
+            old_utry = subcircuit.get_unitary()
+
+        for loop_pass in loop_body:
+            loop_pass.run(subcircuit, subdata)
+
+        if subdata['calculate_error_bound']:
+            new_utry = subcircuit.get_unitary()
+            error = new_utry.get_distance_from(old_utry)
+            subdata['error'] = error
+
+        results.append((subcircuit, subdata))
+    return results

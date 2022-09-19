@@ -20,12 +20,11 @@ class TestQSearch:
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
-    def test_small_qubit_with_compiler(self) -> None:
+    def test_small_qubit_with_compiler(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         qsearch = QSearchSynthesisPass()
-        with Compiler() as compiler:
-            circuit = compiler.compile(CompilationTask(circuit, [qsearch]))
+        circuit = compiler.compile(CompilationTask(circuit, [qsearch]))
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 

@@ -1,16 +1,16 @@
-"""Optimize a 3-qubit circuit to be a toffoli gate."""
-from __future__ import annotations
+"""
+Numerical Instantiation is the foundation of many of BQSKit's algorithms.
 
-import logging
+This example demonstrates building a circuit template that can implement the
+toffoli gate and then instantiating it to be the gate.
+"""
+from __future__ import annotations
 
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
-from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 from bqskit.qis.unitary import UnitaryMatrix
-# The next two lines start bqskits's logger.
-logging.getLogger('bqskit').setLevel(logging.INFO)
 
 # We will optimize towards the toffoli unitary.
 toffoli = np.array([
@@ -47,9 +47,9 @@ circuit.instantiate(
 )
 
 # Calculate and print final distance
-dist = HilbertSchmidtCostGenerator().calc_cost(circuit, toffoli)
+dist = circuit.get_unitary().get_distance_from(toffoli, 1)
 print('Final Distance: ', dist)
 
-# If you would like to convert the unitary operations to native gates,
-# you should use the KAK decomposition for 2 qubit unitaries, or
-# qsearch or qfast for 3+ qubit unitaries.
+# You can use synthesis to convert the `VariableUnitaryGate`s to
+# native gates. Alternatively, you can build a circuit directly out of
+# native gates and use the default instantiater to instantiate directly.

@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import Sequence
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.passes.control.predicate import PassPredicate
+from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
 
@@ -21,17 +23,20 @@ class GateCountPredicate(PassPredicate):
 
     key = 'GateCountPredicate_circuit_count'
 
-    def __init__(self, gate: Gate) -> None:
+    def __init__(self, gate: Gate | Sequence[Gate]) -> None:
         """Construct a GateCountPredicate."""
 
-        if not isinstance(gate, Gate):
+        if isinstance(gate, Gate):
+            gate = [gate]
+
+        if not is_sequence(gate) or not all(isinstance(g, Gate) for g in gate):
             raise TypeError(f'Expected gate, got {type(gate)}')
 
         self.gate = gate
 
     def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
-        gate_count = circuit.count(self.gate)
+        gate_count = sum(circuit.count(g) for g in self.gate)
 
         # If first call, record data and return true
         if self.key not in data:

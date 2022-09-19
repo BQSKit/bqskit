@@ -85,24 +85,33 @@ class CircuitPoint(Tuple[int, int]):
             return True
 
         if not isinstance(point, tuple):
-            _logger.debug('Point is not a tuple.')
+            _logger.log(0, 'Point is not a tuple.')
             return False
 
         if len(point) != 2:
-            _logger.debug(
-                'Expected point to contain two values, got %d.' % len(point),
+            _logger.log(
+                0,
+                'Expected point to contain two values, got %d.' % len(
+                    point,
+                ),
             )
             return False
 
         if not is_integer(point[0]):
-            _logger.debug(
-                'Expected integer values in point, got %s.' % type(point[0]),
+            _logger.log(
+                0,
+                'Expected integer values in point, got %s.' % type(
+                    point[0],
+                ),
             )
             return False
 
         if not is_integer(point[1]):
-            _logger.debug(
-                'Expected integer values in point, got %s.' % type(point[1]),
+            _logger.log(
+                0,
+                'Expected integer values in point, got %s.' % type(
+                    point[1],
+                ),
             )
             return False
 

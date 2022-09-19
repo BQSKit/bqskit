@@ -20,7 +20,7 @@ from bqskit.ir.gates import CNOTGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control import ForEachBlockPass
-from bqskit.passes.layout import SimpleLayoutPass
+from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.partitioning import QuickPartitioner
 from bqskit.passes.synthesis import LEAPSynthesisPass
 
@@ -102,7 +102,7 @@ class QuestRunner(CircuitRunner):
             ForEachBlockPass(synthesis_pass),
         ]
         if self.model is not None:
-            pass_list.insert(0, SimpleLayoutPass(self.model))
+            pass_list.insert(0, SetModelPass(self.model))
 
         task = CompilationTask(circuit.copy(), pass_list)
 
@@ -296,7 +296,7 @@ def annealing_objective(x: npt.NDArray[np.float64], *args: Any) -> float:
     distances = [0] * len(psol_configs)
 
     for index, config in enumerate(psol_configs):
-        distances[index] = sum(  # type: ignore
+        distances[index] = sum(
             utrys[i][config[i]].get_distance_from(utrys[i][b])
             < max(dists[i][config[i]], dists[i][b])
             for i, b in enumerate(blocks)
@@ -356,7 +356,7 @@ def gen_approximate_circuits(
         ForEachBlockPass(synthesis_pass),
     ]
     if model is not None:
-        pass_list.insert(0, SimpleLayoutPass(model))
+        pass_list.insert(0, SetModelPass(model))
 
     task = CompilationTask(circuit.copy(), pass_list)
 

@@ -42,12 +42,12 @@ class MiddleOutLayerGenerator(SimpleLayerGenerator):
             raise ValueError('Cannot expand a single-qudit circuit.')
 
         # Get the machine model
-        model = BasePass.get_model(circuit, data)
+        coupling_graph = BasePass.get_connectivity(circuit, data)
 
         # Generate successors
         successors = []
         for (edge, cycle) in it.product(
-                model.coupling_graph, range(circuit.num_cycles),
+                coupling_graph, range(circuit.num_cycles),
         ):
             successor = circuit.copy()
             successor.insert_gate(
@@ -63,7 +63,7 @@ class MiddleOutLayerGenerator(SimpleLayerGenerator):
                 self.generated_circuits.add(hash)
                 successors.append(successor)
 
-        for edge in model.coupling_graph:
+        for edge in coupling_graph:
             successor = circuit.copy()
             successor.append_gate(self.two_qudit_gate, [edge[0], edge[1]])
             successor.append_gate(self.single_qudit_gate_1, edge[0])

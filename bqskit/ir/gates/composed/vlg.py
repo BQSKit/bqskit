@@ -144,7 +144,7 @@ class VariableLocationGate(ComposedGate):
 
         P = np.sum([a * s for a, s in zip(l, self.perms)], 0)
         G = self.gate.get_unitary(a)
-        PGPT = P @ np.kron(G, self.I) @ P.T
+        PGPT = P.T @ np.kron(G, self.I) @ P
         return UnitaryMatrix.closest_to(PGPT, self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:

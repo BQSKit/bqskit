@@ -466,15 +466,15 @@ class CircuitRegion(Mapping[int, CycleInterval]):
             return True
 
         if not is_mapping(region):
-            _logger.debug('Region is not a mapping.')
+            _logger.log(0, 'Region is not a mapping.')
             return False
 
         if not all(is_integer(key) for key in region.keys()):
-            _logger.debug('Region does not have integer keys.')
+            _logger.log(0, 'Region does not have integer keys.')
             return False
 
         if not all(CycleInterval.is_interval(val) for val in region.values()):
-            _logger.debug('Region does not have IntervalLike values.')
+            _logger.log(0, 'Region does not have IntervalLike values.')
             return False
 
         return True

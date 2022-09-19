@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import logging
 import uuid
+import warnings
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.passes.control import ForEachBlockPass
 from bqskit.passes.control.predicates.count import GateCountPredicate
@@ -28,10 +29,8 @@ class CompilationTask():
     """
     A complete description of a quantum compilation task.
 
-    The CompilationTask class describes a compilation workflow completely.
-    These can be submitted to a BQSKit compiler to be efficiently executed.
-
-    There are static constructors for the most common use cases.
+    The CompilationTask class describes a compilation workflow completely. These
+    can be submitted to a BQSKit compiler to be efficiently executed.
     """
 
     def __init__(self, input: Circuit, passes: Sequence[BasePass]) -> None:
@@ -51,6 +50,10 @@ class CompilationTask():
     @staticmethod
     def synthesize(utry: UnitaryLike) -> CompilationTask:
         """Produces a standard synthesis task for the given unitary."""
+        warnings.warn(
+            'Default task creation is deprecated and will soon be removed.\n'
+            'Instead, use the new compile function.',
+        )
         circuit = Circuit.from_unitary(utry)
         num_qudits = circuit.num_qudits
 
@@ -80,6 +83,10 @@ class CompilationTask():
     @staticmethod
     def optimize(circuit: Circuit) -> CompilationTask:
         """Produces a standard optimization task for the given circuit."""
+        warnings.warn(
+            'Default task creation is deprecated and will soon be removed.\n'
+            'Instead, use the new compile function.',
+        )
         num_qudits = circuit.num_qudits
 
         if num_qudits <= 3:

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import cast
+from typing import Sequence
+
 import numpy as np
 
 from bqskit.exec.results import RunnerResults
@@ -14,4 +17,5 @@ class SimulationRunner(CircuitRunner):
         """Execute the circuit, see CircuitRunner.run for more info."""
         state = np.reshape(circuit.get_unitary()[:, 0], (-1))
         probs = np.square(np.abs(state), dtype=np.float64)
-        return RunnerResults(circuit.num_qudits, circuit.radixes, probs)  # type: ignore # noqa
+        probs = cast(Sequence[float], probs)
+        return RunnerResults(circuit.num_qudits, circuit.radixes, probs)

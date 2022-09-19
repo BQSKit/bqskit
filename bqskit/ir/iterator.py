@@ -1,6 +1,7 @@
 """This module implements the CircuitIterator class."""
 from __future__ import annotations
 
+import heapq
 from typing import Iterator
 from typing import Sequence
 from typing import Tuple
@@ -19,16 +20,125 @@ if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 
 
-class CircuitIterator(
-    Iterator[
-        Union[
-            Operation,
-            Tuple[int, Operation],  # if and_cycles == True
-        ]
-    ],
-):
+class CircuitIterator(Iterator[Union[Operation, Tuple[int, Operation]]]):
+    """A CircuitIterator iterates through a circuit in a simulation order."""
+
+    def __init__(
+            self,
+            circuit: Circuit,
+            start: CircuitPointLike = CircuitPoint(0, 0),
+            end: CircuitPointLike | None = None,
+            qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
+            exclude: bool = False,
+            reverse: bool = False,
+            and_cycles: bool = False,
+    ) -> None:
+        """
+        Construct a CircuitIterator.
+
+        Args:
+            circuit (Circuit): The circuit to iterate through.
+
+            start (CircuitPointLike): Only iterate through points greater
+                than or equal to `start`. Defaults to start at the beginning
+                of the circuit. (Default: (0, 0))
+
+            end (CircuitPointLike | None): Only iterate through points
+                less than or equal to this. If left as None, iterates
+                until the end of the circuit. (Default: None)
+
+            qudits_or_region (CircuitRegionLike | Sequence[int] | None):
+                Determines the way the circuit is iterated. If a region
+                is given, then iterate through operations in the region.
+                If a sequence of qudit indices is given, then only iterate
+                the operations touching those qudits. If left as None,
+                then iterate through the entire circuit in simulation order.
+                (Default: None)
+
+            exclude (bool): If iterating through a region or only some
+                qudits and `exclude` is true, then do not yield operations
+                that are only partially in the region or on the desired
+                qudits. This may result in a sequence of operations that
+                does not occur in simulation order in the circuit.
+                (Default: False)
+
+            reverse (bool): Reverse the ordering. If true, then end acts
+                as start and vice versa. (Default: False)
+
+            and_cycles (bool): If true, in addition to the operation,
+                return the cycle index where it was found. (Default: False)
+        """
+        if (
+            start == (0, 0)
+            and end is None
+            and qudits_or_region is None
+            and not exclude
+            and not reverse
+        ):
+            # Default iteration can be done faster with the DAG Iterator
+            self.iter: CircuitIterator = CircuitDagIterator(circuit, and_cycles)
+
+        else:
+            self.iter = CircuitGridIterator(
+                circuit,
+                start,
+                end,
+                qudits_or_region,
+                exclude,
+                reverse,
+                and_cycles,
+            )
+
+    def __next__(self) -> Operation | tuple[int, Operation]:
+        return self.iter.__next__()
+
+    def __iter__(self) -> CircuitIterator:
+        return self.iter.__iter__()
+
+
+class CircuitDagIterator(CircuitIterator):
+    """Fast and simple iteration through circuit."""
+
+    def __init__(self, circuit: Circuit, and_cycles: bool = False):
+        """Set a CircuitDagIterator to iterate through `circuit`."""
+        self.circuit = circuit
+        self.and_cycles = and_cycles
+
+        # Track frontier for topological traversal
+        self.frontier = list(circuit.front)
+        heapq.heapify(self.frontier)
+
+        # Tracks how many of a gate's dependencies have been partitioned
+        self.prev_binned_counts = {n: 0 for n in circuit.front}
+
+    def __next__(self) -> Operation | tuple[int, Operation]:
+        if len(self.frontier) == 0:
+            raise StopIteration
+
+        point = heapq.heappop(self.frontier)
+        self.prev_binned_counts.pop(point)
+
+        # Update frontier
+        for successor in self.circuit.next(point):
+            if successor not in self.prev_binned_counts:
+                self.prev_binned_counts[successor] = 1
+            else:
+                self.prev_binned_counts[successor] += 1
+            num_prev_binned = self.prev_binned_counts[successor]
+            total_num_prev = len(self.circuit.prev(successor))
+            if num_prev_binned == total_num_prev:
+                heapq.heappush(self.frontier, successor)
+
+        op = self.circuit[point]
+        return (point.cycle, op) if self.and_cycles else op
+
+    def __iter__(self) -> CircuitIterator:
+        return self
+
+
+class CircuitGridIterator(CircuitIterator):
     """
-    The CircuitIterator Class.
+    The CircuitGridIterator Class.
 
     A CircuitIterator can iterate through a circuit in a few different ways. By
     default it can iterate through all operations in the circuit in simulation
@@ -49,7 +159,7 @@ class CircuitIterator(
             and_cycles: bool = False,
     ) -> None:
         """
-        Construct a CircuitIterator.
+        Construct a CircuitGridIterator.
 
         Args:
             circuit (Circuit): The circuit to iterate through.

@@ -10,9 +10,9 @@ indexed first by cycles and second by qudits. The cycle index determines
 when operations are executed, and the qudit index determines which
 qudits an operation operates on.
 
-Every component of the IR is also a function from a vector
-real numbers to a unitary matrix. This is done to facilitate circuit
-instantiatation, which is a very important primitive in quantum synthesis.
+Every component of the IR is also a function from a vector of
+real numbers to a unitary matrix. This is to facilitate circuit
+instantiation, a core primitive in quantum synthesis.
 
 .. rubric:: Core Classes
 
@@ -48,12 +48,12 @@ instantiatation, which is a very important primitive in quantum synthesis.
     CircuitPointLike
     CircuitRegionLike
 
+.. rubric:: Gate Library
+
 .. automodule:: bqskit.ir.gates
    :no-members:
    :no-inherited-members:
    :no-special-members:
-
-TODO: More description
 """
 from __future__ import annotations
 

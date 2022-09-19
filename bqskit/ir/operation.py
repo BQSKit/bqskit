@@ -98,11 +98,7 @@ class Operation(DifferentiableUnitary):
         else:
             full_params = self.params
 
-        return '{}({}) q[{}];\n'.format(
-            self.gate.qasm_name,
-            ', '.join([str(p) for p in full_params]),
-            '], q['.join([str(q) for q in self.location]),
-        ).replace('()', '')
+        return self.gate.get_qasm(full_params, self.location)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

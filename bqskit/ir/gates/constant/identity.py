@@ -60,3 +60,9 @@ class IdentityGate(ConstantGate):
 
     def __hash__(self) -> int:
         return hash((self.num_qudits, self.radixes))
+
+    def __str__(self) -> str:
+        if self.is_qubit_only():
+            return f'IdentityGate({self.num_qudits})'
+        else:
+            return f'IdentityGate({self.num_qudits}, {self.radixes})'

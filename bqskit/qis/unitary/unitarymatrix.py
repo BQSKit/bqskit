@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
@@ -20,6 +21,9 @@ from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
+
+if TYPE_CHECKING:
+    from typing import TypeGuard
 
 if not building_docs():
     from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -363,12 +367,12 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return UnitaryMatrix(np.loadtxt(filename, dtype=np.complex128))
 
     @staticmethod
-    def is_unitary(U: np.typing.ArrayLike, tol: float = 1e-8) -> bool:
+    def is_unitary(U: Any, tol: float = 1e-8) -> TypeGuard[UnitaryLike]:
         """
         Check if U is a unitary matrix.
 
         Args:
-            U (np.typing.ArrayLike): The matrix to check.
+            U (Any): The matrix to check.
 
             tol (float): The numerical precision of the check.
 
