@@ -128,7 +128,7 @@ class QuickPartitioner(BasePass):
                         while merging:
                             merging = False
                             for p in partitioned_circuit.rear:
-                                qudits = partitioned_circuit[p].location
+                                qudits = list(partitioned_circuit[p].location)
 
                                 # if qudits is subset of loc
                                 if all(q in loc for q in qudits):
