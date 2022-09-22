@@ -128,10 +128,10 @@ class QuickPartitioner(BasePass):
                         while merging:
                             merging = False
                             for p in partitioned_circuit.rear:
-                                qudits = partitioned_circuit[p].location
+                                qudits = list(partitioned_circuit[p].location)
 
-                                # if qudits is subset of bin.qudits
-                                if all(q in bin.qudits for q in qudits):
+                                # if qudits is subset of loc
+                                if all(q in loc for q in qudits):
                                     prev_op = partitioned_circuit.pop(p)
                                     pg = cast(CircuitGate, prev_op.gate)
                                     prev_circ = pg._circuit
@@ -142,14 +142,15 @@ class QuickPartitioner(BasePass):
                                     merging = True
                                     break
 
-                                # if bin.qudits is a subset of qudits
-                                if all(q in qudits for q in bin.qudits):
+                                # if loc is a subset of qudits
+                                if all(q in qudits for q in loc):
                                     prev_op = partitioned_circuit.pop(p)
                                     pg = cast(CircuitGate, prev_op.gate)
                                     prev_circ = pg._circuit
-                                    lloc = [qudits.index(q) for q in bin.qudits]
+                                    lloc = [qudits.index(q) for q in loc]
                                     prev_circ.append_circuit(subc, lloc)
                                     subc.become(prev_circ)
+                                    loc = qudits
 
                                     # retry merging
                                     merging = True
