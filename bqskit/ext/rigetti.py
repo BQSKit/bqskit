@@ -55,8 +55,8 @@ _octo_rings = [
 
 _horizontal_connections = [
     [
-        (i + 1, j + 7),
-        (i + 2, j + 6),
+        (i + 1, j + 6),
+        (i + 2, j + 5),
     ]
     for i, j in [(8 * r, 8 * (r + 1)) for r in [0, 1, 2, 3, 5, 6, 7, 8]]
 ]

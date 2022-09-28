@@ -30,7 +30,7 @@ class SetModelPass(BasePass):
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if 'machine_model' in data:
-            _logger.warning('Overriding existing machine model.')
+            _logger.info('Overriding existing machine model.')
 
         if self.model.num_qudits < circuit.num_qudits:
             raise RuntimeError('Machine model is too small for circuit.')

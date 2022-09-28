@@ -473,5 +473,115 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         return interactions
 
+    def get_induced_subgraph(
+        self,
+        location: CircuitLocationLike,
+    ) -> list[tuple[int, int]]:
+        """
+        Return the edges induced by the vertices specified in `location`.
+
+        Arguments:
+            location (CircuitLocationLike): A list of qubits or vertices in the
+                CouplingGraph. The edges connecting each of these vertices
+                together will be extracted.
+
+        Returns:
+            (list[tuple[int,int]]): The list of edges connecting vertices in
+                `location`.
+        """
+        subgraph = []
+        for q1, q2 in it.combinations(location, 2):
+            if (q1, q2) in self._edges or (q2, q1) in self._edges:
+                subgraph.append((min([q1, q2]), max([q1, q2])))
+        return subgraph
+
+    def relabel_subgraph(
+        graph: CouplingGraphLike,
+        relabeling: dict[int, int] | None = None,
+    ) -> CouplingGraph:
+        """
+        Renumber the vertices in `graph` according to the optionally provided
+        `relabeling` dictionary, or relabel so that the vertices are in
+        renumbered in least to greatest order and in the set {0,...,|V|-1}.
+
+        Arguments:
+            graph (CouplingGraphLike): A collection of edges representing a
+                graph.
+
+            relabeling (dict[int,int]|None): An optional dictionary specifying
+                current labels as keys and desired labels as values.
+                (Default: None)
+
+        Returns:
+            (CouplingGraph): The relabeled CouplingGraph.
+        """
+        if relabeling is None:
+            vertices = set()
+            for q1, q2 in graph:
+                vertices.add(q1)
+                vertices.add(q2)
+            renum = {q: i for i, q in enumerate(vertices)}
+        else:
+            renum = relabeling
+
+        edges = [
+            (min([renum[q1], renum[q2]]), max([renum[q1], renum[q2]]))
+            for q1, q2 in graph
+        ]
+        return CouplingGraph(edges)
+
+    def is_embedded_in(self, graph: CouplingGraph) -> bool:
+        """
+        Check if this CouplingGraph is embedded within `graph`.
+
+        Arguments:
+            graph (CouplingGraph): A graph that may have a subgraph isomorphic
+                to self.
+
+        Returns:
+            (bool): True if this graph is isomorphic to a subgraph of `graph`,
+                and False if not.
+
+        Note:
+            The algorithm used is naive and relies on the fact that `graph` and
+            `self` are similar in size and sparse.
+
+        Todo:
+            Implement the V2 algorithm for subgraph isomorphism.
+        """
+        if type(graph) is not CouplingGraph:
+            raise ValueError('Provided `graph` is not of type CouplingGraph.')
+        # A larger graph cannot be embedded in a smaller graph
+        if self.num_qudits > graph.num_qudits:
+            return False
+
+        degs = {q: len(self._adj[q]) for q in range(self.num_qudits)}
+        other_degs = {q: len(graph._adj[q]) for q in range(graph.num_qudits)}
+
+        # Candidates are vertices in the other graph that have degree >= a
+        # given vertex in self.
+        candidate_labels = {q: [] for q in range(self.num_qudits)}
+
+        for q1 in range(self.num_qudits):
+            for q2 in range(graph.num_qudits):
+                if degs[q1] <= other_degs[q2]:
+                    candidate_labels[q1].append(q2)
+
+        # Each vertex must have at least one candidate vertex
+        if any([len(cands) == 0 for cands in candidate_labels.values()]):
+            return False
+
+        # Check if the current renumbering works
+        for renumbering in it.permutations(
+            range(graph.num_qudits), self.num_qudits,
+        ):
+            renum = {q: renumbering[q] for q in range(self.num_qudits)}
+            if all([
+                (min([renum[u], renum[v]]), max([renum[u], renum[v]]))
+                in graph for u, v in self._edges
+            ]):
+                return True
+        return False
+
 
 CouplingGraphLike = Union[Iterable[Tuple[int, int]], CouplingGraph]
