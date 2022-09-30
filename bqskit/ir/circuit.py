@@ -655,8 +655,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             for point in points:
                 self.pop(point)
             return
-        else:
-            self._circuit.pop(cycle_index)
+
+        self._circuit.pop(cycle_index)
+
+        if cycle_index == -1 or cycle_index == self.num_cycles:
+            return
 
         dec_point = lambda p: CircuitPoint(p.cycle - 1, p.qudit)
         shift_point = lambda p: p if p.cycle < cycle_index else dec_point(p)
