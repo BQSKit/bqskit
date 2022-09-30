@@ -489,6 +489,12 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             (list[tuple[int,int]]): The list of edges connecting vertices in
                 `location`.
         """
+        if not isinstance(location, CircuitLocation):
+            location = CircuitLocation(location)
+
+        if len(location) < 2:
+            raise ValueError('Invalid location size.')
+
         subgraph = []
         for q1, q2 in it.combinations(location, 2):
             if (q1, q2) in self._edges or (q2, q1) in self._edges:
@@ -560,7 +566,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         # Candidates are vertices in the other graph that have degree >= a
         # given vertex in self.
-        candidate_labels = {q: [] for q in range(self.num_qudits)}
+        candidate_labels: dict[int, list[int]] = {
+            q: [] for q in range(self.num_qudits)
+        }
 
         for q1 in range(self.num_qudits):
             for q2 in range(graph.num_qudits):

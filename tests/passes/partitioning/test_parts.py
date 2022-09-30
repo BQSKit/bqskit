@@ -6,17 +6,18 @@ from typing import Any
 import pytest
 
 from bqskit import Circuit
+from bqskit.ir.point import CircuitPoint
 from bqskit.passes import QuickPartitioner
 from bqskit.passes import UnfoldPass
 
 
 @pytest.fixture(
-    params=os.listdir(os.path.join(__file__[:__file__.rfind('/')], '_data')),
-    ids=lambda qasm_file: qasm_file[qasm_file.rfind('/') + 1:-5],
+    params=os.listdir(os.path.join(os.path.dirname(__file__), '_data')),
+    ids=lambda qasm_file: os.path.splitext(os.path.basename(qasm_file))[0],
 )
-def big_qasm_files(request: Any) -> Circuit:
+def big_qasm_files(request: Any) -> str:
     """Provide location of a big qasm file."""
-    cur_dir = __file__[:__file__.rfind('/')]
+    cur_dir = os.path.dirname(__file__)
     path = os.path.join(cur_dir, '_data')
     return os.path.join(path, request.param)
 
@@ -39,8 +40,8 @@ def test_parters(big_qasm_file: str) -> None:
             assert g1[1] == g2[1]
 
             # Each operation should have the same previous ops
-            prevs1 = c.prev((g1[0], g1[1].location[0]))
-            prevs2 = wc.prev((g2[0], g2[1].location[0]))
+            prevs1 = c.prev(CircuitPoint(g1[0], g1[1].location[0]))
+            prevs2 = wc.prev(CircuitPoint(g2[0], g2[1].location[0]))
 
             prev_ops1 = [c[prev] for prev in prevs1]
             prev_ops2 = [c[prev] for prev in prevs2]
@@ -49,8 +50,8 @@ def test_parters(big_qasm_file: str) -> None:
             assert all(o in prev_ops1 for o in prev_ops2)
 
             # Each operation should have the same next ops
-            nexts1 = c.next((g1[0], g1[1].location[0]))
-            nexts2 = wc.next((g2[0], g2[1].location[0]))
+            nexts1 = c.next(CircuitPoint(g1[0], g1[1].location[0]))
+            nexts2 = wc.next(CircuitPoint(g2[0], g2[1].location[0]))
 
             next_ops1 = [c[next] for next in nexts1]
             next_ops2 = [c[next] for next in nexts2]
