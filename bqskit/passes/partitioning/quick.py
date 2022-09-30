@@ -78,6 +78,7 @@ class QuickPartitioner(BasePass):
         active_bins: list[Bin | None] = [
             None for _ in range(circuit.num_qudits)
         ]
+
         # Tracks the first cycle in circuit not included in partitioned_circuit
         dividing_line: dict[int, int] = {
             i: 0 if circuit._front[i] is None else circuit._front[i].cycle  # type: ignore  # noqa
@@ -134,7 +135,7 @@ class QuickPartitioner(BasePass):
                                 if all(q in loc for q in qudits):
                                     prev_op = partitioned_circuit.pop(p)
                                     pg = cast(CircuitGate, prev_op.gate)
-                                    prev_circ = pg._circuit
+                                    prev_circ = pg._circuit.copy()
                                     local_loc = [loc.index(q) for q in qudits]
                                     subc.insert_circuit(0, prev_circ, local_loc)
 
@@ -146,7 +147,7 @@ class QuickPartitioner(BasePass):
                                 if all(q in qudits for q in loc):
                                     prev_op = partitioned_circuit.pop(p)
                                     pg = cast(CircuitGate, prev_op.gate)
-                                    prev_circ = pg._circuit
+                                    prev_circ = pg._circuit.copy()
                                     lloc = [qudits.index(q) for q in loc]
                                     prev_circ.append_circuit(subc, lloc)
                                     subc.become(prev_circ)
@@ -166,6 +167,7 @@ class QuickPartitioner(BasePass):
                         for qudit in bin.qudits:
                             dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore  # noqa
                         need_to_reprocess = True
+                        break
 
                 for bin in to_remove:
                     pending_bins.remove(bin)
@@ -175,7 +177,7 @@ class QuickPartitioner(BasePass):
             point = CircuitPoint(cycle, op.location[0])
             location = op.location
 
-            # Get all currently active bins that share atleast one qudit
+            # Get all currently active bins that share at least one qudit
             overlapping_bins: list[Bin] = list({
                 active_bins[q] for q in location  # type: ignore
                 if active_bins[q] is not None
@@ -183,8 +185,8 @@ class QuickPartitioner(BasePass):
 
             # Get all the currently active bins that can have op added to them
             admissible_bins = [
-                b for b in overlapping_bins
-                if b.can_accommodate(location, self.block_size)
+                bin for bin in overlapping_bins
+                if bin.can_accommodate(location, self.block_size)
             ]
 
             # Close location on inadmissible overlapping bins
@@ -193,57 +195,52 @@ class QuickPartitioner(BasePass):
                     if close_bin_qudits(bin, location, cycle):
                         num_closed += 1
 
-            # If we cannot add this op to any bin, make a new one
+            # Select bin or make new one
             if len(admissible_bins) == 0:
+                # If we cannot add this op to any bin, make a new one
                 assert all(active_bins[q] is None for q in location)
-                new_bin = Bin(point, location)
-                for q in location:
-                    active_bins[q] = new_bin
-
-                # Block qudits to prevent circular dependencies
-                for bin in overlapping_bins:
-                    bin.blocked_qudits.update(new_bin.qudits)
-
-                    for active_bin in active_bins:
-                        if active_bin is None or active_bin == bin:
-                            continue
-
-                        indirect = active_bin.blocked_qudits
-                        indirect = indirect.intersection(bin.qudits)
-                        if len(indirect) != 0:
-                            active_bin.blocked_qudits.update(new_bin.qudits)
+                selected_bin = Bin()
 
             else:
-                # Add to first admissible bin
-                selected_bin = admissible_bins[0]
+                # Otherwise add to first admissible bin
+                # selected_bin = admissible_bins[0]
+                # selected_bin = admissible_bins[sorted([(len(bin.op_list), i) for i, bin in enumerate(admissible_bins)])[0][1]]
+                found = False
+                for bin in admissible_bins:
+                    if all(q in bin.qudits for q in location):
+                        selected_bin = bin
+                        found = True
+                        break
+                if not found:
+                    selected_bin = admissible_bins[0]
 
-                # Deactivate the rest
-                for bin in admissible_bins[1:]:
-                    if close_bin_qudits(bin, location, cycle):
-                        num_closed += 1
 
-                # Add op to selected_bin
-                selected_bin.add_op(point, location)
-                for q in location:
-                    if active_bins[q] is None:
-                        active_bins[q] = selected_bin
-                    else:
-                        assert active_bins[q] == selected_bin
+                # Close the overlapping qudits on the other admissible bins
+                for bin in admissible_bins:
+                    if bin != selected_bin:
+                        if close_bin_qudits(bin, location, cycle):
+                            num_closed += 1
+            
+            # Add op to selected_bin
+            selected_bin.add_op(point, location)
+            for q in location:
+                if active_bins[q] is None:
+                    active_bins[q] = selected_bin
+                else:
+                    assert active_bins[q] == selected_bin
 
-                # Block qudits to prevent circular dependencies
-                for bin in overlapping_bins:
-                    if bin == selected_bin:
-                        continue
-                    bin.blocked_qudits.update(selected_bin.qudits)
+            # Block qudits to prevent circular dependencies
+            for active_bin in active_bins:
+                if active_bin is None:
+                    continue
+                if active_bin == selected_bin:
+                    continue
 
-                    for active_bin in active_bins:
-                        if active_bin is None or active_bin == bin:
-                            continue
-
-                        indirect = active_bin.blocked_qudits
-                        indirect = indirect.intersection(bin.qudits)
-                        if len(indirect) != 0:
-                            active_bin.blocked_qudits.update(new_bin.qudits)
+                indirect = active_bin.blocked_qudits
+                indirect = indirect.union(active_bin.qudits)
+                indirect = indirect.intersection(selected_bin.qudits)
+                if len(indirect) != 0:
+                    active_bin.blocked_qudits.update(selected_bin.qudits)
 
             # If a new bin was finalized, reprocess pending bins
             if num_closed >= 5:
@@ -258,6 +255,13 @@ class QuickPartitioner(BasePass):
         # Process remaining bins
         process_pending_bins()
 
+        if len(pending_bins) != 0:
+            raise RuntimeError(
+                "Unable to process all pending bins during partitioning.\n"
+                "This should never happen and is a major issue"
+                ", please make a bug report containing the input circuit."
+            )
+
         # Become partitioned circuit
         circuit.become(partitioned_circuit, False)
 
@@ -268,30 +272,26 @@ class Bin:
     id: int = 0
     """Unique ID counter for Bin instances."""
 
-    def __init__(
-        self,
-        point: CircuitPoint,
-        location: CircuitLocation,
-    ) -> None:
+    def __init__(self) -> None:
         """Can start a new bin from an operation."""
 
         # The qudits in the bin
-        self.qudits: list[int] = list(location)
+        self.qudits: list[int] = []
 
         # The starting cycles for each qudit (inclusive)
-        self.starts: dict[int, int] = {q: point.cycle for q in location}
+        self.starts: dict[int, int] = {}
 
         # The ending cycles for each qudit (inclusive)
-        self.ends: dict[int, int | None] = {q: None for q in location}
+        self.ends: dict[int, int | None] = {}
 
         # The qudits that can still accept new gates
-        self.active_qudits: list[int] = list(location)
+        self.active_qudits: list[int] = []
 
         # Qudits that cannot be added to the bin
         self.blocked_qudits: set[int] = set()
 
         # Points for each operation in this bin
-        self.op_list: list[CircuitPoint] = [point]
+        self.op_list: list[CircuitPoint] = []
 
         self.id = Bin.id
         Bin.id += 1
@@ -301,12 +301,11 @@ class Bin:
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Bin) and self.id == other.id
+    
+    def __repr__(self) -> str:
+        return "Bin " + str(self.id)
 
-    def add_op(
-        self,
-        point: CircuitPoint,
-        location: CircuitLocation,
-    ) -> None:
+    def add_op(self, point: CircuitPoint, location: CircuitLocation) -> None:
         """Add an operation the bin."""
         for q in location:
             if q not in self.qudits:
@@ -322,7 +321,11 @@ class Bin:
         An op can be added to the bin if all overlapping qudits are active in
         the bin and if the new bin won't be too large.
         """
-        if any(q in loc for q in self.blocked_qudits):
+        if any(
+            q in self.blocked_qudits
+            and q not in self.active_qudits
+            for q in loc
+        ):
             return False
 
         overlapping_qudits_are_active = all(
@@ -334,3 +337,4 @@ class Bin:
         too_big = len(set(self.qudits + list(loc))) > size_limit
 
         return overlapping_qudits_are_active and not too_big
+1
