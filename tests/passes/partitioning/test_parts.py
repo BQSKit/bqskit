@@ -15,7 +15,7 @@ from bqskit.passes import UnfoldPass
     params=os.listdir(os.path.join(os.path.dirname(__file__), '_data')),
     ids=lambda qasm_file: os.path.splitext(os.path.basename(qasm_file))[0],
 )
-def big_qasm_files(request: Any) -> str:
+def big_qasm_file(request: Any) -> str:
     """Provide location of a big qasm file."""
     cur_dir = os.path.dirname(__file__)
     path = os.path.join(cur_dir, '_data')
