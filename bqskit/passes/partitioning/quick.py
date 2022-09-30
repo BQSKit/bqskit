@@ -202,25 +202,23 @@ class QuickPartitioner(BasePass):
                 selected_bin = Bin()
 
             else:
-                # Otherwise add to first admissible bin
-                # selected_bin = admissible_bins[0]
-                # selected_bin = admissible_bins[sorted([(len(bin.op_list), i) for i, bin in enumerate(admissible_bins)])[0][1]]
+                # Otherwise select an admissible bin
                 found = False
                 for bin in admissible_bins:
                     if all(q in bin.qudits for q in location):
                         selected_bin = bin
                         found = True
                         break
+
                 if not found:
                     selected_bin = admissible_bins[0]
-
 
                 # Close the overlapping qudits on the other admissible bins
                 for bin in admissible_bins:
                     if bin != selected_bin:
                         if close_bin_qudits(bin, location, cycle):
                             num_closed += 1
-            
+
             # Add op to selected_bin
             selected_bin.add_op(point, location)
             for q in location:
@@ -257,9 +255,9 @@ class QuickPartitioner(BasePass):
 
         if len(pending_bins) != 0:
             raise RuntimeError(
-                "Unable to process all pending bins during partitioning.\n"
-                "This should never happen and is a major issue"
-                ", please make a bug report containing the input circuit."
+                'Unable to process all pending bins during partitioning.\n'
+                'This should never happen and is a major issue'
+                ', please make a bug report containing the input circuit.',
             )
 
         # Become partitioned circuit
@@ -301,9 +299,9 @@ class Bin:
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Bin) and self.id == other.id
-    
+
     def __repr__(self) -> str:
-        return "Bin " + str(self.id)
+        return 'Bin ' + str(self.id)
 
     def add_op(self, point: CircuitPoint, location: CircuitLocation) -> None:
         """Add an operation the bin."""
@@ -337,4 +335,6 @@ class Bin:
         too_big = len(set(self.qudits + list(loc))) > size_limit
 
         return overlapping_qudits_are_active and not too_big
+
+
 1

@@ -1,14 +1,18 @@
-import pytest
+from __future__ import annotations
+
 import os
 from typing import Any
+
+import pytest
+
+from bqskit import Circuit
 from bqskit.passes import QuickPartitioner
 from bqskit.passes import UnfoldPass
-from bqskit import Circuit
 
 
 @pytest.fixture(
     params=os.listdir(os.path.join(__file__[:__file__.rfind('/')], '_data')),
-    ids=lambda qasm_file: qasm_file[qasm_file.rfind('/')+1:-5]
+    ids=lambda qasm_file: qasm_file[qasm_file.rfind('/') + 1:-5],
 )
 def big_qasm_files(request: Any) -> Circuit:
     """Provide location of a big qasm file."""
