@@ -135,7 +135,7 @@ class GeneralizedSabreAlgorithm():
         F = circuit.front
         decay = [1.0 for i in range(circuit.num_qudits)]
         iter_count = 0
-        prev_swap = (-1, -1)
+        prev_swaps = [(-1, -1) for i in range(circuit.num_qudits)]
         prev_executed_counts: dict[CircuitPoint, int] = {n: 0 for n in F}
         _logger.debug(f'Starting forward sabre pass with pi: {pi}.')
 
@@ -164,9 +164,13 @@ class GeneralizedSabreAlgorithm():
                             op.params,
                         )
 
-                    # Reset previous swap if executed gate overlaps it
-                    if any(pi[i] in prev_swap for i in circuit[n].location):
-                        prev_swap = (-1, -1)
+                    # Reset overlapping previous swaps
+                    for q in circuit[n].location:
+                        prev_swap = prev_swaps[pi[q]]
+                        if prev_swap == (-1, -1):
+                            continue
+                        for sq in prev_swap:
+                            prev_swaps[sq] = (-1, -1)
 
                     for successor in circuit.next(n):
                         if successor not in prev_executed_counts:
@@ -189,10 +193,19 @@ class GeneralizedSabreAlgorithm():
             # Pick and apply a swap
             E = self._calc_extended_set(circuit, F)
             best_swap = self._get_best_swap(
-                circuit, F, E, D, cg, pi, decay, prev_swap,
+                circuit, F, E, D, cg, pi, decay, prev_swaps,
             )
             self._apply_swap(best_swap, pi, decay)
-            prev_swap = best_swap
+            print()
+
+            # Update prev_swaps
+            for q in best_swap:
+                prev_swap = prev_swaps[q]
+                if prev_swap != (-1, -1):
+                    for sq in prev_swap:
+                        prev_swaps[sq] = (-1, -1)
+                prev_swaps[q] = best_swap
+
             if modify_circuit:
                 mapped_circuit.append_gate(SwapGate(), best_swap)
 
@@ -228,7 +241,7 @@ class GeneralizedSabreAlgorithm():
         F = circuit.rear
         decay = [1.0 for i in range(circuit.num_qudits)]
         iter_count = 0
-        prev_swap = (-1, -1)
+        prev_swaps = [(-1, -1) for i in range(circuit.num_qudits)]
         next_executed_counts: dict[CircuitPoint, int] = {n: 0 for n in F}
         _logger.debug(f'Starting backward sabre pass with pi: {pi}.')
 
@@ -245,9 +258,13 @@ class GeneralizedSabreAlgorithm():
                     next_executed_counts.pop(n)
                     _logger.debug(f'Executing gate at point {n}.')
 
-                    # Reset previous swap if executed gate overlaps it
-                    if any(pi[i] in prev_swap for i in circuit[n].location):
-                        prev_swap = (-1, -1)
+                    # Reset overlapping previous swaps
+                    for q in circuit[n].location:
+                        prev_swap = prev_swaps[pi[q]]
+                        if prev_swap == (-1, -1):
+                            continue
+                        for sq in prev_swap:
+                            prev_swaps[sq] = (-1, -1)
 
                     for predessor in circuit.prev(n):
                         if predessor not in next_executed_counts:
@@ -270,10 +287,17 @@ class GeneralizedSabreAlgorithm():
             # Pick and apply a swap
             E = self._calc_extended_set(circuit, F)
             best_swap = self._get_best_swap(
-                circuit, F, E, D, cg, pi, decay, prev_swap,
+                circuit, F, E, D, cg, pi, decay, prev_swaps,
             )
             self._apply_swap(best_swap, pi, decay)
-            prev_swap = best_swap
+            
+            # Update prev_swaps
+            for q in best_swap:
+                prev_swap = prev_swaps[q]
+                if prev_swap != (-1, -1):
+                    for sq in prev_swap:
+                        prev_swaps[sq] = (-1, -1)
+                prev_swaps[q] = best_swap
 
             # Update loop counter and reset decay if necessary
             iter_count += 1
@@ -312,7 +336,7 @@ class GeneralizedSabreAlgorithm():
         cg: CouplingGraph,
         pi: list[int],
         decay: list[float],
-        prev_swap: tuple[int, int],
+        prev_swaps: dict[int, tuple[int, int]],
     ) -> tuple[int, int]:
         """Return the best swap given the current algorithm state."""
         # Track best one
@@ -321,8 +345,14 @@ class GeneralizedSabreAlgorithm():
 
         # Gather all considerable swaps
         swap_candidate_list = self._obtain_swaps(circuit, F, pi, cg)
-        if prev_swap in swap_candidate_list:
-            swap_candidate_list.remove(prev_swap)
+        print()
+        print(swap_candidate_list, prev_swaps)
+        swap_candidate_list = [
+            swap
+            for swap in swap_candidate_list
+            if swap != prev_swaps[swap[0]]
+        ]
+        print(swap_candidate_list, prev_swaps)
 
         # Score them, tracking the best one
         for swap in swap_candidate_list:
