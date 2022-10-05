@@ -196,7 +196,6 @@ class GeneralizedSabreAlgorithm():
                 circuit, F, E, D, cg, pi, decay, prev_swaps,
             )
             self._apply_swap(best_swap, pi, decay)
-            print()
 
             # Update prev_swaps
             for q in best_swap:
@@ -345,14 +344,11 @@ class GeneralizedSabreAlgorithm():
 
         # Gather all considerable swaps
         swap_candidate_list = self._obtain_swaps(circuit, F, pi, cg)
-        print()
-        print(swap_candidate_list, prev_swaps)
         swap_candidate_list = [
             swap
             for swap in swap_candidate_list
             if swap != prev_swaps[swap[0]]
         ]
-        print(swap_candidate_list, prev_swaps)
 
         # Score them, tracking the best one
         for swap in swap_candidate_list:
