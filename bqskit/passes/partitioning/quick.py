@@ -93,7 +93,6 @@ class QuickPartitioner(BasePass):
 
         def close_bin_qudits(bin: Bin, loc: Sequence[int], cycle: int) -> bool:
             """Deactivate `qudits` in `bin`; return True if bin is inactive."""
-            to_return = False
             for q in loc:
                 if q in bin.active_qudits:
                     bin.active_qudits.remove(q)
@@ -105,8 +104,9 @@ class QuickPartitioner(BasePass):
             # Check if the bin is completely inactive now
             if len(bin.active_qudits) == 0:
                 pending_bins.append(bin)
-                to_return = True
-            return to_return
+                return True
+
+            return False
 
         def process_pending_bins() -> None:
             """Add pending bins that can be added to the partitioned circuit."""
@@ -239,6 +239,8 @@ class QuickPartitioner(BasePass):
                 indirect = indirect.intersection(selected_bin.qudits)
                 if len(indirect) != 0:
                     active_bin.blocked_qudits.update(selected_bin.qudits)
+                    blockedqs = selected_bin.blocked_qudits
+                    active_bin.blocked_qudits.update(blockedqs)
 
             # If a new bin was finalized, reprocess pending bins
             if num_closed >= 5:
@@ -310,6 +312,7 @@ class Bin:
                 self.qudits.append(q)
                 self.active_qudits.append(q)
                 self.starts[q] = point.cycle
+                self.ends[q] = None
         self.op_list.append(point)
 
     def can_accommodate(self, loc: CircuitLocation, block_size: int) -> bool:
