@@ -250,6 +250,76 @@ class UnitaryBuilder(Unitary):
         inv_perm = list(np.argsort(perm))
         self.tensor = self.tensor.transpose(inv_perm)
 
+    def eval_apply_right(
+        self,
+        M: npt.NDArray[np.complex128],
+        location: CircuitLocationLike,
+    ) -> npt.NDArray[np.complex128]:
+        """
+        Evaluate the application of `M` on the right of this UnitaryBuilder.
+
+        See :func:`apply_right` for more info.
+        """
+        left_perm = list(cast(CircuitLocation, location))
+        mid_perm = [x for x in range(self.num_qudits) if x not in left_perm]
+        right_perm = [x + self.num_qudits for x in range(self.num_qudits)]
+
+        left_dim = int(np.prod([self.radixes[x] for x in left_perm]))
+
+        perm = left_perm + mid_perm + right_perm
+        tensor_copy = self.tensor.copy()
+        tensor_copy = tensor_copy.transpose(perm)
+        tensor_copy = tensor_copy.reshape((left_dim, -1))
+        tensor_copy = M @ tensor_copy  # TODO: Require out matrix to avoid copy
+
+        shape = list(self.radixes) * 2
+        shape = [shape[p] for p in perm]
+        tensor_copy = tensor_copy.reshape(shape)
+        inv_perm = list(np.argsort(perm))
+        tensor_copy = tensor_copy.transpose(inv_perm)
+        out_M = tensor_copy.reshape((self.dim, self.dim))
+        return out_M
+
+    def eval_apply_left(
+        self,
+        M: npt.NDArray[np.complex128],
+        location: CircuitLocationLike,
+    ) -> npt.NDArray[np.complex128]:
+        """
+        Evaluate the application of `M` on the left of this UnitaryBuilder.
+
+        See :func:`apply_left` for more info.
+        """
+        location = cast(CircuitLocation, location)
+        left_perm = list(range(self.num_qudits))
+        mid_perm = [
+            x + self.num_qudits
+            for x in left_perm
+            if x not in location
+        ]
+        right_perm = [x + self.num_qudits for x in location]
+
+        right_dim = int(
+            np.prod([
+                self.radixes[x - self.num_qudits]
+                for x in right_perm
+            ]),
+        )
+
+        perm = left_perm + mid_perm + right_perm
+        tensor_copy = self.tensor.copy()
+        tensor_copy = tensor_copy.transpose(perm)
+        tensor_copy = tensor_copy.reshape((-1, right_dim))
+        tensor_copy = tensor_copy @ M
+
+        shape = list(self.radixes) * 2
+        shape = [shape[p] for p in perm]
+        tensor_copy = tensor_copy.reshape(shape)
+        inv_perm = list(np.argsort(perm))
+        tensor_copy = tensor_copy.transpose(inv_perm)
+        out_M = tensor_copy.reshape((self.dim, self.dim))
+        return out_M
+
     def calc_env_matrix(
             self, location: Sequence[int],
     ) -> npt.NDArray[np.complex128]:
