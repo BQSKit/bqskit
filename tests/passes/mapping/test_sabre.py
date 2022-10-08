@@ -15,9 +15,8 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 def test_simple(compiler: Compiler) -> None:
-    model = MachineModel(
-        8, [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)],
-    )
+    cg = (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)
+    model = MachineModel(8, cg)
     circuit = Circuit(5)
     for i in range(4):
         circuit.append_gate(CNOTGate(), (4, i))
@@ -51,3 +50,4 @@ def test_simple(compiler: Compiler) -> None:
     PI = PermutationMatrix.from_qubit_location(5, pi)
     PF = PermutationMatrix.from_qubit_location(5, pf)
     assert cc.get_unitary().get_distance_from(PF.T @ in_utry @ PI) < 1e-7
+    assert all(e in cg for e in cc.coupling_graph)
