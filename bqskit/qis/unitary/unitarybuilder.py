@@ -30,7 +30,7 @@ class UnitaryBuilder(Unitary):
     unitary matrices.
     """
 
-    def __init__(self, num_qudits: int, radixes: Sequence[int] = []) -> None:
+    def __init__(self, num_qudits: int, radixes: Sequence[int] = [], initial_value UnitaryMatrix = None) -> None:
         """
         UnitaryBuilder constructor.
 
@@ -77,8 +77,20 @@ class UnitaryBuilder(Unitary):
 
         self._num_params = 0
         self._dim = int(np.prod(self.radixes))
-        self.tensor = np.identity(self.dim, dtype=np.complex128)
+
+        if initial_value is None:
+            self.tensor = np.identity(self.dim, dtype=np.complex128)            
+        else:
+            if not all((d1==d2 for d1, d2 in zip(self.radixes, initial_value.radixes)):
+             raise ValueError(
+                f'Expected radixes to be equal between the intial value to desired builder radixes:'
+                ' {initail_value.radixes} != {self.radixes}' ,
+            )   
+            
+            self.tensor = initial_value.numpy
+
         self.tensor = self.tensor.reshape(self.radixes * 2)
+
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
