@@ -8,6 +8,7 @@ from typing import Sequence
 import numpy as np
 import numpy.typing as npt
 
+
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.unitary import RealVector
@@ -96,12 +97,12 @@ class UnitaryBuilder(Unitary):
 
         ..
                  .-----.   .------.
-              0 -|     |---|      |-
-              1 -|     |---| utry |-
+              n -|     |---|      |-
+            n+1 -|     |---| utry |-
                  .     .   '------'
                  .     .
                  .     .
-            n-1 -|     |------------
+           2n-1 -|     |------------
                  '-----'
 
         Args:
@@ -142,25 +143,27 @@ class UnitaryBuilder(Unitary):
             for utry_radix, bldr_radix_idx in zip(utry.radixes, location):
                 if utry_radix != self.radixes[bldr_radix_idx]:
                     raise ValueError('Unitary and location radix mismatch.')
+        
+        location = cast(CircuitLocation, location)
+        utry_tensor = utry.get_tensor_format()
+        utry_size  = len(utry.radixes)
+ 
+        if inverse:
+            offset = 0
+            gate_tensor = utry_tensor.conj()
+        else:
+            offset = utry_size
+            
+        utry_tensor_indexs    = [i for i in range(2*utry_size)]        
+        utry_builder_tensor_indexs = [2*utry_size + i  for i in range(2*self.num_qudits)]        
+        output_tensor_index   = [2*utry_size + i  for i in range(2*self.num_qudits)]
+        
+        for i, loc in enumerate(location):
+            utry_builder_tensor_indexs[loc] = offset + i
+            output_tensor_index[loc] = (utry_size - offset) + i
+        
+        self.tensor  = np.einsum(gate_tensor, gate_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
-        left_perm = list(cast(CircuitLocation, location))
-        mid_perm = [x for x in range(self.num_qudits) if x not in left_perm]
-        right_perm = [x + self.num_qudits for x in range(self.num_qudits)]
-
-        left_dim = int(np.prod([self.radixes[x] for x in left_perm]))
-
-        utry = utry.dagger if inverse else utry
-
-        perm = left_perm + mid_perm + right_perm
-        self.tensor = self.tensor.transpose(perm)
-        self.tensor = self.tensor.reshape((left_dim, -1))
-        self.tensor = utry @ self.tensor
-
-        shape = list(self.radixes) * 2
-        shape = [shape[p] for p in perm]
-        self.tensor = self.tensor.reshape(shape)
-        inv_perm = list(np.argsort(perm))
-        self.tensor = self.tensor.transpose(inv_perm)
 
     def apply_left(
         self,
@@ -174,12 +177,12 @@ class UnitaryBuilder(Unitary):
 
         ..
                  .------.   .-----.
-              0 -|      |---|     |-
-              1 -| gate |---|     |-
+              2 -|      |---|     |-
+              3 -| gate |---|     |-
                  '------'   .     .
                             .     .
                             .     .
-            n-1 ------------|     |-
+           2n-1 ------------|     |-
                             '-----'
 
         Args:
@@ -222,33 +225,24 @@ class UnitaryBuilder(Unitary):
                     raise ValueError('Unitary and location radix mismatch.')
 
         location = cast(CircuitLocation, location)
-        left_perm = list(range(self.num_qudits))
-        mid_perm = [
-            x + self.num_qudits
-            for x in left_perm
-            if x not in location
-        ]
-        right_perm = [x + self.num_qudits for x in location]
-
-        right_dim = int(
-            np.prod([
-                self.radixes[x - self.num_qudits]
-                for x in right_perm
-            ]),
-        )
-
-        utry = utry.dagger if inverse else utry
-
-        perm = left_perm + mid_perm + right_perm
-        self.tensor = self.tensor.transpose(perm)
-        self.tensor = self.tensor.reshape((-1, right_dim))
-        self.tensor = self.tensor @ utry
-
-        shape = list(self.radixes) * 2
-        shape = [shape[p] for p in perm]
-        self.tensor = self.tensor.reshape(shape)
-        inv_perm = list(np.argsort(perm))
-        self.tensor = self.tensor.transpose(inv_perm)
+        utry_tensor = utry.get_tensor_format()
+        utry_size  = len(utry.radixes)
+ 
+        if inverse:
+            offset = utry_size
+            gate_tensor = utry_tensor.conj()
+        else:
+            offset = 0
+            
+        utry_tensor_indexs          = [i for i in range(2*utry_size)]        
+        utry_builder_tensor_indexs  = [2*utry_size + i  for i in range(2*self.num_qudits)]        
+        output_tensor_index         = [2*utry_size + i  for i in range(2*self.num_qudits)]
+        
+        for i, loc in enumerate(location):
+            utry_builder_tensor_indexs[self.num_qudits + loc]   = offset + i
+            output_tensor_index[self.num_qudits + loc]          = (utry_size - offset) + i
+        
+        self.tensor  = np.einsum(gate_tensor, gate_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
     def calc_env_matrix(
             self, location: Sequence[int],
@@ -264,19 +258,13 @@ class UnitaryBuilder(Unitary):
             np.ndarray: The environmental matrix.
         """
 
-        left_perm = list(range(self.num_qudits))
-        left_perm = [x for x in left_perm if x not in location]
-        left_perm = left_perm + [x + self.num_qudits for x in left_perm]
-        right_perm = list(location) + [x + self.num_qudits for x in location]
+        contraction_indexs = list(range(self.num_qudits))+list(range(self.num_qudits))
+        for i, loc in enumerate(location):            
+            contraction_indexs[loc+self.num_qudits] = self.num_qudits + i + 1
 
-        perm = left_perm + right_perm
-        a = np.transpose(self.tensor, perm)
-        a = np.reshape(
-            a, (
-                2 ** (self.num_qudits - len(location)),
-                2 ** (self.num_qudits - len(location)),
-                2 ** len(location),
-                2 ** len(location),
-            ),
-        )
-        return np.trace(a)
+        contraction_indexs_str = "".join([chr(ord('a')+i) for i in contraction_indexs])
+
+        env_tensor = np.einsum(contraction_indexs_str, self.tensor)
+        env_mat = env_tensor.reshape((2**len(location), -1))
+
+        return env_mat
