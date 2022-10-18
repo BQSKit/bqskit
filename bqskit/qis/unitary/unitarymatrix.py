@@ -12,7 +12,7 @@ import numpy.typing as npt
 import scipy as sp
 from scipy.stats import unitary_group
 
-from jaxlib.xla_extension import DeviceArray
+from jaxtyping as jnpt
 
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
@@ -190,7 +190,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the same object, satisfies the :class:`Unitary` API."""
         return self
 
-    def get_tensor_format(self) -> Union[DeviceArray, np.ndarray]:
+    def get_tensor_format(self) -> Union[jnp.Array, np.ndarray]:
         
         """
         Converts the unitary matrix operation into a tensor network format.
