@@ -12,6 +12,8 @@ import numpy.typing as npt
 import scipy as sp
 from scipy.stats import unitary_group
 
+from jaxlib.xla_extension import DeviceArray
+
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
@@ -187,6 +189,29 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the same object, satisfies the :class:`Unitary` API."""
         return self
+
+    def get_tensor_format(self) -> Union[DeviceArray, np.ndarray]:
+        
+        """
+        Converts the unitary matrix operation into a tensor network format.
+
+        Indices are counted top to bottom, right to left:
+             .-----.
+          n -|     |- 0
+        n+1 -|     |- 1
+             .     .
+             .     .
+             .     .
+       2n-1 -|     |- n-1
+             '-----'
+
+
+        Returns
+            Union[DeviceArray, np.ndarray]: A tensor representing this matrix.
+        """
+
+        return self.utry.reshape( self.radixes + self.radixes )
+
 
     def get_distance_from(self, other: UnitaryLike, degree: int = 2) -> float:
         """
