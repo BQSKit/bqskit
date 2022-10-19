@@ -162,7 +162,7 @@ class UnitaryBuilder(Unitary):
  
         if inverse:
             offset = 0
-            gate_tensor = utry_tensor.conj()
+            utry_tensor = utry_tensor.conj()
         else:
             offset = utry_size
             
@@ -174,7 +174,7 @@ class UnitaryBuilder(Unitary):
             utry_builder_tensor_indexs[loc] = offset + i
             output_tensor_index[loc] = (utry_size - offset) + i
         
-        self.tensor  = np.einsum(gate_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+        self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
 
     def apply_left(
@@ -242,7 +242,7 @@ class UnitaryBuilder(Unitary):
  
         if inverse:
             offset = utry_size
-            gate_tensor = utry_tensor.conj()
+            utry_tensor = utry_tensor.conj()
         else:
             offset = 0
             
@@ -254,7 +254,7 @@ class UnitaryBuilder(Unitary):
             utry_builder_tensor_indexs[self.num_qudits + loc]   = offset + i
             output_tensor_index[self.num_qudits + loc]          = (utry_size - offset) + i
         
-        self.tensor  = np.einsum(gate_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+        self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
     def calc_env_matrix(
             self, location: Sequence[int],
