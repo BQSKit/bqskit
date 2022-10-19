@@ -104,12 +104,12 @@ class QFactor_batch(Instantiater):
 
                 if np.abs(c1 - c2) <= self.diff_tol_a + self.diff_tol_r * np.abs( c1 ):
                     diff = np.abs(c1 - c2)
-                    # logger.info( f"Terminated: |c1 - c2| = {diff}"
-                    #             " <= diff_tol_a + diff_tol_r * |c1|." )
+                    _logger.info( f"Terminated: |c1 - c2| = {diff}"
+                                " <= diff_tol_a + diff_tol_r * |c1|." )
                     break
 
                 if it > self.max_iters:
-                    # logger.info( "Terminated: iteration limit reached." )
+                    _logger.info( "Terminated: iteration limit reached." )
                     break
 
             # from right to left
@@ -169,11 +169,24 @@ class QFactor_batch(Instantiater):
                 break
 
             if it % 100 == 0:
-                # logger.info( f"iteration: {it}, cost: {c1}" )
-                print(f"iteration: {it}, cost: {c1}" )
+                _logger.info( f"iteration: {it}, cost: {c1}" )
 
             if it % 40 == 0:
                 target_untry_builder = self._initilize_circuit_tensor(gates, locations, params)
 
 
         return params
+
+
+    @staticmethod
+    def is_capable(circuit: Circuit) -> bool:
+        """Return true if the circuit can be instantiated."""
+        return all(
+            isinstance(gate, LocallyOptimizableUnitary)
+            for gate in circuit.gate_set
+        )
+    
+    @staticmethod
+    def get_method_name() -> str:
+        """Return the name of this method."""
+        return 'qfactor_batch'
