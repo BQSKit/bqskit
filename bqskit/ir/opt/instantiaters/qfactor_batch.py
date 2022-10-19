@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
-import jax
-import jax.numpy as jnp
+# import jax
+# import jax.numpy as jnp
 
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.qis.state.state import StateVector
@@ -70,16 +70,16 @@ class QFactor_batch(Instantiater):
         param_index = 0
         for gate, loc in zip(gates, locations):
             
-            amount_of_params = gate.amount_of_params()
-            gparams = params_for_gates[param_index: param_index+amount_of_params]
+            amount_of_params_for_gate = gate.amount_of_params()
+            gparams = params_for_gates[param_index: param_index+amount_of_params_for_gate]
             target_untry_builder.apply_right(gates.get_unitary(params=gparams), loc, check_arguments=False)
-            param_index += amount_of_params
+            param_index += amount_of_params_for_gate
 
         return target_untry_builder
 
     def instantiate(
         self,
-        circuit: Circuit,
+        circuit,#: Circuit,
         target: UnitaryMatrix | StateVector,
         x0: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
@@ -87,9 +87,10 @@ class QFactor_batch(Instantiater):
 
 
         params = np.array(x0)
-        amount_of_gates = len(params)
+        
         locations = [op.location for op in circuit]
         gates = [op.gate for op in circuit]
+        amount_of_gates = len(gates)
         amount_of_qudits = target.num_qudits
         target_untry_builder = self._initilize_circuit_tensor(target, gates, locations, params)
 
@@ -119,24 +120,24 @@ class QFactor_batch(Instantiater):
                 location = locations[k]
 
                 
-                amount_of_params = gate.num_params
-                gparams = params[param_index - amount_of_params:param_index]
+                amount_of_params_in_gate = gate.num_params
+                gparams = params[param_index - amount_of_params_in_gate:param_index]
                 
 
                 # Remove current gate from right of circuit tensor
                 target_untry_builder.apply_right(gate.get_unitary(params=gparams) , location, inverse = True, check_arguments = False)
 
                 # Update current gate
-                if amount_of_params > 0:
+                if amount_of_params_in_gate > 0:
                     env = target_untry_builder.calc_env_matrix( location )            
                     new_params =  gate.optimize(env)
-                    params[param_index - amount_of_params:param_index] = new_params 
+                    params[param_index - amount_of_params_in_gate:param_index] = new_params 
                     gparams = new_params
 
                 # Add updated gate to left of circuit tensor
                 target_untry_builder.apply_left( gate.get_unitary(new_params), location,  check_arguments = False)
 
-                param_index -= amount_of_params
+                param_index -= amount_of_params_in_gate
 
             # from left to right
             #param index should be 0 now, but we zero it out any way
@@ -145,8 +146,8 @@ class QFactor_batch(Instantiater):
                 gate = gates[k]
                 location = locations[k]
                 
-                amount_of_params = gate.num_params
-                gparams = params[param_index: param_index + amount_of_params]
+                amount_of_params_in_gate = gate.num_params
+                gparams = params[param_index: param_index + amount_of_params_in_gate]
                 # Remove current gate from left of circuit tensor
                 target_untry_builder.apply_left( gate.get_unitary(params = gparams), location, inverse = True, check_arguments = False)
 
@@ -154,7 +155,7 @@ class QFactor_batch(Instantiater):
                 if gate.num_params > 0:
                     env = target_untry_builder.calc_env_matrix( location )            
                     new_params =  gate.optimize(env)
-                    params[param_index : param_index + amount_of_params] = new_params 
+                    params[param_index : param_index + amount_of_params_in_gate] = new_params 
                     gparams = new_params
 
                 # Add updated gate to right of circuit tensor
@@ -179,13 +180,43 @@ class QFactor_batch(Instantiater):
 
 
     @staticmethod
-    def is_capable(circuit: Circuit) -> bool:
+    # def is_capable(circuit: Circuit) -> bool:
+    def is_capable(circuit) -> bool:
         """Return true if the circuit can be instantiated."""
         return all(
             isinstance(gate, LocallyOptimizableUnitary)
             for gate in circuit.gate_set
         )
     
+    @staticmethod
+    def get_violation_report(circuit) -> str:
+    # def get_violation_report(circuit: Circuit) -> str:
+        """
+        Return a message explaining why `circuit` cannot be instantiated.
+
+        Args:
+            circuit (Circuit): Generate a report for this circuit.
+
+        Raises:
+            ValueError: If `circuit` can be instantiated with this
+                instantiater.
+        """
+
+        invalid_gates = {
+            gate
+            for gate in circuit.gate_set
+            if not isinstance(gate, LocallyOptimizableUnitary)
+        }
+
+        if len(invalid_gates) == 0:
+            raise ValueError('Circuit can be instantiated.')
+
+        return (
+            'Cannot instantiate circuit with qfactor'
+            ' because the following gates are not locally optimizable: %s.'
+            % ', '.join(str(g) for g in invalid_gates)
+        )
+
     @staticmethod
     def get_method_name() -> str:
         """Return the name of this method."""
