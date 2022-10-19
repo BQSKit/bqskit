@@ -12,8 +12,6 @@ import numpy.typing as npt
 import scipy as sp
 from scipy.stats import unitary_group
 
-from jaxtyping as jnpt
-
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
