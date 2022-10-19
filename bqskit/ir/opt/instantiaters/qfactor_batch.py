@@ -59,6 +59,7 @@ class QFactor_batch(Instantiater):
         
 
 
+    @staticmethod
     def _initilize_circuit_tensor(
         target,
         gates,
@@ -70,9 +71,9 @@ class QFactor_batch(Instantiater):
         param_index = 0
         for gate, loc in zip(gates, locations):
             
-            amount_of_params_for_gate = gate.amount_of_params()
+            amount_of_params_for_gate = gate.num_params
             gparams = params_for_gates[param_index: param_index+amount_of_params_for_gate]
-            target_untry_builder.apply_right(gates.get_unitary(params=gparams), loc, check_arguments=False)
+            target_untry_builder.apply_right(gate.get_unitary(params=gparams), loc, check_arguments=False)
             param_index += amount_of_params_for_gate
 
         return target_untry_builder
