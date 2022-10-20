@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-class QFactor_batch(Instantiater):
+class QFactor_einsum(Instantiater):
     """The QFactor batch circuit instantiater."""
 
     def __init__(
@@ -93,7 +93,7 @@ class QFactor_batch(Instantiater):
         gates = [op.gate for op in circuit]
         amount_of_gates = len(gates)
         amount_of_qudits = target.num_qudits
-        target_untry_builder = QFactor_batch._initilize_circuit_tensor(target, gates, locations, params)
+        target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, gates, locations, params)
 
 
         c1 = 0
@@ -178,7 +178,7 @@ class QFactor_batch(Instantiater):
                 _logger.info( f"iteration: {it}, cost: {c1}" )
 
             if it % 40 == 0:
-                target_untry_builder = QFactor_batch._initilize_circuit_tensor(target, gates, locations, params)
+                target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, gates, locations, params)
 
 
 
@@ -226,4 +226,4 @@ class QFactor_batch(Instantiater):
     @staticmethod
     def get_method_name() -> str:
         """Return the name of this method."""
-        return 'qfactor_batch'
+        return 'qfactor_einsum'
