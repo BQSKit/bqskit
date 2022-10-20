@@ -101,6 +101,7 @@ class QFactor_batch(Instantiater):
         it = 0
 
         while(True):
+            it += 1
             # Termination conditions
             if it > self.min_iters:
 
@@ -176,7 +177,6 @@ class QFactor_batch(Instantiater):
             if it % 100 == 0:
                 _logger.info( f"iteration: {it}, cost: {c1}" )
 
-            it += 1
             if it % 40 == 0:
                 target_untry_builder = QFactor_batch._initilize_circuit_tensor(target, gates, locations, params)
 
