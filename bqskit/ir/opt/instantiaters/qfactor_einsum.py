@@ -62,20 +62,15 @@ class QFactor_einsum(Instantiater):
     @staticmethod
     def _initilize_circuit_tensor(
         target,
-        gates,
         locations,
-        params_for_gates
+        untrys
     ):
 
         target_untry_builder = UnitaryBuilder(target.num_qudits, target.radixes, target.conj().T)
-        param_index = 0
-        for gate, loc in zip(gates, locations):
+        
+        for loc, untry in zip(locations, untrys):
+            target_untry_builder.apply_right(untry, loc, check_arguments=False)
             
-            amount_of_params_for_gate = gate.num_params
-            gparams = params_for_gates[param_index: param_index+amount_of_params_for_gate]
-            target_untry_builder.apply_right(gate.get_unitary(params=gparams), loc, check_arguments=False)
-            param_index += amount_of_params_for_gate
-
         return target_untry_builder
 
     def instantiate(
@@ -87,13 +82,22 @@ class QFactor_einsum(Instantiater):
         """Instantiate `circuit`, see Instantiater for more info."""
 
 
-        params = np.array(x0)
-        
+        params = np.array(x0)      
         locations = [op.location for op in circuit]
         gates = [op.gate for op in circuit]
+
+        untrys = []
+        param_index = 0
+        for gate in gates:
+            amount_of_params_in_gate = gate.num_params
+            gparams = params[param_index: param_index + amount_of_params_in_gate]
+            untrys.append(gate.get_unitary(params=gparams))
+            param_index += amount_of_params_in_gate
+
+
         amount_of_gates = len(gates)
         amount_of_qudits = target.num_qudits
-        target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, gates, locations, params)
+        target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys)
 
 
         c1 = 0
@@ -116,61 +120,48 @@ class QFactor_einsum(Instantiater):
                     break
 
             # from right to left
-            param_index = len(params)
             for k in reversed(range(amount_of_gates)):
                 gate = gates[k]
                 location = locations[k]
+                untry = untrys[k]
 
-                amount_of_params_in_gate = gate.num_params
-                gparams = params[param_index - amount_of_params_in_gate:param_index]
-                
                 # Remove current gate from right of circuit tensor
-                target_untry_builder.apply_right(gate.get_unitary(params=gparams) , location, inverse = True, check_arguments = False)
+                target_untry_builder.apply_right(untry , location, inverse = True, check_arguments = False)
 
                 # Update current gate
                 if amount_of_params_in_gate > 0:
                     env = target_untry_builder.calc_env_matrix( location )            
-                    gparams =  gate.optimize(env)
-                    params[param_index - amount_of_params_in_gate: param_index] = gparams
+                    untry =  gate.optimize(env, get_untry=True)
+                    untrys[k] = untry
+                    
 
                 # Add updated gate to left of circuit tensor
-                target_untry_builder.apply_left( gate.get_unitary(gparams), location,  check_arguments = False)
+                target_untry_builder.apply_left( untry, location,  check_arguments = False)
 
-                param_index -= amount_of_params_in_gate
 
             # from left to right
-            #param index should be 0 now, but we zero it out any way
-            assert(param_index == 0)
-            
             for k in range(amount_of_gates):
                 gate = gates[k]
-                
-                amount_of_params_in_gate = gate.num_params
-                gparams = params[param_index: param_index + amount_of_params_in_gate]
-
                 location = locations[k]
+                untry = untrys[k]
                 
                 # Remove current gate from left of circuit tensor
-                target_untry_builder.apply_left( gate.get_unitary(params = gparams), location, inverse = True, check_arguments = False)
+                target_untry_builder.apply_left( untry, location, inverse = True, check_arguments = False)
 
                 # Update current gate
                 if gate.num_params > 0:
                     env = target_untry_builder.calc_env_matrix(location)            
-                    gparams =  gate.optimize(env)
-                    params[param_index : param_index + amount_of_params_in_gate] = gparams
-
+                    untry =  gate.optimize(env, get_untry=True)
+                    untrys[k] = untry
+                
                 # Add updated gate to right of circuit tensor
-                target_untry_builder.apply_right( gate.get_unitary(params=gparams), location,  check_arguments = False)
+                target_untry_builder.apply_right( untry, location,  check_arguments = False)
 
-                param_index += amount_of_params_in_gate
-            
             c2 = c1
             c1 = np.abs( np.trace( target_untry_builder.get_unitary() ) )
             c1 = 1 - ( c1 / ( 2 ** amount_of_qudits ) )
             
             if c1 <= self.dist_tol:
-                circuit.set_params(params)
-                dist = circuit.get_unitary().get_distance_from(target, 1)
                 _logger.info( f"Terminated: c1 = {c1} <= dist_tol." )
                 break
 
@@ -178,11 +169,13 @@ class QFactor_einsum(Instantiater):
                 _logger.info( f"iteration: {it}, cost: {c1}" )
 
             if it % 40 == 0:
-                target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, gates, locations, params)
+                target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys)
 
+        params = []
+        for untry, gate in zip(untrys, gates):
+            params.extend(gate.get_params(untry))
 
-
-        return params
+        return np.array(params)
 
 
     @staticmethod

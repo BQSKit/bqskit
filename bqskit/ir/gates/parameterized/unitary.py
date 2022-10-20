@@ -1,9 +1,10 @@
 """This module implements the VariableUnitaryGate."""
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Sequence, Union
 
 import numpy as np
+import jax.numpy as jnp
 import numpy.typing as npt
 import scipy as sp
 
@@ -49,7 +50,7 @@ class VariableUnitaryGate(
             self.num_qudits, str(self.radixes),
         )
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = [], use_jax: bool = False) -> UnitaryMatrix:
         """
         Return the unitary for this gate, see :class:`Unitary` for more.
 
@@ -60,12 +61,16 @@ class VariableUnitaryGate(
         """
         self.check_parameters(params)
         mid = len(params) // 2
-        real = np.array(params[:mid], dtype=np.complex128)
-        imag = 1j * np.array(params[mid:], dtype=np.complex128)
+        if not use_jax:
+            mat_lib = np
+        else:
+            mat_lib = jnp
+        real = mat_lib.array(params[:mid], dtype=mat_lib.complex128)
+        imag = 1j * mat_lib.array(params[mid:], dtype=mat_lib.complex128)
         x = real + imag
-        return UnitaryMatrix.closest_to(np.reshape(x, self.shape), self.radixes)
+        return UnitaryMatrix.closest_to(mat_lib.reshape(x, self.shape), self.radixes)
 
-    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False) -> Union[list[float], UnitaryMatrix]:
         """
         Return the optimal parameters with respect to an environment matrix.
 
@@ -73,7 +78,12 @@ class VariableUnitaryGate(
         """
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
-        x = np.reshape(Vh.conj().T @ U.conj().T, (self.num_params // 2,))
+        utry = Vh.conj().T @ U.conj().T
+        
+        if get_untry:
+            return UnitaryMatrix(utry, radixes=self._radixes, check_arguments=False)
+        
+        x = np.reshape(utry, (self.num_params // 2,))
         return list(np.real(x)) + list(np.imag(x))
 
     @staticmethod
