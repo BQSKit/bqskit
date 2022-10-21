@@ -9,6 +9,7 @@ from typing import Union
 
 import numpy as np
 import jax.numpy as jnp
+import jax
 import numpy.typing as npt
 import scipy as sp
 import jax.scipy.linalg as jla
@@ -531,5 +532,22 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the hash of the unitary."""
         return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
 
+    def  _tree_flatten(self):
+        children = (self._utry,)  # arrays / dynamic values
+        aux_data = {'radixes': self._radixs,
+                    'check_arguments': False,
+                    'use_jax': True
+                    }  # static values
+        return (children, aux_data)
+
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        return cls(*children, **aux_data)
+
+
+jax.tree_util.register_pytree_node(UnitaryMatrix,
+                               Gate._tree_flatten,
+                               Gate._tree_unflatten)
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
