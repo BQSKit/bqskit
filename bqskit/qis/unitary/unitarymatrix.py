@@ -126,7 +126,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if not use_jax:
             self._utry = np.array(input, dtype=np.complex128)
         else:
-            self._utry = jnp.array(input, dtype=np.complex128)
+            self._utry = jnp.array(input, dtype=jnp.complex128)
         self._dim = dim
 
     _num_params = 0
@@ -168,7 +168,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the complex conjugate unitary matrix."""
         return UnitaryMatrix(self._utry.conj(), self.radixes, False)
 
-    def otimes(self, *utrys: UnitaryLike) -> UnitaryMatrix:
+    def otimes(self, *utrys: UnitaryLike, use_jax:bool=False) -> UnitaryMatrix:
         """
         Calculate the tensor or kroneckor product with other unitaries.
 
@@ -180,15 +180,20 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             UnitaryMatrix: The resulting unitary matrix.
         """
 
-        utrys = [UnitaryMatrix(u) for u in utrys]
+        utrys = [UnitaryMatrix(u, use_jax=use_jax) for u in utrys]
+
+        if not use_jax:
+            mat_lib = np
+        else:
+            mat_lib = jnp
 
         utry_acm = self.numpy
         radixes_acm = self.radixes
         for utry in utrys:
-            utry_acm = np.kron(utry_acm, utry.numpy)
+            utry_acm = mat_lib.kron(utry_acm, utry.numpy)
             radixes_acm += utry.radixes
 
-        return UnitaryMatrix(utry_acm, radixes_acm)
+        return UnitaryMatrix(utry_acm, radixes_acm, use_jax=use_jax)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the same object, satisfies the :class:`Unitary` API."""
@@ -217,7 +222,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return self._utry.reshape( self.radixes + self.radixes )
 
 
-    def get_distance_from(self, other: UnitaryLike, degree: int = 2) -> float:
+    def get_distance_from(self, other: UnitaryLike, degree: int = 2, use_jax: bool = False) -> float:
         """
         Return the distance between `self` and `other`.
 
@@ -239,11 +244,16 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             are equal up to global phase and 1 means the two unitaries are
             very unsimilar or far apart.
         """
-        other = UnitaryMatrix(other)
-        num = np.abs(np.trace(self.conj().T @ other))
+        other = UnitaryMatrix(other, use_jax=use_jax)
+        if not use_jax:
+            mat_lib = np
+        else:
+            mat_lib = jnp
+
+        num = mat_lib.abs(mat_lib.trace(self.conj().T @ other))
         dem = self.dim
         frac = min(num / dem, 1)
-        dist = np.power(1 - (frac ** degree), 1.0 / degree)
+        dist = mat_lib.power(1 - (frac ** degree), 1.0 / degree)
         return dist if dist > 0.0 else 0.0
 
     def get_statevector(self, in_state: StateLike) -> StateVector:
@@ -333,7 +343,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return UnitaryMatrix(V @ Wh, radixes, False, use_jax=use_jax)
 
     @staticmethod
-    def random(num_qudits: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
+    def random(num_qudits: int, radixes: Sequence[int] = [], use_jax: bool = False) -> UnitaryMatrix:
         """
         Sample a random unitary from the haar distribution.
 
@@ -372,7 +382,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             )
 
         U = unitary_group.rvs(int(np.prod(radixes)))
-        return UnitaryMatrix(U, radixes, False)
+        return UnitaryMatrix(U, radixes, False, use_jax=use_jax)
 
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""
