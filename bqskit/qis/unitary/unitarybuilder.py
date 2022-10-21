@@ -6,6 +6,7 @@ from typing import cast
 from typing import Sequence
 
 import numpy as np
+import jax.numpy as jnp
 import numpy.typing as npt
 
 
@@ -103,6 +104,7 @@ class UnitaryBuilder(Unitary):
         location: CircuitLocationLike,
         inverse: bool = False,
         check_arguments: bool = True,
+        use_jax: bool = False,
     ) -> None:
         """
         Apply the specified unitary on the right of this UnitaryBuilder.
@@ -174,7 +176,10 @@ class UnitaryBuilder(Unitary):
             utry_builder_tensor_indexs[loc] = offset + i
             output_tensor_index[loc] = (utry_size - offset) + i
         
-        self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+        if not use_jax:
+            self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+        else:
+            self.tensor  = jnp.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
 
     def apply_left(
@@ -183,6 +188,7 @@ class UnitaryBuilder(Unitary):
         location: CircuitLocationLike,
         inverse: bool = False,
         check_arguments: bool = True,
+        use_jax: bool = False,
     ) -> None:
         """
         Apply the specified unitary on the left of this UnitaryBuilder.
@@ -254,11 +260,14 @@ class UnitaryBuilder(Unitary):
             utry_builder_tensor_indexs[self.num_qudits + loc]   = offset + i
             output_tensor_index[self.num_qudits + loc]          = (utry_size - offset) + i
         
-        self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+        if not use_jax:
+            self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+        else:
+            self.tensor  = jnp.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
     def calc_env_matrix(
-            self, location: Sequence[int],
-    ) -> npt.NDArray[np.complex128]:
+            self, location: Sequence[int], use_jax: bool = False
+    ) :
         """
         Calculates the environment matrix w.r.t. the specified location.
 
@@ -276,7 +285,11 @@ class UnitaryBuilder(Unitary):
 
         contraction_indexs_str = "".join([chr(ord('a')+i) for i in contraction_indexs])
 
-        env_tensor = np.einsum(contraction_indexs_str, self.tensor)
+        if not use_jax:
+            env_tensor = np.einsum(contraction_indexs_str, self.tensor)
+        else:
+            env_tensor = jnp.einsum(contraction_indexs_str, self.tensor)
+
         env_mat = env_tensor.reshape((2**len(location), -1))
 
         return env_mat

@@ -21,7 +21,7 @@ class LocallyOptimizableUnitary(Unitary):
     """
 
     @abc.abstractmethod
-    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False) -> list[float]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False, use_jax:bool = False) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 

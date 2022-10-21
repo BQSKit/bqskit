@@ -10,6 +10,7 @@ from typing import Mapping
 from typing import Sized
 
 import numpy as np
+import jax.numpy as jnp
 import numpy.typing as npt
 from typing_extensions import TypeGuard
 
@@ -37,7 +38,7 @@ def is_sized(x: Any) -> TypeGuard[Sized]:
 
 def is_sequence(x: Any) -> TypeGuard[Sequence[Any]]:
     """Return true if x is a sequence."""
-    return isinstance(x, (Sequence, np.ndarray))
+    return isinstance(x, (Sequence, np.ndarray, jnp.ndarray))
 
 
 def is_mapping(x: Any) -> TypeGuard[Mapping[Any, Any]]:
@@ -57,12 +58,12 @@ def is_complex(x: Any) -> TypeGuard[complex]:
 
 def is_real_number(x: Any) -> TypeGuard[float]:
     """Return true if `x` is a real number."""
-    return isinstance(x, numbers.Real)
+    return isinstance(x, numbers.Real) or (isinstance(x, jnp.ndarray) and (len(x.shape) == 0) and is_real_number(x.item())) 
 
 
 def is_integer(x: Any) -> TypeGuard[int]:
     """Return true if x is an integer."""
-    return isinstance(x, (int, np.int_))
+    return isinstance(x, (int, np.int_, jnp.int_))
 
 
 def is_bool(x: Any) -> TypeGuard[bool]:

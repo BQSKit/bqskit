@@ -5,6 +5,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import jax.numpy as jnp
+import jax.scipy.linalg as jla
 import numpy.typing as npt
 import scipy as sp
 
@@ -50,7 +51,7 @@ class VariableUnitaryGate(
             self.num_qudits, str(self.radixes),
         )
 
-    def get_unitary(self, params: RealVector = [], use_jax: bool = False) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = [], check_params: bool = True, use_jax: bool = False) -> UnitaryMatrix:
         """
         Return the unitary for this gate, see :class:`Unitary` for more.
 
@@ -59,7 +60,8 @@ class VariableUnitaryGate(
             however, params are unconstrained so we return the closest
             UnitaryMatrix to the given matrix.
         """
-        self.check_parameters(params)
+        if check_params:
+            self.check_parameters(params)
         mid = len(params) // 2
         if not use_jax:
             mat_lib = np
@@ -70,29 +72,38 @@ class VariableUnitaryGate(
         x = real + imag
         return UnitaryMatrix.closest_to(mat_lib.reshape(x, self.shape), self.radixes)
 
-    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False) -> Union[list[float], UnitaryMatrix]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False, use_jax: bool = False) -> Union[list[float], UnitaryMatrix]:
         """
         Return the optimal parameters with respect to an environment matrix.
 
         See :class:`LocallyOptimizableUnitary` for more info.
         """
         self.check_env_matrix(env_matrix)
-        U, _, Vh = sp.linalg.svd(env_matrix)
+        if not use_jax:
+            U, _, Vh = sp.linalg.svd(env_matrix)
+            mat_lib = np
+        else:
+            U, _, Vh = jla.svd(env_matrix)
+            mat_lib = jnp
         utry = Vh.conj().T @ U.conj().T
         
         if get_untry:
             return UnitaryMatrix(utry, radixes=self._radixes, check_arguments=False)
         
-        x = np.reshape(utry, (self.num_params // 2,))
-        return list(np.real(x)) + list(np.imag(x))
+        x = mat_lib.reshape(utry, (self.num_params // 2,))
+        return list(mat_lib.real(x)) + list(mat_lib.imag(x))
 
     @staticmethod
-    def get_params(utry: UnitaryLike) -> RealVector:
+    def get_params(utry: UnitaryLike, use_jax: bool = False) -> RealVector:
         """Return the params for this gate, given a unitary matrix."""
         num_elems = len(utry) ** 2
-        real = np.reshape(np.real(utry), num_elems)
-        imag = np.reshape(np.imag(utry), num_elems)
-        return np.concatenate([real, imag])
+        if not use_jax:
+            mat_lib = np
+        else:
+            mat_lib = jnp
+        real = mat_lib.reshape(mat_lib.real(utry), num_elems)
+        imag = mat_lib.reshape(mat_lib.imag(utry), num_elems)
+        return mat_lib.concatenate([real, imag])
 
     def __eq__(self, other: object) -> bool:
         return (

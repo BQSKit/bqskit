@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
+import jax.numpy as jnp
 
 from bqskit.qis.unitary.meta import UnitaryMeta
 from bqskit.utils.typing import is_real_number
@@ -56,7 +57,7 @@ class Unitary(metaclass=UnitaryMeta):
         return int(np.prod(self.radixes))
 
     @abc.abstractmethod
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = [], use_jax:bool = False) -> UnitaryMatrix:
         """
         Map real-valued `params` to a `UnitaryMatrix`.
 
@@ -125,4 +126,4 @@ class Unitary(metaclass=UnitaryMeta):
             )
 
 
-RealVector = Union[Sequence[float], np.ndarray]
+RealVector = Union[Sequence[float], np.ndarray, jnp.ndarray]

@@ -188,7 +188,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the same object, satisfies the :class:`Unitary` API."""
         return self
 
-    def get_tensor_format(self) -> Union[jnp.Array, np.ndarray]:
+    def get_tensor_format(self) -> np.ndarray: #Union[jnp.Array, np.ndarray]:
         
         """
         Converts the unitary matrix operation into a tensor network format.
@@ -208,7 +208,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             Union[DeviceArray, np.ndarray]: A tensor representing this matrix.
         """
 
-        return self.utry.reshape( self.radixes + self.radixes )
+        return self._utry.reshape( self.radixes + self.radixes )
 
 
     def get_distance_from(self, other: UnitaryLike, degree: int = 2) -> float:
