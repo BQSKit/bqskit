@@ -82,7 +82,7 @@ class QFactor_jax(QFactor_einsum):
 
         amount_of_gates = len(gates)
         amount_of_qudits = target.num_qudits
-        target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys)
+        target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys, use_jax=True)
 
 
         c1 = 0
@@ -154,7 +154,7 @@ class QFactor_jax(QFactor_einsum):
                 _logger.info( f"iteration: {it}, cost: {c1}" )
 
             if it % 40 == 0:
-                target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys)
+                target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys, use_jax=True)
 
         params = []
         for untry, gate in zip(untrys, gates):

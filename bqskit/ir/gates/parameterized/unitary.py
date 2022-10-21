@@ -70,7 +70,7 @@ class VariableUnitaryGate(
         real = mat_lib.array(params[:mid], dtype=mat_lib.complex128)
         imag = 1j * mat_lib.array(params[mid:], dtype=mat_lib.complex128)
         x = real + imag
-        return UnitaryMatrix.closest_to(mat_lib.reshape(x, self.shape), self.radixes)
+        return UnitaryMatrix.closest_to(mat_lib.reshape(x, self.shape), self.radixes, use_jax=use_jax)
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False, use_jax: bool = False) -> Union[list[float], UnitaryMatrix]:
         """

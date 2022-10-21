@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
+import jax.numpy as jnp
 import numpy.typing as npt
 import scipy as sp
+import jax.scipy.linalg as jla
 from scipy.stats import unitary_group
 
 from bqskit.qis.state.state import StateLike
@@ -42,6 +44,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         input: UnitaryLike,
         radixes: Sequence[int] = [],
         check_arguments: bool = True,
+        use_jax: bool = False,
     ) -> None:
         """
         Constructs a `UnitaryMatrix` from the supplied unitary matrix.
@@ -120,7 +123,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if check_arguments and np.prod(self.radixes) != dim:
             raise ValueError('Qudit radixes mismatch with dimension.')
 
-        self._utry = np.array(input, dtype=np.complex128)
+        if not use_jax:
+            self._utry = np.array(input, dtype=np.complex128)
+        else:
+            self._utry = jnp.array(input, dtype=np.complex128)
         self._dim = dim
 
     _num_params = 0
@@ -270,7 +276,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return StateVector(out_vec.reshape((-1,)), self.radixes)
 
     @staticmethod
-    def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
+    def identity(dim: int, radixes: Sequence[int] = [], use_jax:bool = False) -> UnitaryMatrix:
         """
         Construct an identity UnitaryMatrix.
 
@@ -288,12 +294,16 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """
         if dim <= 0:
             raise ValueError('Invalid dimension for identity matrix.')
-        return UnitaryMatrix(np.identity(dim), radixes)
+        if not use_jax:
+            return UnitaryMatrix(np.identity(dim), radixes)
+        else:
+            return UnitaryMatrix(jnp.identity(dim), radixes)
 
     @staticmethod
     def closest_to(
         M: npt.NDArray[np.complex128],
         radixes: Sequence[int] = [],
+        use_jax: bool = False,
     ) -> UnitaryMatrix:
         """
         Calculate and return the closest unitary to a given matrix.
@@ -316,8 +326,11 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if not is_square_matrix(M):
             raise TypeError('Expected square matrix.')
 
-        V, _, Wh = sp.linalg.svd(M)
-        return UnitaryMatrix(V @ Wh, radixes, False)
+        if not use_jax:
+            V, _, Wh = sp.linalg.svd(M)
+        else:            
+            V, _, Wh = jla.svd(M)
+        return UnitaryMatrix(V @ Wh, radixes, False, use_jax=use_jax)
 
     @staticmethod
     def random(num_qudits: int, radixes: Sequence[int] = []) -> UnitaryMatrix:

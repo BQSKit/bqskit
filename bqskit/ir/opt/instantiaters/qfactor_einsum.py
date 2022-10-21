@@ -63,13 +63,14 @@ class QFactor_einsum(Instantiater):
     def _initilize_circuit_tensor(
         target,
         locations,
-        untrys
+        untrys,
+        use_jax: bool = False,
     ):
 
         target_untry_builder = UnitaryBuilder(target.num_qudits, target.radixes, target.conj().T)
         
         for loc, untry in zip(locations, untrys):
-            target_untry_builder.apply_right(untry, loc, check_arguments=False)
+            target_untry_builder.apply_right(untry, loc, check_arguments=False, use_jax=use_jax)
             
         return target_untry_builder
 
