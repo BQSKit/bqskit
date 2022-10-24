@@ -111,17 +111,17 @@ class QFactor_jax(QFactor_einsum):
                 untry = untrys[k]
 
                 # Remove current gate from right of circuit tensor
-                target_untry_builder.apply_right(untry , location, inverse = True, check_arguments = False)
+                target_untry_builder.apply_right(untry , location, inverse = True, check_arguments = False, use_jax=True)
 
                 # Update current gate
                 if amount_of_params_in_gate > 0:
-                    env = target_untry_builder.calc_env_matrix( location )            
-                    untry =  gate.optimize(env, get_untry=True)
+                    env = target_untry_builder.calc_env_matrix( location, use_jax=True )            
+                    untry =  gate.optimize(env, get_untry=True, use_jax=True)
                     untrys[k] = untry
                     
 
                 # Add updated gate to left of circuit tensor
-                target_untry_builder.apply_left( untry, location,  check_arguments = False)
+                target_untry_builder.apply_left( untry, location,  check_arguments = False, use_jax=True)
 
 
             # from left to right
@@ -131,16 +131,16 @@ class QFactor_jax(QFactor_einsum):
                 untry = untrys[k]
                 
                 # Remove current gate from left of circuit tensor
-                target_untry_builder.apply_left( untry, location, inverse = True, check_arguments = False)
+                target_untry_builder.apply_left( untry, location, inverse = True, check_arguments = False, use_jax=True)
 
                 # Update current gate
                 if gate.num_params > 0:
-                    env = target_untry_builder.calc_env_matrix(location)            
-                    untry =  gate.optimize(env, get_untry=True)
+                    env = target_untry_builder.calc_env_matrix(location, use_jax=True)            
+                    untry =  gate.optimize(env, get_untry=True, use_jax=True)
                     untrys[k] = untry
                 
                 # Add updated gate to right of circuit tensor
-                target_untry_builder.apply_right( untry, location,  check_arguments = False)
+                target_untry_builder.apply_right( untry, location,  check_arguments = False, use_jax=True)
 
             c2 = c1
             c1 = jnp.abs( jnp.trace( jnp.array(target_untry_builder.get_unitary().numpy) ) )
