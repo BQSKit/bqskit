@@ -2809,6 +2809,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             best_index = scores.index(min(scores))
             params = param_futures[best_index].result()
 
+        elif instantiater.can_internaly_perform_multistart():
+            params = instantiater.instantiate_multistart(self, target, starts)
         else:
             params_list = [
                 instantiater.instantiate(self, target, start)

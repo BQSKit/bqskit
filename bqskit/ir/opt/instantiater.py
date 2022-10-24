@@ -93,3 +93,8 @@ class Instantiater(abc.ABC):
     @abc.abstractmethod
     def get_method_name() -> str:
         """Return the name of this method."""
+
+    @staticmethod
+    def can_internaly_perform_multistart() -> bool:
+        """Probes if the instantiater can internaly perform multistrat """
+        return False

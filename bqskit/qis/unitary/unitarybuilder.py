@@ -7,6 +7,7 @@ from typing import Sequence
 
 import numpy as np
 import jax.numpy as jnp
+import jax
 import numpy.typing as npt
 
 
@@ -293,3 +294,22 @@ class UnitaryBuilder(Unitary):
         env_mat = env_tensor.reshape((2**len(location), -1))
 
         return env_mat
+
+
+    def  _tree_flatten(self):
+        children = (self.get_unitary(),)  # arrays / dynamic values
+        aux_data = {'radixes': self._radixs,
+                    'num_qudits': self.num_qudits
+                    
+                    }  # static values
+        return (children, aux_data)
+
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        return cls(*children, **aux_data)
+
+
+jax.tree_util.register_pytree_node(UnitaryBuilder,
+                               UnitaryBuilder._tree_flatten,
+                               UnitaryBuilder._tree_unflatten)

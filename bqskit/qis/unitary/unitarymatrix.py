@@ -534,7 +534,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
     def  _tree_flatten(self):
         children = (self._utry,)  # arrays / dynamic values
-        aux_data = {'radixes': self._radixs,
+        aux_data = {'radixes': self._radixes,
                     'check_arguments': False,
                     'use_jax': True
                     }  # static values
@@ -547,7 +547,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
 
 jax.tree_util.register_pytree_node(UnitaryMatrix,
-                               Gate._tree_flatten,
-                               Gate._tree_unflatten)
+                               UnitaryMatrix._tree_flatten,
+                               UnitaryMatrix._tree_unflatten)
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
