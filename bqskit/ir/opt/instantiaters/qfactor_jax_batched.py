@@ -78,7 +78,7 @@ class QFactor_jax_batched(QFactor_jax):
             
             for start_index in range(amount_of_starts):                
                 gparams = starts[start_index][param_index: param_index + amount_of_params_in_gate]
-                untrys[start_index].append(gate.get_unitary(params=gparams, check_params=False, use_jax=True))
+                untrys[start_index].append(gate.get_unitary(params=gparams, check_params=False, use_jax=True).numpy)
             
             param_index += amount_of_params_in_gate
 
@@ -142,8 +142,16 @@ class QFactor_jax_batched(QFactor_jax):
 
     @staticmethod
     def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
-        target_untry_builder = QFactor_jax._initilize_circuit_tensor(target, locations, untrys, use_jax=True)
+
         amount_of_gates = len(gates)
+        untrys_as_matrixs = []
+        for gate_index in range(amount_of_gates):
+            untrys_as_matrixs.append(UnitaryMatrix(untrys[gate_index], gates[gate_index].radixes, check_arguments=False, use_jax=True))
+
+        untrys = untrys_as_matrixs
+
+        target_untry_builder = QFactor_jax._initilize_circuit_tensor(target, locations, untrys, use_jax=True)
+
         amount_of_qudits = target.num_qudits
 
 
@@ -155,17 +163,17 @@ class QFactor_jax_batched(QFactor_jax):
                 untry = untrys[k]
 
                 # Remove current gate from right of circuit tensor
-                target_untry_builder.apply_right(untry , location, inverse = True, check_arguments = False)
+                target_untry_builder.apply_right(untry , location, inverse = True, check_arguments = False, use_jax=True)
 
                 # Update current gate
                 if gate.num_params > 0:
-                    env = target_untry_builder.calc_env_matrix( location )            
-                    untry =  gate.optimize(env, get_untry=True)
+                    env = target_untry_builder.calc_env_matrix( location , use_jax=True)            
+                    untry =  gate.optimize(env, get_untry=True, use_jax=True)
                     untrys[k] = untry
                     
 
                 # Add updated gate to left of circuit tensor
-                target_untry_builder.apply_left( untry, location,  check_arguments = False)
+                target_untry_builder.apply_left( untry, location,  check_arguments = False, use_jax=True)
 
 
             # from left to right
@@ -175,18 +183,18 @@ class QFactor_jax_batched(QFactor_jax):
                 untry = untrys[k]
                 
                 # Remove current gate from left of circuit tensor
-                target_untry_builder.apply_left( untry, location, inverse = True, check_arguments = False)
+                target_untry_builder.apply_left( untry, location, inverse = True, check_arguments = False, use_jax=True)
 
                 # Update current gate
                 if gate.num_params > 0:
-                    env = target_untry_builder.calc_env_matrix(location)            
-                    untry =  gate.optimize(env, get_untry=True)
+                    env = target_untry_builder.calc_env_matrix(location, use_jax=True)            
+                    untry =  gate.optimize(env, get_untry=True, use_jax=True)
                     untrys[k] = untry
                 
                 # Add updated gate to right of circuit tensor
-                target_untry_builder.apply_right( untry, location,  check_arguments = False)
+                target_untry_builder.apply_right( untry, location,  check_arguments = False, use_jax=True)
 
         c1 = jnp.abs( jnp.trace( jnp.array(target_untry_builder.get_unitary().numpy) ) )
         c1 = 1 - ( c1 / ( 2 ** amount_of_qudits ) )
 
-        return c1, untrys
+        return c1, jnp.array([untry.numpy for untry in untrys])
