@@ -78,8 +78,9 @@ class VariableUnitaryGate(
 
         See :class:`LocallyOptimizableUnitary` for more info.
         """
-        self.check_env_matrix(env_matrix)
+        
         if not use_jax:
+            self.check_env_matrix(env_matrix) # TODO: Find a better way not to perfrom this check while in JAX
             U, _, Vh = sp.linalg.svd(env_matrix)
             mat_lib = np
         else:
@@ -88,7 +89,7 @@ class VariableUnitaryGate(
         utry = Vh.conj().T @ U.conj().T
         
         if get_untry:
-            return UnitaryMatrix(utry, radixes=self._radixes, check_arguments=False)
+            return UnitaryMatrix(utry, radixes=self._radixes, check_arguments=False, use_jax=use_jax)
         
         x = mat_lib.reshape(utry, (self.num_params // 2,))
         return list(mat_lib.real(x)) + list(mat_lib.imag(x))

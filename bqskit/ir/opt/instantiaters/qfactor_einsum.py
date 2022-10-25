@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
+_logger.setLevel('DEBUG')
 
 
 class QFactor_einsum(Instantiater):
@@ -98,6 +100,7 @@ class QFactor_einsum(Instantiater):
 
         amount_of_gates = len(gates)
         amount_of_qudits = target.num_qudits
+        tic = time.perf_counter()
         target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys)
 
 
@@ -170,6 +173,9 @@ class QFactor_einsum(Instantiater):
                 _logger.info( f"iteration: {it}, cost: {c1}" )
 
             if it % 40 == 0:
+                toc = time.perf_counter()
+                print(f"iteration took {toc-tic} seconeds")
+                tic = time.perf_counter()                
                 target_untry_builder = QFactor_einsum._initilize_circuit_tensor(target, locations, untrys)
 
         params = []

@@ -94,10 +94,10 @@ class UnitaryBuilder(Unitary):
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = [], use_jax:bool = False) -> UnitaryMatrix:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
         utry = self.tensor.reshape((self.dim, self.dim))
-        return UnitaryMatrix(utry, self.radixes, False)
+        return UnitaryMatrix(utry, self.radixes, False, use_jax=use_jax)
 
     def apply_right(
         self,

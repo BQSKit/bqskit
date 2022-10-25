@@ -98,25 +98,28 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if check_arguments and not UnitaryMatrix.is_unitary(input):
             raise ValueError('Input failed unitary condition.')
 
-        dim = len(input)
-
+        if check_arguments:
+            dim = len(input)
+        
         if radixes:
             self._radixes = tuple(radixes)
-
+        else:
+            dim = len(input)
+            self._dim = dim
         # Check if unitary dimension is a power of two
-        elif dim & (dim - 1) == 0:
-            self._radixes = tuple([2] * int(np.round(np.log2(dim))))
+            if dim & (dim - 1) == 0:
+                self._radixes = tuple([2] * int(np.round(np.log2(dim))))
 
         # Check if unitary dimension is a power of three
-        elif 3 ** int(np.round(np.log(dim) / np.log(3))) == dim:  # noqa
-            radixes = [3] * int(np.round(np.log(dim) / np.log(3)))
-            self._radixes = tuple(radixes)
+            elif 3 ** int(np.round(np.log(dim) / np.log(3))) == dim:  # noqa
+                radixes = [3] * int(np.round(np.log(dim) / np.log(3)))
+                self._radixes = tuple(radixes)
 
-        else:
-            raise RuntimeError(
+            else:
+                raise RuntimeError(
                 'Unable to determine radixes'
                 ' for UnitaryMatrix with dim %d.' % dim,
-            )
+                )
 
         if check_arguments and not is_valid_radixes(self.radixes):
             raise TypeError('Invalid qudit radixes.')
@@ -124,11 +127,14 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if check_arguments and np.prod(self.radixes) != dim:
             raise ValueError('Qudit radixes mismatch with dimension.')
 
-        if not use_jax:
-            self._utry = np.array(input, dtype=np.complex128)
+        if type(input) is not object:
+            if not use_jax:
+                self._utry = np.array(input, dtype=np.complex128)
+            else:
+                self._utry = jnp.array(input, dtype=jnp.complex128)
         else:
-            self._utry = jnp.array(input, dtype=jnp.complex128)
-        self._dim = dim
+            self._utry = input
+        
 
     _num_params = 0
 
@@ -463,12 +469,15 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
-    ) -> npt.NDArray[np.complex128]:
+    ) :
         """Implements NumPy API for the UnitaryMatrix class."""
-        if dtype != np.complex128:
+        if dtype != np.complex128 or dtype != jnp.complex128:
             raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
 
         return self._utry
+
+    def __jax_array__(self, dtype):
+        return self.__array__(dtype)
 
     def __array_ufunc__(
         self,

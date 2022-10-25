@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -71,7 +72,7 @@ class QFactor_jax_batched(QFactor_jax):
         gates = [op.gate for op in circuit]
         
 
-        untrys = [[]]*amount_of_starts  
+        untrys = [[] for _ in range(amount_of_starts)]
         param_index = 0
         for gate in gates:
             amount_of_params_in_gate = gate.num_params
@@ -110,7 +111,13 @@ class QFactor_jax_batched(QFactor_jax):
 
             c2s = c1s
             
+            tic = time.perf_counter()
             c1s, untrys = sweep_vmaped(target, locations, gates, untrys, n)
+
+            c1s = c1s.block_until_ready()
+            toc = time.perf_counter()
+
+            print(f"iteration took {toc-tic} seconeds")
             
 
             reached_desired_distance = [c1 <= self.dist_tol for c1 in c1s]
@@ -194,7 +201,7 @@ class QFactor_jax_batched(QFactor_jax):
                 # Add updated gate to right of circuit tensor
                 target_untry_builder.apply_right( untry, location,  check_arguments = False, use_jax=True)
 
-        c1 = jnp.abs( jnp.trace( jnp.array(target_untry_builder.get_unitary().numpy) ) )
+        c1 = jnp.abs( jnp.trace( jnp.array(target_untry_builder.get_unitary(use_jax=True).numpy) ) )
         c1 = 1 - ( c1 / ( 2 ** amount_of_qudits ) )
 
         return c1, jnp.array([untry.numpy for untry in untrys])
