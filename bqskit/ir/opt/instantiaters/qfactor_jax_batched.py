@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -19,7 +18,6 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel('DEBUG')
 
 
 class QFactor_jax_batched(QFactor_jax):
@@ -110,15 +108,7 @@ class QFactor_jax_batched(QFactor_jax):
                     break
 
             c2s = c1s
-            
-            tic = time.perf_counter()
             c1s, untrys = sweep_vmaped(target, locations, gates, untrys, n)
-
-            c1s = c1s.block_until_ready()
-            toc = time.perf_counter()
-
-            print(f"iteration took {toc-tic} seconeds")
-            
 
             reached_desired_distance = [c1 <= self.dist_tol for c1 in c1s]
             if any(reached_desired_distance):
