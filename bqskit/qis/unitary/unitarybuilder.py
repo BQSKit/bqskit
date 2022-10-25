@@ -82,7 +82,7 @@ class UnitaryBuilder(Unitary):
 
         if initial_value is None:
             self.tensor = np.identity(self.dim, dtype=np.complex128)            
-        else:
+        elif isinstance(initial_value, UnitaryMatrix):
             if not all((d1==d2 for d1, d2 in zip(self.radixes, initial_value.radixes))):
              raise ValueError(
                 f'Expected radixes to be equal between the intial value to desired builder radixes:'
@@ -90,6 +90,9 @@ class UnitaryBuilder(Unitary):
             )   
             
             self.tensor = initial_value.numpy
+        else:
+            self.tensor = initial_value
+
 
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
@@ -297,17 +300,16 @@ class UnitaryBuilder(Unitary):
 
 
     def  _tree_flatten(self):
-        children = (self.get_unitary(),)  # arrays / dynamic values
-        aux_data = {'radixes': self._radixs,
+        children = (self.get_unitary(use_jax=True),)  # arrays / dynamic values
+        aux_data = {'radixes': self._radixes,
                     'num_qudits': self.num_qudits
-                    
                     }  # static values
         return (children, aux_data)
 
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):
-        return cls(*children, **aux_data)
+        return cls(initial_value = children[0], **aux_data)
 
 
 jax.tree_util.register_pytree_node(UnitaryBuilder,
