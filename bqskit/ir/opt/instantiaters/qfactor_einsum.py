@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel('DEBUG')
+# _logger.setLevel('DEBUG')
 
 
 class QFactor_einsum(Instantiater):
