@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel('DEBUG')
+# _logger.setLevel('DEBUG')
 
 
 class QFactor_jax_batched_jit(QFactor_jax):
@@ -167,7 +167,7 @@ def _initilize_circuit_tensor(
             
         return target_untry_builder
 
-__initilize_circuit_tensor_jit = jax.jit(_initilize_circuit_tensor, static_argnums=(0,1,2))
+_initilize_circuit_tensor_jit = jax.jit(_initilize_circuit_tensor, static_argnums=(0,1,2))
     
 # __initilize_circuit_tensor_jit = _initilize_circuit_tensor
 
@@ -211,7 +211,7 @@ def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builde
             # Add updated gate to right of circuit tensor
         target_untry_builder.apply_right( untry, location,  check_arguments = False, use_jax=True)
     
-    return target_untry_builder
+    return target_untry_builder, untrys
 
 _single_sweep_jit = jax.jit(_single_sweep, static_argnums=(0,1,3))
 # _single_sweep_jit = _single_sweep
@@ -225,13 +225,13 @@ def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
 
     untrys = untrys_as_matrixs
 
-    target_untry_builder = __initilize_circuit_tensor_jit(target.num_qudits, target.radixes, locations, target.numpy, untrys)
+    target_untry_builder = _initilize_circuit_tensor_jit(target.num_qudits, target.radixes, locations, target.numpy, untrys)
 
     amount_of_qudits = target.num_qudits
 
 
     for _ in range(n):        
-        target_untry_builder = _single_sweep_jit(locations, gates, untrys, amount_of_gates, target_untry_builder)
+        target_untry_builder, untrys = _single_sweep_jit(locations, gates, untrys, amount_of_gates, target_untry_builder)
 
     c1 = jnp.abs( jnp.trace( jnp.array(target_untry_builder.get_unitary(use_jax=True).numpy) ) )
     c1 = 1 - ( c1 / ( 2 ** amount_of_qudits ) )
