@@ -34,6 +34,7 @@ class Rebase2QuditGatePass(BasePass):
         success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         instantiate_options: dict[str, Any] = {},
+        single_qudit_gate: Gate = U3Gate(),
     ) -> None:
         """
         Construct a Rebase2QuditGatePass.
@@ -64,6 +65,9 @@ class Rebase2QuditGatePass(BasePass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
+
+            single_qudit_gate (Gate): A single-qudit gate to fill
+                in between two-qudit gates.
 
         Raises:
             ValueError: If `gate_in_circuit` or `new_gate` is not a 2-qudit
@@ -125,6 +129,14 @@ class Rebase2QuditGatePass(BasePass):
                 % type(instantiate_options),
             )
 
+        if not isinstance(single_qudit_gate, Gate):
+            raise TypeError(f'Expected Gate, got {type(single_qudit_gate)}.')
+
+        if single_qudit_gate.num_qudits != 1:
+            raise ValueError(
+                f'Expected single-qudit gate, got {single_qudit_gate}.',
+            )
+
         self.gates = gate_in_circuit
         self.ngates = new_gate
         self.max_depth = max_depth
@@ -136,6 +148,7 @@ class Rebase2QuditGatePass(BasePass):
             'min_iters': 100,
         }
         self.instantiate_options.update(instantiate_options)
+        self.sq = single_qudit_gate
         self.generate_new_gate_templates()
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
@@ -265,21 +278,21 @@ class Rebase2QuditGatePass(BasePass):
         self.counts = []
 
         circ = Circuit(2)
-        circ.append_gate(U3Gate(), 0)
-        circ.append_gate(U3Gate(), 1)
+        circ.append_gate(self.sq, 0)
+        circ.append_gate(self.sq, 1)
         self.circs.append(circ)
         self.counts.append(0)
 
         for g in self.ngates:
             for i in range(1, self.max_depth + 1):
                 circ = Circuit(2)
-                circ.append_gate(U3Gate(), 0)
-                circ.append_gate(U3Gate(), 1)
+                circ.append_gate(self.sq, 0)
+                circ.append_gate(self.sq, 1)
 
                 for _ in range(i):
                     circ.append_gate(g, (0, 1))
-                    circ.append_gate(U3Gate(), 0)
-                    circ.append_gate(U3Gate(), 1)
+                    circ.append_gate(self.sq, 0)
+                    circ.append_gate(self.sq, 1)
 
                 self.counts.append(i)
                 self.circs.append(circ)
@@ -287,8 +300,8 @@ class Rebase2QuditGatePass(BasePass):
         # Add overdrive circuit, incase we exceed retry limit
         self.overdrive = self.circs[-1].copy()
         self.overdrive.append_gate(self.ngates[-1], (0, 1))
-        self.overdrive.append_gate(U3Gate(), 0)
-        self.overdrive.append_gate(U3Gate(), 1)
+        self.overdrive.append_gate(self.sq, 0)
+        self.overdrive.append_gate(self.sq, 1)
         self.counts.append(self.counts[-1] + 1)
 
         # Preprocess log messages
