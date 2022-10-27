@@ -10,7 +10,10 @@ from bqskit.passes import GeneralizedSabreRoutingPass
 from bqskit.qis import CouplingGraph
 
 
-def looping_circuit(uphill_swaps=1, additional_local_minimum_gates=0):
+def looping_circuit(
+    uphill_swaps: int = 1,
+    additional_local_minimum_gates: int = 0,
+) -> Circuit:
     """
     Create a circuit that is arbitrarily hard for the advanced SABRE heuristics
     to route.

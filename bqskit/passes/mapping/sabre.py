@@ -138,7 +138,7 @@ class GeneralizedSabreAlgorithm():
         decay = [1.0 for i in range(circuit.num_qudits)]
         iter_count = 0
         prev_executed_counts: dict[CircuitPoint, int] = {n: 0 for n in F}
-        leading_swaps = []
+        leading_swaps: list[tuple[int, int]] = []
         _logger.debug(f'Starting forward sabre pass with pi: {pi}.')
 
         if modify_circuit:
@@ -253,7 +253,7 @@ class GeneralizedSabreAlgorithm():
         F = circuit.rear
         decay = [1.0 for i in range(circuit.num_qudits)]
         iter_count = 0
-        leading_swaps = []
+        leading_swaps: list[tuple[int, int]] = []
         next_executed_counts: dict[CircuitPoint, int] = {n: 0 for n in F}
         _logger.debug(f'Starting backward sabre pass with pi: {pi}.')
 
