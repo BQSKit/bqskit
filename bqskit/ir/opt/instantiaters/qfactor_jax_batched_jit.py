@@ -1,6 +1,5 @@
-from functools import partial
+
 import logging
-import time
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
-# _logger.setLevel('DEBUG')
 
 
 class QFactor_jax_batched_jit(QFactor_jax):
@@ -112,15 +110,7 @@ class QFactor_jax_batched_jit(QFactor_jax):
                     break
 
             c2s = c1s
-            
-            tic = time.perf_counter()
             c1s, untrys = sweep_vmaped(target, locations, gates, untrys, n)
-
-            c1s = c1s.block_until_ready()
-            toc = time.perf_counter()
-
-            print(f"iteration took {toc-tic} seconeds")
-            
 
             reached_desired_distance = [c1 <= self.dist_tol for c1 in c1s]
             if any(reached_desired_distance):
@@ -168,8 +158,6 @@ def _initilize_circuit_tensor(
         return target_untry_builder
 
 _initilize_circuit_tensor_jit = jax.jit(_initilize_circuit_tensor, static_argnums=(0,1,2))
-    
-# __initilize_circuit_tensor_jit = _initilize_circuit_tensor
 
 
 def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builder):
@@ -214,7 +202,6 @@ def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builde
     return target_untry_builder, untrys
 
 _single_sweep_jit = jax.jit(_single_sweep, static_argnums=(0,1,3))
-# _single_sweep_jit = _single_sweep
     
 def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
 
@@ -224,9 +211,7 @@ def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
         untrys_as_matrixs.append(UnitaryMatrix(untrys[gate_index], gates[gate_index].radixes, check_arguments=False, use_jax=True))
 
     untrys = untrys_as_matrixs
-
     target_untry_builder = _initilize_circuit_tensor_jit(target.num_qudits, target.radixes, locations, target.numpy, untrys)
-
     amount_of_qudits = target.num_qudits
 
 
@@ -237,5 +222,3 @@ def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
     c1 = 1 - ( c1 / ( 2 ** amount_of_qudits ) )
 
     return c1, jnp.array([untry.numpy for untry in untrys])
-
-
