@@ -5,11 +5,10 @@ import logging
 from typing import cast
 from typing import Sequence
 
-import numpy as np
-import jax.numpy as jnp
 import jax
+import jax.numpy as jnp
+import numpy as np
 import numpy.typing as npt
-
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
@@ -81,23 +80,21 @@ class UnitaryBuilder(Unitary):
         self._dim = int(np.prod(self.radixes))
 
         if initial_value is None:
-            self.tensor = np.identity(self.dim, dtype=np.complex128)            
+            self.tensor = np.identity(self.dim, dtype=np.complex128)
         elif isinstance(initial_value, UnitaryMatrix):
-            if not all((d1==d2 for d1, d2 in zip(self.radixes, initial_value.radixes))):
-             raise ValueError(
-                f'Expected radixes to be equal between the intial value to desired builder radixes:'
-                ' {initail_value.radixes} != {self.radixes}' ,
-            )   
-            
+            if not all((d1 == d2 for d1, d2 in zip(self.radixes, initial_value.radixes))):
+                raise ValueError(
+                    f'Expected radixes to be equal between the intial value to desired builder radixes:'
+                    ' {initail_value.radixes} != {self.radixes}',
+                )
+
             self.tensor = initial_value.numpy
         else:
             self.tensor = initial_value
 
-
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
-
-    def get_unitary(self, params: RealVector = [], use_jax:bool = False) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = [], use_jax: bool = False) -> UnitaryMatrix:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
         utry = self.tensor.reshape((self.dim, self.dim))
         return UnitaryMatrix(utry, self.radixes, False, use_jax=use_jax)
@@ -161,30 +158,40 @@ class UnitaryBuilder(Unitary):
             for utry_radix, bldr_radix_idx in zip(utry.radixes, location):
                 if utry_radix != self.radixes[bldr_radix_idx]:
                     raise ValueError('Unitary and location radix mismatch.')
-        
+
         location = cast(CircuitLocation, location)
         utry_tensor = utry.get_tensor_format()
-        utry_size  = len(utry.radixes)
- 
+        utry_size = len(utry.radixes)
+
         if inverse:
             offset = 0
             utry_tensor = utry_tensor.conj()
         else:
             offset = utry_size
-            
-        utry_tensor_indexs    = [i for i in range(2*utry_size)]        
-        utry_builder_tensor_indexs = [2*utry_size + i  for i in range(2*self.num_qudits)]        
-        output_tensor_index   = [2*utry_size + i  for i in range(2*self.num_qudits)]
-        
+
+        utry_tensor_indexs = [i for i in range(2 * utry_size)]
+        utry_builder_tensor_indexs = [
+            2 * utry_size + i for i in range(2 * self.num_qudits)
+        ]
+        output_tensor_index = [
+            2 * utry_size +
+            i for i in range(2 * self.num_qudits)
+        ]
+
         for i, loc in enumerate(location):
             utry_builder_tensor_indexs[loc] = offset + i
             output_tensor_index[loc] = (utry_size - offset) + i
-        
-        if not use_jax:
-            self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
-        else:
-            self.tensor  = jnp.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
 
+        if not use_jax:
+            self.tensor = np.einsum(
+                utry_tensor, utry_tensor_indexs,
+                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
+            )
+        else:
+            self.tensor = jnp.einsum(
+                utry_tensor, utry_tensor_indexs,
+                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
+            )
 
     def apply_left(
         self,
@@ -248,30 +255,44 @@ class UnitaryBuilder(Unitary):
 
         location = cast(CircuitLocation, location)
         utry_tensor = utry.get_tensor_format()
-        utry_size  = len(utry.radixes)
- 
+        utry_size = len(utry.radixes)
+
         if inverse:
             offset = utry_size
             utry_tensor = utry_tensor.conj()
         else:
             offset = 0
-            
-        utry_tensor_indexs          = [i for i in range(2*utry_size)]        
-        utry_builder_tensor_indexs  = [2*utry_size + i  for i in range(2*self.num_qudits)]        
-        output_tensor_index         = [2*utry_size + i  for i in range(2*self.num_qudits)]
-        
+
+        utry_tensor_indexs = [i for i in range(2 * utry_size)]
+        utry_builder_tensor_indexs = [
+            2 * utry_size + i for i in range(2 * self.num_qudits)
+        ]
+        output_tensor_index = [
+            2 * utry_size +
+            i for i in range(2 * self.num_qudits)
+        ]
+
         for i, loc in enumerate(location):
-            utry_builder_tensor_indexs[self.num_qudits + loc]   = offset + i
-            output_tensor_index[self.num_qudits + loc]          = (utry_size - offset) + i
-        
+            utry_builder_tensor_indexs[self.num_qudits + loc] = offset + i
+            output_tensor_index[
+                self.num_qudits +
+                loc
+            ] = (utry_size - offset) + i
+
         if not use_jax:
-            self.tensor  = np.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+            self.tensor = np.einsum(
+                utry_tensor, utry_tensor_indexs,
+                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
+            )
         else:
-            self.tensor  = jnp.einsum(utry_tensor, utry_tensor_indexs, self.tensor, utry_builder_tensor_indexs, output_tensor_index)
+            self.tensor = jnp.einsum(
+                utry_tensor, utry_tensor_indexs,
+                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
+            )
 
     def calc_env_matrix(
-            self, location: Sequence[int], use_jax: bool = False
-    ) :
+            self, location: Sequence[int], use_jax: bool = False,
+    ):
         """
         Calculates the environment matrix w.r.t. the specified location.
 
@@ -283,11 +304,14 @@ class UnitaryBuilder(Unitary):
             np.ndarray: The environmental matrix.
         """
 
-        contraction_indexs = list(range(self.num_qudits))+list(range(self.num_qudits))
-        for i, loc in enumerate(location):            
-            contraction_indexs[loc+self.num_qudits] = self.num_qudits + i + 1
+        contraction_indexs = list(range(self.num_qudits)) + \
+            list(range(self.num_qudits))
+        for i, loc in enumerate(location):
+            contraction_indexs[loc + self.num_qudits] = self.num_qudits + i + 1
 
-        contraction_indexs_str = "".join([chr(ord('a')+i) for i in contraction_indexs])
+        contraction_indexs_str = ''.join(
+            [chr(ord('a') + i) for i in contraction_indexs],
+        )
 
         if not use_jax:
             env_tensor = np.einsum(contraction_indexs_str, self.tensor)
@@ -298,20 +322,21 @@ class UnitaryBuilder(Unitary):
 
         return env_mat
 
-
-    def  _tree_flatten(self):
+    def _tree_flatten(self):
         children = (self.get_unitary(use_jax=True),)  # arrays / dynamic values
-        aux_data = {'radixes': self._radixes,
-                    'num_qudits': self.num_qudits
-                    }  # static values
+        aux_data = {
+            'radixes': self._radixes,
+            'num_qudits': self.num_qudits,
+        }  # static values
         return (children, aux_data)
-
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):
-        return cls(initial_value = children[0], **aux_data)
+        return cls(initial_value=children[0], **aux_data)
 
 
-jax.tree_util.register_pytree_node(UnitaryBuilder,
-                               UnitaryBuilder._tree_flatten,
-                               UnitaryBuilder._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    UnitaryBuilder,
+    UnitaryBuilder._tree_flatten,
+    UnitaryBuilder._tree_unflatten,
+)

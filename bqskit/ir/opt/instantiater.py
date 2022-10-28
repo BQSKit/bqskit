@@ -96,5 +96,5 @@ class Instantiater(abc.ABC):
 
     @staticmethod
     def can_internaly_perform_multistart() -> bool:
-        """Probes if the instantiater can internaly perform multistrat """
+        """Probes if the instantiater can internaly perform multistrat."""
         return False

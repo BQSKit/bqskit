@@ -7,12 +7,12 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
-import numpy as np
-import jax.numpy as jnp
 import jax
+import jax.numpy as jnp
+import jax.scipy.linalg as jla
+import numpy as np
 import numpy.typing as npt
 import scipy as sp
-import jax.scipy.linalg as jla
 from scipy.stats import unitary_group
 
 from bqskit.qis.state.state import StateLike
@@ -100,7 +100,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         if check_arguments:
             dim = len(input)
-        
+
         if radixes:
             self._radixes = tuple(radixes)
         else:
@@ -117,8 +117,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
             else:
                 raise RuntimeError(
-                'Unable to determine radixes'
-                ' for UnitaryMatrix with dim %d.' % dim,
+                    'Unable to determine radixes'
+                    ' for UnitaryMatrix with dim %d.' % dim,
                 )
 
         if check_arguments and not is_valid_radixes(self.radixes):
@@ -134,7 +134,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
                 self._utry = jnp.array(input, dtype=jnp.complex128)
         else:
             self._utry = input
-        
 
     _num_params = 0
 
@@ -175,7 +174,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the complex conjugate unitary matrix."""
         return UnitaryMatrix(self._utry.conj(), self.radixes, False)
 
-    def otimes(self, *utrys: UnitaryLike, use_jax:bool=False) -> UnitaryMatrix:
+    def otimes(self, *utrys: UnitaryLike, use_jax: bool = False) -> UnitaryMatrix:
         """
         Calculate the tensor or kroneckor product with other unitaries.
 
@@ -206,28 +205,26 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the same object, satisfies the :class:`Unitary` API."""
         return self
 
-    def get_tensor_format(self) -> np.ndarray: #Union[jnp.Array, np.ndarray]:
-        
+    def get_tensor_format(self) -> np.ndarray:  # Union[jnp.Array, np.ndarray]:
         """
         Converts the unitary matrix operation into a tensor network format.
 
-        Indices are counted top to bottom, right to left:
-             .-----.
-          n -|     |- 0
-        n+1 -|     |- 1
-             .     .
-             .     .
-             .     .
-       2n-1 -|     |- n-1
-             '-----'
+         Indices are counted top to bottom, right to left:
+              .-----.
+           n -|     |- 0
+         n+1 -|     |- 1
+              .     .
+              .     .
+              .     .
+        2n-1 -|     |- n-1
+              '-----'
 
 
-        Returns
-            Union[DeviceArray, np.ndarray]: A tensor representing this matrix.
+         Returns
+             Union[DeviceArray, np.ndarray]: A tensor representing this matrix.
         """
 
-        return self._utry.reshape( self.radixes + self.radixes )
-
+        return self._utry.reshape(self.radixes + self.radixes)
 
     def get_distance_from(self, other: UnitaryLike, degree: int = 2, use_jax: bool = False) -> float:
         """
@@ -293,7 +290,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return StateVector(out_vec.reshape((-1,)), self.radixes)
 
     @staticmethod
-    def identity(dim: int, radixes: Sequence[int] = [], use_jax:bool = False) -> UnitaryMatrix:
+    def identity(dim: int, radixes: Sequence[int] = [], use_jax: bool = False) -> UnitaryMatrix:
         """
         Construct an identity UnitaryMatrix.
 
@@ -345,7 +342,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         if not use_jax:
             V, _, Wh = sp.linalg.svd(M)
-        else:            
+        else:
             V, _, Wh = jla.svd(M)
         return UnitaryMatrix(V @ Wh, radixes, False, use_jax=use_jax)
 
@@ -469,7 +466,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
-    ) :
+    ):
         """Implements NumPy API for the UnitaryMatrix class."""
         if dtype != np.complex128 or dtype != jnp.complex128:
             raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
@@ -541,22 +538,24 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the hash of the unitary."""
         return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
 
-    def  _tree_flatten(self):
+    def _tree_flatten(self):
         children = (self._utry,)  # arrays / dynamic values
-        aux_data = {'radixes': self._radixes,
-                    'check_arguments': False,
-                    'use_jax': True
-                    }  # static values
+        aux_data = {
+            'radixes': self._radixes,
+            'check_arguments': False,
+            'use_jax': True,
+        }  # static values
         return (children, aux_data)
-
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):
         return cls(*children, **aux_data)
 
 
-jax.tree_util.register_pytree_node(UnitaryMatrix,
-                               UnitaryMatrix._tree_flatten,
-                               UnitaryMatrix._tree_unflatten)
+jax.tree_util.register_pytree_node(
+    UnitaryMatrix,
+    UnitaryMatrix._tree_flatten,
+    UnitaryMatrix._tree_unflatten,
+)
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]

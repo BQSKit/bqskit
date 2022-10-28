@@ -1,11 +1,11 @@
 """This module implements the VariableUnitaryGate."""
 from __future__ import annotations
 
-from typing import Sequence, Union
+from typing import Sequence
 
-import numpy as np
 import jax.numpy as jnp
 import jax.scipy.linalg as jla
+import numpy as np
 import numpy.typing as npt
 import scipy as sp
 
@@ -72,25 +72,26 @@ class VariableUnitaryGate(
         x = real + imag
         return UnitaryMatrix.closest_to(mat_lib.reshape(x, self.shape), self.radixes, use_jax=use_jax)
 
-    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry:bool = False, use_jax: bool = False) -> Union[list[float], UnitaryMatrix]:
+    def optimize(self, env_matrix: npt.NDArray[np.complex128], get_untry: bool = False, use_jax: bool = False) -> list[float] | UnitaryMatrix:
         """
         Return the optimal parameters with respect to an environment matrix.
 
         See :class:`LocallyOptimizableUnitary` for more info.
         """
-        
+
         if not use_jax:
-            self.check_env_matrix(env_matrix) # TODO: Find a better way not to perfrom this check while in JAX
+            # TODO: Find a better way not to perfrom this check while in JAX
+            self.check_env_matrix(env_matrix)
             U, _, Vh = sp.linalg.svd(env_matrix)
             mat_lib = np
         else:
             U, _, Vh = jla.svd(env_matrix)
             mat_lib = jnp
         utry = Vh.conj().T @ U.conj().T
-        
+
         if get_untry:
             return UnitaryMatrix(utry, radixes=self._radixes, check_arguments=False, use_jax=use_jax)
-        
+
         x = mat_lib.reshape(utry, (self.num_params // 2,))
         return list(mat_lib.real(x)) + list(mat_lib.imag(x))
 

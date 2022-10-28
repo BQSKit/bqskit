@@ -9,8 +9,8 @@ from typing import Iterable
 from typing import Mapping
 from typing import Sized
 
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 import numpy.typing as npt
 from typing_extensions import TypeGuard
 
@@ -58,7 +58,7 @@ def is_complex(x: Any) -> TypeGuard[complex]:
 
 def is_real_number(x: Any) -> TypeGuard[float]:
     """Return true if `x` is a real number."""
-    return isinstance(x, numbers.Real) or (isinstance(x, jnp.ndarray) and (len(x.shape) == 0) and is_real_number(x.item())) 
+    return isinstance(x, numbers.Real) or (isinstance(x, jnp.ndarray) and (len(x.shape) == 0) and is_real_number(x.item()))
 
 
 def is_integer(x: Any) -> TypeGuard[int]:
