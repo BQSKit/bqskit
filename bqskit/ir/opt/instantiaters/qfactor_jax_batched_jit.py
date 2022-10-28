@@ -8,9 +8,9 @@ import numpy.typing as npt
 
 import jax
 import jax.numpy as jnp
-
-from bqskit.ir.opt.instantiaters.qfactor_jax import QFactor_jax
+from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
-
-class QFactor_jax_batched_jit(QFactor_jax):
+class QFactor_jax_batched_jit(Instantiater):
     """The QFactor batch circuit instantiater."""
 
     def __init__(
@@ -58,6 +57,17 @@ class QFactor_jax_batched_jit(QFactor_jax):
         self.min_iters  = min_iters
         
 
+
+    def instantiate(
+        self,
+        circuit,#: Circuit,
+        target: UnitaryMatrix | StateVector,
+        x0
+    ) :
+
+        return self.instantiate_multistart(circuit, target, [x0])
+    
+    
     def instantiate_multistart(
         self,
         circuit,#: Circuit,
@@ -138,6 +148,42 @@ class QFactor_jax_batched_jit(QFactor_jax):
     def can_internaly_perform_multistart() -> bool:
         """Probes if the instantiater can internaly perform multistrat """
         return True
+    
+    @staticmethod
+    def is_capable(circuit) -> bool:
+        """Return true if the circuit can be instantiated."""
+        return all(
+            isinstance(gate, LocallyOptimizableUnitary)
+            for gate in circuit.gate_set
+        )
+
+    @staticmethod
+    def get_violation_report(circuit) -> str:
+        """
+        Return a message explaining why `circuit` cannot be instantiated.
+
+        Args:
+            circuit (Circuit): Generate a report for this circuit.
+
+        Raises:
+            ValueError: If `circuit` can be instantiated with this
+                instantiater.
+        """
+
+        invalid_gates = {
+            gate
+            for gate in circuit.gate_set
+            if not isinstance(gate, LocallyOptimizableUnitary)
+        }
+
+        if len(invalid_gates) == 0:
+            raise ValueError('Circuit can be instantiated.')
+
+        return (
+            'Cannot instantiate circuit with qfactor'
+            ' because the following gates are not locally optimizable: %s.'
+            % ', '.join(str(g) for g in invalid_gates)
+        )
 
 
 
@@ -214,7 +260,6 @@ def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
     target_untry_builder = _initilize_circuit_tensor_jit(target.num_qudits, target.radixes, locations, target.numpy, untrys)
     amount_of_qudits = target.num_qudits
 
-
     for _ in range(n):        
         target_untry_builder, untrys = _single_sweep_jit(locations, gates, untrys, amount_of_gates, target_untry_builder)
 
@@ -222,3 +267,4 @@ def _sweep_circuit(target:UnitaryMatrix, locations, gates, untrys, n:int):
     c1 = 1 - ( c1 / ( 2 ** amount_of_qudits ) )
 
     return c1, jnp.array([untry.numpy for untry in untrys])
+
