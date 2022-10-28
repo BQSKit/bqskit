@@ -89,7 +89,7 @@ class QFactor_jax_batched_jit(Instantiater):
                 ]
                 untrys[start_index].append(
                     gate.get_unitary(
-                    params=gparams, check_params=False, use_jax=True,
+                        params=gparams, check_params=False, use_jax=True,
                     ).numpy,
                 )
 
@@ -276,7 +276,7 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int):
     for gate_index in range(amount_of_gates):
         untrys_as_matrixs.append(
             UnitaryMatrix(
-            untrys[gate_index], gates[gate_index].radixes, check_arguments=False, use_jax=True,
+                untrys[gate_index], gates[gate_index].radixes, check_arguments=False, use_jax=True,
             ),
         )
 
