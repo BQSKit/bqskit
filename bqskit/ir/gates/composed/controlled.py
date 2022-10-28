@@ -10,6 +10,7 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 
 
@@ -69,7 +70,7 @@ class ControlledGate(
         self.left = np.kron((self.Ic - self.OneProj), self.It)
 
         # If input is a constant gate, we can cache the unitary.
-        if self.num_params == 0:
+        if self.num_params == 0 and not building_docs():
             U = self.gate.get_unitary()
             right = np.kron(self.OneProj, U)
             self.utry = UnitaryMatrix(self.left + right, self.radixes)
