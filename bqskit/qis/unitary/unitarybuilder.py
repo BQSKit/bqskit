@@ -64,6 +64,7 @@ class UnitaryBuilder(Unitary):
                 num_qudits,
             )
 
+        self._mat_lib = np
         self._num_qudits = num_qudits
         self._radixes = tuple(radixes if len(radixes) > 0 else [2] * num_qudits)
 
@@ -94,10 +95,10 @@ class UnitaryBuilder(Unitary):
 
         self.tensor = self.tensor.reshape(self.radixes * 2)
 
-    def get_unitary(self, params: RealVector = [], use_jax: bool = False) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
         utry = self.tensor.reshape((self.dim, self.dim))
-        return UnitaryMatrix(utry, self.radixes, False, use_jax=use_jax)
+        return UnitaryMatrix(utry, self.radixes, False)
 
     def apply_right(
         self,
@@ -105,7 +106,6 @@ class UnitaryBuilder(Unitary):
         location: CircuitLocationLike,
         inverse: bool = False,
         check_arguments: bool = True,
-        use_jax: bool = False,
     ) -> None:
         """
         Apply the specified unitary on the right of this UnitaryBuilder.
@@ -182,24 +182,18 @@ class UnitaryBuilder(Unitary):
             utry_builder_tensor_indexs[loc] = offset + i
             output_tensor_index[loc] = (utry_size - offset) + i
 
-        if not use_jax:
-            self.tensor = np.einsum(
-                utry_tensor, utry_tensor_indexs,
-                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
+        
+        self.tensor = self._mat_lib.einsum(
+               utry_tensor, utry_tensor_indexs,
+               self.tensor, utry_builder_tensor_indexs, output_tensor_index,
             )
-        else:
-            self.tensor = jnp.einsum(
-                utry_tensor, utry_tensor_indexs,
-                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
-            )
-
+    
     def apply_left(
         self,
         utry: UnitaryMatrix,
         location: CircuitLocationLike,
         inverse: bool = False,
         check_arguments: bool = True,
-        use_jax: bool = False,
     ) -> None:
         """
         Apply the specified unitary on the left of this UnitaryBuilder.
@@ -279,19 +273,14 @@ class UnitaryBuilder(Unitary):
                 loc
             ] = (utry_size - offset) + i
 
-        if not use_jax:
-            self.tensor = np.einsum(
-                utry_tensor, utry_tensor_indexs,
-                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
-            )
-        else:
-            self.tensor = jnp.einsum(
-                utry_tensor, utry_tensor_indexs,
-                self.tensor, utry_builder_tensor_indexs, output_tensor_index,
-            )
-
+        
+        self.tensor = self._mat_lib.einsum(
+            utry_tensor, utry_tensor_indexs,
+            self.tensor, utry_builder_tensor_indexs, output_tensor_index,
+        )
+    
     def calc_env_matrix(
-            self, location: Sequence[int], use_jax: bool = False,
+            self, location: Sequence[int]
     ):
         """
         Calculates the environment matrix w.r.t. the specified location.
@@ -313,30 +302,9 @@ class UnitaryBuilder(Unitary):
             [chr(ord('a') + i) for i in contraction_indexs],
         )
 
-        if not use_jax:
-            env_tensor = np.einsum(contraction_indexs_str, self.tensor)
-        else:
-            env_tensor = jnp.einsum(contraction_indexs_str, self.tensor)
-
+        
+        env_tensor = self._mat_lib.einsum(contraction_indexs_str, self.tensor)
         env_mat = env_tensor.reshape((2**len(location), -1))
 
         return env_mat
 
-    def _tree_flatten(self):
-        children = (self.get_unitary(use_jax=True),)  # arrays / dynamic values
-        aux_data = {
-            'radixes': self._radixes,
-            'num_qudits': self.num_qudits,
-        }  # static values
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        return cls(initial_value=children[0], **aux_data)
-
-
-jax.tree_util.register_pytree_node(
-    UnitaryBuilder,
-    UnitaryBuilder._tree_flatten,
-    UnitaryBuilder._tree_unflatten,
-)

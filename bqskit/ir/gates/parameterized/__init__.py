@@ -22,6 +22,7 @@ from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.gates.parameterized.unitary_acc import VariableUnitaryGateAcc
 
 __all__ = [
     'CPGate',
@@ -45,4 +46,5 @@ __all__ = [
     'U3Gate',
     'U8Gate',
     'VariableUnitaryGate',
+    'VariableUnitaryGateAcc',
 ]

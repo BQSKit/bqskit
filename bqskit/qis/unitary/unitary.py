@@ -57,7 +57,7 @@ class Unitary(metaclass=UnitaryMeta):
         return int(np.prod(self.radixes))
 
     @abc.abstractmethod
-    def get_unitary(self, params: RealVector = [], use_jax: bool = False) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """
         Map real-valued `params` to a `UnitaryMatrix`.
 

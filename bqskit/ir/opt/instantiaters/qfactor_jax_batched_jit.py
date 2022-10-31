@@ -7,11 +7,13 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
+from bqskit.ir.gates.parameterized.unitary_acc import VariableUnitaryGateAcc
 
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
-from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
+from bqskit.qis.unitary.unitarybuilderjax import UnitaryBuilderJax
+from bqskit.qis.unitary.unitarymatrixjax import UnitaryMatrixJax
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -89,7 +91,7 @@ class QFactor_jax_batched_jit(Instantiater):
                 ]
                 untrys[start_index].append(
                     gate.get_unitary(
-                        params=gparams, check_params=False, use_jax=True,
+                        params=gparams
                     ).numpy,
                 )
 
@@ -160,7 +162,7 @@ class QFactor_jax_batched_jit(Instantiater):
     def is_capable(circuit) -> bool:
         """Return true if the circuit can be instantiated."""
         return all(
-            isinstance(gate, LocallyOptimizableUnitary)
+            isinstance(gate, VariableUnitaryGateAcc)
             for gate in circuit.gate_set
         )
 
@@ -180,7 +182,7 @@ class QFactor_jax_batched_jit(Instantiater):
         invalid_gates = {
             gate
             for gate in circuit.gate_set
-            if not isinstance(gate, LocallyOptimizableUnitary)
+            if not isinstance(gate, VariableUnitaryGateAcc)
         }
 
         if len(invalid_gates) == 0:
@@ -188,7 +190,7 @@ class QFactor_jax_batched_jit(Instantiater):
 
         return (
             'Cannot instantiate circuit with qfactor'
-            ' because the following gates are not locally optimizable: %s.'
+            ' because the following gates are not locally optimizable with jax: %s.'
             % ', '.join(str(g) for g in invalid_gates)
         )
 
@@ -201,14 +203,13 @@ def _initilize_circuit_tensor(
     untrys,
 ):
 
-    use_jax = True
-    target_untry_builder = UnitaryBuilder(
+    target_untry_builder = UnitaryBuilderJax(
         target_num_qudits, target_radixes, target_mat.conj().T,
     )
 
     for loc, untry in zip(locations, untrys):
         target_untry_builder.apply_right(
-            untry, loc, check_arguments=False, use_jax=use_jax,
+            untry, loc, check_arguments=False,
         )
 
     return target_untry_builder
@@ -228,18 +229,18 @@ def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builde
 
         # Remove current gate from right of circuit tensor
         target_untry_builder.apply_right(
-            untry, location, inverse=True, check_arguments=False, use_jax=True,
+            untry, location, inverse=True, check_arguments=False
         )
 
         # Update current gate
         if gate.num_params > 0:
-            env = target_untry_builder.calc_env_matrix(location, use_jax=True)
-            untry = gate.optimize(env, get_untry=True, use_jax=True)
+            env = target_untry_builder.calc_env_matrix(location)
+            untry = gate.optimize(env, get_untry=True)
             untrys[k] = untry
 
             # Add updated gate to left of circuit tensor
         target_untry_builder.apply_left(
-            untry, location, check_arguments=False, use_jax=True,
+            untry, location, check_arguments=False,
         )
 
         # from left to right
@@ -250,18 +251,18 @@ def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builde
 
         # Remove current gate from left of circuit tensor
         target_untry_builder.apply_left(
-            untry, location, inverse=True, check_arguments=False, use_jax=True,
+            untry, location, inverse=True, check_arguments=False,
         )
 
         # Update current gate
         if gate.num_params > 0:
-            env = target_untry_builder.calc_env_matrix(location, use_jax=True)
-            untry = gate.optimize(env, get_untry=True, use_jax=True)
+            env = target_untry_builder.calc_env_matrix(location)
+            untry = gate.optimize(env, get_untry=True)
             untrys[k] = untry
 
             # Add updated gate to right of circuit tensor
         target_untry_builder.apply_right(
-            untry, location, check_arguments=False, use_jax=True,
+            untry, location, check_arguments=False,
         )
 
     return target_untry_builder, untrys
@@ -275,8 +276,8 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int):
     untrys_as_matrixs = []
     for gate_index in range(amount_of_gates):
         untrys_as_matrixs.append(
-            UnitaryMatrix(
-                untrys[gate_index], gates[gate_index].radixes, check_arguments=False, use_jax=True,
+            UnitaryMatrixJax(
+                untrys[gate_index], gates[gate_index].radixes
             ),
         )
 
@@ -292,7 +293,7 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int):
         )
 
     c1 = jnp.abs(
-        jnp.trace(jnp.array(target_untry_builder.get_unitary(use_jax=True).numpy)),
+        jnp.trace(jnp.array(target_untry_builder.get_unitary().numpy)),
     )
     c1 = 1 - (c1 / (2 ** amount_of_qudits))
 

@@ -45,7 +45,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         input: UnitaryLike,
         radixes: Sequence[int] = [],
         check_arguments: bool = True,
-        use_jax: bool = False,
     ) -> None:
         """
         Constructs a `UnitaryMatrix` from the supplied unitary matrix.
@@ -84,7 +83,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if building_docs():
             self._utry: npt.NDArray[np.complex128] = np.array([])
             return
-
+        self._mat_lib = np        
+        self._my_class = UnitaryMatrix
         # Copy constructor
         if isinstance(input, UnitaryMatrix):
             self._utry = input.numpy
@@ -92,13 +92,13 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             self._dim = input.dim
             return
 
-        if check_arguments and not is_square_matrix(input):
-            raise TypeError(f'Expected square matrix, got {type(input)}.')
-
-        if check_arguments and not UnitaryMatrix.is_unitary(input):
-            raise ValueError('Input failed unitary condition.')
-
         if check_arguments:
+            if not is_square_matrix(input):
+                raise TypeError(f'Expected square matrix, got {type(input)}.')
+
+            if not UnitaryMatrix.is_unitary(input):
+                raise ValueError('Input failed unitary condition.')
+
             dim = len(input)
 
         if radixes:
@@ -128,10 +128,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             raise ValueError('Qudit radixes mismatch with dimension.')
 
         if type(input) is not object:
-            if not use_jax:
                 self._utry = np.array(input, dtype=np.complex128)
-            else:
-                self._utry = jnp.array(input, dtype=jnp.complex128)
         else:
             self._utry = input
 
@@ -174,7 +171,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """Return the complex conjugate unitary matrix."""
         return UnitaryMatrix(self._utry.conj(), self.radixes, False)
 
-    def otimes(self, *utrys: UnitaryLike, use_jax: bool = False) -> UnitaryMatrix:
+    def otimes(self, *utrys: UnitaryLike) -> UnitaryMatrix:
         """
         Calculate the tensor or kroneckor product with other unitaries.
 
@@ -186,20 +183,15 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             UnitaryMatrix: The resulting unitary matrix.
         """
 
-        utrys = [UnitaryMatrix(u, use_jax=use_jax) for u in utrys]
-
-        if not use_jax:
-            mat_lib = np
-        else:
-            mat_lib = jnp
+        utrys = [self._my_class(u) for u in utrys]
 
         utry_acm = self.numpy
         radixes_acm = self.radixes
         for utry in utrys:
-            utry_acm = mat_lib.kron(utry_acm, utry.numpy)
+            utry_acm = self._mat_lib.kron(utry_acm, utry.numpy)
             radixes_acm += utry.radixes
 
-        return UnitaryMatrix(utry_acm, radixes_acm, use_jax=use_jax)
+        return self._my_class(utry_acm, radixes_acm)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the same object, satisfies the :class:`Unitary` API."""
@@ -226,7 +218,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         return self._utry.reshape(self.radixes + self.radixes)
 
-    def get_distance_from(self, other: UnitaryLike, degree: int = 2, use_jax: bool = False) -> float:
+    def get_distance_from(self, other: UnitaryLike, degree: int = 2) -> float:
         """
         Return the distance between `self` and `other`.
 
@@ -248,16 +240,11 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             are equal up to global phase and 1 means the two unitaries are
             very unsimilar or far apart.
         """
-        other = UnitaryMatrix(other, use_jax=use_jax)
-        if not use_jax:
-            mat_lib = np
-        else:
-            mat_lib = jnp
-
-        num = mat_lib.abs(mat_lib.trace(self.conj().T @ other))
+        other = self._my_class(other)
+        num = self._mat_lib.abs(self._mat_lib.trace(self.conj().T @ other))
         dem = self.dim
         frac = min(num / dem, 1)
-        dist = mat_lib.power(1 - (frac ** degree), 1.0 / degree)
+        dist = self._mat_lib.power(1 - (frac ** degree), 1.0 / degree)
         return dist if dist > 0.0 else 0.0
 
     def get_statevector(self, in_state: StateLike) -> StateVector:
@@ -290,7 +277,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return StateVector(out_vec.reshape((-1,)), self.radixes)
 
     @staticmethod
-    def identity(dim: int, radixes: Sequence[int] = [], use_jax: bool = False) -> UnitaryMatrix:
+    def identity(dim: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
         """
         Construct an identity UnitaryMatrix.
 
@@ -308,16 +295,12 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """
         if dim <= 0:
             raise ValueError('Invalid dimension for identity matrix.')
-        if not use_jax:
-            return UnitaryMatrix(np.identity(dim), radixes)
-        else:
-            return UnitaryMatrix(jnp.identity(dim), radixes)
+        return UnitaryMatrix(np.identity(dim), radixes)
 
     @staticmethod
     def closest_to(
         M: npt.NDArray[np.complex128],
         radixes: Sequence[int] = [],
-        use_jax: bool = False,
     ) -> UnitaryMatrix:
         """
         Calculate and return the closest unitary to a given matrix.
@@ -340,14 +323,12 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if not is_square_matrix(M):
             raise TypeError('Expected square matrix.')
 
-        if not use_jax:
-            V, _, Wh = sp.linalg.svd(M)
-        else:
-            V, _, Wh = jla.svd(M)
-        return UnitaryMatrix(V @ Wh, radixes, False, use_jax=use_jax)
+        V, _, Wh = sp.linalg.svd(M)
+        
+        return UnitaryMatrix(V @ Wh, radixes, False)
 
     @staticmethod
-    def random(num_qudits: int, radixes: Sequence[int] = [], use_jax: bool = False) -> UnitaryMatrix:
+    def random(num_qudits: int, radixes: Sequence[int] = []) -> UnitaryMatrix:
         """
         Sample a random unitary from the haar distribution.
 
@@ -386,7 +367,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             )
 
         U = unitary_group.rvs(int(np.prod(radixes)))
-        return UnitaryMatrix(U, radixes, False, use_jax=use_jax)
+        return UnitaryMatrix(U, radixes, False)
 
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""
@@ -473,9 +454,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         return self._utry
 
-    def __jax_array__(self, dtype):
-        return self.__array__(dtype)
-
     def __array_ufunc__(
         self,
         ufunc: np.ufunc,
@@ -490,7 +468,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         non_unitary_involved = False
         args: list[npt.NDArray[Any]] = []
         for input in inputs:
-            if isinstance(input, UnitaryMatrix):
+            if isinstance(input, self._my_class):
                 args.append(input.numpy)
             else:
                 args.append(input)
@@ -511,18 +489,18 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             or (
                 ufunc.__name__ == 'multiply'
                 and all(
-                    np.isscalar(input) or isinstance(input, UnitaryMatrix)
+                    self._mat_lib.isscalar(input) or isinstance(input, self._my_class)
                     for input in inputs
                 )
                 and all(
-                    np.abs(np.abs(input) - 1) <= 1e-14
-                    for input in inputs if np.isscalar(input)
+                    self._mat_lib.abs(self._mat_lib.abs(input) - 1) <= 1e-14
+                    for input in inputs if self._mat_lib.isscalar(input)
                 )
             )
         )
 
         if convert_back:
-            return UnitaryMatrix(out, self.radixes)
+            return self._my_class(out, self.radixes)
 
         return out
 
@@ -537,25 +515,5 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __hash__(self) -> int:
         """Return the hash of the unitary."""
         return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
-
-    def _tree_flatten(self):
-        children = (self._utry,)  # arrays / dynamic values
-        aux_data = {
-            'radixes': self._radixes,
-            'check_arguments': False,
-            'use_jax': True,
-        }  # static values
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        return cls(*children, **aux_data)
-
-
-jax.tree_util.register_pytree_node(
-    UnitaryMatrix,
-    UnitaryMatrix._tree_flatten,
-    UnitaryMatrix._tree_unflatten,
-)
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
