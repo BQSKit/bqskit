@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import TYPE_CHECKING
 
 import jax
@@ -15,6 +16,8 @@ from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarybuilderjax import UnitaryBuilderJax
 from bqskit.qis.unitary.unitarymatrixjax import UnitaryMatrixJax
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+from scipy.stats import unitary_group
 
 
 if TYPE_CHECKING:
@@ -75,27 +78,15 @@ class QFactor_jax_batched_jit(Instantiater):
         """Instantiate `circuit`, see Instantiater for more info."""
 
         amount_of_starts = len(starts)
-        starts = jnp.array(starts)
         locations = tuple([op.location for op in circuit])
         gates = tuple([op.gate for op in circuit])
 
         untrys = [[] for _ in range(amount_of_starts)]
-        param_index = 0
+
         for gate in gates:
-            amount_of_params_in_gate = gate.num_params
-
+            size_of_untry = 2**gate.num_qudits
             for start_index in range(amount_of_starts):
-                gparams = starts[start_index][
-                    param_index: param_index +
-                    amount_of_params_in_gate
-                ]
-                untrys[start_index].append(
-                    gate.get_unitary(
-                        params=gparams
-                    ).numpy,
-                )
-
-            param_index += amount_of_params_in_gate
+                untrys[start_index].append( unitary_group.rvs(size_of_untry))
 
         untrys = jnp.array(untrys)
         n = 40
