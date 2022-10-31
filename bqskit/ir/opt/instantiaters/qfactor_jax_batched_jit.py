@@ -12,7 +12,6 @@ from bqskit.ir.gates.parameterized.unitary_acc import VariableUnitaryGateAcc
 
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.qis.state.state import StateVector
-from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarybuilderjax import UnitaryBuilderJax
 from bqskit.qis.unitary.unitarymatrixjax import UnitaryMatrixJax
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -54,9 +53,9 @@ class QFactor_jax_batched_jit(Instantiater):
         if not isinstance(min_iters, int) or min_iters < 0:
             raise TypeError('Invalid minimum number of iterations.')
 
-        self.diff_tol_a = diff_tol_a
-        self.diff_tol_r = diff_tol_r
-        self.dist_tol = dist_tol
+        self.diff_tol_a = jnp.array(diff_tol_a)
+        self.diff_tol_r = jnp.array(diff_tol_r)
+        self.dist_tol = jnp.array(dist_tol)
         self.max_iters = max_iters
         self.min_iters = min_iters
 
@@ -76,7 +75,6 @@ class QFactor_jax_batched_jit(Instantiater):
         starts: list[npt.NDArray[np.float64]],
     ):
         """Instantiate `circuit`, see Instantiater for more info."""
-
         amount_of_starts = len(starts)
         locations = tuple([op.location for op in circuit])
         gates = tuple([op.gate for op in circuit])
@@ -89,49 +87,44 @@ class QFactor_jax_batched_jit(Instantiater):
                 untrys[start_index].append( unitary_group.rvs(size_of_untry))
 
         untrys = jnp.array(untrys)
-        n = 40
-        c1s = [0] * amount_of_starts
-        c2s = [1] * amount_of_starts
+        n = 20
+        c1s = jnp.array([1] * amount_of_starts)
         it = 0
+        it2 = 0
         best_start = 0
 
-        sweep_vmaped = jax.vmap(
-            _sweep_circuit, in_axes=(None, None, None, 0, None),
-        )
-
         while (True):
-            it += 1
-            # Termination conditions
-            if it * n > self.min_iters:
+            c1s, untrys, plato_calc, reached_desired_distance = _sweep_vmaped(target, locations, gates, untrys, n, c1s, self.dist_tol, self.diff_tol_a, self.diff_tol_r)
+            c1s = c1s.block_until_ready()
+            
+            it += n
+            it2 +=1
 
-                if all([jnp.abs(c1 - c2) <= self.diff_tol_a + self.diff_tol_r * jnp.abs(c1) for c1, c2 in zip(c1s, c2s)]):
-                    # diff = jnp.abs(c1 - c2)
-                    _logger.info(
-                        f'Terminated: |c1 - c2| = '
-                        ' <= diff_tol_a + diff_tol_r * |c1|.',
-                    )
-                    best_start = np.argmin(c1s)
-                    break
-
-                if it * n > self.max_iters:
-                    _logger.info('Terminated: iteration limit reached.')
-                    best_start = jnp.argmin(c1s)
-                    break
-
-            c2s = c1s
-            c1s, untrys = sweep_vmaped(target, locations, gates, untrys, n)
-
-            reached_desired_distance = [c1 <= self.dist_tol for c1 in c1s]
+            if it2 % 4 == 0:
+                _logger.info(f'iteration: {it}, costs: {c1s}')
+            
+            # Termination conditions            
             if any(reached_desired_distance):
 
-                best_start = reached_desired_distance.index(True)
+                best_start = reached_desired_distance.tolist().index(True)
                 _logger.info(
                     f'Terminated: {it} c1 = {c1s} <= dist_tol.\n Best start is {best_start}',
                 )
                 break
 
-            if it % 4 == 0:
-                _logger.info(f'iteration: {it*n}, costs: {c1s}')
+            if it > self.min_iters:
+                if all(plato_calc):
+                    _logger.info(
+                        f'Terminated: |c1 - c2| = '
+                        ' <= diff_tol_a + diff_tol_r * |c1|.',
+                    )
+                    best_start = jnp.argmin(c1s)
+                    break
+
+                if it > self.max_iters:
+                    _logger.info('Terminated: iteration limit reached.')
+                    best_start = jnp.argmin(c1s)
+                    break
 
         params = []
         for untry, gate in zip(untrys[best_start], gates):
@@ -262,7 +255,7 @@ def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builde
 _single_sweep_jit = jax.jit(_single_sweep, static_argnums=(0, 1, 3))
 
 
-def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int):
+def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, dist_tol, diff_tol_a, diff_tol_r):
     amount_of_gates = len(gates)
     untrys_as_matrixs = []
     for gate_index in range(amount_of_gates):
@@ -283,9 +276,26 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int):
             locations, gates, untrys, amount_of_gates, target_untry_builder,
         )
 
+    c1, plato_calc, reached_required_tol = _calc_stats_jited(c1, dist_tol, diff_tol_a, diff_tol_r, target_untry_builder.tensor, amount_of_qudits, target_untry_builder.dim)
+
+    return c1, jnp.array([untry.numpy for untry in untrys]), plato_calc , reached_required_tol
+
+
+_sweep_vmaped = jax.vmap(
+        _sweep_circuit, in_axes=(None, None, None, 0, None, 0, None, None, None),
+        )
+
+def _calc_stats(c1, dist_tol, diff_tol_a, diff_tol_r, tensor, amount_of_qudits, dim):
+    c2 = c1
+    untry_res = tensor.reshape((dim, dim))
     c1 = jnp.abs(
-        jnp.trace(jnp.array(target_untry_builder.get_unitary().numpy)),
+        jnp.trace(untry_res),
     )
     c1 = 1 - (c1 / (2 ** amount_of_qudits))
 
-    return c1, jnp.array([untry.numpy for untry in untrys])
+    plato_calc = jnp.abs(c1 - c2) <= diff_tol_a + diff_tol_r * jnp.abs(c1)
+    reached_required_tol = c1 < dist_tol
+    
+    return c1, plato_calc, reached_required_tol
+
+_calc_stats_jited = jax.jit(_calc_stats, static_argnums=(5, 6))
