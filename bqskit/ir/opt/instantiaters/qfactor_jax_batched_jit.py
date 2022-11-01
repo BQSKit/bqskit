@@ -53,9 +53,9 @@ class QFactor_jax_batched_jit(Instantiater):
         if not isinstance(min_iters, int) or min_iters < 0:
             raise TypeError('Invalid minimum number of iterations.')
 
-        self.diff_tol_a = jnp.array(diff_tol_a)
-        self.diff_tol_r = jnp.array(diff_tol_r)
-        self.dist_tol = jnp.array(dist_tol)
+        self.diff_tol_a = diff_tol_a
+        self.diff_tol_r = diff_tol_r
+        self.dist_tol = dist_tol
         self.max_iters = max_iters
         self.min_iters = min_iters
 
@@ -75,6 +75,7 @@ class QFactor_jax_batched_jit(Instantiater):
         starts: list[npt.NDArray[np.float64]],
     ):
         """Instantiate `circuit`, see Instantiater for more info."""
+        target = UnitaryMatrixJax(target)
         amount_of_starts = len(starts)
         locations = tuple([op.location for op in circuit])
         gates = tuple([op.gate for op in circuit])
@@ -84,17 +85,17 @@ class QFactor_jax_batched_jit(Instantiater):
         for gate in gates:
             size_of_untry = 2**gate.num_qudits
             for start_index in range(amount_of_starts):
-                untrys[start_index].append( unitary_group.rvs(size_of_untry))
+                untrys[start_index].append(unitary_group.rvs(size_of_untry))
 
         untrys = jnp.array(untrys)
-        n = 20
+        n = 40
         c1s = jnp.array([1] * amount_of_starts)
         it = 0
         it2 = 0
         best_start = 0
 
         while (True):
-            c1s, untrys, plato_calc, reached_desired_distance = _sweep_vmaped(target, locations, gates, untrys, n, c1s, self.dist_tol, self.diff_tol_a, self.diff_tol_r)
+            c1s, untrys, plato_calc, reached_desired_distance = _sweep_jited_vmaped(target, locations, gates, untrys, n, c1s, self.dist_tol, self.diff_tol_a, self.diff_tol_r)
             c1s = c1s.block_until_ready()
             
             it += n
@@ -198,13 +199,7 @@ def _initilize_circuit_tensor(
 
     return target_untry_builder
 
-
-_initilize_circuit_tensor_jit = jax.jit(
-    _initilize_circuit_tensor, static_argnums=(0, 1, 2),
-)
-
-
-def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builder):
+def _single_sweep(locations, gates,  amount_of_gates, target_untry_builder, untrys):
     # from right to left
     for k in reversed(range(amount_of_gates)):
         gate = gates[k]
@@ -251,10 +246,6 @@ def _single_sweep(locations, gates, untrys, amount_of_gates, target_untry_builde
 
     return target_untry_builder, untrys
 
-
-_single_sweep_jit = jax.jit(_single_sweep, static_argnums=(0, 1, 3))
-
-
 def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, dist_tol, diff_tol_a, diff_tol_r):
     amount_of_gates = len(gates)
     untrys_as_matrixs = []
@@ -266,36 +257,33 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, 
         )
 
     untrys = untrys_as_matrixs
-    target_untry_builder = _initilize_circuit_tensor_jit(
+    target_untry_builder = _initilize_circuit_tensor(
         target.num_qudits, target.radixes, locations, target.numpy, untrys,
     )
     amount_of_qudits = target.num_qudits
 
-    for _ in range(n):
-        target_untry_builder, untrys = _single_sweep_jit(
-            locations, gates, untrys, amount_of_gates, target_untry_builder,
-        )
-
-    c1, plato_calc, reached_required_tol = _calc_stats_jited(c1, dist_tol, diff_tol_a, diff_tol_r, target_untry_builder.tensor, amount_of_qudits, target_untry_builder.dim)
-
-    return c1, jnp.array([untry.numpy for untry in untrys]), plato_calc , reached_required_tol
+    
+    sweep_loop_body = lambda i,x: _single_sweep(locations, gates,  amount_of_gates, target_untry_builder=x[0], untrys=x[1])
+    target_untry_builder, untrys = jax.lax.fori_loop(0,n, sweep_loop_body, (target_untry_builder, untrys))
 
 
-_sweep_vmaped = jax.vmap(
-        _sweep_circuit, in_axes=(None, None, None, 0, None, 0, None, None, None),
-        )
-
-def _calc_stats(c1, dist_tol, diff_tol_a, diff_tol_r, tensor, amount_of_qudits, dim):
     c2 = c1
-    untry_res = tensor.reshape((dim, dim))
-    c1 = jnp.abs(
-        jnp.trace(untry_res),
-    )
+    dim = target_untry_builder.dim
+    untry_res = target_untry_builder.tensor.reshape((dim, dim))
+    c1 = jnp.abs(jnp.trace(untry_res))
     c1 = 1 - (c1 / (2 ** amount_of_qudits))
 
     plato_calc = jnp.abs(c1 - c2) <= diff_tol_a + diff_tol_r * jnp.abs(c1)
     reached_required_tol = c1 < dist_tol
-    
-    return c1, plato_calc, reached_required_tol
 
-_calc_stats_jited = jax.jit(_calc_stats, static_argnums=(5, 6))
+
+    return c1, jnp.array([untry.numpy for untry in untrys]), plato_calc , reached_required_tol
+
+
+_sweep_circuit_jited = jax.jit(_sweep_circuit, static_argnums=(1,2,4,6,7,8))
+
+_sweep_jited_vmaped = jax.vmap(
+        _sweep_circuit_jited, in_axes=(None, None, None, 0, None, 0, None, None, None),
+        )
+
+

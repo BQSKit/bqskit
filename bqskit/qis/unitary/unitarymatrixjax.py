@@ -26,8 +26,8 @@ class UnitaryMatrixJax(UnitaryMatrix):
         self._my_class = UnitaryMatrixJax
         self._mat_lib = jnp
         # Copy constructor
-        if isinstance(input, UnitaryMatrixJax):
-            self._utry = input.numpy
+        if isinstance(input, (UnitaryMatrixJax, UnitaryMatrix)):
+            self._utry = jnp.array(input.numpy)
             self._radixes = input.radixes
             self._dim = input.dim
             return
