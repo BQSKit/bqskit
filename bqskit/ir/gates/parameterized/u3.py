@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+import jax.numpy as jnp
+import jax.scipy.linalg as jla
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitarymatrixjax import UnitaryMatrixJax
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -31,6 +34,22 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
     _num_params = 3
     _qasm_name = 'u3'
 
+    def optimize(self, env_matrix, get_untry: bool = True) -> list[float] | UnitaryMatrixJax:
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
+
+        U, _, Vh = jla.svd(env_matrix)        
+        utry = Vh.conj().T @ U.conj().T
+
+        if get_untry:
+            return UnitaryMatrixJax(utry, radixes=self.radixes)
+        else:
+            return U3Gate.get_params(utry)
+
+        
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
@@ -88,6 +107,22 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
                 ],
             ], dtype=np.complex128,
         )
+
+
+    @staticmethod
+    def get_params(utry ) -> tuple[float, float, float]:
+        
+        mag = np.linalg.det(utry) ** (-1 / 2)
+        special_utry = mag * utry
+        a = np.angle(special_utry[1][1])
+        b = np.angle(special_utry[1][0])
+        c = np.abs(special_utry[1][0])
+        d = np.abs(special_utry[0][0])
+        theta = 2 * float(np.arctan2(c, d))
+        phi = (a + b)
+        lamb = (a - b)
+        return theta, phi, lamb
+
 
     @staticmethod
     def calc_params(utry: UnitaryMatrix) -> tuple[float, float, float]:
