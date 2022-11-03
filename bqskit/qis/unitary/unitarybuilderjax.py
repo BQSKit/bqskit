@@ -46,13 +46,15 @@ class UnitaryBuilderJax(UnitaryBuilder):
         Examples:
             >>> builder = UnitaryBuilder(4)  # Creates a 4-qubit builder.
         """
-        super().__init__(num_qudits, radixes, initial_value)
+        super().__init__(num_qudits, radixes, initial_value, jnp)
 
-        self._mat_lib = jnp
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrixJax:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
-        utry = self.tensor.reshape((self.dim, self.dim))
+        if isinstance(self.tensor, jnp.ndarray):
+            utry = self.tensor.reshape((self.dim, self.dim))
+        else:
+            utry = self.tensor
         return UnitaryMatrixJax(utry, self.radixes)
 
     def _tree_flatten(self):

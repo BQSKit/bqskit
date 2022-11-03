@@ -15,6 +15,7 @@ class UnitaryMatrixJax(UnitaryMatrix):
         self,
         input: UnitaryLike,
         radixes: Sequence[int] = [],
+        _from_tree: bool = False,
         ) -> None:
 
 
@@ -34,8 +35,8 @@ class UnitaryMatrixJax(UnitaryMatrix):
 
         self._radixes = tuple(radixes)
 
-        if type(input) is not object:
-                self._utry = jnp.array(input, dtype=jnp.complex128)
+        if type(input) is not object and type(input) is not jax.core.ShapedArray and not _from_tree:
+                    self._utry = jnp.array(input, dtype=jnp.complex128).reshape(self.radixes * 2) # make sure its a square matrix
         else:
             self._utry = input
 
@@ -123,6 +124,7 @@ class UnitaryMatrixJax(UnitaryMatrix):
         children = (self._utry,)  # arrays / dynamic values
         aux_data = {
             'radixes': self._radixes,
+            '_from_tree': True,
         }  # static values
         return (children, aux_data)
 
