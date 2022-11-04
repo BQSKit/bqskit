@@ -44,7 +44,6 @@ from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
 from bqskit.qis.graph import CouplingGraph
-from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
@@ -2578,29 +2577,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # Calculate gradient
         left = UnitaryBuilder(self.num_qudits, self.radixes)
         right = UnitaryBuilder(self.num_qudits, self.radixes)
-        full_gards = []
+        full_grads = []
 
         for M, loc in zip(matrices, locations):
             right.apply_right(M, loc)
 
         for M, dM, loc in zip(matrices, grads, locations):
-            perm = PermutationMatrix.from_qubit_location(self.num_qudits, loc)
-            permT = perm.T
-            iden = np.identity(2 ** (self.num_qudits - len(loc)))
-
             right.apply_left(M, loc, inverse=True)
             right_utry = right.get_unitary()
-            left_utry = left.get_unitary()
             for grad in dM:
-                # TODO: use tensor contractions here instead of mm
-                # Should work fine with non unitary gradients
-                # TODO: Fix for non qubits
-                full_grad = np.kron(grad, iden)
-                full_grad = permT @ full_grad @ perm
-                full_gards.append(right_utry @ full_grad @ left_utry)
+                full_grads.append(right_utry @ left.eval_apply_right(grad, loc))
             left.apply_right(M, loc)
 
-        return left.get_unitary(), np.array(full_gards)
+        return left.get_unitary(), np.array(full_grads)
 
     def instantiate(
         self,

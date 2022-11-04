@@ -7,6 +7,7 @@ applied to a circuit.
 from __future__ import annotations
 
 from typing import Callable
+from typing import ClassVar
 from typing import TYPE_CHECKING
 
 from bqskit.ir.location import CircuitLocation
@@ -51,8 +52,12 @@ class Gate(Unitary):
             '], q['.join([str(q) for q in location]),
         ).replace('()', '')
 
-    with_frozen_params: Callable[[Gate, dict[int, float]], FrozenParameterGate]
-    with_all_frozen_params: Callable[[Gate, list[float]], FrozenParameterGate]
+    with_frozen_params: ClassVar[
+        Callable[[Gate, dict[int, float]], FrozenParameterGate]
+    ]
+    with_all_frozen_params: ClassVar[
+        Callable[[Gate, list[float]], FrozenParameterGate]
+    ]
 
     def __repr__(self) -> str:
         return self.name

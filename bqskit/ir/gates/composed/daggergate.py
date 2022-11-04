@@ -10,6 +10,7 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.docs import building_docs
 
 
 class DaggerGate(
@@ -45,7 +46,7 @@ class DaggerGate(
         self._radixes = gate.radixes
 
         # If input is a constant gate, we can cache the unitary.
-        if self.num_params == 0:
+        if self.num_params == 0 and not building_docs():
             self.utry = gate.get_unitary().dagger
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
