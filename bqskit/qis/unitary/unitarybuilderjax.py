@@ -48,7 +48,6 @@ class UnitaryBuilderJax(UnitaryBuilder):
         """
         super().__init__(num_qudits, radixes, initial_value, jnp)
 
-
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrixJax:
         """Build the unitary, see :func:`Unitary.get_unitary` for more."""
         if isinstance(self.tensor, jnp.ndarray):

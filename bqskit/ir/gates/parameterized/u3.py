@@ -1,10 +1,10 @@
 """This module implements the U3Gate."""
 from __future__ import annotations
 
-import numpy as np
-import numpy.typing as npt
 import jax.numpy as jnp
 import jax.scipy.linalg as jla
+import numpy as np
+import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -41,7 +41,7 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
         See :class:`LocallyOptimizableUnitary` for more info.
         """
 
-        U, _, Vh = jla.svd(env_matrix)        
+        U, _, Vh = jla.svd(env_matrix)
         utry = Vh.conj().T @ U.conj().T
 
         if get_untry:
@@ -49,7 +49,6 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
         else:
             return U3Gate.get_params(utry)
 
-        
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
@@ -108,10 +107,9 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
             ], dtype=np.complex128,
         )
 
-
     @staticmethod
-    def get_params(utry ) -> tuple[float, float, float]:
-        
+    def get_params(utry) -> tuple[float, float, float]:
+
         mag = np.linalg.det(utry) ** (-1 / 2)
         special_utry = mag * utry
         a = np.angle(special_utry[1][1])
@@ -122,7 +120,6 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
         phi = (a + b)
         lamb = (a - b)
         return theta, phi, lamb
-
 
     @staticmethod
     def calc_params(utry: UnitaryMatrix) -> tuple[float, float, float]:

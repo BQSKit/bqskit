@@ -83,7 +83,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if building_docs():
             self._utry: npt.NDArray[np.complex128] = np.array([])
             return
-        self._mat_lib = np        
+        self._mat_lib = np
         self._my_class = UnitaryMatrix
         # Copy constructor
         if isinstance(input, UnitaryMatrix):
@@ -128,7 +128,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             raise ValueError('Qudit radixes mismatch with dimension.')
 
         if type(input) is not object:
-                self._utry = np.array(input, dtype=np.complex128)
+            self._utry = np.array(input, dtype=np.complex128)
         else:
             self._utry = input
 
@@ -324,7 +324,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             raise TypeError('Expected square matrix.')
 
         V, _, Wh = sp.linalg.svd(M)
-        
+
         return UnitaryMatrix(V @ Wh, radixes, False)
 
     @staticmethod
@@ -489,7 +489,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             or (
                 ufunc.__name__ == 'multiply'
                 and all(
-                    self._mat_lib.isscalar(input) or isinstance(input, self._my_class)
+                    self._mat_lib.isscalar(input) or isinstance(
+                        input, self._my_class,
+                    )
                     for input in inputs
                 )
                 and all(
@@ -515,5 +517,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __hash__(self) -> int:
         """Return the hash of the unitary."""
         return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
+
 
 UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]

@@ -1,12 +1,15 @@
-from typing import Sequence
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix, UnitaryLike
-from bqskit.utils.docs import building_docs
+from __future__ import annotations
 
-from bqskit.utils.typing import is_square_matrix
+from typing import Sequence
 
 import jax
 import jax.numpy as jnp
 import jax.scipy.linalg as jla
+
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.docs import building_docs
+from bqskit.utils.typing import is_square_matrix
 
 
 class UnitaryMatrixJax(UnitaryMatrix):
@@ -16,14 +19,13 @@ class UnitaryMatrixJax(UnitaryMatrix):
         input: UnitaryLike,
         radixes: Sequence[int] = [],
         _from_tree: bool = False,
-        ) -> None:
-
+    ) -> None:
 
         # Stop any actual logic when building documentation
         if building_docs():
             self._utry = jnp.array([])
             return
-            
+
         self._my_class = UnitaryMatrixJax
         self._mat_lib = jnp
         # Copy constructor
@@ -36,7 +38,9 @@ class UnitaryMatrixJax(UnitaryMatrix):
         self._radixes = tuple(radixes)
 
         if type(input) is not object and type(input) is not jax.core.ShapedArray and not _from_tree:
-                    self._utry = jnp.array(input, dtype=jnp.complex128).reshape(self.radixes * 2) # make sure its a square matrix
+            self._utry = jnp.array(input, dtype=jnp.complex128).reshape(
+                self.radixes * 2,
+            )  # make sure its a square matrix
         else:
             self._utry = input
 
@@ -60,7 +64,6 @@ class UnitaryMatrixJax(UnitaryMatrix):
         if dim <= 0:
             raise ValueError('Invalid dimension for identity matrix.')
         return UnitaryMatrixJax(jnp.identity(dim), radixes)
-
 
     @staticmethod
     def closest_to(
@@ -89,9 +92,8 @@ class UnitaryMatrixJax(UnitaryMatrix):
             raise TypeError('Expected square matrix.')
 
         V, _, Wh = jla.svd(M)
-        
-        return UnitaryMatrixJax(V @ Wh, radixes)
 
+        return UnitaryMatrixJax(V @ Wh, radixes)
 
     @staticmethod
     def random(num_qudits: int, radixes: Sequence[int] = []):
@@ -102,7 +104,6 @@ class UnitaryMatrixJax(UnitaryMatrix):
         """Load a unitary from a file."""
         return UnitaryMatrixJax(jnp.loadtxt(filename, dtype=jnp.complex128))
 
-
     @property
     def T(self):
         """The transpose of the unitary."""
@@ -110,15 +111,15 @@ class UnitaryMatrixJax(UnitaryMatrix):
 
     def __array__(
         self,
-        dtype = jnp.complex128,
+        dtype=jnp.complex128,
     ):
         """Implements NumPy API for the UnitaryMatrix class."""
         if dtype != jnp.complex128:
-            raise ValueError('UnitaryMatrix only supports JAX Complex128 dtype.')
+            raise ValueError(
+                'UnitaryMatrix only supports JAX Complex128 dtype.',
+            )
 
         return self._utry
-
-
 
     def _tree_flatten(self):
         children = (self._utry,)  # arrays / dynamic values

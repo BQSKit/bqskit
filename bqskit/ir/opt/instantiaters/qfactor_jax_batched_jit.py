@@ -1,24 +1,22 @@
 from __future__ import annotations
 
 import logging
-import time
 from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import numpy.typing as npt
+from scipy.stats import unitary_group
+
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.unitary_acc import VariableUnitaryGateAcc
-
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarybuilderjax import UnitaryBuilderJax
-from bqskit.qis.unitary.unitarymatrixjax import UnitaryMatrixJax
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
-from scipy.stats import unitary_group
+from bqskit.qis.unitary.unitarymatrixjax import UnitaryMatrixJax
 
 
 if TYPE_CHECKING:
@@ -81,17 +79,20 @@ class QFactor_jax_batched_jit(Instantiater):
         amount_of_starts = len(starts)
         locations = tuple([op.location for op in circuit])
         gates = tuple([op.gate for op in circuit])
-        biggest_gate_size = max((gate.num_qudits for gate in gates))
-        
-        
+        biggest_gate_size = max(gate.num_qudits for gate in gates)
+
         untrys = []
 
         for gate in gates:
             size_of_untry = 2**gate.num_qudits
-            untrys.append([_apply_padding_and_flatten(unitary_group.rvs(size_of_untry), gate, biggest_gate_size) for _ in range(amount_of_starts)])
+            untrys.append([
+                _apply_padding_and_flatten(
+                    unitary_group.rvs(
+                    size_of_untry,
+                    ), gate, biggest_gate_size,
+                ) for _ in range(amount_of_starts)
+            ])
 
-                
-                
         untrys = jnp.array(np.stack(untrys, axis=1))
         n = 40
         c1s = jnp.array([1] * amount_of_starts)
@@ -100,15 +101,17 @@ class QFactor_jax_batched_jit(Instantiater):
         best_start = 0
 
         while (True):
-            c1s, untrys, plato_calc, reached_desired_distance = _sweep_jited_vmaped(target, locations, gates, untrys, n, c1s, self.dist_tol, self.diff_tol_a, self.diff_tol_r)
-            
+            c1s, untrys, plato_calc, reached_desired_distance = _sweep_jited_vmaped(
+                target, locations, gates, untrys, n, c1s, self.dist_tol, self.diff_tol_a, self.diff_tol_r,
+            )
+
             it += n
-            it2 +=1
+            it2 += 1
 
             if it2 % 4 == 0:
                 _logger.info(f'iteration: {it}, costs: {c1s}')
-            
-            # Termination conditions            
+
+            # Termination conditions
             if any(reached_desired_distance):
 
                 best_start = reached_desired_distance.tolist().index(True)
@@ -133,7 +136,11 @@ class QFactor_jax_batched_jit(Instantiater):
 
         params = []
         for untry, gate in zip(untrys[best_start], gates):
-            params.extend(gate.get_params(_remove_padding_and_create_matrix(untry, gate)))
+            params.extend(
+                gate.get_params(
+                _remove_padding_and_create_matrix(untry, gate),
+                ),
+            )
 
         return np.array(params)
 
@@ -203,7 +210,8 @@ def _initilize_circuit_tensor(
 
     return target_untry_builder
 
-def _single_sweep(locations, gates,  amount_of_gates, target_untry_builder, untrys):
+
+def _single_sweep(locations, gates, amount_of_gates, target_untry_builder, untrys):
     # from right to left
     for k in reversed(range(amount_of_gates)):
         gate = gates[k]
@@ -212,7 +220,7 @@ def _single_sweep(locations, gates,  amount_of_gates, target_untry_builder, untr
 
         # Remove current gate from right of circuit tensor
         target_untry_builder.apply_right(
-            untry, location, inverse=True, check_arguments=False
+            untry, location, inverse=True, check_arguments=False,
         )
 
         # Update current gate
@@ -250,8 +258,8 @@ def _single_sweep(locations, gates,  amount_of_gates, target_untry_builder, untr
 
     return target_untry_builder, untrys
 
-_single_sweep_jit = jax.jit(_single_sweep, static_argnums=(0, 1, 2))
 
+_single_sweep_jit = jax.jit(_single_sweep, static_argnums=(0, 1, 2))
 
 
 def _apply_padding_and_flatten(untry, gate, max_gate_size):
@@ -262,10 +270,12 @@ def _apply_padding_and_flatten(untry, gate, max_gate_size):
     else:
         return jnp.array(untry.flatten())
 
+
 def _remove_padding_and_create_matrix(untry, gate):
     len_of_matrix = 2**gate.num_qudits
     size_to_keep = len_of_matrix**2
     return untry[:size_to_keep].reshape((len_of_matrix, len_of_matrix))
+
 
 def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, dist_tol, diff_tol_a, diff_tol_r):
     amount_of_gates = len(gates)
@@ -273,7 +283,9 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, 
     for gate_index, gate in enumerate(gates):
         untrys_as_matrixs.append(
             UnitaryMatrixJax(
-                _remove_padding_and_create_matrix(untrys[gate_index], gate), gate.radixes
+                _remove_padding_and_create_matrix(
+                    untrys[gate_index], gate,
+                ), gate.radixes,
             ),
         )
 
@@ -283,10 +295,12 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, 
     )
     amount_of_qudits = target.num_qudits
 
-    
-    sweep_loop_body = lambda i,x: _single_sweep_jit(locations, gates,  amount_of_gates, target_untry_builder=x[0], untrys=x[1])
-    target_untry_builder, untrys = jax.lax.fori_loop(0, n, sweep_loop_body, (target_untry_builder, untrys))
-
+    sweep_loop_body = lambda i, x: _single_sweep_jit(
+        locations, gates, amount_of_gates, target_untry_builder=x[0], untrys=x[1],
+    )
+    target_untry_builder, untrys = jax.lax.fori_loop(
+        0, n, sweep_loop_body, (target_untry_builder, untrys),
+    )
 
     c2 = c1
     dim = target_untry_builder.dim
@@ -297,15 +311,23 @@ def _sweep_circuit(target: UnitaryMatrix, locations, gates, untrys, n: int, c1, 
     plato_calc = jnp.abs(c1 - c2) <= diff_tol_a + diff_tol_r * jnp.abs(c1)
     reached_required_tol = c1 < dist_tol
 
-    biggest_gate_size = max((gate.num_qudits for gate in gates))
-    final_untrys_padded = jnp.array([_apply_padding_and_flatten(untry.numpy.flatten(), gate, biggest_gate_size) for untry, gate in zip(untrys, gates)])
+    biggest_gate_size = max(gate.num_qudits for gate in gates)
+    final_untrys_padded = jnp.array([
+        _apply_padding_and_flatten(
+            untry.numpy.flatten(
+            ), gate, biggest_gate_size,
+        ) for untry, gate in zip(untrys, gates)
+    ])
 
-    return c1, final_untrys_padded, plato_calc , reached_required_tol
+    return c1, final_untrys_padded, plato_calc, reached_required_tol
 
-_sweep_circuit_jited = jax.jit(_sweep_circuit, static_argnums=(1,2,4,6,7,8))
+
+_sweep_circuit_jited = jax.jit(
+    _sweep_circuit, static_argnums=(1, 2, 4, 6, 7, 8),
+)
 
 _sweep_jited_vmaped = jax.vmap(
-        _sweep_circuit_jited, in_axes=(None, None, None, 0, None, 0, None, None, None),
-        )
-
-
+    _sweep_circuit_jited, in_axes=(
+        None, None, None, 0, None, 0, None, None, None,
+    ),
+)

@@ -59,7 +59,7 @@ class VariableUnitaryGate(
             however, params are unconstrained so we return the closest
             UnitaryMatrix to the given matrix.
         """
-        
+
         self.check_parameters(params)
         mid = len(params) // 2
         real = np.array(params[:mid], dtype=np.complex128)
