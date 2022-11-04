@@ -101,7 +101,6 @@ class QFactor_jax_batched_jit(Instantiater):
 
         while (True):
             c1s, untrys, plato_calc, reached_desired_distance = _sweep_jited_vmaped(target, locations, gates, untrys, n, c1s, self.dist_tol, self.diff_tol_a, self.diff_tol_r)
-            c1s = c1s.block_until_ready()
             
             it += n
             it2 +=1

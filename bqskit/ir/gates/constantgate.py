@@ -56,3 +56,7 @@ class ConstantGate(
         See :class:`LocallyOptimizableUnitary` for more info.
         """
         return []
+
+    @staticmethod
+    def get_params(untry):
+        return []
