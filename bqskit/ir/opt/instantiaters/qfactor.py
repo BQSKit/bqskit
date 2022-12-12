@@ -1,7 +1,7 @@
 """This module implements the QFactor class."""
 from __future__ import annotations
-import copy
 
+import copy
 import logging
 from typing import Any
 from typing import TYPE_CHECKING
@@ -28,8 +28,8 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
     def __new__(cls, **kwargs: dict[str, Any]) -> Any:
         if 'cost_fn_gen' in kwargs:
             del kwargs['cost_fn_gen']
-        
-        new_obj =  super().__new__(cls, **kwargs)
+
+        new_obj = super().__new__(cls, **kwargs)
 
         new_obj.__orig_kwargs = copy.deepcopy(kwargs)
 
