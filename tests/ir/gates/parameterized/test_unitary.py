@@ -13,7 +13,6 @@ from bqskit.utils.test.strategies import unitaries
 
 
 class TestInit:
-
     @given(num_qudits_and_radixes(3, (2, 3)))
     def test_valid(self, pair: tuple[int, tuple[int, ...]]) -> None:
         num_qudits, radixes = pair
@@ -29,7 +28,6 @@ class TestInit:
 
 
 class TestGetUnitary:
-
     @given(unitaries())
     def test_exact(self, utry: UnitaryMatrix) -> None:
         params = list(np.reshape(np.real(utry.numpy), (-1,))) + \

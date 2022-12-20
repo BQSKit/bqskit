@@ -11,7 +11,6 @@ from bqskit.utils.test.strategies import circuits
 
 
 class TestPickle:
-
     @given(circuits([2, 2], max_gates=3), circuits([2, 2], max_gates=3))
     def test_pickle_individual(self, c1: Circuit, c2: Circuit) -> None:
         gate1 = CircuitGate(c1)

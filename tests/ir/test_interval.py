@@ -26,7 +26,6 @@ def test_strategy(interval: CycleInterval) -> None:
 
 
 class TestCycleIntervalNew:
-
     @valid_type_test(CycleInterval)
     def test_valid_type(self) -> None:
         pass
@@ -100,7 +99,6 @@ def test_indices(interval: CycleInterval) -> None:
 
 
 class TestCycleIntervalOverlaps:
-
     @valid_type_test(CycleInterval(0, 0).overlaps)
     def test_valid_type(self) -> None:
         pass
@@ -122,7 +120,6 @@ class TestCycleIntervalOverlaps:
 
 
 class TestCycleIntervalIntersection:
-
     @valid_type_test(CycleInterval(0, 0).intersection)
     def test_valid_type(self) -> None:
         pass
@@ -159,7 +156,6 @@ class TestCycleIntervalIntersection:
 
 
 class TestCycleIntervalUnion:
-
     @valid_type_test(CycleInterval(0, 0).union)
     def test_valid_type(self) -> None:
         pass
@@ -196,7 +192,6 @@ class TestCycleIntervalUnion:
 
 
 class TestCycleIntervalLt:
-
     @given(cycle_intervals(), everything_except(tuple))
     # @example(CycleInterval(0, 0), tuple())
     def test_invalid(self, interval: CycleInterval, other: Any) -> None:
@@ -222,7 +217,6 @@ class TestCycleIntervalLt:
 
 
 class TestCycleIntervalIsBounds:
-
     @given(cycle_intervals())
     def test_true_1(self, interval: CycleInterval) -> None:
         assert CycleInterval.is_interval(interval)

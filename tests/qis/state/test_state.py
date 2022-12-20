@@ -13,7 +13,6 @@ from bqskit.utils.test.strategies import state_vectors
 
 
 class TestInit:
-
     @given(state_vectors())
     def test_init_copy(self, vec: StateVector) -> None:
         new_vec = StateVector(vec)
@@ -51,7 +50,6 @@ def test_random(pair: tuple[int, tuple[int, ...]]) -> None:
 
 
 class TestClosedOperations:
-
     @given(state_vectors())
     def test_conjugate(self, v: StateVector) -> None:
         out = np.conjugate(v)

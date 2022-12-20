@@ -8,7 +8,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TestGreedyPartitioner:
-
     def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
         utry = r6_qudit_circuit.get_unitary()
         GreedyPartitioner(3).run(r6_qudit_circuit, {})

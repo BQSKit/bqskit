@@ -13,7 +13,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TestConstructor:
-
     @given(integers(max_value=0))
     def test_invalid_value_size(self, size: int) -> None:
         with pytest.raises(ValueError):
@@ -51,7 +50,6 @@ class TestConstructor:
 
 
 class TestApplyLeft:
-
     def test_valid_1(self) -> None:
         u1 = UnitaryMatrix.random(3)
         ub = UnitaryBuilder(3)
@@ -83,7 +81,6 @@ class TestApplyLeft:
 
 
 class TestApplyRight:
-
     def test_valid_1(self) -> None:
         u1 = UnitaryMatrix.random(3)
         ub = UnitaryBuilder(3)
@@ -115,7 +112,6 @@ class TestApplyRight:
 
 
 class TestCalcEnvMatrix:
-
     def test_valid_1(self) -> None:
         u1 = UnitaryMatrix.random(3)
         ub = UnitaryBuilder(3)

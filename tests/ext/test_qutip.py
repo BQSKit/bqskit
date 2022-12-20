@@ -15,7 +15,6 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestTranslate:
-
     @pytest.fixture
     def bqskit_circuit(self) -> Circuit:
         circuit = Circuit(3)

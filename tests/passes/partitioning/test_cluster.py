@@ -6,7 +6,6 @@ from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 
 
 class TestClusteringPartitioner:
-
     def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
         utry = r6_qudit_circuit.get_unitary()
         ClusteringPartitioner(3, 2).run(r6_qudit_circuit, {})

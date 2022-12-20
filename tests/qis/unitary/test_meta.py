@@ -12,7 +12,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TestIsLocallyOptimizable:
-
     def test_normal_inheritance(self) -> None:
         class test_class(LocallyOptimizableUnitary):
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
@@ -60,7 +59,6 @@ class TestIsLocallyOptimizable:
 
 
 class TestIsDifferentiable:
-
     def test_normal_inheritance(self) -> None:
         class test_class(DifferentiableUnitary):
             def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:

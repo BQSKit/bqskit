@@ -18,7 +18,6 @@ from bqskit.utils.test.types import valid_type_test
 
 
 class TestNew:
-
     @invalid_type_test(CircuitPoint)
     def test_invalid_type(self) -> None:
         pass
@@ -56,7 +55,6 @@ class TestNew:
 
 
 class TestIsPoint:
-
     @given(circuit_points())
     def test_from_point(self, point: CircuitPoint) -> None:
         assert CircuitPoint.is_point(point)
@@ -71,7 +69,6 @@ class TestIsPoint:
 
 
 class TestConversionToTuple:
-
     @given(circuit_points())
     def test_from_point(self, point: CircuitPoint) -> None:
         assert isinstance(point, tuple)

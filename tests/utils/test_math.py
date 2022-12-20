@@ -42,7 +42,6 @@ def dexpm_exact(
 
 
 class TestDexpmv:
-
     @pytest.mark.parametrize(
         'alpha', [np.random.random(16) for i in range(100)],
     )
@@ -104,7 +103,6 @@ class TestDexpmv:
 
 
 class TestSoftmax:
-
     @pytest.mark.parametrize('x', [np.random.random(100) for i in range(100)])
     def test_1(self, x: npt.NDArray[np.float64]) -> None:
         assert np.abs(np.sum(softmax(10 * x)) - 1) < 1e-15
@@ -147,7 +145,6 @@ class TestDotProduct:
 
 
 class TestUnitaryLog:
-
     @pytest.mark.parametrize(
         'reU',
         PauliMatrices(1).paulis
@@ -176,7 +173,6 @@ class TestUnitaryLog:
 
 
 class TestPauliExpansion:
-
     @pytest.mark.parametrize(
         'reH',
         PauliMatrices(1).paulis

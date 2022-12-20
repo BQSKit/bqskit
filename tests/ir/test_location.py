@@ -14,7 +14,6 @@ from bqskit.utils.test.types import valid_type_test
 
 
 class TestInit:
-
     @invalid_type_test(CircuitLocation)
     def test_invalid_type(self) -> None:
         pass
@@ -31,7 +30,6 @@ class TestInit:
 
 
 class TestUnion:
-
     @given(circuit_locations())
     def test_self(self, loc: CircuitLocation) -> None:
         assert set(loc.union(loc)) == set(loc)
@@ -46,7 +44,6 @@ class TestUnion:
 
 
 class TestIntersection:
-
     @given(circuit_locations())
     def test_self(self, loc: CircuitLocation) -> None:
         assert loc.intersection(loc) == loc
