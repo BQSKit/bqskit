@@ -8,7 +8,6 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestQPredict:
-
     def test_small_qubit(self) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)

@@ -12,13 +12,12 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TestIsLocallyOptimizable:
-
     def test_normal_inheritance(self) -> None:
         class test_class(LocallyOptimizableUnitary):
-            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
+            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:  # type: ignore  # noqa
                 pass
 
-            def optimize(
+            def optimize(  # type: ignore  # noqa
                     self, env_matrix: npt.NDArray[np.complex128],
             ) -> list[float]:
                 pass
@@ -28,10 +27,10 @@ class TestIsLocallyOptimizable:
 
     def test_conditional_inheritance_true(self) -> None:
         class test_class(LocallyOptimizableUnitary):
-            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
+            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:  # type: ignore  # noqa
                 pass
 
-            def optimize(
+            def optimize(  # type: ignore  # noqa
                     self, env_matrix: npt.NDArray[np.complex128],
             ) -> list[float]:
                 pass
@@ -44,10 +43,10 @@ class TestIsLocallyOptimizable:
 
     def test_conditional_inheritance_false(self) -> None:
         class test_class(LocallyOptimizableUnitary):
-            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
+            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:  # type: ignore  # noqa
                 pass
 
-            def optimize(
+            def optimize(  # type: ignore  # noqa
                     self, env_matrix: npt.NDArray[np.complex128],
             ) -> list[float]:
                 pass
@@ -60,13 +59,12 @@ class TestIsLocallyOptimizable:
 
 
 class TestIsDifferentiable:
-
     def test_normal_inheritance(self) -> None:
         class test_class(DifferentiableUnitary):
-            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
+            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:  # type: ignore  # noqa
                 pass
 
-            def get_grad(
+            def get_grad(  # type: ignore  # noqa
                 self, params: RealVector = [],
             ) -> npt.NDArray[np.complex128]:
                 pass
@@ -76,10 +74,10 @@ class TestIsDifferentiable:
 
     def test_conditional_inheritance_true(self) -> None:
         class test_class(DifferentiableUnitary):
-            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
+            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:  # type: ignore  # noqa
                 pass
 
-            def get_grad(
+            def get_grad(  # type: ignore  # noqa
                 self, params: RealVector = [],
             ) -> npt.NDArray[np.complex128]:
                 pass
@@ -92,10 +90,10 @@ class TestIsDifferentiable:
 
     def test_conditional_inheritance_false(self) -> None:
         class test_class(DifferentiableUnitary):
-            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:
+            def get_unitary(self, p: RealVector = []) -> UnitaryMatrix:  # type: ignore  # noqa
                 pass
 
-            def get_grad(
+            def get_grad(  # type: ignore  # noqa
                 self, params: RealVector = [],
             ) -> npt.NDArray[np.complex128]:
                 pass

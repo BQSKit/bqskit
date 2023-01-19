@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 
 class MultiStartGenerator(abc.ABC):
-
     @abc.abstractmethod
     def gen_starting_points(
         self,

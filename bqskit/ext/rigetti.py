@@ -43,7 +43,7 @@ _aspen_11_coupling_graph = CouplingGraph([
     # Ring 4-5
     (25, 38), (26, 37),
 ])
-"""Retrieved August 31, 2022: https://qcs.rigetti.com/qpus"""
+"""Retrieved August 31, 2022: https://qcs.rigetti.com/qpus."""
 
 _octo_rings = [
     [
@@ -77,7 +77,7 @@ for l in _vertical_connections:
     _links.extend(l)
 
 _aspen_m2_coupling_graph = CouplingGraph(_links)
-"""Retrieved August 31, 2022: https://qcs.rigetti.com/qpus"""
+"""Retrieved August 31, 2022: https://qcs.rigetti.com/qpus."""
 
 Aspen11Model = MachineModel(40, _aspen_11_coupling_graph, rigetti_gate_set)
 """A BQSKit MachineModel for Rigetti's Aspen-11 quantum processor."""

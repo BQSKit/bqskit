@@ -255,7 +255,6 @@ class TestGateDecl:
 
 
 class TestIncludeStatements:
-
     def test_include_no_exists(self) -> None:
         input = """
             OPENQASM 2.0;

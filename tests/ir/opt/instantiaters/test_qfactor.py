@@ -11,7 +11,6 @@ from bqskit.ir.opt.instantiaters.qfactor import QFactor
 
 
 class TestQFactorEndToEnd:
-
     def test_no_change(self) -> None:
         u1 = unitary_group.rvs(8)
         g1 = VariableUnitaryGate(3)

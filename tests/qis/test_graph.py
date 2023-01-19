@@ -7,7 +7,6 @@ from bqskit.qis.graph import CouplingGraph
 
 
 class TestGraphGetSubgraphsOfSize:
-
     def test_1(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
         l = coupling_graph.get_subgraphs_of_size(2)
@@ -43,7 +42,6 @@ class TestGraphGetSubgraphsOfSize:
 
 
 class TestMachineGetSubgraph:
-
     def test_1(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
         l = coupling_graph.get_subgraph((0, 1, 2))

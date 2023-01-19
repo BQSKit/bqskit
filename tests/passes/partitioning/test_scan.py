@@ -13,7 +13,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TestScanPartitioner:
-
     def test_run(self) -> None:
         """Test run with a linear topology."""
         #     0  1  2  3  4        #########

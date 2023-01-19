@@ -1,6 +1,7 @@
 """This module implements the QFactor class."""
 from __future__ import annotations
 
+import copy
 import logging
 from typing import Any
 from typing import TYPE_CHECKING
@@ -27,7 +28,12 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
     def __new__(cls, **kwargs: dict[str, Any]) -> Any:
         if 'cost_fn_gen' in kwargs:
             del kwargs['cost_fn_gen']
-        return super().__new__(cls, **kwargs)
+
+        new_obj = super().__new__(cls, **kwargs)
+
+        new_obj.__orig_kwargs = copy.deepcopy(kwargs)
+
+        return new_obj
 
     def instantiate(
         self,
@@ -36,7 +42,7 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
         x0: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""
-        return super().instantiate(circuit, target, x0)
+        return QFactorInstantiatorNative.instantiate(self, circuit, target, x0)
 
     @staticmethod
     def is_capable(circuit: Circuit) -> bool:
@@ -78,3 +84,6 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
     def get_method_name() -> str:
         """Return the name of this method."""
         return 'qfactor'
+
+    def __getnewargs_ex__(self) -> tuple[Any, Any]:
+        return (tuple(), self.__orig_kwargs)

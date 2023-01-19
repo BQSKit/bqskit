@@ -10,7 +10,6 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestSubstitute:
-
     def test_small_qubit(self) -> None:
         utry = UnitaryMatrix.identity(4)
         circuit = Circuit(2)

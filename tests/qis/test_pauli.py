@@ -16,7 +16,6 @@ from bqskit.utils.test.types import valid_type_test
 
 
 class TestPauliMatricesConstructor:
-
     def in_array(self, needle: Any, haystack: Any) -> bool:
         for elem in haystack:
             if np.allclose(elem, needle):
@@ -152,7 +151,6 @@ class TestPauliMatricesConstructor:
 
 
 class TestPauliMatricesGetProjectionMatrices:
-
     def in_array(self, needle: Any, haystack: Any) -> bool:
         for elem in haystack:
             if np.allclose(elem, needle):
@@ -500,7 +498,6 @@ class TestPauliMatricesGetProjectionMatrices:
 
 
 class TestPauliMatricesDotProduct:
-
     @pytest.mark.parametrize('invalid_alpha', [[1.1] * i for i in range(4)])
     def test_invalid_value(self, invalid_alpha: RealVector) -> None:
         with pytest.raises(ValueError):
@@ -618,7 +615,6 @@ class TestPauliMatricesDotProduct:
 
 
 class TestPauliMatricesFromString:
-
     def in_array(self, needle: Any, haystack: Any) -> bool:
         for elem in haystack:
             if not needle.shape == elem.shape:

@@ -23,7 +23,6 @@ def test_init(op: Operation) -> None:
 
 
 class TestGetQasm:
-
     def test_cx(self) -> None:
         op = Operation(CXGate(), (0, 1))
         assert op.get_qasm() == 'cx q[0], q[1];\n'

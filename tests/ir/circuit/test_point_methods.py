@@ -16,7 +16,6 @@ from bqskit.utils.typing import is_bool
 
 
 class TestIsPointInRange:
-
     @valid_type_test(Circuit(1).is_point_in_range)
     def test_valid_type(self) -> None:
         pass
@@ -111,7 +110,6 @@ class TestIsPointInRange:
 
 
 class TestIsPointIdle:
-
     @valid_type_test(Circuit(1).is_point_idle)
     def test_valid_type(self) -> None:
         pass
@@ -141,7 +139,6 @@ class TestIsPointIdle:
 
 
 class TestNormalizePoint:
-
     @valid_type_test(Circuit(1).normalize_point)
     def test_valid_type(self) -> None:
         pass
