@@ -11,10 +11,10 @@ from typing import ClassVar
 from typing import TYPE_CHECKING
 
 from bqskit.ir.location import CircuitLocation
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitary import Unitary
 
 if TYPE_CHECKING:
+    from bqskit.qis.unitary.unitary import RealVector
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 
 
