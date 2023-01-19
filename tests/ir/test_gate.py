@@ -11,7 +11,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class TestBasicGate:
-
     def test_get_name(self, gate: Gate) -> None:
         assert isinstance(gate.name, str)
 

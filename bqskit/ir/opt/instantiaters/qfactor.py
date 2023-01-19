@@ -42,7 +42,7 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
         x0: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""
-        return super().instantiate(circuit, target, x0)
+        return QFactorInstantiatorNative.instantiate(self, circuit, target, x0)
 
     @staticmethod
     def is_capable(circuit: Circuit) -> bool:

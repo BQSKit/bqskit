@@ -24,7 +24,6 @@ from bqskit.utils.test.strategies import unitary_likes
 
 
 class TestInit:
-
     @given(unitaries())
     def test_init_copy(self, utry: UnitaryMatrix) -> None:
         new_utry = UnitaryMatrix(utry)
@@ -54,7 +53,6 @@ def test_conj(utry: UnitaryMatrix) -> None:
 
 
 class TestOtimes:
-
     @given(unitaries(2), unitaries(2))
     def test_two(self, u1: UnitaryMatrix, u2: UnitaryMatrix) -> None:
         kron = u1.otimes(u2)
@@ -88,7 +86,6 @@ def test_get_unitary(utry: UnitaryMatrix) -> None:
 
 
 class TestGetDistanceFrom:
-
     @given(unitaries(1, (2,)), unitaries(1, (2,)))
     def test_get_distance_from(
         self, u1: UnitaryMatrix,
@@ -113,7 +110,6 @@ class TestGetDistanceFrom:
 
 
 class TestGetStateVector:
-
     @given(unitaries(1, (2,)), state_likes(1, (2,)))
     def test_simple(self, u: UnitaryMatrix, v: StateLike) -> None:
         o = u.get_statevector(v)
@@ -132,7 +128,6 @@ class TestGetStateVector:
 
 
 class TestIdentity:
-
     @given(radixes())
     def test_identity(self, radixes: tuple[int, ...]) -> None:
         utry = UnitaryMatrix.identity(int(np.prod(radixes)), radixes)
@@ -177,7 +172,6 @@ def test_is_unitary(u: UnitaryLike) -> None:
 
 
 class TestClosedOperations:
-
     @given(num_qudits_and_radixes(3, (2, 3)))
     def test_matmul(self, pair: tuple[int, tuple[int, ...]]) -> None:
         num_qudits, radixes = pair

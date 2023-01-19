@@ -14,7 +14,6 @@ from bqskit.utils.test.strategies import circuits
 
 
 class TestCircuitIterator:
-
     def test_empty(self) -> None:
         circuit = Circuit(1)
         ops = [cast(Operation, op) for op in CircuitIterator(circuit)]

@@ -25,7 +25,6 @@ def test_strategy(region: CircuitRegion) -> None:
 
 
 class TestCircuitRegionInit:
-
     @valid_type_test(CircuitRegion)
     def test_valid_type(self) -> None:
         pass
@@ -187,7 +186,6 @@ def test_empty(region: CircuitRegion) -> None:
 
 
 class TestShiftLeft:
-
     @valid_type_test(CircuitRegion({}).shift_left)
     def test_valid_type(self) -> None:
         pass
@@ -230,7 +228,6 @@ class TestShiftLeft:
 
 
 class TestShiftRight:
-
     @valid_type_test(CircuitRegion({}).shift_right)
     def test_valid_type(self) -> None:
         pass
@@ -273,7 +270,6 @@ class TestShiftRight:
 
 
 class TestOverlaps:
-
     @valid_type_test(CircuitRegion({}).overlaps)
     def test_valid_type(self) -> None:
         pass
@@ -306,7 +302,6 @@ class TestOverlaps:
 
 
 class TestContains:
-
     @given(circuit_regions(), circuit_regions())
     def test_region_by_region(
         self,
@@ -360,7 +355,6 @@ def test_transpose(region: CircuitRegion) -> None:
 
 
 class TestIntersection:
-
     @valid_type_test(CircuitRegion({}).intersection)
     def test_valid_type(self) -> None:
         pass
@@ -384,7 +378,6 @@ class TestIntersection:
 
 
 class TestUnion:
-
     @valid_type_test(CircuitRegion({}).union)
     def test_valid_type(self) -> None:
         pass

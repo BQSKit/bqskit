@@ -2090,8 +2090,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         HalfWire = Tuple[CircuitPoint, str]
         """
-        A HalfWire is a point in the circuit and a direction. This
-        represents a point to start exploring from and a direction to
+        A HalfWire is a point in the circuit and a direction.
+
+        This represents a point to start exploring from and a direction to
         explore in.
         """
 
@@ -2104,14 +2105,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         A Node in the search tree.
 
-        Each node represents a region that may grow further.
-        The data structure tracks all HalfWires in the region and
-        the set of operations inside the region. During node exploration
-        each HalfWire is walked until we find a multi-qudit gate. Multi-
-        qudit gates form branches in the tree on whether on the gate
-        should be included. The node structure additionally stores the
-        set of qudit indices involved in the region currently. Also, we
-        track points that have already been explored to reduce repetition.
+        Each node represents a region that may grow further. The data structure
+        tracks all HalfWires in the region and the set of operations inside the
+        region. During node exploration each HalfWire is walked until we find a
+        multi-qudit gate. Multi- qudit gates form branches in the tree on
+        whether on the gate should be included. The node structure additionally
+        stores the set of qudit indices involved in the region currently. Also,
+        we track points that have already been explored to reduce repetition.
         """
 
         # Initialize the frontier

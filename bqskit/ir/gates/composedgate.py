@@ -24,11 +24,11 @@ class ComposedGate(Gate):
     def is_differentiable(self) -> bool:
         """Check if all sub gates are differentiable."""
         if hasattr(self, 'gate'):
-            return isinstance(self.gate, DifferentiableUnitary)  # type: ignore
+            return isinstance(self.gate, DifferentiableUnitary)
         if hasattr(self, 'gates'):
             return all(
                 isinstance(gate, DifferentiableUnitary)
-                for gate in self.gates  # type: ignore
+                for gate in self.gates
             )
 
         raise AttributeError(
@@ -40,12 +40,12 @@ class ComposedGate(Gate):
         """Check if all sub gates are locally optimizable."""
         if hasattr(self, 'gate'):
             return isinstance(
-                self.gate, LocallyOptimizableUnitary,  # type: ignore
+                self.gate, LocallyOptimizableUnitary,
             )
         if hasattr(self, 'gates'):
             return all(
                 isinstance(gate, LocallyOptimizableUnitary)
-                for gate in self.gates  # type: ignore
+                for gate in self.gates
             )
 
         raise AttributeError(
@@ -55,9 +55,9 @@ class ComposedGate(Gate):
 
     def __hash__(self) -> int:
         if hasattr(self, 'gate'):
-            return hash((self.name, self.gate))  # type: ignore
+            return hash((self.name, self.gate))
         if hasattr(self, 'gates'):
-            return hash((self.name, tuple(self.gates)))  # type: ignore
+            return hash((self.name, tuple(self.gates)))
         raise RuntimeError(
             f"Composed gate '{self.name}' has no attribute 'gate' or 'gates'.",
         )

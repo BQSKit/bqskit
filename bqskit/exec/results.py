@@ -24,4 +24,4 @@ class RunnerResults:
         return np.asarray(np.multiply(shots, self.probs), np.int64)
 
     def __str__(self) -> str:
-        pass
+        return str(self.probs)
