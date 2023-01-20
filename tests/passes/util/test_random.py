@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bqskit.compiler import Compiler
@@ -15,12 +17,12 @@ def test_two_qubit_syn_with_seed_no_dask() -> None:
     in_utry = UnitaryMatrix.random(2)
 
     circ1 = Circuit.from_unitary(in_utry)
-    data = {}
+    data: dict[str, Any] = {}
     SetRandomSeedPass(0).run(circ1, data)
     QSearchSynthesisPass().run(circ1, data)
 
     circ2 = Circuit.from_unitary(in_utry)
-    data = {}
+    data: dict[str, Any] = {}
     SetRandomSeedPass(0).run(circ2, data)
     QSearchSynthesisPass().run(circ2, data)
 
@@ -32,12 +34,12 @@ def test_three_qubit_syn_with_seed_no_dask() -> None:
     in_utry = CCXGate().get_unitary()
 
     circ1 = Circuit.from_unitary(in_utry)
-    data = {}
+    data: dict[str, Any] = {}
     SetRandomSeedPass(0).run(circ1, data)
     QSearchSynthesisPass().run(circ1, data)
 
     circ2 = Circuit.from_unitary(in_utry)
-    data = {}
+    data: dict[str, Any] = {}
     SetRandomSeedPass(0).run(circ2, data)
     QSearchSynthesisPass().run(circ2, data)
 
