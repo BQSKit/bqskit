@@ -10,19 +10,6 @@ and pre-built MachineModels for many QPUs.
 """
 from __future__ import annotations
 
-try:
-    import cirq  # noqa
-    import pytket  # noqa
-    import qiskit  # noqa
-    import qutip  # noqa
-except ImportError as e:
-    raise ImportError(
-        '\n\nUnable to import bqskit.ext package.\n'
-        'Ensure that bqskit was installed with extension support.\n'
-        'To install bqskit with extension support try:\n'
-        '\tpip install bqskit[ext]\n',
-    ) from e
-
 from bqskit.ext.cirq.translate import bqskit_to_cirq
 from bqskit.ext.cirq.translate import cirq_to_bqskit
 from bqskit.ext.pytket.translate import bqskit_to_pytket

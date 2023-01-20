@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.qis.permutation import PermutationMatrix
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
@@ -58,6 +57,6 @@ class SwapGate(ConstantGate):
 
     def __str__(self) -> str:
         if self.is_qubit_only():
-            return f'SwapGate'
+            return 'SwapGate'
         else:
             return f'SwapGate({self.radixes[0]})'

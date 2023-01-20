@@ -1,8 +1,8 @@
+# flake8: noqa
 from __future__ import annotations
 
 import pytest
-pytket = pytest.importorskip('pytket')
-pytest.importorskip('bqskit.ext')
+pytest.importorskip('pytket')
 
 import numpy as np
 from pytket import OpType

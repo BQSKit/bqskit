@@ -1,7 +1,9 @@
 """This module implements functions for working with IBM Backends."""
 from __future__ import annotations
 
-from qiskit.providers import BackendV1
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from qiskit.providers import BackendV1
 
 from bqskit.compiler import MachineModel
 from bqskit.ir.gate import Gate

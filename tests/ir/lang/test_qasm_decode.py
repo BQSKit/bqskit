@@ -5,10 +5,8 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
-pytest.importorskip('bqskit.ext')
-from qiskit import QuantumCircuit
 
-from bqskit.ext import qiskit_to_bqskit
+from bqskit.ext.qiskit import qiskit_to_bqskit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
@@ -92,6 +90,8 @@ class TestGateDecl:
             gate_x(1.2) q[0];
         """
 
+        pytest.importorskip('qiskit')
+        from qiskit import QuantumCircuit
         circuit = OPENQASM2Language().decode(input)
         assert circuit.num_qudits == 1
         assert circuit.num_operations == 1
@@ -138,6 +138,8 @@ class TestGateDecl:
             gate_x q[0];
         """
 
+        pytest.importorskip('qiskit')
+        from qiskit import QuantumCircuit
         circuit = OPENQASM2Language().decode(input)
         assert circuit.num_qudits == 1
         op = circuit[0, 0]
@@ -158,6 +160,9 @@ class TestGateDecl:
             gate gate_x q0 {}
             gate_x q[0];
         """
+
+        pytest.importorskip('qiskit')
+        from qiskit import QuantumCircuit
 
         circuit = OPENQASM2Language().decode(input)
         assert circuit.num_qudits == 1
@@ -184,6 +189,9 @@ class TestGateDecl:
             }
             gate_x q[1], q[2], q[0];
         """
+
+        pytest.importorskip('qiskit')
+        from qiskit import QuantumCircuit
 
         circuit = OPENQASM2Language().decode(input)
         assert circuit.num_qudits == 3
