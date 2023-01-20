@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-import numpy as np
 import pytest
+pytket = pytest.importorskip('pytket')
+pytest.importorskip('bqskit.ext')
+
+import numpy as np
 from pytket import OpType
 from pytket.circuit import Circuit as QubitCircuit
 from pytket.extensions.qiskit import AerUnitaryBackend

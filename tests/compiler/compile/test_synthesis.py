@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+pytest.importorskip('bqskit.ext')
 
 from bqskit import compile
 from bqskit import MachineModel

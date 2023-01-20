@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import cirq
 import pytest
+cirq = pytest.importorskip('cirq')
+    
 from cirq import Circuit as QuantumCircuit
 
 from bqskit.compiler.compile import compile

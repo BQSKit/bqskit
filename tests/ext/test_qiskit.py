@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import pytest
+qiskit = pytest.importorskip('qiskit')
+pytest.importorskip('bqskit.ext')
+
 import qiskit.quantum_info as qi
 from qiskit import QuantumCircuit
 from qiskit import transpile

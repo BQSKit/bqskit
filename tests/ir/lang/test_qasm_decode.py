@@ -5,6 +5,7 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
+pytest.importorskip('bqskit.ext')
 from qiskit import QuantumCircuit
 
 from bqskit.ext import qiskit_to_bqskit
