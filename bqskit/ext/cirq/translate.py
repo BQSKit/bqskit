@@ -34,5 +34,5 @@ def bqskit_to_cirq(circuit: Circuit) -> cirq.Circuit:
             'Please ensure that it is installed with the following command:\n'
             '\tpip install cirq\n',
         ) from e
-        
+
     return circuit_from_qasm(OPENQASM2Language().encode(circuit))

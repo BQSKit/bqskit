@@ -34,5 +34,5 @@ def bqskit_to_pytket(circuit: Circuit) -> pytket.Circuit:
             'Please ensure that it is installed with the following command:\n'
             '\tpip install pytket\n',
         ) from e
-        
+
     return circuit_from_qasm_str(OPENQASM2Language().encode(circuit))
