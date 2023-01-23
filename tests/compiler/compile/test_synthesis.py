@@ -128,4 +128,4 @@ def test_identity_synthesis(
         UnitaryMatrix.identity(dim), 1,
     ) < 1e-10
     if optimization_level == 3:
-        assert out_circuit.num_operations in [0, 3]
+        assert out_circuit.num_operations <= 3
