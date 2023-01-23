@@ -1,4 +1,4 @@
-name: tox
+name: tests
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: [master]
 
 jobs:
-  tox:
+  tests:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
