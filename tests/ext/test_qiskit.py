@@ -1,6 +1,9 @@
+# flake8: noqa
 from __future__ import annotations
 
 import pytest
+pytest.importorskip('qiskit')
+
 import qiskit.quantum_info as qi
 from qiskit import QuantumCircuit
 from qiskit import transpile

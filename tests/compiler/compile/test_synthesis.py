@@ -111,3 +111,21 @@ def test_fail_on_larger_max_synthesis_size(compiler: Compiler) -> None:
     utry = UnitaryMatrix.random(4)
     with pytest.raises(ValueError):
         compile(utry, max_synthesis_size=3, compiler=compiler)
+
+
+@pytest.mark.parametrize('dim', [2, 4, 8])
+def test_identity_synthesis(
+    optimization_level: int,
+    dim: int,
+    compiler: Compiler,
+) -> None:
+    out_circuit = compile(
+        UnitaryMatrix.identity(dim),
+        optimization_level=optimization_level,
+        compiler=compiler,
+    )
+    assert out_circuit.get_unitary().get_distance_from(
+        UnitaryMatrix.identity(dim), 1,
+    ) < 1e-10
+    if optimization_level == 3:
+        assert out_circuit.num_operations <= 3

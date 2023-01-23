@@ -141,6 +141,10 @@ class GeneralizedSabreAlgorithm():
         leading_swaps: list[tuple[int, int]] = []
         _logger.debug(f'Starting forward sabre pass with pi: {pi}.')
 
+        if not all(r == circuit.radixes[0] for r in circuit.radixes):
+            raise RuntimeError('Cannot currently map to hybrid-level systems.')
+        radix = circuit.radixes[0]
+
         if modify_circuit:
             mapped_circuit = Circuit(circuit.num_qudits, circuit.radixes)
 
@@ -208,7 +212,7 @@ class GeneralizedSabreAlgorithm():
                 for swap in self._uphill_swaps(qudits, cg, pi, D):
                     self._apply_swap(swap, pi, decay)
                     if modify_circuit:
-                        mapped_circuit.append_gate(SwapGate(), swap)
+                        mapped_circuit.append_gate(SwapGate(radix), swap)
                 _logger.debug('Stopping override.')
                 continue
 
@@ -219,7 +223,7 @@ class GeneralizedSabreAlgorithm():
             leading_swaps.append(best_swap)
 
             if modify_circuit:
-                mapped_circuit.append_gate(SwapGate(), best_swap)
+                mapped_circuit.append_gate(SwapGate(radix), best_swap)
 
             # Update loop counter and reset decay if necessary
             iter_count += 1

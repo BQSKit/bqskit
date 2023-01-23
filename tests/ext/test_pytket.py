@@ -1,7 +1,10 @@
+# flake8: noqa
 from __future__ import annotations
 
-import numpy as np
 import pytest
+pytest.importorskip('pytket')
+
+import numpy as np
 from pytket import OpType
 from pytket.circuit import Circuit as QubitCircuit
 from pytket.extensions.qiskit import AerUnitaryBackend

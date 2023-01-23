@@ -1,7 +1,10 @@
+# flake8: noqa
 from __future__ import annotations
 
-import cirq
 import pytest
+pytest.importorskip('cirq')
+
+import cirq
 from cirq import Circuit as QuantumCircuit
 
 from bqskit.compiler.compile import compile

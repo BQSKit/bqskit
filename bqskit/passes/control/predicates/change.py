@@ -43,6 +43,9 @@ class ChangePredicate(PassPredicate):
         """Retreive hash associated with `circuit`."""
         _logger.debug('Calculating hash for circuit...')
 
+        if len(circuit) == 0:
+            return hash(tuple())
+
         hashes: list[int] = []
         for op in circuit:
             hashes.append(hash(repr(op)))

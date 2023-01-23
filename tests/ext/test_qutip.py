@@ -1,6 +1,9 @@
+# flake8: noqa
 from __future__ import annotations
 
 import pytest
+pytest.importorskip('qutip')
+
 from qutip import CircuitSimulator
 from qutip import QubitCircuit
 
