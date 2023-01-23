@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ctypes
+from ctypes.util import find_library
 
 import numpy as np
 
@@ -9,7 +10,7 @@ import numpy as np
 def seed_random_sources(seed: int) -> None:
     """Seed the various sources of randomness BQSKit uses."""
     # set rand() seed, used by Ceres
-    libc = ctypes.CDLL(ctypes.util.find_library('c'))
+    libc = ctypes.CDLL(find_library('c'))
     libc.srand(seed)
     # set numpy seed
     np.random.seed(seed)
