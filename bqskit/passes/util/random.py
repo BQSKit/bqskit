@@ -38,7 +38,7 @@ class SetRandomSeedPass(BasePass):
 
         self.seed = seed
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug(f'Setting the random seed to {self.seed}.')
         data[self.key] = self.seed

@@ -15,6 +15,7 @@ from bqskit.ir.point import CircuitPoint as Point
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
+from bqskit.runtime import get_runtime
 _logger = logging.getLogger(__name__)
 
 
@@ -151,7 +152,7 @@ class Rebase2QuditGatePass(BasePass):
         self.sq = single_qudit_gate
         self.generate_new_gate_templates()
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug(f'Rebasing gates from {self.gates} to {self.ngates}.')
 
@@ -186,8 +187,7 @@ class Rebase2QuditGatePass(BasePass):
                     circuit_copy.replace_with_circuit(point, self.overdrive)
                     circuits_with_new_gate.append(circuit_copy)
 
-                instantiated_circuits = self.execute(
-                    data,
+                instantiated_circuits = await get_runtime().map(
                     Circuit.instantiate,
                     circuits_with_new_gate,
                     target=target,

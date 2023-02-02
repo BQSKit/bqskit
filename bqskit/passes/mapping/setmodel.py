@@ -27,7 +27,7 @@ class SetModelPass(BasePass):
 
         self.model = model
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if 'machine_model' in data:
             _logger.info('Overriding existing machine model.')

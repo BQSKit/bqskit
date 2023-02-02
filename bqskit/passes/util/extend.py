@@ -31,7 +31,7 @@ class ExtendBlockSizePass(BasePass):
 
         self.minimum_size = minimum_size
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if circuit.num_qudits < self.minimum_size:
             raise RuntimeError('Cannot extend block larger than circuit.')

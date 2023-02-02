@@ -61,14 +61,14 @@ class DoWhileLoopPass(BasePass):
         self.condition = condition
         self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         # Perform Work
         _logger.debug('Loop body executing...')
         for loop_pass in self.loop_body:
-            loop_pass.run(circuit, data)
+            await loop_pass.run(circuit, data)
 
         while self.condition(circuit, data):
             _logger.debug('Loop body executing...')
             for loop_pass in self.loop_body:
-                loop_pass.run(circuit, data)
+                await loop_pass.run(circuit, data)

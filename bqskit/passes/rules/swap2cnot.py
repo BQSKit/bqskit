@@ -26,7 +26,7 @@ class SwapToCNOTPass(BasePass):
         circuit.append_gate(CNOTGate(), (1, 0))
         self.cg = CircuitGate(circuit)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find all cnots

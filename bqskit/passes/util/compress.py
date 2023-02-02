@@ -15,6 +15,6 @@ class CompressPass(BasePass):
     passes slightly more efficient without actually changing the circuit.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         circuit.compress()

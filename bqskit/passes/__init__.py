@@ -210,7 +210,6 @@ from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
 from bqskit.passes.processing.rebase import Rebase2QuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
-from bqskit.passes.processing.window import WindowOptimizationPass
 from bqskit.passes.rules.ch2cnot import CHToCNOTPass
 from bqskit.passes.rules.cnot2ch import CNOTToCHPass
 from bqskit.passes.rules.cnot2cy import CNOTToCYPass
@@ -275,7 +274,6 @@ __all__ = [
     'UpdateDataPass',
     'ToU3Pass',
     'ScanningGateRemovalPass',
-    'WindowOptimizationPass',
     'SimpleLayerGenerator',
     'AStarHeuristic',
     'GreedyHeuristic',

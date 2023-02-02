@@ -6,8 +6,7 @@ from typing import Any
 from typing import Callable
 from typing import Sequence
 
-from distributed import as_completed
-from distributed import worker_client
+from bqskit.runtime import get_runtime
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
@@ -77,7 +76,7 @@ class ParallelDo(BasePass):
         self.less_than = less_than
         self.pick_first = pick_fisrt
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Running pass sequences in parallel.')
 
@@ -86,33 +85,34 @@ class ParallelDo(BasePass):
                 'Parallel pass cannot be executed without a compiler.',
             )
 
-        with worker_client() as client:
-            futures = []
-            for pass_seq in self.pass_seqs:
-                future = client.submit(_sub_do_work, pass_seq, circuit, data)
-                futures.append(future)
+        runtime = get_runtime()
+        futures = [
+            runtime.submit(_sub_do_work, pass_seq, circuit, data)
+            for pass_seq in self.pass_seqs
+        ]
 
-            if self.pick_first:
-                _, result = next(as_completed(futures, with_results=True))
-                for future in futures:
-                    if not future.done:
-                        client.cancel(future)
+        if self.pick_first:
+            # _, result = next(as_completed(futures, with_results=True))
+            # for future in futures:
+            #     if not future.done:
+            #         client.cancel(future)
 
-                circuit.become(result[0])
-                data.update(result[1])
+            # circuit.become(result[0])
+            # data.update(result[1])
+            raise NotImplementedError("TODO: Cancel Task Support")
 
-            else:
-                best_circ = None
-                best_data = None
-                for future in futures:
-                    _circ, _data = future.result()
-                    if best_circ is None or self.less_than(_circ, best_circ):
-                        best_circ = _circ
-                        best_data = _data
-                if best_circ is None or best_data is None:
-                    raise RuntimeError('No valid circuit found.')
-                circuit.become(best_circ)
-                data.update(best_data)
+        else:
+            best_circ = None
+            best_data = None
+            for future in futures:
+                _circ, _data = await future
+                if best_circ is None or self.less_than(_circ, best_circ):
+                    best_circ = _circ
+                    best_data = _data
+            if best_circ is None or best_data is None:
+                raise RuntimeError('No valid circuit found.')
+            circuit.become(best_circ)
+            data.update(best_data)
 
 
 def _sub_do_work(

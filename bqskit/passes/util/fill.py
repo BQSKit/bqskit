@@ -25,7 +25,7 @@ class FillSingleQuditGatesPass(BasePass):
         """
         self.success_threshold = success_threshold
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Completing circuit with single-qudit gates.')
         target = self.get_target(circuit, data)

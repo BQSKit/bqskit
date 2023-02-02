@@ -17,7 +17,7 @@ class ExtractMeasurements(BasePass):
 
     key = '__measurement_data__'
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.info('Extracting measurements from circuit.')
         points_to_remove: list[CircuitPoint] = []
@@ -41,7 +41,7 @@ class ExtractMeasurements(BasePass):
 class RestoreMeasurements(BasePass):
     """A pass that restores the measurements in a circuit."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.info('Restoring measurements to circuit.')
         if ExtractMeasurements.key in data:

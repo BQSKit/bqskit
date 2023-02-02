@@ -123,7 +123,7 @@ class QFASTDecompositionPass(SynthesisPass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # Skip any unitaries too small for the configured gate.
@@ -149,14 +149,7 @@ class QFASTDecompositionPass(SynthesisPass):
         while True:
 
             # Instantiate circuit
-            circuit = self.execute(
-                data,
-                Circuit.instantiate,
-                [circuit],
-                target=utry,
-                **self.instantiate_options,
-            )[0]
-
+            circuit.instantiate(utry, **self.instantiate_options)
             dist = self.cost.calc_cost(circuit, utry)
             _logger.info(f'Instantiated depth {depth} at {dist} cost.')
 
@@ -211,15 +204,7 @@ class QFASTDecompositionPass(SynthesisPass):
         # Reinstantiate
         dist = self.cost.calc_cost(circuit, utry)
         while dist > self.success_threshold:
-            circuit.become(
-                self.execute(
-                    data,
-                    Circuit.instantiate,
-                    [circuit],
-                    target=utry,
-                    **(self.instantiate_options),
-                )[0],
-            )
+            circuit.instantiate(utry, **self.instantiate_options)
             dist = self.cost.calc_cost(circuit, utry)
 
         _logger.info(f'Final circuit found with cost: {dist}.')

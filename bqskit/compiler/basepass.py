@@ -7,10 +7,6 @@ from typing import Any
 from typing import Callable
 from typing import TypeVar
 
-from distributed import get_client
-from distributed import rejoin
-from distributed import secede
-
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.graph import CouplingGraph
@@ -43,7 +39,7 @@ class BasePass(abc.ABC):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """
         Perform the pass's operation on `circuit`.
 
@@ -195,41 +191,3 @@ class BasePass(abc.ABC):
             return False
 
         return data['parallel']
-
-    @staticmethod
-    def execute(
-        data: dict[str, Any],
-        fn: Callable[..., T],
-        *args: Any,
-        **kwargs: Any,
-    ) -> list[T]:
-        """Map a function over iterable arguments in parallel."""
-
-        if not all(is_iterable(arg) for arg in args):
-            raise ValueError('Each argument must be a sized iterable')
-
-        if not all(len(arg) == len(args[0]) for arg in args):
-            raise ValueError('Each iterable argument must have same length.')
-
-        # Execute using dask if dask is started and there are multiple tasks
-        if BasePass.in_parallel(data) and len(args[0]) > 1:
-            if fn == Circuit.instantiate:
-                kwargs['parallel'] = True
-
-            client = get_client()
-            futures = client.map(fn, *args, **kwargs)
-            secede()
-            results = client.gather(futures)
-            rejoin()
-            return results
-
-        # Otherwise execute in current process
-        else:
-            results = []
-            if len(args) == 1:
-                for arg in args[0]:
-                    results.append(fn(arg, **kwargs))
-            else:
-                for subargs in zip(*args):
-                    results.append(fn(*subargs, **kwargs))
-            return results

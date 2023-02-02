@@ -68,7 +68,7 @@ class BlockConversionPass(BasePass):
         else:
             raise ValueError('Unexpected input for conversion target.')
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Variable -> Constant

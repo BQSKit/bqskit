@@ -14,6 +14,7 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.structure import CircuitStructure
 from bqskit.utils.typing import is_real_number
+from bqskit.runtime import get_runtime
 _logger = logging.getLogger(__name__)
 
 
@@ -104,7 +105,7 @@ class ExhaustiveGateRemovalPass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Starting exhaustive gate removal.')
 
@@ -137,8 +138,7 @@ class ExhaustiveGateRemovalPass(BasePass):
                         circuits_seen.add(structure)
 
             # Instantiate them all
-            instantiated_circuits = self.execute(
-                data,
+            instantiated_circuits = await get_runtime().map(
                 Circuit.instantiate,
                 expanded_circuits,
                 target=target,

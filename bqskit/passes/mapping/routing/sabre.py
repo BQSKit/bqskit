@@ -20,7 +20,7 @@ class GeneralizedSabreRoutingPass(BasePass, GeneralizedSabreAlgorithm):
     See :class:`GeneralizedSabreAlgorithm` for more info.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         subgraph = self.get_connectivity(circuit, data)
         if not subgraph.is_fully_connected():

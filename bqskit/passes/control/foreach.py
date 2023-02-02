@@ -17,6 +17,7 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
+from bqskit.runtime import get_runtime
 
 _logger = logging.getLogger(__name__)
 
@@ -122,7 +123,7 @@ class ForEachBlockPass(BasePass):
                 ', got %s.' % type(self.replace_filter),
             )
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         # Make room in data for block data
         if self.key not in data:
@@ -186,8 +187,7 @@ class ForEachBlockPass(BasePass):
             ]
 
         # Do the work
-        results = self.execute(
-            data,
+        results = await get_runtime().map(
             _sub_do_work,
             [self.loop_body] * len(batched_subcircuits),
             batched_subcircuits,
@@ -257,7 +257,7 @@ def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True
 
 
-def _sub_do_work(
+async def _sub_do_work(
     loop_body: Sequence[BasePass],
     subcircuits: list[Circuit],
     subdatas: list[dict[str, Any]],
@@ -268,7 +268,7 @@ def _sub_do_work(
             old_utry = subcircuit.get_unitary()
 
         for loop_pass in loop_body:
-            loop_pass.run(subcircuit, subdata)
+            await loop_pass.run(subcircuit, subdata)
 
         if subdata['calculate_error_bound']:
             new_utry = subcircuit.get_unitary()

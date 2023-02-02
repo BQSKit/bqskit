@@ -86,14 +86,14 @@ class IfThenElsePass(BasePass):
         self.on_true = on_true if is_sequence(on_true) else [on_true]
         self.on_false = on_false if is_sequence(on_false) else [on_false]
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if self.condition(circuit, data):
             _logger.debug('True branch taken.')
             for branch_pass in self.on_true:
-                branch_pass.run(circuit, data)
+                await branch_pass.run(circuit, data)
 
         elif self.on_false is not None:
             _logger.debug('False branch taken.')
             for branch_pass in self.on_false:
-                branch_pass.run(circuit, data)
+                await branch_pass.run(circuit, data)

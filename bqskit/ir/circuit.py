@@ -19,8 +19,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from distributed import get_client
-from distributed import secede
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -2624,8 +2622,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 directly through this.
 
             multistarts (int): The number of starting points to sample
-                instantiation with. If `parallel` is True and this is greater
-                than one, will spawn this many Dask tasks. (Default: 1)
+                instantiation with. (Default: 1)
 
             seed (int | None): The seed for any pseudo-random number generators
                 to use. Note that this is not guaranteed to make this method
@@ -2640,9 +2637,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 from the different starting points.
                 (Default: HilbertSchmidtCostGenerator())
 
-            parallel (bool): If True and `multistarts` is greater than 1,
-                this will attempt to connect to a dask cluster and submit
-                jobs to be run in parallel. (Default: False)
+            parallel (bool): Ignored for now.
 
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method constructor. For more info, see
@@ -2750,60 +2745,60 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cost_fn = score_fn_gen.gen_cost(self, target)
 
         # Instantiate the circuit
-        if parallel and multistarts > 1:
-            client = get_client()
+        # if parallel and multistarts > 1:
+        #     client = get_client()
 
-            def single_start_instantiate(
-                instantiater: Instantiater,
-                circuit: Circuit,
-                target: UnitaryMatrix,
-                start: npt.NDArray[np.float64],
-            ) -> npt.NDArray[np.float64]:
-                return instantiater.instantiate(circuit, target, start)
+        #     def single_start_instantiate(
+        #         instantiater: Instantiater,
+        #         circuit: Circuit,
+        #         target: UnitaryMatrix,
+        #         start: npt.NDArray[np.float64],
+        #     ) -> npt.NDArray[np.float64]:
+        #         return instantiater.instantiate(circuit, target, start)
 
-            def scoring_fn(
-                fn_gen: CostFunctionGenerator,
-                circuit: Circuit,
-                target: UnitaryMatrix,
-                params: npt.NDArray[np.float64],
-            ) -> float:
-                return fn_gen.gen_cost(circuit, target).get_cost(params)
+        #     def scoring_fn(
+        #         fn_gen: CostFunctionGenerator,
+        #         circuit: Circuit,
+        #         target: UnitaryMatrix,
+        #         params: npt.NDArray[np.float64],
+        #     ) -> float:
+        #         return fn_gen.gen_cost(circuit, target).get_cost(params)
 
-            param_futures = client.map(
-                single_start_instantiate,
-                [instantiater] * multistarts,
-                [self] * multistarts,
-                [target] * multistarts,
-                starts,
-                pure=False,
-            )
+        #     param_futures = client.map(
+        #         single_start_instantiate,
+        #         [instantiater] * multistarts,
+        #         [self] * multistarts,
+        #         [target] * multistarts,
+        #         starts,
+        #         pure=False,
+        #     )
 
-            score_futures = client.map(
-                scoring_fn,
-                [score_fn_gen] * multistarts,
-                [self] * multistarts,
-                [target] * multistarts,
-                param_futures,
-                pure=False,
-            )
+        #     score_futures = client.map(
+        #         scoring_fn,
+        #         [score_fn_gen] * multistarts,
+        #         [self] * multistarts,
+        #         [target] * multistarts,
+        #         param_futures,
+        #         pure=False,
+        #     )
 
-            # We only want to secede on worker threads, so try to recover if
-            # Circuit.instantiate is called from the main thread
-            try:
-                secede()
-            except ValueError:
-                pass
+        #     # We only want to secede on worker threads, so try to recover if
+        #     # Circuit.instantiate is called from the main thread
+        #     try:
+        #         secede()
+        #     except ValueError:
+        #         pass
 
-            scores = client.gather(score_futures)
-            best_index = scores.index(min(scores))
-            params = param_futures[best_index].result()
+        #     scores = client.gather(score_futures)
+        #     best_index = scores.index(min(scores))
+        #     params = param_futures[best_index].result()
 
-        else:
-            params_list = [
-                instantiater.instantiate(self, target, start)
-                for start in starts
-            ]
-            params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        # else:
+        params_list = [
+            instantiater.instantiate(self, target, start)
+            for start in starts
+        ]
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
 
         # Return best result
         self.set_params(params)

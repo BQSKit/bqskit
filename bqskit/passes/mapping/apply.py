@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 class ApplyPlacement(BasePass):
     """Place the circuit on the machine model."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         model = self.get_model(circuit, data)
         placement = self.get_placement(circuit, data)

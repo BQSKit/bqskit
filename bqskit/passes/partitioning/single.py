@@ -15,7 +15,7 @@ class GroupSingleQuditGatePass(BasePass):
     This pass groups together consecutive single-qudit gates.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Go through each qudit individually

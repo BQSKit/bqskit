@@ -94,12 +94,10 @@ myst_enable_extensions = ['dollarmath', 'amsmath']
 autodoc_mock_imports = [
     'bqskitrs',
     'threadpoolctl',
-    'dask',
     'scipy',
     'numpy',
     'qiskit',
     'lark-parser',
-    'distributed',
     'hypothesis',
     'pytket',
     'cirq',

@@ -71,7 +71,7 @@ class SaveIntermediatePass(BasePass):
 
         self.as_qasm = save_as_qasm
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see BasePass for more info."""
 
         # Gather and enumerate CircuitGates to save
@@ -171,7 +171,7 @@ class RestoreIntermediatePass(BasePass):
                 'More block files than indicies in `structure.pickle`',
             )
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """
         Perform the pass's operation, see BasePass for more info.
 

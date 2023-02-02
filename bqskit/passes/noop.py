@@ -10,6 +10,6 @@ from bqskit.ir.circuit import Circuit
 class NOOPPass(BasePass):
     """A pass that does not perform any operation."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         return

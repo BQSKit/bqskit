@@ -15,7 +15,7 @@ class U3Decomposition(BasePass):
     Convert a single-qubit circuit to U3 gate.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         if circuit.num_qudits != 1:

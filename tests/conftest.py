@@ -133,11 +133,11 @@ SWAP = np.asarray(
 )
 
 
-@pytest.fixture(scope='session')
-def compiler() -> Iterator[Compiler]:
-    compiler = Compiler()
-    yield compiler
-    compiler.close()
+# @pytest.fixture(scope='session')
+# def compiler() -> Iterator[Compiler]:
+#     compiler = Compiler()
+#     yield compiler
+#     compiler.close()
 
 
 @pytest.fixture

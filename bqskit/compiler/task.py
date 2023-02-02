@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 import warnings
-from typing import Sequence
+from typing import Any, Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
@@ -44,81 +44,33 @@ class CompilationTask():
                 performed on the circuit.
         """
         self.task_id = uuid.uuid4()
-        self.input_circuit = input
+        self.circuit = input
         self.passes = passes
+        self.data = {}
+        self.requested_keys = []
+        self.logging_level = 30
+        self.max_logging_depth = -1
 
-    @staticmethod
-    def synthesize(utry: UnitaryLike) -> CompilationTask:
-        """Produces a standard synthesis task for the given unitary."""
-        warnings.warn(
-            'Default task creation is deprecated and will soon be removed.\n'
-            'Instead, use the new compile function.',
-        )
-        circuit = Circuit.from_unitary(utry)
-        num_qudits = circuit.num_qudits
+    async def run(self) -> Circuit | tuple[Circuit, dict[str, Any]]:
+        """Execute the task."""
+        for pass_obj in self.passes:
+            await pass_obj.run(self.circuit, self.data)
+        self.done = True
 
-        if num_qudits > 6:
-            _logger.warning('Synthesis input size is very large.')
+        if len(self.requested_keys) == 0:
+            return self.circuit
 
-        inner_seq = [
-            LEAPSynthesisPass(),
-            ScanningGateRemovalPass(),
-        ]
+        requested_data = {
+            k: self.data[k]
+            for k in self.requested_keys
+            if k in self.data
+        }
+        return self.circuit, requested_data
+    
+    def request_key(self, key: str) -> None:
+        """Ask the task to also return `key` from the compilation data."""
+        self.requested_keys.append(key)
 
-        passes: list[BasePass] = []
-        if num_qudits >= 5:
-            passes.append(QFASTDecompositionPass())
-            passes.append(
-                ForEachBlockPass(
-                    inner_seq,
-                    replace_filter=less_2q_gates,
-                ),
-            )
-            passes.append(UnfoldPass())
-        else:
-            passes.extend(inner_seq)
-
-        return CompilationTask(circuit, passes)
-
-    @staticmethod
-    def optimize(circuit: Circuit) -> CompilationTask:
-        """Produces a standard optimization task for the given circuit."""
-        warnings.warn(
-            'Default task creation is deprecated and will soon be removed.\n'
-            'Instead, use the new compile function.',
-        )
-        num_qudits = circuit.num_qudits
-
-        if num_qudits <= 3:
-            return CompilationTask.synthesize(circuit.get_unitary())
-
-        inner_seq = [
-            LEAPSynthesisPass(),
-            ScanningGateRemovalPass(),
-        ]
-
-        passes: list[BasePass] = []
-        passes.append(QuickPartitioner(3))
-        passes.append(ForEachBlockPass(inner_seq, replace_filter=less_2q_gates))
-        passes.append(UnfoldPass())
-
-        iterative_reopt = WhileLoopPass(
-            GateCountPredicate(CNOTGate()),
-            [
-                ClusteringPartitioner(3, 4),
-                ForEachBlockPass(inner_seq, replace_filter=less_2q_gates),
-                UnfoldPass(),
-            ],
-        )
-
-        passes.append(iterative_reopt)
-        return CompilationTask(circuit, passes)
-
-
-def less_2q_gates(circuit: Circuit, op: Operation) -> bool:
-    """Replace `circuit' with `op` if has less 2 qubit gates."""
-    if not isinstance(op, CircuitGate):
-        return True
-    og_num_2q_gate = len([op for op in op._circuit if op.num_qudits >= 2])
-    new_num_2q_gate = len([op for op in circuit if op.num_qudits >= 2])
-    return new_num_2q_gate > og_num_2q_gate
+    def set_max_logging_depth(self, max_depth: int) -> None:
+        """Restrict logging for tasks with more than `max_depth` parents."""
+        self.max_logging_depth = max_depth

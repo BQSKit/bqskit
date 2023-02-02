@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 class ToU3Pass(BasePass):
     """Converts single-qubit general unitary gates to U3 Gates."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Converting single-qubit general gates to U3Gates.')
         for cycle, op in circuit.operations_with_cycles():

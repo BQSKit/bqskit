@@ -28,7 +28,7 @@ class LogPass(BasePass):
         self.msg = msg
         self.level = level
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.log(self.level, self.msg)
 
@@ -47,7 +47,7 @@ class LogErrorPass(BasePass):
         """
         self.threshold = error_threshold
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if 'error' in data:
             error = data['error']

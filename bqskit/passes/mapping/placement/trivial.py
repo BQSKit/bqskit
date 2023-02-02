@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 class TrivialPlacementPass(BasePass):
     """Place the logical qubits on the first n physical qubits."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Select the first n physical qubits for placement

@@ -67,7 +67,7 @@ class GeneralizedSabreLayoutPass(BasePass, GeneralizedSabreAlgorithm):
             extended_set_weight,
         )
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         subgraph = self.get_connectivity(circuit, data)
         if not subgraph.is_fully_connected():

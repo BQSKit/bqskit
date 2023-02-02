@@ -25,7 +25,7 @@ class SynthesisPass(BasePass):
     """
 
     @abstractmethod
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """
         Synthesis abstract method to synthesize a UnitaryMatrix into a Circuit.
 
@@ -41,10 +41,10 @@ class SynthesisPass(BasePass):
             This function should be self-contained and have no side effects.
         """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if len(data) == 0:
             data = dict()
 
         target_utry = self.get_target(circuit, data)
-        circuit.become(self.synthesize(target_utry, data))
+        circuit.become(await self.synthesize(target_utry, data))

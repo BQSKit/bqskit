@@ -1,37 +1,35 @@
 """This module implements the Compiler class."""
 from __future__ import annotations
+import functools
 
 import logging
-import sys
+import os
+import signal
 import time
-import uuid
-from subprocess import PIPE
-from subprocess import Popen
 from typing import TYPE_CHECKING
+import multiprocessing as mp
+from multiprocessing.connection import Client
+import uuid
+from bqskit.runtime.attached import start_attached_server
+from bqskit.runtime.message import RuntimeMessage
 
 if TYPE_CHECKING:
     from typing import Any
-    from dask.distributed import Future
     from bqskit.compiler.task import CompilationTask
     from bqskit.ir.circuit import Circuit
 
-from dask.distributed import Client
-from threadpoolctl import threadpool_limits
-
-from bqskit.compiler.executor import Executor
-
 _logger = logging.getLogger(__name__)
-
 
 class Compiler:
     """
     A compiler is responsible for accepting and managing compilation tasks.
 
-    The compiler class spins up or connects to a Dask execution environment,
-    which compilation tasks can then access to parallelize their operations.
-    The compiler is implemented as a context manager and it is recommended
-    to use it as one. If the compiler is not used in a context manager, it
-    is the responsibility of the user to call `close()`.
+    The compiler class either spins up a parallel runtime or connects to
+    a distributed one, which compilation tasks can then access to
+    parallelize their operations. The compiler is implemented as a
+    context manager and it is recommended to use it as one. If the
+    compiler is not used in a context manager, it is the responsibility
+    of the user to call `close()`.
 
     Examples:
         1. Use in a context manager:
@@ -43,52 +41,47 @@ class Compiler:
         >>> circuit = compiler.compile(task)
         >>> compiler.close()
 
-        3. Connect to an already running dask cluster:
-        >>> with Compiler('localhost:8786') as compiler:
+        3. Connect to an already running detached runtime:
+        >>> with Compiler('localhost', 8786) as compiler:
         ...     circuit = compiler.compile(task)
 
-        4. Connect to a dask cluster with a scheduler file:
-        >>> with Compiler(scheduler_file='/path/to/file/') as compiler:
+        4. Start and attach to a runtime with 4 worker processes:
+        >>> with Compiler(num_workers=4) as compiler:
         ...     circuit = compiler.compile(task)
     """
 
-    _parallelism_enabled = True
-    """Used to to limit default parallelism; see bqskit.disable_parallelism."""
+    def __init__(self, ip: None | str = None, port: None | int = None, num_workers = -1) -> None:
+        """Construct a Compiler object."""
+        self.p = None
+        self.conn = None
+        if ip is None:
+            ip = "localhost"
+            port = 7472
+            self.start_server(num_workers)
 
-    _dashboard = False
-    """Used to enable the dask dashboard; see bqskit.enable_dashboard."""
+        self.connect_to_server(ip, port)
+    
+    def start_server(self, num_workers: int) -> None:
+        self.p = mp.Process(target=start_attached_server, args=(num_workers,))
+        _logger.debug('Starting runtime server process.')
+        self.p.start()
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """
-        Construct a Compiler object.
-
-        Notes:
-            All arguments are passed directly to Dask. You can use
-            these to connect to and configure a Dask cluster.
-        """
-        # Connect to or start a Dask cluster
-        self.managed = len(args) == 0 and len(kwargs) == 0
-        if self.managed:
-            self.processes = start_dask_cluster()
-            self.client = Client('localhost:8786')
-        else:
-            self.client = Client(*args, **kwargs)
-
-        # Initialize workers for logging support
-        def set_logging_level(level: int) -> None:
-            import bqskit  # noqa
-            logging.getLogger('bqskit').setLevel(level)
-
-        self.client.run(set_logging_level, logging.getLogger('bqskit').level)
-
-        # Limit threads for low level math calls on workers
-        def limit_threads() -> None:
-            threadpool_limits(limits=1)
-        self.client.run(limit_threads)
-
-        # Keep track of submitted compilation tasks
-        self.tasks: dict[uuid.UUID, Future] = {}
-        _logger.info('Started compiler process.')
+    def connect_to_server(self, ip, port) -> None:
+        max_retries = 5
+        wait_time = .25
+        for _ in range(max_retries):
+            try:
+                conn = Client((ip, port))
+            except ConnectionRefusedError:
+                time.sleep(wait_time)
+                wait_time *= 2
+            else:
+                self.conn = conn
+                self.old_signal = signal.signal(signal.SIGINT, functools.partial(sigint_handler, compiler=self))
+                self.conn.send((RuntimeMessage.CONNECT, None))
+                _logger.debug('Successfully connected to runtime server.')
+                return
+        raise RuntimeError("Client connection refused")
 
     def __enter__(self) -> Compiler:
         """Enter a context for this compiler."""
@@ -100,107 +93,114 @@ class Compiler:
 
     def close(self) -> None:
         """Shutdown compiler."""
-        self.client.close()
-        self.tasks = {}
-        if self.managed:
-            for proc in self.processes:
-                proc.terminate()  # type: ignore
-                proc.wait()  # type: ignore
-        _logger.info('Stopped compiler process.')
-
+        if self.conn is not None:
+            try:
+                self.conn.send((RuntimeMessage.DISCONNECT, None))
+                self.conn.close()
+            except Exception as e:
+                _logger.debug('Unsuccessfully disconnected from runtime server.')
+                _logger.debug(e)
+            else:
+                _logger.debug('Disconnected from runtime server.')
+            finally:
+                self.conn = None
+        if self.p is not None:
+            self.p.join(5)
+            if self.p.exitcode is None:
+                os.kill(self.p.pid, signal.SIGKILL)
+                self.p.join()
+            self.p = None
+            
     def __del__(self) -> None:
-        if self.managed and hasattr(self, 'processes'):
-            for proc in self.processes:
-                proc.terminate()  # type: ignore
-                proc.wait()  # type: ignore
+        self.close()
+        _logger.debug('Compiler successfully shutdown.')
 
     def submit(self, task: CompilationTask) -> None:
         """Submit a CompilationTask to the Compiler."""
-        executor = self.client.scatter(Executor(task))
-        future = self.client.submit(Executor.run, executor, pure=False)
-        self.tasks[task.task_id] = future
-        _logger.info('Submitted task: %s' % task.task_id)
+        task.logging_level = logging.getLogger('bqskit').getEffectiveLevel()
+        try:
+            # print(f"Compiler submitting task {task.task_id}.")
+            self.conn.send((RuntimeMessage.SUBMIT, task))
 
-    def status(self, task: CompilationTask) -> str:
-        """Retrieve the status of the specified CompilationTask."""
-        return self.tasks[task.task_id].status
+        except Exception as e:
+            self.conn = None
+            raise RuntimeError("Server connection unexpectedly closed.") from e
 
-    def result(self, task: CompilationTask) -> Circuit:
+    def status(self, task: CompilationTask) -> bool:
+        """
+        Retrieve the status of the specified CompilationTask.
+
+        A true value means the task is ready to be retrieved.
+        """
+        try:
+            self.conn.send((RuntimeMessage.STATUS, task.task_id))
+
+            msg, payload = self._recv_handle_log_error()
+
+            if msg == RuntimeMessage.STATUS:
+                return payload
+
+            else:
+                raise RuntimeError(f"Unexpected message type: {msg}.")
+
+        except Exception as e:
+            self.conn = None
+            raise RuntimeError("Server connection unexpectedly closed.") from e
+
+    def result(self, task: CompilationTask) -> Circuit | tuple[Circuit, dict[str, Any]]:
         """Block until the CompilationTask is finished, return its result."""
-        circ = self.tasks[task.task_id].result()[0]
-        return circ
+        try:
+            # print(f"Compiler requesting task {task.task_id}.")
+            self.conn.send((RuntimeMessage.REQUEST, task.task_id))
 
-    def cancel(self, task: CompilationTask) -> None:
+            msg, payload = self._recv_handle_log_error()
+            if msg == RuntimeMessage.RESULT:
+                return payload  # type: ignore
+            
+            else:
+                raise RuntimeError(f"Unexpected message type: {msg}.")
+                
+        except Exception as e:
+            self.conn = None
+            raise RuntimeError("Server connection unexpectedly closed.") from e
+
+    def cancel(self, task: CompilationTask) -> bool:
         """Remove a task from the compiler's workqueue."""
-        self.client.cancel(self.tasks[task.task_id])
-        _logger.info('Cancelled task: %s' % task.task_id)
+        try:
+            self.conn.send((RuntimeMessage.CANCEL, task.task_id))
 
-    def compile(self, task: CompilationTask) -> Circuit:
+            msg, _ = self._recv_handle_log_error()
+            if msg == RuntimeMessage.CANCEL:
+                return True
+            
+            else:
+                raise RuntimeError(f"Unexpected message type: {msg}.")
+                
+        except Exception as e:
+            self.conn = None
+            raise RuntimeError("Server connection unexpectedly closed.") from e
+
+    def compile(self, task: CompilationTask) -> Circuit | tuple[Circuit, dict[str, Any]]:
         """Submit and execute the CompilationTask, block until its done."""
         _logger.info('Compiling task: %s' % task.task_id)
         self.submit(task)
         result = self.result(task)
         return result
 
-    def analyze(self, task: CompilationTask, key: str) -> Any:
-        """Gather the value associated with `key` in the task's data."""
-        if task.task_id not in self.tasks:
-            self.submit(task)
-        return self.tasks[task.task_id].result()[1][key]
+    def _recv_handle_log_error(self) -> tuple[RuntimeMessage, Any]:
+        """Return next msg, transparently emit log records and raise errors"""
+        while True:
+            msg, payload = self.conn.recv()
+            if msg == RuntimeMessage.LOG:
+                logging.getLogger(payload.name).handle(payload)
+            
+            elif msg == RuntimeMessage.ERROR:
+                raise RuntimeError(payload)
+            
+            else:
+                return (msg, payload)
 
-
-def start_dask_cluster() -> tuple[Popen[bytes], Popen[str]]:
-    """Start a dask cluster and return the scheduler and worker processes."""
-    scheduler_proc: Any = None
-    worker_proc: Any = None
-
-    # Start a dask scheduler in another process
-    try:
-        dashboard = '--dashboard' if Compiler._dashboard else '--no-dashboard'
-        scheduler_proc = Popen(
-            [
-                'dask-scheduler',
-                '--host', 'localhost',
-                '--port', '8786',
-                dashboard,
-            ],
-            bufsize=1,
-            universal_newlines=True,
-            stdout=sys.stdout,
-            stderr=PIPE,
-        )
-        for line in iter(scheduler_proc.stderr.readline, ''):
-            if 'Scheduler at:' in line:
-                break
-        scheduler_proc.stderr.close()
-    except Exception as e:
-        raise RuntimeError('Failed to start dask scheduler') from e
-
-    # Start dask workers in another process
-    try:
-        workers = []
-        if Compiler._parallelism_enabled:
-            workers.append('auto')
-        else:
-            workers.append('1')
-            workers.append('--nthreads')
-            workers.append('1')
-
-        worker_proc = Popen(
-            ['dask-worker', '--nworkers', *workers, 'localhost:8786'],
-            bufsize=1,
-            universal_newlines=True,
-            stdout=sys.stdout,
-            stderr=PIPE,
-        )
-        for line in iter(worker_proc.stderr.readline, ''):
-            if 'Starting established connection' in line:
-                break
-        worker_proc.stderr.close()
-    except Exception as e:
-        scheduler_proc.terminate()
-        scheduler_proc.wait()
-        raise RuntimeError('Failed to start dask worker') from e
-
-    time.sleep(1)
-    return worker_proc, scheduler_proc
+def sigint_handler(signum, frame, compiler):
+    _logger.critical("Compiler interrupted.")
+    compiler.close()
+    exit(-1)

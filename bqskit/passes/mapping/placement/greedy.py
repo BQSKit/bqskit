@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 class GreedyPlacementPass(BasePass):
     """Find a placement by starting with the most connected qudit."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find physical qudit with highest degree

@@ -62,13 +62,13 @@ class DoThenDecide(BasePass):
         self.condition = condition
         self.pass_list = pass_list if is_sequence(pass_list) else [pass_list]
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         # Perform Work
         old_circuit = circuit.copy()
         _logger.debug('Pass list executing...')
         for bqskit_pass in self.pass_list:
-            bqskit_pass.run(circuit, data)
+            await bqskit_pass.run(circuit, data)
 
         if self.condition(old_circuit, circuit):
             _logger.debug('Accepted circuit.')

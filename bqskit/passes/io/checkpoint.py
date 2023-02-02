@@ -27,7 +27,7 @@ class SaveCheckpointPass(BasePass):
         """
         self.checkpoint_filename = checkpoint_filename
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see BasePass for more info."""
         with open(self.checkpoint_filename, 'wb') as f:
             pickle.dump((circuit, data), f)
@@ -49,7 +49,7 @@ class LoadCheckpointPass(BasePass):
         """
         self.checkpoint_filename = checkpoint_filename
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see BasePass for more info."""
         with open(self.checkpoint_filename, 'rb') as f:
             checkpoint = pickle.load(f)
