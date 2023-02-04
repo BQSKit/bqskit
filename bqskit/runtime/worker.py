@@ -152,6 +152,8 @@ class Worker:
             if self.ready_tasks.empty():
                 if len(self.delayed_tasks) > 0:
                     self._add_task(self.delayed_tasks.pop())
+                else:
+                    time.sleep(0)
                 return
 
             _addr = self.ready_tasks.get()
