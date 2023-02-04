@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import multiprocessing as mp
 from multiprocessing.connection import Client
 import uuid
-from bqskit.bqskit.compiler.status import CompilationStatus
+from bqskit.compiler.status import CompilationStatus
 from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
 
@@ -93,7 +93,8 @@ class Compiler:
         self.close()
 
     def close(self) -> None:
-        """Shutdown compiler."""
+        """Shutdown the compiler."""
+        # Disconnect from server
         if self.conn is not None:
             try:
                 self.conn.send((RuntimeMessage.DISCONNECT, None))
@@ -105,12 +106,26 @@ class Compiler:
                 _logger.debug('Disconnected from runtime server.')
             finally:
                 self.conn = None
+        
+        # Shutdown server if attached
         if self.p is not None:
-            self.p.join(5)
-            if self.p.exitcode is None:
-                os.kill(self.p.pid, signal.SIGKILL)
+            try:
+                os.kill(self.p.pid, signal.SIGINT)
+                _logger.debug('Interrupted attached runtime server.')
+
+                self.p.join(1)
+                if self.p.exitcode is None:
+                    os.kill(self.p.pid, signal.SIGKILL)
+                    _logger.debug('Killed attached runtime server.')
+
+            except Exception as e:
+                _logger.debug('Error while shuting down attached runtime server.')
+            else:
+                _logger.debug('Successfully shutdown attached runtime server.')
+            finally:
                 self.p.join()
-            self.p = None
+                _logger.debug('Attached runtime server is down.')
+                self.p = None
             
     def __del__(self) -> None:
         self.close()
@@ -130,11 +145,7 @@ class Compiler:
             raise RuntimeError("Server connection unexpectedly closed.") from e
 
     def status(self, task: CompilationTask) -> CompilationStatus:
-        """
-        Retrieve the status of the specified CompilationTask.
-
-        A true value means the task is ready to be retrieved.
-        """
+        """Retrieve the status of the specified CompilationTask."""
         try:
             self.conn.send((RuntimeMessage.STATUS, task.task_id))
 

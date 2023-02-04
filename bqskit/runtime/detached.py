@@ -11,7 +11,7 @@ import time
 import traceback
 from typing import Any, List, cast
 import uuid
-from bqskit.bqskit.compiler.status import CompilationStatus
+from bqskit.compiler.status import CompilationStatus
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
@@ -92,70 +92,93 @@ class DetachedServer:
 
     def __del__(self) -> None:
         """Shutdown the server and clean up spawned processes."""
+        self._handle_shutdown()
+    
+    def _handle_shutdown(self) -> None:
+        # Stop running
+        self.running = False
+
+        # Close client connections
+        for client in self.clients.keys():
+            client.close()
+        self.clients.clear()
+            
         # Instruct managers to shutdown
         for mconn in self.managers:
             try:
                 mconn.send((RuntimeMessage.SHUTDOWN, None))
+                mconn.close()
             except:
                 pass
+
+        self.managers.clear()
 
     def _run(self) -> None:
         """Main server loop."""
         self.running = True
-        while self.running:
-            events = self.sel.select()  # Say that 5 times fast
-            for key, _ in events:
-                msg, payload = key.fileobj.recv()
+        try:
+            while self.running:
+                events = self.sel.select(5)  # Say that 5 times fast
+                for key, _ in events:
+                    msg, payload = key.fileobj.recv()
 
-                if key.data == "from_client":
+                    if key.data == "from_client":
 
-                    if msg == RuntimeMessage.CONNECT:
-                        pass
+                        if msg == RuntimeMessage.CONNECT:
+                            pass
 
-                    elif msg == RuntimeMessage.DISCONNECT:
-                        self._handle_disconnect(key.fileobj)
+                        elif msg == RuntimeMessage.DISCONNECT:
+                            self._handle_disconnect(key.fileobj)
 
-                    elif msg == RuntimeMessage.SUBMIT:
-                        task = cast(CompilationTask, payload)
-                        self._recieve_new_comp_task(key.fileobj, task)
+                        elif msg == RuntimeMessage.SUBMIT:
+                            task = cast(CompilationTask, payload)
+                            self._recieve_new_comp_task(key.fileobj, task)
 
-                    elif msg == RuntimeMessage.REQUEST:
-                        request = cast(uuid.UUID, payload)
-                        self._handle_request(request)
-                
-                    elif msg == RuntimeMessage.STATUS:
-                        request = cast(uuid.UUID, payload)
-                        self._handle_status(request)
-
-                    elif msg == RuntimeMessage.CANCEL:
-                        request = cast(uuid.UUID, payload)
-                        self._handle_cancel_comp_task(request)
-
-                elif key.data == "from_below":
-
-                    if msg == RuntimeMessage.SUBMIT:
-                        task = cast(RuntimeTask, payload)
-                        self._recieve_new_task(task)
-                
-                    elif msg == RuntimeMessage.SUBMIT_BATCH:
-                        tasks = cast(List[RuntimeTask], payload)
-                        self._recieve_new_tasks(tasks)
-                                    
-                    elif msg == RuntimeMessage.RESULT:
-                        result = cast(RuntimeResult, payload)
-                        self._handle_result(result)
+                        elif msg == RuntimeMessage.REQUEST:
+                            request = cast(uuid.UUID, payload)
+                            self._handle_request(key.fileobj, request)
                     
-                    elif msg == RuntimeMessage.ERROR:
-                        self._handle_error(payload)
-                        return
+                        elif msg == RuntimeMessage.STATUS:
+                            request = cast(uuid.UUID, payload)
+                            self._handle_status(request)
 
-                    elif msg == RuntimeMessage.LOG:
-                        self._handle_log(payload)
+                        elif msg == RuntimeMessage.CANCEL:
+                            request = cast(uuid.UUID, payload)
+                            self._handle_cancel_comp_task(request)
 
-                    elif msg == RuntimeMessage.CANCEL:
-                        self._handle_cancel(payload)
+                    elif key.data == "from_below":
+
+                        if msg == RuntimeMessage.SUBMIT:
+                            task = cast(RuntimeTask, payload)
+                            self._recieve_new_task(task)
+                    
+                        elif msg == RuntimeMessage.SUBMIT_BATCH:
+                            tasks = cast(List[RuntimeTask], payload)
+                            self._recieve_new_tasks(tasks)
+                                        
+                        elif msg == RuntimeMessage.RESULT:
+                            result = cast(RuntimeResult, payload)
+                            self._handle_result(result)
+                        
+                        elif msg == RuntimeMessage.ERROR:
+                            self._handle_error(payload)
+                            return
+
+                        elif msg == RuntimeMessage.LOG:
+                            self._handle_log(payload)
+
+                        elif msg == RuntimeMessage.CANCEL:
+                            self._handle_cancel(payload)
+
+        except Exception as e:
+            exc_info = sys.exc_info()
+            error_str = ''.join(traceback.format_exception(*exc_info))
+            for client in self.clients.keys():
+                client.send((RuntimeMessage.ERROR, error_str))
+            self._handle_shutdown()
 
     def _handle_disconnect(self, conn: Connection) -> None:
+        conn.close()
         self.sel.unregister(conn)
         tasks = self.clients.pop(conn)
         for task_id in tasks:
@@ -231,7 +254,7 @@ class DetachedServer:
             self.tasks.pop(request)
             self.mailboxes.pop(mailbox_id)
             self.mailbox_to_task_dict.pop(mailbox_id)
-            self.clients[conn].remove(conn)
+            self.clients[conn].remove(request)
 
     def _handle_result(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker"""
@@ -289,7 +312,7 @@ class DetachedServer:
 
     def _handle_log(self, log_payload: tuple[int, str]) -> None:
         conn = self.tasks[self.mailbox_to_task_dict[log_payload[0]]][1]
-        conn.send(RuntimeMessage.LOG, log_payload[1])
+        conn.send((RuntimeMessage.LOG, log_payload[1]))
 
     def _get_new_mailbox_id(self) -> int:
         """Unique mailbox id counter."""

@@ -1,5 +1,6 @@
 """This module implements the AttachedServer runtime."""
 
+import functools
 import os
 from multiprocessing.connection import Listener, Connection
 from multiprocessing import Pipe, Process
@@ -7,9 +8,9 @@ import signal
 from typing import Any
 import uuid
 import selectors
-from bqskit.bqskit.runtime.address import RuntimeAddress
-from bqskit.bqskit.runtime.message import RuntimeMessage
-from bqskit.bqskit.runtime.worker import start_worker
+from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.message import RuntimeMessage
+from bqskit.runtime.worker import start_worker
 
 from bqskit.runtime.detached import DetachedServer
 from threadpoolctl import threadpool_limits
@@ -104,9 +105,24 @@ def start_attached_server(*args, **kwargs) -> None:
             continue
         logger.handlers.clear()
     
-    # Ignore interrupt signals
+    # Ignore interrupts on workers (handler is inherited by subprocesses)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    # Start and run the server
+    # Initialize the server
+    server = AttachedServer(*args, **kwargs)
+
+    # Force shutdown on interrupt signals
+    handle = functools.partial(sigint_handler, server=server)
+    signal.signal(signal.SIGINT, handle)
+
+    # Run the server
     with threadpool_limits(limits=1):
-        AttachedServer(*args, **kwargs)._run()
+        server._run()
+
+def sigint_handler(signum, frame, server):
+    # Clean up workers
+    for wproc in server.worker_procs:
+        if wproc.exitcode is None:
+            os.kill(wproc.pid, signal.SIGKILL)
+        wproc.join()
+    exit(-1)
