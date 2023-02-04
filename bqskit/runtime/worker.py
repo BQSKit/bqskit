@@ -23,10 +23,9 @@ from queue import Queue
 class Worker:
     """BQSKit Runtime's Worker."""
 
-    def __init__(self, id: int, conn: Connection, node_id: int) -> None:
+    def __init__(self, id: int, conn: Connection) -> None:
         """Initialize a worker with no tasks."""
         self.id = id
-        self.node_id = node_id
         self.conn = conn
         self.tasks: dict[tuple[int, int, int, int], RuntimeTask] = {}
         self.delayed_tasks = []
@@ -151,6 +150,8 @@ class Worker:
         task = None
         while True:
             if self.ready_tasks.empty():
+                if len(self.delayed_tasks) > 0:
+                    self._add_task(self.delayed_tasks.pop())
                 return
 
             _addr = self.ready_tasks.get()
@@ -248,7 +249,7 @@ class Worker:
         # Create the tasks
         task = RuntimeTask(
             fnarg,
-            RuntimeAddress(self.node_id, self.id, mailbox_id, 0),
+            RuntimeAddress(self.id, mailbox_id, 0),
             self.active_task.comp_task_id,
             self.active_task.breadcrumbs + (self.active_task.return_address,),
             self.active_task.logging_level,
@@ -281,7 +282,7 @@ class Worker:
         tasks = [
             RuntimeTask(
                 fnarg,
-                RuntimeAddress(self.node_id, self.id, mailbox_id, i),
+                RuntimeAddress(self.id, mailbox_id, i),
                 self.active_task.comp_task_id,
                 self.active_task.breadcrumbs + (self.active_task.return_address,),
                 self.active_task.logging_level,

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import multiprocessing as mp
 from multiprocessing.connection import Client
 import uuid
+from bqskit.bqskit.compiler.status import CompilationStatus
 from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
 
@@ -57,16 +58,16 @@ class Compiler:
         if ip is None:
             ip = "localhost"
             port = 7472
-            self.start_server(num_workers)
+            self._start_server(num_workers)
 
-        self.connect_to_server(ip, port)
+        self._connect_to_server(ip, port)
     
-    def start_server(self, num_workers: int) -> None:
+    def _start_server(self, num_workers: int) -> None:
         self.p = mp.Process(target=start_attached_server, args=(num_workers,))
         _logger.debug('Starting runtime server process.')
         self.p.start()
 
-    def connect_to_server(self, ip, port) -> None:
+    def _connect_to_server(self, ip, port) -> None:
         max_retries = 5
         wait_time = .25
         for _ in range(max_retries):
@@ -117,7 +118,9 @@ class Compiler:
 
     def submit(self, task: CompilationTask) -> None:
         """Submit a CompilationTask to the Compiler."""
-        task.logging_level = logging.getLogger('bqskit').getEffectiveLevel()
+        if task.logging_level is None:
+            task.logging_level = logging.getLogger('bqskit').getEffectiveLevel()
+            
         try:
             # print(f"Compiler submitting task {task.task_id}.")
             self.conn.send((RuntimeMessage.SUBMIT, task))
@@ -126,7 +129,7 @@ class Compiler:
             self.conn = None
             raise RuntimeError("Server connection unexpectedly closed.") from e
 
-    def status(self, task: CompilationTask) -> bool:
+    def status(self, task: CompilationTask) -> CompilationStatus:
         """
         Retrieve the status of the specified CompilationTask.
 

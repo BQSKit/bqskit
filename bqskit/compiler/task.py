@@ -8,18 +8,6 @@ from typing import Any, Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.operation import Operation
-from bqskit.passes.control import ForEachBlockPass
-from bqskit.passes.control.predicates.count import GateCountPredicate
-from bqskit.passes.control.whileloop import WhileLoopPass
-from bqskit.passes.partitioning.cluster import ClusteringPartitioner
-from bqskit.passes.partitioning.quick import QuickPartitioner
-from bqskit.passes.processing import ScanningGateRemovalPass
-from bqskit.passes.synthesis import QFASTDecompositionPass
-from bqskit.passes.synthesis.leap import LEAPSynthesisPass
-from bqskit.passes.util import UnfoldPass
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 
 _logger = logging.getLogger(__name__)
@@ -48,7 +36,7 @@ class CompilationTask():
         self.passes = passes
         self.data = {}
         self.requested_keys = []
-        self.logging_level = 30
+        self.logging_level = None
         self.max_logging_depth = -1
 
     async def run(self) -> Circuit | tuple[Circuit, dict[str, Any]]:

@@ -10,7 +10,6 @@ class RuntimeAddress(NamedTuple):
     a task. A task will ship its result to its return address. That slot
     will only accept a package from that task.
     """
-    node_id: int
     worker_id: int
     mailbox_index: int
     mailbox_slot: int
