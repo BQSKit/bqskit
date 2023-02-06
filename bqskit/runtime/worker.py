@@ -1,6 +1,6 @@
 """This module implements BQSKit Runtime's Worker class."""
 from __future__ import annotations
-from multiprocessing.connection import Connection
+from multiprocessing.connection import Connection, wait
 import signal
 import sys
 import time
@@ -52,9 +52,19 @@ class Worker:
         """Main worker event loop."""
         self.running = True
         while self.running:
-            self._step_next_ready_task()
+            self._try_idle()
             self._handle_comms()
+            self._step_next_ready_task()
     
+    def _try_idle(self) -> None:
+        """If there is nothing to do, wait until we recieve a msg."""
+        empty_out_box = len(self.outgoing) == 0
+        no_ready_tasks = self.ready_tasks.empty()
+        no_delayed_tasks = len(self.delayed_tasks) == 0
+
+        if empty_out_box and no_ready_tasks and no_delayed_tasks:
+            wait([self.conn])
+
     def _handle_comms(self) -> None:
         """Handle all incoming and outgoing messages."""
         self.communicating = True
@@ -152,8 +162,6 @@ class Worker:
             if self.ready_tasks.empty():
                 if len(self.delayed_tasks) > 0:
                     self._add_task(self.delayed_tasks.pop())
-                else:
-                    time.sleep(0)
                 return
 
             _addr = self.ready_tasks.get()
