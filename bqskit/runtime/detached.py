@@ -1,6 +1,9 @@
 """This module implements the DetachedServer runtime."""
 from __future__ import annotations
+
 import os
+os.environ['OMP_NUM_THREADS'] = "1"
+
 from multiprocessing.connection import Client, Listener, Connection, wait
 from multiprocessing import Pipe, Process
 import selectors

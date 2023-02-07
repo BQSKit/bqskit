@@ -1,5 +1,8 @@
 """This module implements BQSKit Runtime's Worker class."""
 from __future__ import annotations
+
+import os
+os.environ['OMP_NUM_THREADS'] = "1"
 from multiprocessing.connection import Connection, wait
 import signal
 import sys
@@ -328,8 +331,7 @@ def start_worker(*args, **kwargs) -> None:
     signal.signal(signal.SIGUSR1, cancel_signal_handler)
     global _worker
     _worker = Worker(*args, **kwargs)
-    with threadpool_limits(limits=1):
-        _worker._loop()
+    _worker._loop()
 
 def get_worker() -> Worker:
     """Return a handle on this process' worker."""

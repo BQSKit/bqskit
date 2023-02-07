@@ -1,5 +1,7 @@
 """This module implements the AttachedServer runtime."""
 import os
+os.environ['OMP_NUM_THREADS'] = "1"
+
 from multiprocessing.connection import Client, Listener, Connection, wait
 from multiprocessing import Pipe, Process
 import signal

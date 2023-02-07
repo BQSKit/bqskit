@@ -1,7 +1,8 @@
 """This module implements the AttachedServer runtime."""
 
-import functools
 import os
+os.environ['OMP_NUM_THREADS'] = "1"
+import functools
 from multiprocessing.connection import Listener, Connection
 from multiprocessing import Pipe, Process
 import signal
@@ -13,7 +14,6 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.worker import start_worker
 
 from bqskit.runtime.detached import DetachedServer
-from threadpoolctl import threadpool_limits
 
 class AttachedServer(DetachedServer):
 
@@ -116,8 +116,7 @@ def start_attached_server(*args, **kwargs) -> None:
     signal.signal(signal.SIGINT, handle)
 
     # Run the server
-    with threadpool_limits(limits=1):
-        server._run()
+    server._run()
 
 def sigint_handler(signum, frame, server):
     # Clean up workers
