@@ -310,7 +310,7 @@ class DetachedServer:
 
     def _handle_error(self, error_payload: tuple[int, str]) -> None:
         conn = self.tasks[self.mailbox_to_task_dict[error_payload[0]]][1]
-        conn.send(RuntimeMessage.ERROR, error_payload[1])
+        conn.send((RuntimeMessage.ERROR, error_payload[1]))
         self._handle_disconnect(conn)
 
     def _handle_log(self, log_payload: tuple[int, str]) -> None:
