@@ -31,7 +31,7 @@ class Worker:
         self.id = id
         self.conn = conn
         self.tasks: dict[tuple[int, int, int, int], RuntimeTask] = {}
-        self.delayed_tasks = []
+        self.delayed_tasks: list[RuntimeTask] = []
         self.outgoing = []
         self.ready_tasks = Queue()
         self.running = False
@@ -45,7 +45,12 @@ class Worker:
         old_factory = logging.getLogRecordFactory()
         def record_factory(*args, **kwargs):
             record = old_factory(*args, **kwargs)
-            self.outgoing.append((RuntimeMessage.LOG, (get_worker().active_task.comp_task_id, record)))
+            active_task = get_worker().active_task
+            if active_task is not None:
+                tid = active_task.comp_task_id
+            else:
+                tid = -1
+            self.outgoing.append((RuntimeMessage.LOG, (tid, record)))
             return record
         logging.setLogRecordFactory(record_factory)
 

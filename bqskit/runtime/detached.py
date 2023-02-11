@@ -314,7 +314,13 @@ class DetachedServer:
         self._handle_disconnect(conn)
 
     def _handle_log(self, log_payload: tuple[int, str]) -> None:
-        conn = self.tasks[self.mailbox_to_task_dict[log_payload[0]]][1]
+        tid = log_payload[0]
+
+        if tid == -1:
+            print(log_payload[1].getMessage())  # Dump it in detached mode
+            return
+
+        conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         conn.send((RuntimeMessage.LOG, log_payload[1]))
 
     def _get_new_mailbox_id(self) -> int:

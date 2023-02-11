@@ -126,6 +126,9 @@ class Compiler:
                 self.p.join()
                 _logger.debug('Attached runtime server is down.')
                 self.p = None
+        
+        # Reset interrupt signal handler
+        signal.signal(signal.SIGINT, self.old_signal)
             
     def __del__(self) -> None:
         self.close()
@@ -215,6 +218,7 @@ class Compiler:
                 return (msg, payload)
 
 def sigint_handler(signum, frame, compiler):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     _logger.critical("Compiler interrupted.")
     compiler.close()
     exit(-1)
