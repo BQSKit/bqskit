@@ -15,9 +15,9 @@ from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
-from bqskit.runtime import get_runtime
 
 _logger = logging.getLogger(__name__)
 

@@ -4,7 +4,6 @@ import pytest
 
 from bqskit import compile
 from bqskit import MachineModel
-from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import default_gate_set
 from bqskit.ext.cirq.models import google_gate_set
 from bqskit.ext.honeywell import honeywell_gate_set

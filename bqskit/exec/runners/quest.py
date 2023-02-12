@@ -114,7 +114,7 @@ class QuestRunner(CircuitRunner):
         blocked_circuit = self.compiler.compile(task)
 
         # 2. Gather partial solutions
-        data = self.compiler.analyze(task, ForEachBlockPass.key)
+        data = self.compiler.analyze(task)[1][ForEachBlockPass.key]
         psols, pts = self.parse_data(blocked_circuit, data)
         # psols: psols[i] = list[[circuit, dist]] -> block i's partial solutions
         # pts: pts[i] = CircuitPoint -> block i's locations
@@ -380,7 +380,7 @@ def gen_approximate_circuits(
         instantiate_options,
     )
 
-    data = compiler.analyze(task, ForEachBlockPass.key)
+    data = compiler.analyze(task)[1][ForEachBlockPass.key]
     psols, pts = runner.parse_data(blocked_circuit, data)
     # psols: psols[i] = list[[circuit, dist]] -> block i's partial solutions
     # pts: pts[i] = CircuitPoint -> block i's locations

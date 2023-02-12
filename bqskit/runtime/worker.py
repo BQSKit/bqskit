@@ -1,29 +1,34 @@
 """This module implements BQSKit Runtime's Worker class."""
 from __future__ import annotations
 
+import logging
 import os
-os.environ['OMP_NUM_THREADS'] = "1"
-from multiprocessing.connection import Connection, wait
 import signal
 import sys
 import time
 import traceback
-from typing import Any, List, cast
+from multiprocessing.connection import Connection
+from multiprocessing.connection import wait
+from queue import Queue
+from types import FrameType
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import List
 
 import faulthandler
 faulthandler.enable()
 import logging
 from bqskit.runtime.address import RuntimeAddress
-from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.future import RuntimeFuture
-from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.message import RuntimeMessage
+from bqskit.runtime.result import RuntimeResult
+from bqskit.runtime.task import RuntimeTask
+os.environ['OMP_NUM_THREADS'] = '1'
 
-from threadpoolctl import threadpool_limits
 
 _worker = None
 
-from queue import Queue
 
 class Worker:
     """BQSKit Runtime's Worker."""
@@ -32,20 +37,21 @@ class Worker:
         """Initialize a worker with no tasks."""
         self.id = id
         self.conn = conn
-        self.tasks: dict[tuple[int, int, int, int], RuntimeTask] = {}
+        self.tasks: dict[RuntimeAddress, RuntimeTask] = {}
         self.delayed_tasks: list[RuntimeTask] = []
-        self.outgoing = []
-        self.ready_tasks = Queue()
+        self.outgoing: list[tuple[RuntimeMessage, Any]] = []
+        self.ready_tasks: Queue[RuntimeAddress] = Queue()
         self.running = False
-        self.mailboxes = {}
+        self.mailboxes: dict[int, list[Any]] = {}
         self.mailbox_counter = 0
-        self.active_task = None
+        self.active_task: RuntimeTask | None = None
         self.communicating = False
-        self.cancelled_tasks = set()
+        self.cancelled_tasks: set[RuntimeAddress] = set()
 
         # Send out every emitted log message upstream
         old_factory = logging.getLogRecordFactory()
-        def record_factory(*args, **kwargs):
+
+        def record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
             record = old_factory(*args, **kwargs)
             active_task = get_worker().active_task
             if active_task is not None:
@@ -65,7 +71,7 @@ class Worker:
             self._try_idle()
             self._handle_comms()
             self._step_next_ready_task()
-    
+
     def _try_idle(self) -> None:
         """If there is nothing to do, wait until we recieve a msg."""
         empty_out_box = len(self.outgoing) == 0
@@ -95,11 +101,11 @@ class Worker:
                 tasks = cast(List[RuntimeTask], payload)
                 self._add_task(tasks.pop())
                 self.delayed_tasks.extend(tasks)
-                
+
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
                 self._handle_result(result)
-                
+
             elif msg == RuntimeMessage.CANCEL:
                 addr = cast(RuntimeAddress, payload)
                 self._handle_cancel(addr)
@@ -109,7 +115,7 @@ class Worker:
         for out_msg in self.outgoing:
             self.conn.send(out_msg)
         self.outgoing.clear()
-    
+
     def _add_task(self, task: RuntimeTask) -> None:
         """Start a task and add it to the loop."""
         self.tasks[task.return_address] = task
@@ -119,19 +125,19 @@ class Worker:
     def _handle_result(self, result: RuntimeResult) -> None:
         """Insert result into appropriate mailbox and wake waiting tasks."""
         box = self.mailboxes[result.return_address.mailbox_index]
-        if box[0] is False: # Expecting a single result
+        if box[0] is False:  # Expecting a single result
             box[0] = True
             box[1] = result.result
             if box[2] is not None:
                 addr = box[2]
-                self.tasks[addr].send = box.pop(1) # Send result to the task
+                self.tasks[addr].send = box.pop(1)  # Send result to the task
                 self.mailboxes.pop(result.return_address.mailbox_index)
-                self.ready_tasks.put(addr) # Wake it
+                self.ready_tasks.put(addr)  # Wake it
             return
 
         box[1][result.return_address.mailbox_slot] = result.result
         box[0] += 1
-        
+
         if box[0] >= len(box[1]):
             box[0] = True
             if box[2] is not None:
@@ -145,11 +151,11 @@ class Worker:
         self.cancelled_tasks.add(addr)
 
         # Remove all tasks that are children of `addr` from initialized tasks
-        to_remove = []
+        to_remove: list[Any] = []
         for key, task in self.tasks.items():
             if task.is_descendant_of(addr):
                 to_remove.append(key)
-        
+
         for key in to_remove:
             self.tasks.pop(key)
 
@@ -219,7 +225,7 @@ class Worker:
                 task.send = None
 
             # Handle an await on a RuntimeFuture
-            if isinstance(result, tuple) and result[0] == "BQSKIT_MAIL_ID":
+            if isinstance(result, tuple) and result[0] == 'BQSKIT_MAIL_ID':
                 self.mailboxes[result[1]][2] = addr
 
             else:
@@ -234,8 +240,8 @@ class Worker:
             # Start delayed task
             if len(self.delayed_tasks) > 0:
                 self._add_task(self.delayed_tasks.pop())
-        
-        except RuntimeCancelException as e:
+
+        except RuntimeCancelException:
             # Active tasks needs to be set asap
             # to prevent double cancel issue
             self.active_task = None
@@ -243,13 +249,20 @@ class Worker:
             # Start delayed task
             if len(self.delayed_tasks) > 0:
                 self._add_task(self.delayed_tasks.pop())
-        
-        except Exception as e:
+
+        except Exception:
+            assert self.active_task is not None
+
             # Bubble up errors
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
-            self.conn.send((RuntimeMessage.ERROR, (self.active_task.comp_task_id, error_str)))
-        
+            self.conn.send(
+                (
+                    RuntimeMessage.ERROR,
+                    (self.active_task.comp_task_id, error_str),
+                ),
+            )
+
         finally:
             self.active_task = None
 
@@ -259,11 +272,17 @@ class Worker:
         self.mailbox_counter += 1
         return new_id
 
-    def submit(self, fn, *args: Any, **kwargs: Any) -> RuntimeFuture:
+    def submit(
+        self,
+        fn: Callable[..., Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> RuntimeFuture:
         """Submit `fn` as a task to the runtime."""
+        assert self.active_task is not None
         # Group fnargs together
         fnarg = (fn, args, kwargs)
-        
+
         # Create a new mailbox
         mailbox_id = self._get_new_mailbox_id()
         self.mailboxes[mailbox_id] = [False, None, None]
@@ -284,8 +303,14 @@ class Worker:
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
 
-    def map(self, fn, *args: Any, **kwargs: Any) -> RuntimeFuture:
+    def map(
+        self,
+        fn: Callable[..., Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> RuntimeFuture:
         """Map `fn` over the input arguments distributed across the runtime."""
+        assert self.active_task is not None
         # Group fnargs together
         fnargs = []
         if len(args) == 1:
@@ -295,18 +320,20 @@ class Worker:
         else:
             for subargs in zip(*args):
                 fnargs.append((fn, subargs, kwargs))
-        
+
         # Create a new mailbox
         mailbox_id = self._get_new_mailbox_id()
         self.mailboxes[mailbox_id] = [0, [None] * len(fnargs), None]
 
         # Create the tasks
+        breadcrumbs = self.active_task.breadcrumbs
+        breadcrumbs += (self.active_task.return_address,)
         tasks = [
             RuntimeTask(
                 fnarg,
                 RuntimeAddress(self.id, mailbox_id, i),
                 self.active_task.comp_task_id,
-                self.active_task.breadcrumbs + (self.active_task.return_address,),
+                breadcrumbs,
                 self.active_task.logging_level,
                 self.active_task.max_logging_depth,
             )
@@ -319,10 +346,12 @@ class Worker:
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
 
+
 class RuntimeCancelException(Exception):
     pass
 
-def cancel_signal_handler(signum, frame) -> None:
+
+def cancel_signal_handler(signum: int, frame: FrameType | None) -> Any:
     if _worker is not None:
         if _worker.communicating:
             return
@@ -335,15 +364,17 @@ def cancel_signal_handler(signum, frame) -> None:
             ):
                 raise RuntimeCancelException()
 
-def start_worker(*args, **kwargs) -> None:
+
+def start_worker(*args: Any, **kwargs: Any) -> None:
     """Start this process' worker."""
     signal.signal(signal.SIGUSR1, cancel_signal_handler)
     global _worker
     _worker = Worker(*args, **kwargs)
     _worker._loop()
 
+
 def get_worker() -> Worker:
     """Return a handle on this process' worker."""
     if _worker is None:
-        raise RuntimeError("Worker has not been started.")
+        raise RuntimeError('Worker has not been started.')
     return _worker

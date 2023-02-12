@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 from typing import Any
 from typing import Callable
-from typing import Iterator
 from typing import Sequence
 
 import numpy as np
@@ -19,7 +18,6 @@ from hypothesis import HealthCheck
 from hypothesis import settings
 from scipy.stats import unitary_group
 
-from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate

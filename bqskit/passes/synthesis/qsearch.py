@@ -14,9 +14,9 @@ from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
-from bqskit.runtime import get_runtime
 
 
 _logger = logging.getLogger(__name__)
@@ -133,7 +133,11 @@ class QSearchSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
-    async def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
 

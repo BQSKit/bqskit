@@ -14,7 +14,7 @@ from bqskit.qis import PermutationMatrix
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-def test_simple(compiler: Compiler) -> None:
+def test_simple() -> None:
     cg = (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)
     model = MachineModel(8, cg)
     circuit = Circuit(5)
@@ -44,10 +44,11 @@ def test_simple(compiler: Compiler) -> None:
         ],
     )
 
-    cc = compiler.compile(task)
-    pi = compiler.analyze(task, 'initial_mapping')
-    pf = compiler.analyze(task, 'final_mapping')
-    PI = PermutationMatrix.from_qubit_location(5, pi)
-    PF = PermutationMatrix.from_qubit_location(5, pf)
-    assert cc.get_unitary().get_distance_from(PF.T @ in_utry @ PI) < 1e-7
-    assert all(e in cg for e in cc.coupling_graph)
+    with Compiler() as compiler:
+        cc, data = compiler.analyze(task)
+        pi = data['initial_mapping']
+        pf = data['final_mapping']
+        PI = PermutationMatrix.from_qubit_location(5, pi)
+        PF = PermutationMatrix.from_qubit_location(5, pf)
+        assert cc.get_unitary().get_distance_from(PF.T @ in_utry @ PI) < 1e-7
+        assert all(e in cg for e in cc.coupling_graph)

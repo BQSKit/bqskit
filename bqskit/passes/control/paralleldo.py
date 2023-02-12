@@ -6,10 +6,9 @@ from typing import Any
 from typing import Callable
 from typing import Sequence
 
-from bqskit.runtime import get_runtime
-
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
@@ -99,7 +98,7 @@ class ParallelDo(BasePass):
 
             # circuit.become(result[0])
             # data.update(result[1])
-            raise NotImplementedError("TODO: Cancel Task Support")
+            raise NotImplementedError('TODO: Cancel Task Support')
 
         else:
             best_circ = None
@@ -115,11 +114,11 @@ class ParallelDo(BasePass):
             data.update(best_data)
 
 
-def _sub_do_work(
+async def _sub_do_work(
     loop_body: Sequence[BasePass],
     circuit: Circuit,
     data: dict[str, Any],
 ) -> tuple[Circuit, dict[str, Any]]:
     for loop_pass in loop_body:
-        loop_pass.run(circuit, data)
+        await loop_pass.run(circuit, data)
     return circuit, data

@@ -1,6 +1,9 @@
 """This module implements the RuntimeTask class."""
+from __future__ import annotations
+
 import inspect
 from typing import Any
+from typing import Coroutine
 
 from bqskit.runtime.address import RuntimeAddress
 
@@ -14,7 +17,7 @@ class RuntimeTask:
         and arguments grouped with a return address. It is expected
         when the task is finished executing, to ship the result to
         the return address.
-    
+
         2. When the task has been scheduled to run on a worker, it is
         initialized into a coroutine that can be executed in steps.
     """
@@ -27,9 +30,9 @@ class RuntimeTask:
         fnargs: Any,
         return_address: RuntimeAddress,
         comp_task_id: int,
-        breadcrumbs: tuple[RuntimeAddress],
-        logging_level = 30,
-        max_logging_depth = -1,
+        breadcrumbs: tuple[RuntimeAddress, ...],
+        logging_level: int = 30,
+        max_logging_depth: int = -1,
     ) -> None:
         """Create the task with a new id and return address."""
         RuntimeTask.task_counter += 1
@@ -40,26 +43,26 @@ class RuntimeTask:
         self.comp_task_id = comp_task_id
         self.breadcrumbs = breadcrumbs
         self.max_logging_depth = max_logging_depth
-        self.coro = None
+        self.coro: Coroutine[Any, Any, Any] | None = None
         self.send = None
 
-    def step(self):
+    def step(self) -> Any:
         """Execute one step of the task."""
         if self.coro is None:
-            raise RuntimeError("Task has not been initialized.")
+            raise RuntimeError('Task has not been initialized.')
 
         return self.coro.send(self.send)
-    
-    def start(self):
+
+    def start(self) -> None:
         """Initialize the task."""
         self.coro = self.run()
-    
+
     async def run(self) -> Any:
         """Task coroutine wrapper."""
         if inspect.iscoroutinefunction(self.fnargs[0]):
             return await self.fnargs[0](*self.fnargs[1], **self.fnargs[2])
         return self.fnargs[0](*self.fnargs[1], **self.fnargs[2])
-    
+
     def is_descendant_of(self, addr: RuntimeAddress) -> bool:
         """Return true if `addr` identifies a parent (or this) task."""
         return addr == self.return_address or addr in self.breadcrumbs
