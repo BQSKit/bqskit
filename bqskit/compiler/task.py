@@ -5,9 +5,11 @@ import logging
 import uuid
 from typing import Any
 from typing import Sequence
+from typing import TYPE_CHECKING
 
-from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
+if TYPE_CHECKING:
+    from bqskit.compiler.basepass import BasePass
+    from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
 

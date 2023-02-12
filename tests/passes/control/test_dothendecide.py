@@ -8,18 +8,24 @@ from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.passes.control import DoThenDecide
 
 
+def accept_always(c1: Circuit, c2: Circuit) -> bool:
+    return True
+
+
+def reject_always(c1: Circuit, c2: Circuit) -> bool:
+    return False
+
+
+class AddCNOTPass(BasePass):
+    async def run(
+        self,
+        circuit: Circuit,
+        data: dict[str, Any] = {},
+    ) -> None:
+        circuit.append_gate(CNOTGate(), (0, 1))
+
+
 def test_dothendecide_accept() -> None:
-    def accept_always(c1: Circuit, c2: Circuit) -> bool:
-        return True
-
-    class AddCNOTPass(BasePass):
-        async def run(
-            self,
-            circuit: Circuit,
-            data: dict[str, Any] = {},
-        ) -> None:
-            circuit.append_gate(CNOTGate(), (0, 1))
-
     circuit = Circuit(2)
     dtd_pass = DoThenDecide(accept_always, AddCNOTPass())
     circuit.perform(dtd_pass)
@@ -28,17 +34,6 @@ def test_dothendecide_accept() -> None:
 
 
 def test_dothendecide_reject() -> None:
-    def reject_always(c1: Circuit, c2: Circuit) -> bool:
-        return False
-
-    class AddCNOTPass(BasePass):
-        async def run(
-            self,
-            circuit: Circuit,
-            data: dict[str, Any] = {},
-        ) -> None:
-            circuit.append_gate(CNOTGate(), (0, 1))
-
     circuit = Circuit(2)
     dtd_pass = DoThenDecide(reject_always, AddCNOTPass())
     circuit.perform(dtd_pass)
@@ -46,17 +41,6 @@ def test_dothendecide_reject() -> None:
 
 
 def test_dothendecide_list() -> None:
-    def accept_always(c1: Circuit, c2: Circuit) -> bool:
-        return True
-
-    class AddCNOTPass(BasePass):
-        async def run(
-            self,
-            circuit: Circuit,
-            data: dict[str, Any] = {},
-        ) -> None:
-            circuit.append_gate(CNOTGate(), (0, 1))
-
     circuit = Circuit(2)
     dtd_pass = DoThenDecide(accept_always, [AddCNOTPass(), AddCNOTPass()])
     circuit.perform(dtd_pass)

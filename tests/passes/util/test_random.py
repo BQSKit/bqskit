@@ -11,6 +11,7 @@ from bqskit.passes import SetRandomSeedPass
 from bqskit.qis import UnitaryMatrix
 
 
+@pytest.mark.xfail(reason='Bug #107')
 def test_two_qubit_syn_with_seed(compiler: Compiler) -> None:
     in_utry = UnitaryMatrix.random(2)
 
