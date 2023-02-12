@@ -33,7 +33,7 @@ class TestScanPartitioner:
         circ.append_gate(CNOTGate(), [1, 2])
         circ.append_gate(CNOTGate(), [2, 3])
         utry = circ.get_unitary()
-        ScanPartitioner(3).run(circ, {})
+        circ.perform(ScanPartitioner(3))
 
         assert len(circ) == 3
         assert all(isinstance(op.gate, CircuitGate) for op in circ)
@@ -45,7 +45,7 @@ class TestScanPartitioner:
 
     def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
         utry = r6_qudit_circuit.get_unitary()
-        ScanPartitioner(3).run(r6_qudit_circuit, {})
+        r6_qudit_circuit.perform(ScanPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -102,7 +102,7 @@ class TestScanPartitioner:
             ],
         )
         utry = circuit.get_unitary()
-        ScanPartitioner(3).run(circuit, {})
+        circuit.perform(ScanPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -160,7 +160,7 @@ class TestScanPartitioner:
         )
 
         utry = circuit.get_unitary()
-        ScanPartitioner(3).run(circuit, {})
+        circuit.perform(ScanPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -239,7 +239,7 @@ class TestScanPartitioner:
         )
 
         utry = circuit.get_unitary()
-        ScanPartitioner(3).run(circuit, {})
+        circuit.perform(ScanPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -299,7 +299,7 @@ class TestScanPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [4])
 
         utry = circuit.get_unitary()
-        ScanPartitioner(3).run(circuit, {})
+        circuit.perform(ScanPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -333,4 +333,4 @@ class TestScanPartitioner:
             ],
         )
         with pytest.raises(RuntimeError):
-            ScanPartitioner(3).run(circuit)
+            circuit.perform(ScanPartitioner(3))

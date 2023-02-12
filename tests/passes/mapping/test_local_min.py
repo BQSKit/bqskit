@@ -5,7 +5,6 @@ import pytest
 from bqskit import Circuit
 from bqskit import MachineModel
 from bqskit.ir.gates import CZGate
-from bqskit.passes import GeneralizedSabreLayoutPass
 from bqskit.passes import GeneralizedSabreRoutingPass
 from bqskit.qis import CouplingGraph
 
@@ -70,7 +69,7 @@ def test_escape_min_route(swaps: int, local_mins: int) -> None:
     circuit = looping_circuit(swaps, local_mins)
     cg = CouplingGraph.linear(circuit.num_qudits)
     data = {'machine_model': MachineModel(circuit.num_qudits, cg)}
-    GeneralizedSabreRoutingPass().run(circuit, data)
+    circuit.perform(GeneralizedSabreRoutingPass(), data)
     assert all(e in cg for e in circuit.coupling_graph)
 
 
@@ -82,4 +81,4 @@ def test_escape_min_layout(swaps: int, local_mins: int) -> None:
     circuit = looping_circuit(swaps, local_mins)
     cg = CouplingGraph.linear(circuit.num_qudits)
     data = {'machine_model': MachineModel(circuit.num_qudits, cg)}
-    GeneralizedSabreLayoutPass(3).run(circuit, data)
+    circuit.perform(GeneralizedSabreRoutingPass(3), data)

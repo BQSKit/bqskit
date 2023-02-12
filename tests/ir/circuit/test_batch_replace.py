@@ -118,7 +118,7 @@ class TestBatchReplace:
                 b = (b + 1) % num_q
             circ.append_gate(CNOTGate(), [a, b])
 
-        ScanPartitioner(2).run(circ, {})
+        circ.perform(ScanPartitioner(2))
 
         points = []
         ops = []

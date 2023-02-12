@@ -16,7 +16,11 @@ from bqskit.ir.circuit import Circuit
 
 def test_errors_raised_locally(compiler: Compiler) -> None:
     class ErrorPass(BasePass):
-        def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        async def run(
+            self,
+            circuit: Circuit,
+            data: dict[str, Any] = {},
+        ) -> None:
             raise RuntimeError()
 
     task = CompilationTask(Circuit(1), [ErrorPass()])
@@ -27,7 +31,11 @@ def test_errors_raised_locally(compiler: Compiler) -> None:
 
 def test_log_msg_printed_locally(compiler: Compiler) -> None:
     class LogPass(BasePass):
-        def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        async def run(
+            self,
+            circuit: Circuit,
+            data: dict[str, Any] = {},
+        ) -> None:
             logging.getLogger('bqskit.dummy').debug('Test.')
 
     task = CompilationTask(Circuit(1), [LogPass()])

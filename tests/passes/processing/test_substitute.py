@@ -20,7 +20,7 @@ class TestSubstitute:
         def is_variable(op: Operation) -> bool:
             return isinstance(op.gate, VariableUnitaryGate)
         substitute = SubstitutePass(is_variable, VariableUnitaryGate(1))
-        substitute.run(circuit)
+        circuit.perform(substitute)
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
         assert circuit.num_operations == 1

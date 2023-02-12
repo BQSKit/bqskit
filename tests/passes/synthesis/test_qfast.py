@@ -17,7 +17,7 @@ class TestQFAST:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         qfast = QFASTDecompositionPass()
-        qfast.run(circuit)
+        circuit.perform(qfast)
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
@@ -33,7 +33,7 @@ class TestQFAST:
         utry = UnitaryMatrix.random(3)
         circuit = Circuit.from_unitary(utry)
         qfast = QFASTDecompositionPass()
-        qfast.run(circuit)
+        circuit.perform(qfast)
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
@@ -56,6 +56,6 @@ class TestQFAST:
         utry = UnitaryMatrix.random(3)
         circuit = Circuit.from_unitary(utry)
         qfast = QFASTDecompositionPass(cg)
-        qfast.run(circuit)
+        circuit.perform(qfast)
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5

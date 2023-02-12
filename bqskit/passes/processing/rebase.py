@@ -12,10 +12,10 @@ from bqskit.ir.gates import U3Gate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.point import CircuitPoint as Point
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
-from bqskit.runtime import get_runtime
 _logger = logging.getLogger(__name__)
 
 

@@ -1,35 +1,46 @@
 """This module implements the AttachedServer runtime."""
-import os
-os.environ['OMP_NUM_THREADS'] = "1"
+from __future__ import annotations
 
-from multiprocessing.connection import Client, Listener, Connection, wait
-from multiprocessing import Pipe, Process
+import os
 import signal
 import sys
 import time
 import traceback
-from typing import List, cast
+from multiprocessing import Pipe
+from multiprocessing import Process
+from multiprocessing.connection import Client
+from multiprocessing.connection import Connection
+from multiprocessing.connection import Listener
+from multiprocessing.connection import wait
+from typing import Any
+from typing import cast
+from typing import List
+
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
-from bqskit.runtime.message import RuntimeMessage
+os.environ['OMP_NUM_THREADS'] = '1'
 
 
 class Manager:
     """
     BQSKit Runtime Manager.
 
-    A Manager is a middle node in the process hierarchy and is responsible
-    for managing workers or other managers. The manager is part of the
-    detached architecture. Here managers are started individually as 
-    separate processes, which in turn start their own workers. Then,
-    if necessary, more managers can be started to manager the level-1
-    managers, and so on, until finally, a detached server is started and
-    clients can connect.
+    A Manager is a middle node in the process hierarchy and is responsible for
+    managing workers or other managers. The manager is part of the detached
+    architecture. Here managers are started individually as separate processes,
+    which in turn start their own workers. Then, if necessary, more managers can
+    be started to manager the level-1 managers, and so on, until finally, a
+    detached server is started and clients can connect.
     """
 
-    def __init__(self, num_workers: int = -1, ipports: list[tuple[str, int]] | None = None) -> None:
+    def __init__(
+        self,
+        num_workers: int = -1,
+        ipports: list[tuple[str, int]] | None = None,
+    ) -> None:
         """
         Create a manager instance in one of two ways:
 
@@ -38,12 +49,12 @@ class Manager:
             You can also specify the number of workers to spawn via
             the `num_workers` parameter. In this mode, the manager
             is a level-1 manager and manages workers.
-        
+
         2) Specify ip and port pairs, then assume at each endpoint there
             is a listening manager and attempt to establish a connection.
             In this mode, the manager will not spawn any workers and just
             manage the specified managers.
-        
+
         In either case, if any problems arise during startup, no recovery
         is attempted and the manager terminates.
         """
@@ -53,20 +64,26 @@ class Manager:
         self.workers: list[tuple[Connection, Process | None]] = []
         self.worker_resources: list[int] = []
 
-        if ipports is None: # Case 1: spawn and manage workers
+        if ipports is None:  # Case 1: spawn and manage workers
             self._spawn_workers(num_workers)
 
-        else: # Case 2: Connect to managers at ipports
-            sub_range = (self.upper_id_bound - self.lower_id_bound) // len(ipports)
+        else:  # Case 2: Connect to managers at ipports
+            d = len(ipports)
+            sub_range = (self.upper_id_bound - self.lower_id_bound) // d
             for i, (ip, port) in enumerate(ipports):
-                lb = self.lower_id_bound + (i*sub_range)
-                ub = min(self.lower_id_bound + ((i+1)*sub_range), self.upper_id_bound)
+                lb = self.lower_id_bound + (i * sub_range)
+                ub = min(
+                    self.lower_id_bound + ((i + 1) * sub_range),
+                    self.upper_id_bound,
+                )
                 self._connect_to_manager(ip, port, lb, ub)
-        
+
         # Task tracking data structure
         self.total_resources = sum(self.worker_resources)
         self.total_idle_resources = 0
-        self.worker_idle_resources: list[int] = [r for r in self.worker_resources]
+        self.worker_idle_resources: list[int] = [
+            r for r in self.worker_resources
+        ]
 
         # Ready and inform upstream
         self.upstream.send((RuntimeMessage.STARTED, self.total_resources))
@@ -82,22 +99,26 @@ class Manager:
         self.lower_id_bound = payload[0]
         self.upper_id_bound = payload[1]
 
-    def _spawn_workers(self, num_workers = -1):
+    def _spawn_workers(self, num_workers: int = -1) -> None:
         if num_workers == -1:
-            num_workers = os.cpu_count()
-    
+            oscount = os.cpu_count()
+            num_workers = oscount if oscount else 1
+
         for i in range(num_workers):
-            p, q = Pipe()
             if self.lower_id_bound + i == self.upper_id_bound:
-                raise RuntimeError("Insufficient id range for workers.")
-            self.workers.append((p, Process(target=start_worker, args=(self.lower_id_bound + i, q))))
-            self.workers[-1][1].start()
+                raise RuntimeError('Insufficient id range for workers.')
+
+            p, q = Pipe()
+            args = (self.lower_id_bound + i, q)
+            proc = Process(target=start_worker, args=args)
+            self.workers.append((p, proc))
+            self.workers[-1][1].start()  # type: ignore
             self.worker_resources.append(1)
 
         for wconn, _ in self.workers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
 
-    def _connect_to_manager(self, ip, port, lb, ub) -> None:
+    def _connect_to_manager(self, ip: str, port: int, lb: int, ub: int) -> None:
         max_retries = 5
         wait_time = .25
         for _ in range(max_retries):
@@ -113,35 +134,36 @@ class Manager:
                 assert msg == RuntimeMessage.STARTED
                 self.worker_resources.append(payload)
                 return
-        raise RuntimeError("Worker connection refused")
-    
+        raise RuntimeError('Worker connection refused')
+
     def __del__(self) -> None:
         """Shutdown the manager and clean up spawned processes."""
         # Instruct workers to shutdown
         for wconn, wproc in self.workers:
             try:
                 wconn.send((RuntimeMessage.SHUTDOWN, None))
-            except:
+            except Exception:
                 pass
-            if wproc is not None:
+            if wproc is not None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGUSR1)
-        
+
         # Clean up processes
         for _, wproc in self.workers:
             if wproc is None:
                 continue
 
-            if wproc.exitcode is None:
+            if wproc.exitcode is None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGKILL)
             wproc.join()
 
     def _run(self) -> None:
         """Main server loop."""
         connections = [self.upstream] + [wconn for wconn, _ in self.workers]
-        
+
         try:
             while True:
-                for conn in wait(connections):
+                for fd in wait(connections):
+                    conn = cast(Connection, fd)
                     msg, payload = conn.recv()
 
                     if conn == self.upstream:
@@ -149,7 +171,7 @@ class Manager:
                         if msg == RuntimeMessage.SUBMIT:
                             task = cast(RuntimeTask, payload)
                             self._assign_new_task(task)
-                
+
                         elif msg == RuntimeMessage.SUBMIT_BATCH:
                             tasks = cast(List[RuntimeTask], payload)
                             self._assign_new_tasks(tasks)
@@ -159,7 +181,8 @@ class Manager:
                             self._handle_result_coming_down(result)
 
                         elif msg == RuntimeMessage.CANCEL:
-                            self._handle_cancel(payload)
+                            addr = cast(RuntimeAddress, payload)
+                            self._handle_cancel(addr)
 
                     else:
 
@@ -169,11 +192,11 @@ class Manager:
 
                         elif msg == RuntimeMessage.SUBMIT_BATCH:
                             self._recieve_new_tasks(tasks)
-                                    
+
                         elif msg == RuntimeMessage.RESULT:
                             result = cast(RuntimeResult, payload)
                             self._handle_result_going_up(result)
-                    
+
                         elif msg == RuntimeMessage.ERROR:
                             self.upstream.send((msg, payload))
                             return
@@ -184,7 +207,7 @@ class Manager:
                         elif msg == RuntimeMessage.CANCEL:
                             self.upstream.send((msg, payload))
 
-        except Exception as e:
+        except Exception:
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
             self.upstream.send((RuntimeMessage.ERROR, error_str))
@@ -202,7 +225,7 @@ class Manager:
         min_tasks = min(self.worker_idle_resources)
         best_id = self.worker_idle_resources.index(min_tasks)
         self.worker_idle_resources[best_id] -= 1
-        
+
         # assign work
         worker = self.workers[best_id]
         worker[0].send((RuntimeMessage.SUBMIT, task))
@@ -216,14 +239,14 @@ class Manager:
 
     def _assign_new_tasks(self, tasks: list[RuntimeTask]) -> None:
         """Schedule many tasks between the workers."""
-        assignments = [[] for _ in self.workers]
+        assignments: list[list[RuntimeTask]] = [[] for _ in self.workers]
         for task in tasks:
             # select worker
             min_tasks = min(self.worker_idle_resources)
             best_id = self.worker_idle_resources.index(min_tasks)
             self.worker_idle_resources[best_id] -= 1
             assignments[best_id].append(task)
-        
+
         # assign work
         for i, assignment in enumerate(assignments):
             if len(assignment) == 0:
@@ -234,8 +257,8 @@ class Manager:
                 self.workers[i][0].send(msg)
 
             else:
-                msg = (RuntimeMessage.SUBMIT_BATCH, assignment)
-                self.workers[i][0].send(msg)
+                msgb = (RuntimeMessage.SUBMIT_BATCH, assignment)
+                self.workers[i][0].send(msgb)
 
     def _handle_result_coming_down(self, result: RuntimeResult) -> None:
         wid = result.return_address.worker_id - self.lower_id_bound
@@ -243,7 +266,7 @@ class Manager:
         self.workers[wid][0].send((RuntimeMessage.RESULT, result))
 
     def _handle_result_going_up(self, result: RuntimeResult) -> None:
-        """Either store the result here or ship it to the destination worker"""
+        """Either store the result here or ship it to the destination worker."""
         self.worker_idle_resources[result.completed_by] += 1
         dest_wid = result.return_address.worker_id
 
@@ -257,10 +280,11 @@ class Manager:
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """Cancel a compilation task or a runtime task in the system."""
         for wconn, p in self.workers:
-            if p is not None:
+            if p is not None and p.pid is not None:
                 os.kill(p.pid, signal.SIGUSR1)
             wconn.send((RuntimeMessage.CANCEL, addr))
 
-def start_manager(*args, **kwargs) -> None:
+
+def start_manager(*args: Any, **kwargs: Any) -> None:
     """Start a runtime manager."""
     Manager(*args, **kwargs)._run()

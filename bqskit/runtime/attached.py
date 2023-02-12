@@ -1,25 +1,29 @@
 """This module implements the AttachedServer runtime."""
+from __future__ import annotations
 
-import os
-os.environ['OMP_NUM_THREADS'] = "1"
 import functools
-from multiprocessing.connection import Listener, Connection
-from multiprocessing import Pipe, Process
-import signal
-from typing import Any
-import uuid
+import os
 import selectors
+import signal
+import uuid
+from multiprocessing import Pipe
+from multiprocessing import Process
+from multiprocessing.connection import Connection
+from multiprocessing.connection import Listener
+from types import FrameType
+from typing import Any
+
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.worker import start_worker
+os.environ['OMP_NUM_THREADS'] = '1'
 
-from bqskit.runtime.detached import DetachedServer
 
 class AttachedServer(DetachedServer):
-
-    def __init__(self, num_workers = -1) -> None:
+    def __init__(self, num_workers: int = -1) -> None:
         """Create a server with `num_workers` workers."""
-        self.tasks: dict[uuid.UUID, tuple(int, Connection)] = {}
+        self.tasks: dict[uuid.UUID, tuple[int, Connection]] = {}
         self.mailbox_to_task_dict: dict[int, uuid.UUID] = {}
         self.mailboxes: dict[int, Any] = {}
         self.mailbox_counter = 0
@@ -39,15 +43,18 @@ class AttachedServer(DetachedServer):
         # Task tracking data structure
         self.total_resources = sum(self.manager_resources)
         self.total_idle_resources = self.total_resources
-        self.manager_idle_resources: list[int] = [r for r in self.manager_resources]
+        self.manager_idle_resources: list[int] = [
+            r for r in self.manager_resources
+        ]
 
         # Connect to client
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         self._listen_once()
-    
-    def _spawn_workers(self, num_workers = -1) -> None:
+
+    def _spawn_workers(self, num_workers: int = -1) -> None:
         if num_workers == -1:
-            num_workers = os.cpu_count()
+            oscount = os.cpu_count()
+            num_workers = oscount if oscount else 1
 
         for i in range(num_workers):
             p, q = Pipe()
@@ -58,15 +65,15 @@ class AttachedServer(DetachedServer):
 
         for wconn in self.managers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
-            self.sel.register(wconn, selectors.EVENT_READ, "from_below")
-    
+            self.sel.register(wconn, selectors.EVENT_READ, 'from_below')
+
     def _listen_once(self) -> None:
         listener = Listener(('localhost', 7472))
         client = listener.accept()
         listener.close()
 
         self.clients[client] = set()
-        self.sel.register(client, selectors.EVENT_READ, "from_client")
+        self.sel.register(client, selectors.EVENT_READ, 'from_client')
 
     def __del__(self) -> None:
         """Shutdown the server and clean up spawned processes."""
@@ -74,27 +81,31 @@ class AttachedServer(DetachedServer):
         for wconn, wproc in zip(self.managers, self.worker_procs):
             try:
                 wconn.send((RuntimeMessage.SHUTDOWN, None))
-            except:
+            except Exception:
                 pass
-            os.kill(wproc.pid, signal.SIGUSR1)
-        
+
+            if wproc.pid is not None:
+                os.kill(wproc.pid, signal.SIGUSR1)
+
         # Clean up processes
         for wproc in self.worker_procs:
-            if wproc.exitcode is None:
+            if wproc.exitcode is None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGKILL)
             wproc.join()
 
     def _handle_disconnect(self, conn: Connection) -> None:
         super()._handle_disconnect(conn)
         self.running = False
-        
+
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """Cancel a runtime task in the system."""
         for wconn, wproc in zip(self.managers, self.worker_procs):
-            wconn.send((RuntimeMessage.CANCEL, addr))
-            os.kill(wproc.pid, signal.SIGUSR1)
+            if wproc.pid is not None:
+                wconn.send((RuntimeMessage.CANCEL, addr))
+                os.kill(wproc.pid, signal.SIGUSR1)
 
-def start_attached_server(*args, **kwargs) -> None:
+
+def start_attached_server(*args: Any, **kwargs: Any) -> None:
     """Start a runtime server in attached mode."""
     # When the server is started using fork instead of spawn
     # global variables are shared. This can leak erroneous logging
@@ -104,7 +115,7 @@ def start_attached_server(*args, **kwargs) -> None:
         if isinstance(logger, logging.PlaceHolder):
             continue
         logger.handlers.clear()
-    
+
     # Ignore interrupts on workers (handler is inherited by subprocesses)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -118,10 +129,15 @@ def start_attached_server(*args, **kwargs) -> None:
     # Run the server
     server._run()
 
-def sigint_handler(signum, frame, server):
+
+def sigint_handler(
+    signum: int,
+    frame: FrameType,
+    server: AttachedServer,
+) -> None:
     # Clean up workers
     for wproc in server.worker_procs:
-        if wproc.exitcode is None:
+        if wproc.exitcode is None and wproc.pid is not None:
             os.kill(wproc.pid, signal.SIGKILL)
         wproc.join()
     exit(-1)

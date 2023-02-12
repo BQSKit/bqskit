@@ -12,7 +12,7 @@ class TestQPredict:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         qpredict = QPredictDecompositionPass()
-        qpredict.run(circuit)
+        circuit.perform(qpredict)
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-3
 
@@ -28,7 +28,7 @@ class TestQPredict:
         utry = UnitaryMatrix.random(3)
         circuit = Circuit.from_unitary(utry)
         qpredict = QPredictDecompositionPass()
-        qpredict.run(circuit)
+        circuit.perform(qpredict)
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-3
 

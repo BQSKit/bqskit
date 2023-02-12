@@ -44,9 +44,9 @@ def test_simple(compiler: Compiler) -> None:
         ],
     )
 
-    cc = compiler.compile(task)
-    pi = compiler.analyze(task, 'initial_mapping')
-    pf = compiler.analyze(task, 'final_mapping')
+    cc, data = compiler.analyze(task)
+    pi = data['initial_mapping']
+    pf = data['final_mapping']
     PI = PermutationMatrix.from_qubit_location(5, pi)
     PF = PermutationMatrix.from_qubit_location(5, pf)
     assert cc.get_unitary().get_distance_from(PF.T @ in_utry @ PI) < 1e-7

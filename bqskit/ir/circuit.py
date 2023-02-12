@@ -20,6 +20,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.task import CompilationTask
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
@@ -61,6 +63,7 @@ from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
+    from bqskit.compiler.basepass import BasePass
 
 _logger = logging.getLogger(__name__)
 
@@ -2588,6 +2591,28 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             left.apply_right(M, loc)
 
         return left.get_unitary(), np.array(full_grads)
+
+    def perform(
+        self,
+        compiler_pass: BasePass,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Execute the provided `compiler_pass` on this circuit.
+
+        Args:
+            compiler_pass (BasePass): The BQSKit pass to perform on this
+                circuit.
+
+            data (dict[str, Any] | None): Optionally provide additional
+                pass data to the compiler pass.
+        """
+        if data is None:
+            data = {}
+
+        with Compiler() as compiler:
+            task = CompilationTask(self, [compiler_pass])
+            self.become(compiler.compile(task))
 
     def instantiate(
         self,

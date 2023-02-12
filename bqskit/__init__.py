@@ -13,6 +13,7 @@ from bqskit.ir.lang.qasm2 import OPENQASM2Language as _qasm
 # Initialize Logging
 _logging_initialized = False
 
+
 def enable_logging(verbose: bool = False) -> None:
     """
     Enable logging for BQSKit.
@@ -26,7 +27,7 @@ def enable_logging(verbose: bool = False) -> None:
         _logger = logging.getLogger('bqskit')
         _handler = logging.StreamHandler(_stdout)
         _handler.setLevel(0)
-        _fmt_header = '(%(thread)d): %(asctime)s.%(msecs)03d - %(levelname)-8s |'
+        _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
         _fmt_message = ' %(name)s: %(message)s'
         _fmt = _fmt_header + _fmt_message
         _formatter = logging.Formatter(_fmt, '%H:%M:%S')

@@ -10,7 +10,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class TestGreedyPartitioner:
     def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
         utry = r6_qudit_circuit.get_unitary()
-        GreedyPartitioner(3).run(r6_qudit_circuit, {})
+        r6_qudit_circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -57,7 +57,7 @@ class TestGreedyPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -112,7 +112,7 @@ class TestGreedyPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -164,7 +164,7 @@ class TestGreedyPartitioner:
             ],
         )
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -217,7 +217,7 @@ class TestGreedyPartitioner:
         )
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -279,7 +279,7 @@ class TestGreedyPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [2])
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -339,7 +339,7 @@ class TestGreedyPartitioner:
         )
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -413,7 +413,7 @@ class TestGreedyPartitioner:
         )
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -468,7 +468,7 @@ class TestGreedyPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [4])
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -521,7 +521,7 @@ class TestGreedyPartitioner:
         )
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -576,7 +576,7 @@ class TestGreedyPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [3])
 
         utry = circuit.get_unitary()
-        GreedyPartitioner(3).run(circuit, {})
+        circuit.perform(GreedyPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)

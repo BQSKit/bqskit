@@ -25,7 +25,11 @@ class SynthesisPass(BasePass):
     """
 
     @abstractmethod
-    async def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> Circuit:
         """
         Synthesis abstract method to synthesize a UnitaryMatrix into a Circuit.
 

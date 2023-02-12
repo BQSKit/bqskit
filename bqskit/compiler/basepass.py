@@ -4,14 +4,12 @@ from __future__ import annotations
 import abc
 import logging
 from typing import Any
-from typing import Callable
 from typing import TypeVar
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)

@@ -13,8 +13,8 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.structure import CircuitStructure
-from bqskit.utils.typing import is_real_number
 from bqskit.runtime import get_runtime
+from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
 

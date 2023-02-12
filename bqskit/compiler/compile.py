@@ -1,7 +1,7 @@
 """This module defines a standard `compile` function using BQSKit."""
 from __future__ import annotations
-import functools
 
+import functools
 import logging
 import warnings
 from typing import Any
@@ -318,11 +318,14 @@ def compile(
         )
 
     # Perform the compilation
-    out = compiler.compile(task)
+    if error_threshold is None:
+        out = compiler.compile(task)
+    else:
+        out, data = compiler.analyze(task)
 
     # Log error if necessary
     if error_threshold is not None:
-        error = compiler.analyze(task, 'error')
+        error = data['error']
         nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
         if nonsq_error > error_threshold:
             warnings.warn(
@@ -904,6 +907,7 @@ def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
         ),
     ])
 
+
 def _replace_filter(new: Circuit, old: Operation, model: MachineModel) -> bool:
     # return true if old doesn't satisfy model
     if not isinstance(old.gate, CircuitGate):
@@ -927,6 +931,7 @@ def _replace_filter(new: Circuit, old: Operation, model: MachineModel) -> bool:
     new_sq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
     new_mq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
     return (new_mq_n, new_sq_n) < (org_mq_n, org_sq_n)
+
 
 def _gen_replace_filter(
     model: MachineModel,

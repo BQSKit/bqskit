@@ -3,12 +3,11 @@ from __future__ import annotations
 
 import logging
 import uuid
-import warnings
-from typing import Any, Sequence
+from typing import Any
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.ir.circuit import Circuit
-from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 
 _logger = logging.getLogger(__name__)
 
@@ -34,30 +33,23 @@ class CompilationTask():
         self.task_id = uuid.uuid4()
         self.circuit = input
         self.passes = passes
-        self.data = {}
-        self.requested_keys = []
-        self.logging_level = None
+        self.data: dict[str, Any] = {}
+        self.done = False
+        self.request_data = False
+        self.logging_level: int | None = None
         self.max_logging_depth = -1
 
     async def run(self) -> Circuit | tuple[Circuit, dict[str, Any]]:
         """Execute the task."""
         for pass_obj in self.passes:
             await pass_obj.run(self.circuit, self.data)
+
         self.done = True
 
-        if len(self.requested_keys) == 0:
+        if not self.request_data:
             return self.circuit
 
-        requested_data = {
-            k: self.data[k]
-            for k in self.requested_keys
-            if k in self.data
-        }
-        return self.circuit, requested_data
-    
-    def request_key(self, key: str) -> None:
-        """Ask the task to also return `key` from the compilation data."""
-        self.requested_keys.append(key)
+        return self.circuit, self.data
 
     def set_max_logging_depth(self, max_depth: int) -> None:
         """Restrict logging for tasks with more than `max_depth` parents."""

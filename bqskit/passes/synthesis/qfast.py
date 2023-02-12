@@ -123,7 +123,11 @@ class QFASTDecompositionPass(SynthesisPass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    async def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix,
+        data: dict[str, Any],
+    ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # Skip any unitaries too small for the configured gate.
