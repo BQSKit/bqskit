@@ -10,6 +10,8 @@ import time
 import traceback
 from typing import Any, List, cast
 
+import faulthandler
+faulthandler.enable()
 import logging
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.task import RuntimeTask
@@ -71,7 +73,9 @@ class Worker:
         no_delayed_tasks = len(self.delayed_tasks) == 0
 
         if empty_out_box and no_ready_tasks and no_delayed_tasks:
+            print(f"Idling: {self.id}, with {len(self.mailboxes)},{len(self.tasks)} mailboxes open.")
             wait([self.conn])
+            print(f"Waking: {self.id}")
 
     def _handle_comms(self) -> None:
         """Handle all incoming and outgoing messages."""

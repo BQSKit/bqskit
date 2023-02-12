@@ -15,6 +15,9 @@ from bqskit.runtime.worker import start_worker
 
 from bqskit.runtime.detached import DetachedServer
 
+import faulthandler
+faulthandler.enable()
+
 class AttachedServer(DetachedServer):
 
     def __init__(self, num_workers = -1) -> None:
