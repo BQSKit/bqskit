@@ -1,6 +1,7 @@
 """This module implements the DetachedServer runtime."""
 from __future__ import annotations
 
+import faulthandler
 import os
 import selectors
 import sys
@@ -22,6 +23,8 @@ from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
+faulthandler.enable()
+
 os.environ['OMP_NUM_THREADS'] = '1'
 
 
@@ -31,6 +34,13 @@ def listen(server: DetachedServer) -> None:
         client = listener.accept()
         server.clients[client] = set()
         server.sel.register(client, selectors.EVENT_READ, 'from_client')
+
+
+def send_outgoing(server: DetachedServer) -> None:
+    while True:
+        if len(server.outgoing) > 0:
+            outgoing = server.outgoing.pop()
+            outgoing[0].send((outgoing[1], outgoing[2]))
 
 
 class DetachedServer:
@@ -80,6 +90,10 @@ class DetachedServer:
         self.listening_thread = Thread(target=listen, args=(self,))
         self.listening_thread.start()
 
+        self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
+        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread.start()
+
     def _connect_to_manager(self, ip: str, port: int, lb: int, ub: int) -> None:
         max_retries = 5
         wait_time = .25
@@ -127,10 +141,13 @@ class DetachedServer:
         self.running = True
         try:
             while self.running:
+                # print("Upper loop");sys.stdout.flush()
                 events = self.sel.select(5)  # Say that 5 times fast
+                # print("Selected loop");sys.stdout.flush()
                 for key, _ in events:
                     conn = cast(Connection, key.fileobj)
                     msg, payload = conn.recv()
+                    # print(f"Recieved {msg} {key.data}.");sys.stdout.flush()
 
                     if key.data == 'from_client':
 
@@ -181,6 +198,7 @@ class DetachedServer:
                             self._handle_cancel(payload)
 
         except Exception:
+            print('SERVER CRASH')
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
             for client in self.clients.keys():
@@ -220,6 +238,8 @@ class DetachedServer:
 
     def _recieve_new_task(self, task: RuntimeTask) -> None:
         """Schedule a task on a manager."""
+        # self._recieved_jobs += 1
+        # print(f"Server recieved new job, total: {self._recieved_jobs}.");sys.stdout.flush()
         # select worker
         min_tasks = max(self.manager_idle_resources)
         best_id = self.manager_idle_resources.index(min_tasks)
@@ -227,10 +247,16 @@ class DetachedServer:
 
         # assign work
         manager = self.managers[best_id]
-        manager.send((RuntimeMessage.SUBMIT, task))
+        self.outgoing.append((manager, RuntimeMessage.SUBMIT, task))
+        # manager.send((RuntimeMessage.SUBMIT, task))
+        # self._sent_jobs += 1
+        # self._sent_jobs_by_worker[best_id] += 1
+        # print(f"Server sent new job to {best_id}, total: {self._sent_jobs}, total/worker: {self._sent_jobs_by_worker[best_id]}.");sys.stdout.flush()
 
     def _recieve_new_tasks(self, tasks: list[RuntimeTask]) -> None:
         """Schedule many tasks between the managers."""
+        # self._recieved_jobs += len(tasks)
+        # print(f"Server recieved new jobs, total: {self._recieved_jobs}.");sys.stdout.flush()
         assignments: list[list[RuntimeTask]] = [[] for _ in self.managers]
         for task in tasks:
             # select manager
@@ -238,19 +264,33 @@ class DetachedServer:
             best_id = self.manager_idle_resources.index(min_tasks)
             self.manager_idle_resources[best_id] -= 1
             assignments[best_id].append(task)
+        # print([len(a) for a in assignments])
 
         # assign work
         for i, assignment in enumerate(assignments):
             if len(assignment) == 0:
+                # print("No assignment");sys.stdout.flush()
                 continue
 
             elif len(assignment) == 1:
-                msg = (RuntimeMessage.SUBMIT, assignment[0])
-                self.managers[i].send(msg)
+                # print("One assignment");sys.stdout.flush()
+                self.outgoing.append(
+                    (self.managers[i], RuntimeMessage.SUBMIT, assignment[0]),
+                )
+                # self.managers[i].send((RuntimeMessage.SUBMIT, assignment[0]))
+                # self._sent_jobs += 1
+                # self._sent_jobs_by_worker[i] += 1
+                # print(f"Server sent new job to {i}, total: {self._sent_jobs}, total/worker: {self._sent_jobs_by_worker[i]}.");sys.stdout.flush()
 
             else:
-                msgb = (RuntimeMessage.SUBMIT_BATCH, assignment)
-                self.managers[i].send(msgb)
+                # print("Many assignment")
+                self.outgoing.append(
+                    (self.managers[i], RuntimeMessage.SUBMIT_BATCH, assignment),
+                )
+                # self.managers[i].send((RuntimeMessage.SUBMIT_BATCH, assignment))
+                # self._sent_jobs += len(assignment)
+                # self._sent_jobs_by_worker[i] += len(assignment)
+                # print(f"Server sent new job to {i}, total: {self._sent_jobs}, total/worker: {self._sent_jobs_by_worker[i]}.");sys.stdout.flush()
 
     def _handle_request(self, conn: Connection, request: uuid.UUID) -> None:
         """Record the requested task, and ship it as soon as it's ready."""
@@ -264,7 +304,8 @@ class DetachedServer:
         if box[0] is None:
             box[1] = True
         else:
-            conn.send((RuntimeMessage.RESULT, box[0]))
+            self.outgoing.append((conn, RuntimeMessage.RESULT, box[0]))
+            # conn.send((RuntimeMessage.RESULT, box[0]))
             self.tasks.pop(request)
             self.mailboxes.pop(mailbox_id)
             self.mailbox_to_task_dict.pop(mailbox_id)
@@ -272,6 +313,9 @@ class DetachedServer:
 
     def _handle_result(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker."""
+        # self._recieved_results += 1
+        # self._recieved_results_by_worker[result.completed_by] += 1
+        # print(f"Server recieved result from {result.completed_by}, total: {self._recieved_results}, total/worker: {self._recieved_results_by_worker[result.completed_by]}.");sys.stdout.flush()
         self.manager_idle_resources[result.completed_by] += 1
         dest_w_id = result.return_address.worker_id
 
@@ -280,10 +324,17 @@ class DetachedServer:
             w_id = result.return_address.worker_id - self.lower_id_bound
             m_id = w_id // self.step_size
             assert m_id >= 0 and m_id < len(self.managers)
-            self.managers[m_id].send((RuntimeMessage.RESULT, result))
+            self.outgoing.append(
+                (self.managers[m_id], RuntimeMessage.RESULT, result),
+            )
+            # self.managers[m_id].send((RuntimeMessage.RESULT, result))
+            # self._sent_results += 1
+            # self._sent_results_by_worker[m_id] += 1
+            # print(f"Server sent result to {m_id}, total: {self._sent_results}, total/worker: {self._sent_results_by_worker[m_id]}.");sys.stdout.flush()
             return
 
         # If it is for me
+        # print("Server recieved result for itself.");sys.stdout.flush()
         mailbox_id = result.return_address.mailbox_slot
         box = self.mailboxes[mailbox_id]
         box[0] = result.result

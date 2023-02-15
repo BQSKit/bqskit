@@ -1,6 +1,7 @@
 """This module implements the AttachedServer runtime."""
 from __future__ import annotations
 
+import faulthandler
 import functools
 import os
 import selectors
@@ -10,6 +11,7 @@ from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
+from threading import Thread
 from types import FrameType
 from typing import Any
 
@@ -20,8 +22,16 @@ from bqskit.runtime.worker import start_worker
 os.environ['OMP_NUM_THREADS'] = '1'
 
 
-import faulthandler
 faulthandler.enable()
+
+
+def send_outgoing(server: DetachedServer) -> None:
+    while True:
+        if len(server.outgoing) > 0:
+            outgoing = server.outgoing.pop()
+            outgoing[0].send((outgoing[1], outgoing[2]))
+            # print(f"Just sent {outgoing[1]}.");sys.stdout.flush()
+
 
 class AttachedServer(DetachedServer):
     def __init__(self, num_workers: int = -1) -> None:
@@ -53,6 +63,18 @@ class AttachedServer(DetachedServer):
         # Connect to client
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         self._listen_once()
+
+        self._recieved_jobs = 0
+        self._sent_jobs = 0
+        self._sent_jobs_by_worker = [0 for _ in self.managers]
+        self._recieved_results = 0
+        self._sent_results = 0
+        self._recieved_results_by_worker = [0 for _ in self.managers]
+        self._sent_results_by_worker = [0 for _ in self.managers]
+
+        self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
+        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread.start()
 
     def _spawn_workers(self, num_workers: int = -1) -> None:
         if num_workers == -1:
