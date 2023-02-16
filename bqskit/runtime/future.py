@@ -18,7 +18,7 @@ class RuntimeFuture:
 
     def __await__(self) -> Any:
         """
-        Wait on a package to be delivered.
+        Wait on a result to be delivered.
 
         Informs the event loop which mailbox this is waiting on.
         """
