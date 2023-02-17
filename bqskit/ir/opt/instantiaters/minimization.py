@@ -25,7 +25,7 @@ class Minimization(Instantiater):
     def __init__(
         self,
         cost_fn_gen: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
-        minimizer: Minimizer | None = None,
+        minimizer: Minimizer = CeresMinimizer(),
         **kwargs: dict[str, Any],  # TODO: handle dist_tol and other options
     ) -> None:
         """
@@ -36,7 +36,7 @@ class Minimization(Instantiater):
                 functions that are minimized.
                 (Default: HilbertSchmidtGenerator())
 
-            minimizer (Minimizer | None): The minimizer to use. If left as
+            minimizer (Minimizer): The minimizer to use. If left as
                 None, attempts to select best one.
         """
 
@@ -45,12 +45,8 @@ class Minimization(Instantiater):
                 'Expected CostFunctionGenerator, got %s.' % type(cost_fn_gen),
             )
 
-        if minimizer is not None and not isinstance(minimizer, Minimizer):
+        if not isinstance(minimizer, Minimizer):
             raise TypeError('Expected Minimizer, got %s.' % type(minimizer))
-
-        # Default to the fast CeresMinimizer
-        if minimizer is None:
-            minimizer = CeresMinimizer()
 
         self.cost_fn_gen = cost_fn_gen
         self.minimizer = minimizer

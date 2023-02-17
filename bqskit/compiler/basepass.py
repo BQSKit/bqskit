@@ -13,7 +13,9 @@ from distributed import secede
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.state import StateGate
 from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence
@@ -160,7 +162,7 @@ class BasePass(abc.ABC):
         return model.coupling_graph.get_subgraph(placement)
 
     @staticmethod
-    def get_target(circuit: Circuit, data: dict[str, Any]) -> UnitaryMatrix:
+    def get_target(circuit: Circuit, data: dict[str, Any]) -> StateVector | UnitaryMatrix:
         """
         Retrieve the target unitary from the data dictionary.
 
@@ -172,17 +174,24 @@ class BasePass(abc.ABC):
         Returns:
             UnitaryMatrix: The target unitary.
         """
+        def get_utry_or_state() -> StateVector | UnitaryMatrix:
+            if circuit.num_operations == 1:
+                for op in circuit:
+                    if isinstance(op.gate, StateGate):
+                        return op.gate.state
+            return circuit.get_unitary()
+
         if len(data) == 0:
-            return circuit.get_unitary()
+            return get_utry_or_state()
 
-        if 'target_unitary' not in data:
-            data['target_unitary'] = circuit.get_unitary()
+        if 'target' not in data:
+            data['target'] = get_utry_or_state()
 
-        if not isinstance(data['target_unitary'], UnitaryMatrix):
-            _logger.warning('Expected target_unitary to be a unitary.')
-            return circuit.get_unitary()
+        if not isinstance(data['target'], (UnitaryMatrix, StateVector)):
+            _logger.warning('Expected target to be a unitary or state.')
+            return get_utry_or_state()
 
-        return data['target_unitary']
+        return data['target']
 
     @staticmethod
     def in_parallel(data: dict[str, Any]) -> bool:

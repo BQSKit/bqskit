@@ -5,6 +5,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.qis.state.state import StateVector
 
 if TYPE_CHECKING:
     from typing import Any
@@ -25,7 +26,7 @@ class SynthesisPass(BasePass):
     """
 
     @abstractmethod
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    def synthesize(self, utry: UnitaryMatrix | StateVector, data: dict[str, Any]) -> Circuit:
         """
         Synthesis abstract method to synthesize a UnitaryMatrix into a Circuit.
 
@@ -46,5 +47,5 @@ class SynthesisPass(BasePass):
         if len(data) == 0:
             data = dict()
 
-        target_utry = self.get_target(circuit, data)
-        circuit.become(self.synthesize(target_utry, data))
+        target = self.get_target(circuit, data)
+        circuit.become(self.synthesize(target, data))

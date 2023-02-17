@@ -15,6 +15,7 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -123,7 +124,7 @@ class QFASTDecompositionPass(SynthesisPass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    def synthesize(self, utry: UnitaryMatrix | StateVector, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # Skip any unitaries too small for the configured gate.

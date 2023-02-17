@@ -13,6 +13,7 @@ from bqskit.ir.location import CircuitLocation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import pauli_expansion
 from bqskit.utils.math import unitary_log_no_i
@@ -180,7 +181,7 @@ class QPredictDecompositionPass(SynthesisPass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    def synthesize(self, utry: UnitaryMatrix | StateVector, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
 
         # 0. Skip any unitaries too small for the configured block.

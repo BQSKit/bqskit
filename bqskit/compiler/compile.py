@@ -21,6 +21,7 @@ from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.state import StateGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
@@ -33,6 +34,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from bqskit.qis.unitary import UnitaryLike
     from bqskit.qis.state import StateLike
+
 
 
 def compile(
@@ -832,8 +834,78 @@ def _stateprep_workflow(
     error_sim_size: int = 8,
 ) -> CompilationTask:
     """Build a workflow for state preparation."""
-    # TODO
-    raise NotImplementedError('State preparation is not yet implemented.')
+    circuit = Circuit(state.num_qudits, state.radixes)
+    circuit.append_gate(StateGate(state), list(range(state.num_qudits)))
+    layer_gen = _get_layer_gen(model)
+
+    if optimization_level == 1:
+        inst_ops = {
+            'multistarts': 1,
+            'method': 'minimization',
+        }
+        synthesis = LEAPSynthesisPass(
+            success_threshold=synthesis_epsilon,
+            layer_generator=layer_gen,
+            instantiate_options=inst_ops,
+            min_prefix_size=3,
+        )
+    
+    elif optimization_level == 2:
+        inst_ops = {
+            'multistarts': 4,
+            'method': 'minimization',
+            'ftol': 5e-12,
+            'gtol': 1e-14,
+        }
+        synthesis = LEAPSynthesisPass(
+            success_threshold=synthesis_epsilon,
+            layer_generator=layer_gen,
+            instantiate_options=inst_ops,
+            min_prefix_size=5,
+        )
+    
+    elif optimization_level == 3:
+        inst_ops = {
+            'multistarts': 8,
+            'method': 'minimization',
+            'ftol': 5e-16,
+            'gtol': 1e-15,
+        }
+        if circuit.num_qudits > 3:
+            synthesis = LEAPSynthesisPass(
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+                min_prefix_size=7,
+            )
+        else:
+            synthesis = QSearchSynthesisPass(
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+            )
+    
+    elif optimization_level == 4:
+        inst_ops = {
+            'multistarts': 8,
+            'method': 'minimization',
+            'ftol': 5e-16,
+            'gtol': 1e-15,
+        }
+        raise NotImplementedError("Not yet.")
+
+    scan = ScanningGateRemovalPass(
+        success_threshold=synthesis_epsilon,
+        instantiate_options = inst_ops,
+    )
+    
+    workflow = [
+        SetModelPass(model),
+        synthesis,
+        scan,
+    ]
+
+    return CompilationTask(circuit, workflow)
 
 
 def _get_layer_gen(model: MachineModel) -> LayerGenerator:
