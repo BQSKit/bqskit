@@ -1,24 +1,31 @@
 """This module implements the Compiler class."""
 from __future__ import annotations
 
+import atexit
 import functools
 import logging
 import multiprocessing as mp
 import os
 import signal
 import time
+import uuid
+import warnings
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from types import FrameType
+from typing import Iterable
+from typing import overload
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.status import CompilationStatus
+from bqskit.compiler.task import CompilationTask
 from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
+from bqskit.utils.typing import is_iterable
 
 if TYPE_CHECKING:
     from typing import Any
-    from bqskit.compiler.task import CompilationTask
+    from bqskit.compiler.basepass import BasePass
     from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -71,6 +78,7 @@ class Compiler:
             self._start_server(num_workers)
 
         self._connect_to_server(ip, port)
+        atexit.register(self.close)
 
     def _start_server(self, num_workers: int) -> None:
         self.p = mp.Process(target=start_attached_server, args=(num_workers,))
@@ -136,9 +144,9 @@ class Compiler:
                     os.kill(self.p.pid, signal.SIGKILL)
                     _logger.debug('Killed attached runtime server.')
 
-            except Exception:
+            except Exception as e:
                 _logger.debug(
-                    'Error while shuting down attached runtime server.',
+                    f'Error while shuting down attached runtime server: {e}.',
                 )
             else:
                 _logger.debug('Successfully shutdown attached runtime server.')
@@ -147,14 +155,163 @@ class Compiler:
                 _logger.debug('Attached runtime server is down.')
                 self.p = None
 
-        # Reset interrupt signal handler
+        # Reset interrupt signal handler and remove exit handler
         signal.signal(signal.SIGINT, self.old_signal)
+        atexit.unregister(self.close)
 
     def __del__(self) -> None:
         self.close()
         _logger.debug('Compiler successfully shutdown.')
 
+    def submit(
+        self,
+        task_or_circuit: CompilationTask | Circuit,
+        workflow: Iterable[BasePass] | None = None,
+        request_data: bool = False,
+        logging_level: int | None = None,
+        max_logging_depth: int = -1,
+    ) -> uuid.UUID:
+        """Submit a CompilationTask to the Compiler."""
+        # Build CompilationTask
+        if isinstance(task_or_circuit, CompilationTask):
+            if workflow is not None:
+                raise ValueError(
+                    'Cannot specify workflow and task.'
+                    ' Either specify a workflow and circuit or a task alone.',
+                )
+
+            task = task_or_circuit
+
+        else:
+            if workflow is None:
+                raise TypeError(
+                    'Must specify workflow when providing a circuit to submit.',
+                )
+
+            if not is_iterable(workflow):
+                raise TypeError('Expected sequence of bqskit passes.')
+
+            task = CompilationTask(task_or_circuit, list(workflow))
+
+        # Set task configuration
+        task.request_data = request_data
+        task.max_logging_depth = max_logging_depth
+
+        if logging_level is None:
+            task.logging_level = logging.getLogger('bqskit').getEffectiveLevel()
+        else:
+            task.logging_level = logging_level
+
+        # Submit task to runtime
+        self._send(RuntimeMessage.SUBMIT, task)
+        return task.task_id
+
+    def status(self, task_id: CompilationTask | uuid.UUID) -> CompilationStatus:
+        """Retrieve the status of the specified CompilationTask."""
+        if isinstance(task_id, CompilationTask):
+            warnings.warn('DEPRECATED...')  # TODO
+            task_id = task_id.task_id
+        assert isinstance(task_id, uuid.UUID)
+
+        msg, payload = self._send_recv(RuntimeMessage.STATUS, task_id)
+        if msg != RuntimeMessage.STATUS:
+            raise RuntimeError(f'Unexpected message type: {msg}.')
+        return payload
+
+    def result(
+        self,
+        task_id: CompilationTask | uuid.UUID,
+    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+        """Block until the CompilationTask is finished, return its result."""
+        if isinstance(task_id, CompilationTask):
+            warnings.warn('DEPRECATED...')  # TODO
+            task_id = task_id.task_id
+        assert isinstance(task_id, uuid.UUID)
+
+        msg, payload = self._send_recv(RuntimeMessage.REQUEST, task_id)
+        if msg != RuntimeMessage.RESULT:
+            raise RuntimeError(f'Unexpected message type: {msg}.')
+        return payload
+
+    def cancel(self, task_id: CompilationTask | uuid.UUID) -> bool:
+        """Remove a task from the compiler's workqueue."""
+        if isinstance(task_id, CompilationTask):
+            warnings.warn('DEPRECATED...')  # TODO
+            task_id = task_id.task_id
+        assert isinstance(task_id, uuid.UUID)
+
+        msg, _ = self._send_recv(RuntimeMessage.CANCEL, task_id)
+        if msg != RuntimeMessage.CANCEL:
+            raise RuntimeError(f'Unexpected message type: {msg}.')
+        return True
+
+    @overload
+    def compile(
+        self,
+        task_or_circuit: CompilationTask,
+    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+        ...
+
+    @overload
+    def compile(
+        self,
+        task_or_circuit: Circuit,
+        workflow: Iterable[BasePass],
+        request_data: None,
+        logging_level: int | None,
+        max_logging_depth: int,
+    ) -> Circuit:
+        ...
+
+    @overload
+    def compile(
+        self,
+        task_or_circuit: Circuit,
+        workflow: Iterable[BasePass],
+        request_data: bool,
+        logging_level: int | None,
+        max_logging_depth: int,
+    ) -> tuple[Circuit, dict[str, Any]]:
+        ...
+
+    def compile(
+        self,
+        task_or_circuit: CompilationTask | Circuit,
+        workflow: Iterable[BasePass] | None = None,
+        request_data: bool | None = None,
+        logging_level: int | None = None,
+        max_logging_depth: int = -1,
+    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+        """Submit and execute the CompilationTask, block until its done."""
+        if isinstance(task_or_circuit, CompilationTask):
+            warnings.warn('DEPRECATED...')  # TODO
+
+        task_id = self.submit(
+            task_or_circuit,
+            workflow,
+            request_data if request_data else False,
+            logging_level,
+            max_logging_depth,
+        )
+        result = self.result(task_id)
+        return result
+
     def _send(
+        self,
+        msg: RuntimeMessage,
+        payload: Any,
+    ) -> None:
+        if self.conn is None:
+            raise RuntimeError('Connection unexpectedly none.')
+
+        try:
+            self.conn.send((msg, payload))
+
+        except Exception as e:
+            self.conn = None
+            raise RuntimeError('Server connection unexpectedly closed.') from e
+
+    def _send_recv(
         self,
         msg: RuntimeMessage,
         payload: Any,
@@ -170,64 +327,6 @@ class Compiler:
         except Exception as e:
             self.conn = None
             raise RuntimeError('Server connection unexpectedly closed.') from e
-
-    def submit(self, task: CompilationTask) -> None:
-        """Submit a CompilationTask to the Compiler."""
-        if task.logging_level is None:
-            task.logging_level = logging.getLogger('bqskit').getEffectiveLevel()
-
-        if self.conn is None:
-            raise RuntimeError('Connection unexpectedly none.')
-
-        try:
-            # print(f"Compiler submitting task {task.task_id}.")
-            self.conn.send((RuntimeMessage.SUBMIT, task))
-
-        except Exception as e:
-            self.conn = None
-            raise RuntimeError('Server connection unexpectedly closed.') from e
-
-    def status(self, task: CompilationTask) -> CompilationStatus:
-        """Retrieve the status of the specified CompilationTask."""
-        msg, payload = self._send(RuntimeMessage.STATUS, task.task_id)
-        if msg != RuntimeMessage.STATUS:
-            raise RuntimeError(f'Unexpected message type: {msg}.')
-        return payload
-
-    def result(
-        self,
-        task: CompilationTask,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
-        """Block until the CompilationTask is finished, return its result."""
-        msg, payload = self._send(RuntimeMessage.REQUEST, task.task_id)
-        if msg != RuntimeMessage.RESULT:
-            raise RuntimeError(f'Unexpected message type: {msg}.')
-        return payload
-
-    def cancel(self, task: CompilationTask) -> bool:
-        """Remove a task from the compiler's workqueue."""
-        msg, _ = self._send(RuntimeMessage.CANCEL, task.task_id)
-        if msg != RuntimeMessage.CANCEL:
-            raise RuntimeError(f'Unexpected message type: {msg}.')
-        return True
-
-    def compile(
-        self,
-        task: CompilationTask,
-    ) -> Circuit:
-        """Submit and execute the CompilationTask, block until its done."""
-        _logger.info('Compiling task: %s' % task.task_id)
-        self.submit(task)
-        result = self.result(task)
-        return result  # type: ignore
-
-    def analyze(
-        self,
-        task: CompilationTask,
-    ) -> tuple[Circuit, dict[str, Any]]:
-        """Execute a task, return output circuit and final pass data."""
-        task.request_data = True
-        return self.compile(task)  # type: ignore
 
     def _recv_handle_log_error(self) -> tuple[RuntimeMessage, Any]:
         """Return next msg, transparently emit log records and raise errors."""
@@ -249,4 +348,4 @@ def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     _logger.critical('Compiler interrupted.')
     compiler.close()
-    exit(-1)
+    raise KeyboardInterrupt

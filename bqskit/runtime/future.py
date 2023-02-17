@@ -18,7 +18,7 @@ class RuntimeFuture:
 
     def __await__(self) -> Any:
         """
-        Wait on a package to be delivered.
+        Wait on a result to be delivered.
 
         Informs the event loop which mailbox this is waiting on.
         """
@@ -36,7 +36,7 @@ class RuntimeFuture:
         """Return true if the future is ready."""
         from bqskit.runtime.worker import get_worker
 
-        if self.mailbox_id not in get_worker().mailboxes:
+        if self.mailbox_id not in get_worker()._mailboxes:
             return True
 
-        return get_worker().mailboxes[self.mailbox_id][0] is True
+        return get_worker()._mailboxes[self.mailbox_id].ready

@@ -21,7 +21,6 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
-os.environ['OMP_NUM_THREADS'] = '1'
 
 
 class Manager:
@@ -32,7 +31,7 @@ class Manager:
     managing workers or other managers. The manager is part of the detached
     architecture. Here managers are started individually as separate processes,
     which in turn start their own workers. Then, if necessary, more managers can
-    be started to manager the level-1 managers, and so on, until finally, a
+    be started to manage the level-1 managers, and so on, until finally, a
     detached server is started and clients can connect.
     """
 

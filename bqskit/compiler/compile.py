@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.task import CompilationTask
@@ -34,6 +33,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from bqskit.qis.unitary import UnitaryLike
     from bqskit.qis.state import StateLike
+    from bqskit.compiler.basepass import BasePass
 
 
 def compile(

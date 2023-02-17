@@ -4,13 +4,16 @@ from __future__ import annotations
 import abc
 import logging
 from typing import Any
+from typing import TYPE_CHECKING
 from typing import TypeVar
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.ir.circuit import Circuit
-from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
+
+if TYPE_CHECKING:
+    from bqskit.ir.circuit import Circuit
+    from bqskit.qis.graph import CouplingGraph
 
 _logger = logging.getLogger(__name__)
 

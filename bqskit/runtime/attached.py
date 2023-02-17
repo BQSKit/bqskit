@@ -10,17 +10,29 @@ from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
+from threading import Thread
 from types import FrameType
 from typing import Any
 
-from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.detached import DetachedServer
+from bqskit.runtime.detached import send_outgoing
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.worker import start_worker
-os.environ['OMP_NUM_THREADS'] = '1'
 
 
 class AttachedServer(DetachedServer):
+    """
+    BQSKit Runtime Server in attached mode.
+
+    In attached mode, the runtime is started by the client. The client owns the
+    server and there is only one client on the server. Additionally, the client
+    is responsible for shutting down the server. There are no managers in the
+    attached architecture, only workers directly managed by a single server.
+    This architecture is designed for single-machine shared-memory settings.
+    BQSKit will, by default, create, manage, and shutdown an AttachedServer when
+    a Compiler() object is created or when bqskit.compile is used.
+    """
+
     def __init__(self, num_workers: int = -1) -> None:
         """Create a server with `num_workers` workers."""
         self.tasks: dict[uuid.UUID, tuple[int, Connection]] = {}
@@ -31,7 +43,7 @@ class AttachedServer(DetachedServer):
         self.manager_resources: list[int] = []
         self.sel = selectors.DefaultSelector()
         self.client_counter = 0
-        self.running = False
+        self.running = True
         self.lower_id_bound = 0
         self.upper_id_bound = int(2e9)
         self.step_size = 1
@@ -51,7 +63,20 @@ class AttachedServer(DetachedServer):
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         self._listen_once()
 
+        # Start outgoing thread
+        self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
+        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread.start()
+
     def _spawn_workers(self, num_workers: int = -1) -> None:
+        """
+        Spawn worker processes.
+
+        Args:
+            num_workers (int): The number of workers to spawn. If -1,
+                then spawn as many workers as CPUs on the system.
+                (Default: -1).
+        """
         if num_workers == -1:
             oscount = os.cpu_count()
             num_workers = oscount if oscount else 1
@@ -68,6 +93,7 @@ class AttachedServer(DetachedServer):
             self.sel.register(wconn, selectors.EVENT_READ, 'from_below')
 
     def _listen_once(self) -> None:
+        """Listen for a single client connection."""
         listener = Listener(('localhost', 7472))
         client = listener.accept()
         listener.close()
@@ -75,34 +101,38 @@ class AttachedServer(DetachedServer):
         self.clients[client] = set()
         self.sel.register(client, selectors.EVENT_READ, 'from_client')
 
-    def __del__(self) -> None:
-        """Shutdown the server and clean up spawned processes."""
-        # Instruct workers to shutdown
-        for wconn, wproc in zip(self.managers, self.worker_procs):
+    def _handle_shutdown(self) -> None:
+        """Shutdown the runtime."""
+        # Stop running
+        self.running = False
+
+        # Instruct managers to shutdown
+        for mconn in self.managers:
             try:
-                wconn.send((RuntimeMessage.SHUTDOWN, None))
+                mconn.send((RuntimeMessage.SHUTDOWN, None))
+                mconn.close()
             except Exception:
                 pass
+        self.managers.clear()
 
-            if wproc.pid is not None:
-                os.kill(wproc.pid, signal.SIGUSR1)
+        # Close client connections
+        for client in self.clients.keys():
+            client.close()
+        self.clients.clear()
 
-        # Clean up processes
+        # Join workers
         for wproc in self.worker_procs:
             if wproc.exitcode is None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGKILL)
             wproc.join()
+        self.worker_procs.clear()
+
+        # Join thread
+        self.outgoing_thread.join()
 
     def _handle_disconnect(self, conn: Connection) -> None:
-        super()._handle_disconnect(conn)
-        self.running = False
-
-    def _handle_cancel(self, addr: RuntimeAddress) -> None:
-        """Cancel a runtime task in the system."""
-        for wconn, wproc in zip(self.managers, self.worker_procs):
-            if wproc.pid is not None:
-                wconn.send((RuntimeMessage.CANCEL, addr))
-                os.kill(wproc.pid, signal.SIGUSR1)
+        """A client disconnect in attached mode is equal to a shutdown."""
+        self._handle_shutdown()
 
 
 def start_attached_server(*args: Any, **kwargs: Any) -> None:
@@ -132,12 +162,7 @@ def start_attached_server(*args: Any, **kwargs: Any) -> None:
 
 def sigint_handler(
     signum: int,
-    frame: FrameType,
+    frame: FrameType | None,
     server: AttachedServer,
 ) -> None:
-    # Clean up workers
-    for wproc in server.worker_procs:
-        if wproc.exitcode is None and wproc.pid is not None:
-            os.kill(wproc.pid, signal.SIGKILL)
-        wproc.join()
-    exit(-1)
+    server._handle_shutdown()

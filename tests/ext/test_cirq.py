@@ -1,20 +1,18 @@
 # flake8: noqa
 from __future__ import annotations
+from bqskit.qis import UnitaryMatrix
+from bqskit.ir.gates import HGate
+from bqskit.ir.gates import CNOTGate
+from bqskit.ir.circuit import Circuit
+from bqskit.ext import cirq_to_bqskit
+from bqskit.ext import bqskit_to_cirq
+from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.compile import compile
+from cirq import Circuit as QuantumCircuit
+import cirq
 
 import pytest
 pytest.importorskip('cirq')
-
-import cirq
-from cirq import Circuit as QuantumCircuit
-
-from bqskit.compiler.compile import compile
-from bqskit.compiler.compiler import Compiler
-from bqskit.ext import bqskit_to_cirq
-from bqskit.ext import cirq_to_bqskit
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import HGate
-from bqskit.qis import UnitaryMatrix
 
 
 class TestTranslate:
