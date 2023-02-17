@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from typing import Sequence
+from typing import TYPE_CHECKING
 
-from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
@@ -12,6 +12,9 @@ from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.graph import CouplingGraphLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
+
+if TYPE_CHECKING:
+    from bqskit.ir.circuit import Circuit
 
 
 default_gate_set: set[Gate] = {

@@ -125,14 +125,14 @@ class AttachedServer(DetachedServer):
             if wproc.exitcode is None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGKILL)
             wproc.join()
+        self.worker_procs.clear()
 
         # Join thread
         self.outgoing_thread.join()
 
     def _handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""
-        super()._handle_disconnect(conn)
-        self.running = False
+        self._handle_shutdown()
 
 
 def start_attached_server(*args: Any, **kwargs: Any) -> None:
@@ -165,9 +165,4 @@ def sigint_handler(
     frame: FrameType | None,
     server: AttachedServer,
 ) -> None:
-    # Clean up workers
-    for wproc in server.worker_procs:
-        if wproc.exitcode is None and wproc.pid is not None:
-            os.kill(wproc.pid, signal.SIGKILL)
-        wproc.join()
-    exit(-1)
+    server._handle_shutdown()

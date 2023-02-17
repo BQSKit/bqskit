@@ -302,7 +302,7 @@ class DetachedServer:
 
         # If it is for me
         else:
-            mailbox_id = result.return_address.mailbox_slot
+            mailbox_id = result.return_address.mailbox_index
             box = self.mailboxes[mailbox_id]
             box[0] = result.result
             if box[1]:
