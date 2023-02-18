@@ -31,7 +31,7 @@ class RuntimeTask:
         return_address: RuntimeAddress,
         comp_task_id: int,
         breadcrumbs: tuple[RuntimeAddress, ...],
-        logging_level: int = 30,
+        logging_level: int | None = None,
         max_logging_depth: int = -1,
     ) -> None:
         """Create the task with a new id and return address."""

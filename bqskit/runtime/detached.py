@@ -229,7 +229,7 @@ class DetachedServer:
             RuntimeAddress(-1, mailbox_id, 0),
             mailbox_id,
             tuple(),
-            task.logging_level if task.logging_level else 30,
+            task.logging_level,
             task.max_logging_depth,
         )
 

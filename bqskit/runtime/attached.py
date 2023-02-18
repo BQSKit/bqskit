@@ -145,6 +145,7 @@ def start_attached_server(*args: Any, **kwargs: Any) -> None:
         if isinstance(logger, logging.PlaceHolder):
             continue
         logger.handlers.clear()
+    logging.Logger.manager.loggerDict = {}
 
     # Ignore interrupts on workers (handler is inherited by subprocesses)
     signal.signal(signal.SIGINT, signal.SIG_IGN)

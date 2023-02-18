@@ -195,12 +195,8 @@ class Compiler:
 
         # Set task configuration
         task.request_data = request_data
+        task.logging_level = logging_level
         task.max_logging_depth = max_logging_depth
-
-        if logging_level is None:
-            task.logging_level = logging.getLogger('bqskit').getEffectiveLevel()
-        else:
-            task.logging_level = logging_level
 
         # Submit task to runtime
         self._send(RuntimeMessage.SUBMIT, task)
@@ -309,6 +305,7 @@ class Compiler:
 
         except Exception as e:
             self.conn = None
+            self.close()
             raise RuntimeError('Server connection unexpectedly closed.') from e
 
     def _send_recv(
@@ -326,22 +323,38 @@ class Compiler:
 
         except Exception as e:
             self.conn = None
+            self.close()
             raise RuntimeError('Server connection unexpectedly closed.') from e
 
     def _recv_handle_log_error(self) -> tuple[RuntimeMessage, Any]:
         """Return next msg, transparently emit log records and raise errors."""
-        while self.conn is not None:
+        if self.conn is None:
+            raise RuntimeError('Connection unexpectedly none.')
+
+        to_return = None
+        while to_return is None or self.conn.poll():
             msg, payload = self.conn.recv()
+
             if msg == RuntimeMessage.LOG:
-                logging.getLogger(payload.name).handle(payload)
+                logger = logging.getLogger(payload.name)
+                if logger.isEnabledFor(payload.levelno):
+                    logger.handle(payload)
 
             elif msg == RuntimeMessage.ERROR:
                 raise RuntimeError(payload)
 
             else:
-                return (msg, payload)
+                # Communication between runtime server and compiler
+                # is always round-trip. Once we have received our
+                # desired message (not log or error) we can therefore be
+                # certain any remaining messages in the pipeline are
+                # only either logs or error messages. We do want to
+                # handle these sooner rather than later, so we ensure to
+                # process every arrived message before returning.
+                # Hence, the `or self.conn.poll()` in the while condition.
+                to_return = (msg, payload)
 
-        raise RuntimeError('Connection unexpectedly none.')
+        return to_return
 
 
 def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:

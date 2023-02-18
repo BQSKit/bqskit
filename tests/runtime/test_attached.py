@@ -1,21 +1,18 @@
+"""Checks the attached runtime's process management and ability to cleanup."""
 from __future__ import annotations
 
 import os
 import signal
 import subprocess
+from typing import Any
 
 import psutil
 import pytest
 
+from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
-
-
-# [x] Check children processes
-# [ ] Errors in attached shutdown entire system (error in pass)
-# [ ] Worker graceful shutdown is handled gracefully (exit in pass)
-# [x] Interrupt is handled safely and quickly
-# [x] Termination is handled safely and quickly
-# [x] All worker processes limit number blas threads to 1
+from bqskit.ir import Circuit
+from bqskit.runtime import get_runtime
 
 
 @pytest.mark.parametrize('num_workers', [1, -1])
@@ -86,3 +83,58 @@ def test_interrupt_handling() -> None:
     p.wait()
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
+
+
+class TestErrorPass(BasePass):
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        raise RuntimeError('Boo!')
+
+
+def raise_error() -> None:
+    raise RuntimeError('Boo!')
+
+
+class TestNestedErrorPass(BasePass):
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        await get_runtime().submit(raise_error)
+
+
+class TestWorkerExitPass(BasePass):
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        exit()
+
+
+def test_errors_shutdown_system() -> None:
+    in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+    try:
+        compiler = Compiler(num_workers=1)
+        compiler.compile(Circuit(2), [TestErrorPass()])
+    except RuntimeError:
+        num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+        assert in_num_childs == num_childs
+    else:
+        assert False, 'No error caught.'
+
+
+def test_errors_shutdown_system_nested() -> None:
+    in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+    try:
+        compiler = Compiler(num_workers=1)
+        compiler.compile(Circuit(2), [TestNestedErrorPass()])
+    except RuntimeError:
+        num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+        assert in_num_childs == num_childs
+    else:
+        assert False, 'No error caught.'
+
+
+def test_worker_fail_shutdown_system() -> None:
+    in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+    try:
+        compiler = Compiler(num_workers=2)
+        compiler.compile(Circuit(2), [TestWorkerExitPass()])
+    except RuntimeError:
+        num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+        assert in_num_childs == num_childs
+    else:
+        assert False, 'No error caught.'

@@ -149,10 +149,10 @@ class Worker:
             record = old_factory(*args, **kwargs)
             active_task = get_worker()._active_task
             if active_task is not None:
-                tid = active_task.comp_task_id
-            else:
-                tid = -1
-            self._outgoing.append((RuntimeMessage.LOG, (tid, record)))
+                lvl = active_task.logging_level
+                if lvl is None or lvl <= record.levelno:
+                    tid = active_task.comp_task_id
+                    self._outgoing.append((RuntimeMessage.LOG, (tid, record)))
             return record
 
         logging.setLogRecordFactory(record_factory)
@@ -282,8 +282,11 @@ class Worker:
             self._active_task = task
 
             # Set logging level
-            if len(task.breadcrumbs) <= task.max_logging_depth:
-                logging.getLogger().setLevel(task.logging_level)
+            if (
+                task.max_logging_depth < 0
+                or len(task.breadcrumbs) <= task.max_logging_depth
+            ):
+                logging.getLogger().setLevel(0)
             else:
                 logging.getLogger().setLevel(30)
 
