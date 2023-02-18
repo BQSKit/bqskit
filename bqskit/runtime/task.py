@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 from typing import Any
 from typing import Coroutine
 
@@ -45,13 +46,37 @@ class RuntimeTask:
         self.max_logging_depth = max_logging_depth
         self.coro: Coroutine[Any, Any, Any] | None = None
         self.send = None
+        self.owned_mailboxes = []
+        self.wake_on_next: bool = False
 
     def step(self) -> Any:
         """Execute one step of the task."""
         if self.coro is None:
             raise RuntimeError('Task has not been initialized.')
 
-        return self.coro.send(self.send)
+        # Remove previously set await flags
+        if self.wake_on_next:
+            self.wake_on_next = False
+
+        # Set logging level
+        old_level = logging.getLogger().getEffectiveLevel()
+        if (
+            self.max_logging_depth < 0
+            or len(self.breadcrumbs) <= self.max_logging_depth
+        ):
+            logging.getLogger().setLevel(0)
+
+        # Execute a task step
+        to_return = self.coro.send(self.send)
+
+        # Reset send value, if set
+        if self.send is not None:
+            self.send = None
+        
+        # Reset logging
+        logging.getLogger().setLevel(old_level)
+        
+        return to_return
 
     def start(self) -> None:
         """Initialize the task."""

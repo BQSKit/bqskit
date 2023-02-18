@@ -36,6 +36,7 @@ class WorkerMailbox:
     result: Any = None
     num_results: int = 0
     dest_addr: RuntimeAddress | None = None
+    wake_on_next: bool = False
 
     @property
     def ready(self) -> bool:
@@ -221,19 +222,42 @@ class Worker:
 
     def _handle_result(self, result: RuntimeResult) -> None:
         """Insert result into appropriate mailbox and wake waiting task."""
-        box = self._mailboxes[result.return_address.mailbox_index]
+        mailbox_id = result.return_address.mailbox_index
+        if mailbox_id not in self._mailboxes:
+            # If the mailbox has been dropped due to a cancel, ignore result
+            return
+
+        box = self._mailboxes[mailbox_id]
         box.num_results += 1
+        slot_id = result.return_address.mailbox_slot
 
         if box.expecting_single_result:
             box.result = result.result
         else:
-            box.result[result.return_address.mailbox_slot] = result.result
+            box.result[slot_id] = result.result
 
-        if box.ready and box.dest_addr is not None:
-            # if task waiting on this result
-            self._tasks[box.dest_addr].send = box.result
-            self._mailboxes.pop(result.return_address.mailbox_index)
-            self._ready_tasks.put(box.dest_addr)  # Wake it
+        # If a task is waiting on this result
+        if box.dest_addr is not None:
+            task = self._tasks[box.dest_addr]
+
+            if task.wake_on_next:
+                if task.send is None:
+                    task.send = [(slot_id, result.result)]
+                    self._ready_tasks.put(box.dest_addr)
+                    # Only first result in, wakes the task
+
+                elif isinstance(task.send, list):
+                    task.send.append((slot_id, result.result))
+                    # more results may arrive before task starts again
+
+                else:
+                    raise RuntimeError("Unexpected send type.")
+
+            elif box.ready:
+                self._tasks[box.dest_addr].send = box.result
+                self._tasks[box.dest_addr].owned_mailboxes.remove(mailbox_id)
+                self._mailboxes.pop(mailbox_id)
+                self._ready_tasks.put(box.dest_addr)  # Wake it
 
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """Remove `addr` and its children tasks from this worker."""
@@ -246,6 +270,9 @@ class Worker:
                 to_remove.append(key)
 
         for key in to_remove:
+            for mailbox_id in self._tasks[key].owned_mailboxes:
+                self._mailboxes.pop(mailbox_id)
+            self._tasks[key].owned_mailboxes.clear()
             self._tasks.pop(key)
 
         # Remove all tasks that are children of `addr` from delayed tasks
@@ -280,36 +307,31 @@ class Worker:
 
         try:
             self._active_task = task
-
-            # Set logging level
-            if (
-                task.max_logging_depth < 0
-                or len(task.breadcrumbs) <= task.max_logging_depth
-            ):
-                logging.getLogger().setLevel(0)
-            else:
-                logging.getLogger().setLevel(30)
-
+                
             # Step it
             result = task.step()
 
-            # Reset send value, if set
-            if task.send is not None:
-                task.send = None
-
             # Handle an await on a RuntimeFuture
-            if isinstance(result, tuple) and result[0] == 'BQSKIT_MAIL_ID':
-                box = self._mailboxes[result[1]]
-                if box.ready:
+            if (
+                isinstance(result, tuple)
+                and len(result) == 2
+                and result[0] in ['BQSKIT_MAIL_ID', 'BQSKIT_WAIT_ID']
+            ):
+                mailbox_id = result[1]
+                if mailbox_id not in self._mailboxes:
+                    raise RuntimeError("Cannot await on a canceled task.")
+                box = self._mailboxes[mailbox_id]
+                if box.ready and result[0] == 'BQSKIT_MAIL_ID':
                     task.send = box.result
+                    task.owned_mailboxes.remove(result[1])
                     self._mailboxes.pop(result[1])
                     self._ready_tasks.put(addr)
                 else:
                     box.dest_addr = addr
-
+                    if result[0] == 'BQSKIT_WAIT_ID':
+                        task.wake_on_next = True
             else:
-                # If not waiting on a RuntimeFuture then ready to run again
-                self._ready_tasks.put(addr)
+                raise RuntimeError("Can only await on a BQSKit RuntimeFuture.")
 
         except StopIteration as e:
             # Task finished running, package and send out result
@@ -318,6 +340,16 @@ class Worker:
 
             # Remove task
             self._tasks.pop(addr)
+
+            # Cancel any open tasks
+            for mailbox_id in self._active_task.owned_mailboxes:
+                # If task is complete, simply discard result
+                if mailbox_id in self._mailboxes:
+                    if self._mailboxes[mailbox_id].ready:
+                        self._mailboxes.pop(mailbox_id)
+                        continue
+                # Otherwise send a cancel message
+                self.cancel(RuntimeFuture(mailbox_id))
 
             # Start delayed task
             if self._ready_tasks.empty() and len(self._delayed_tasks) > 0:
@@ -359,6 +391,7 @@ class Worker:
         # Create a new mailbox
         mailbox_id = self._get_new_mailbox_id()
         self._mailboxes[mailbox_id] = WorkerMailbox.new_mailbox()
+        self._active_task.owned_mailboxes.append(mailbox_id)
 
         # Create the task
         task = RuntimeTask(
@@ -397,6 +430,7 @@ class Worker:
         # Create a new mailbox
         mailbox_id = self._get_new_mailbox_id()
         self._mailboxes[mailbox_id] = WorkerMailbox.new_mailbox(len(fnargs))
+        self._active_task.owned_mailboxes.append(mailbox_id)
 
         # Create the tasks
         breadcrumbs = self._active_task.breadcrumbs
@@ -418,6 +452,34 @@ class Worker:
 
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
+
+    def cancel(self, future: RuntimeFuture) -> None:
+        """Cancel all tasks associated with `future`."""
+        num_slots = self._mailboxes[future.mailbox_id].total_num_results
+        self._active_task.owned_mailboxes.remove(future.mailbox_id)
+        self._mailboxes.pop(future.mailbox_id)
+        addrs = [
+            RuntimeAddress(self._id, future.mailbox_id, slot_id)
+            for slot_id in range(num_slots)
+        ]
+        msgs = [(RuntimeMessage.CANCEL, addr) for addr in addrs]
+        self._outgoing.extend(msgs)
+    
+    async def wait(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
+        """
+        Wait for and return the next batch of results from a map task.
+
+        Returns:
+            (list[tuple[int, Any]]): A list of the results that arrived
+                while the task was waiting. Each result is paired with
+                the index of its arguments in the original map call.
+        """
+        if future.done:
+            raise RuntimeError("Cannot wait on an already completed result.")
+        future.wait_flag = True
+        next_result_batch = await future
+        future.wait_flag = False
+        return next_result_batch  # type: ignore
 
 
 # Global variable containing reference to this process's worker object.

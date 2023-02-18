@@ -79,39 +79,36 @@ class ParallelDo(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Running pass sequences in parallel.')
 
-        if 'parallel' not in data:
-            raise RuntimeError(
-                'Parallel pass cannot be executed without a compiler.',
-            )
-
+        # Submit jobs to the runtime
         runtime = get_runtime()
-        futures = [
-            runtime.submit(_sub_do_work, pass_seq, circuit, data)
-            for pass_seq in self.pass_seqs
-        ]
+        future = runtime.map(
+            _sub_do_work,
+            self.pass_seqs,
+            circuit = circuit,
+            data = data,
+        )
 
+        # Wait for results
         if self.pick_first:
-            # _, result = next(as_completed(futures, with_results=True))
-            # for future in futures:
-            #     if not future.done:
-            #         client.cancel(future)
-
-            # circuit.become(result[0])
-            # data.update(result[1])
-            raise NotImplementedError('TODO: Cancel Task Support')
-
+            circuits_and_ids = await runtime.wait(future) # Wake on next result
+            circuits = [x[1] for x in circuits_and_ids]
         else:
-            best_circ = None
-            best_data = None
-            for future in futures:
-                _circ, _data = await future
-                if best_circ is None or self.less_than(_circ, best_circ):
-                    best_circ = _circ
-                    best_data = _data
-            if best_circ is None or best_data is None:
-                raise RuntimeError('No valid circuit found.')
-            circuit.become(best_circ)
-            data.update(best_data)
+            circuits = await future
+
+        # Find the best result
+        best_circ = None
+        best_data = None
+        for _circ, _data in circuits:
+            if best_circ is None or self.less_than(_circ, best_circ):
+                best_circ = _circ
+                best_data = _data
+
+        if best_circ is None or best_data is None:
+            raise RuntimeError('No valid circuit found.')
+        
+        # Become best result
+        circuit.become(best_circ)
+        data.update(best_data)
 
 
 async def _sub_do_work(
@@ -119,6 +116,8 @@ async def _sub_do_work(
     circuit: Circuit,
     data: dict[str, Any],
 ) -> tuple[Circuit, dict[str, Any]]:
+    """Execute a sequence of passes on circuit"""
+    # TODO: Move to BasePass
     for loop_pass in loop_body:
         await loop_pass.run(circuit, data)
     return circuit, data

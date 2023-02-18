@@ -15,6 +15,7 @@ class RuntimeFuture:
     def __init__(self, mailbox_id: int) -> None:
         """Initialize a future tied to a local mailbox."""
         self.mailbox_id = mailbox_id
+        self.wait_flag = False
 
     def __await__(self) -> Any:
         """
@@ -22,6 +23,9 @@ class RuntimeFuture:
 
         Informs the event loop which mailbox this is waiting on.
         """
+        if self.wait_flag:
+            return (yield ('BQSKIT_WAIT_ID', self.mailbox_id))
+            
         return (yield ('BQSKIT_MAIL_ID', self.mailbox_id))
 
     def __getstate__(self) -> Any:
