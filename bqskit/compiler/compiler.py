@@ -73,12 +73,12 @@ class Compiler:
         if port is None:
             port = 7472
 
+        atexit.register(self.close)
         if ip is None:
             ip = 'localhost'
             self._start_server(num_workers)
 
         self._connect_to_server(ip, port)
-        atexit.register(self.close)
 
     def _start_server(self, num_workers: int) -> None:
         self.p = mp.Process(target=start_attached_server, args=(num_workers,))
