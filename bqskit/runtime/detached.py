@@ -1,6 +1,8 @@
 """This module implements the DetachedServer runtime."""
 from __future__ import annotations
 
+import argparse
+import logging
 import selectors
 import sys
 import time
@@ -30,41 +32,100 @@ def listen(server: DetachedServer) -> None:
         client = listener.accept()
         server.clients[client] = set()
         server.sel.register(client, selectors.EVENT_READ, 'from_client')
+        print("Client connected")
 
 
 def send_outgoing(server: DetachedServer) -> None:
     """Outgoing thread forwards messages as they are created."""
     while server.running:
         if len(server.outgoing) > 0:
+            time.sleep(0)
             outgoing = server.outgoing.pop()
             outgoing[0].send((outgoing[1], outgoing[2]))
 
 
 class DetachedServer:
     """
-    BQSKit Runtime Server in detached mode.
+    BQSKit Runtime server in detached mode.
 
-    In detached mode, the runtime is started separately than the client. Clients
+    In detached mode, the runtime is started separately from the client. Clients
     can connect and disconnect rather than shutdown a detached server. This
     architecture is designed for the distributed setting, where managers manage
     workers in shared memory and communicate with the server over a network.
     """
 
-    def __init__(self, ipports: list[tuple[str, int]]) -> None:
-        """Create a server and connect to the managers at `ipports`."""
+    def __init__(
+        self,
+        ipports: list[tuple[str, int]],
+        port: int = 7472,
+    ) -> None:
+        """
+        Create a server and connect to the managers at `ipports`.
+
+        Args:
+            ipports (list[tuple[str, int]]): The ip and port pairs were
+                managers are expected to be waiting.
+            
+            port (int): The port this server will listen for clients on.
+                Default is 7472.
+        """
+
+        self.clients: dict[Connection, set[uuid.UUID]] = {}
+        """Tracks all connected clients and all the tasks they have created."""
+
         self.tasks: dict[uuid.UUID, tuple[int, Connection]] = {}
+        """Tracks all active CompilationTasks submitted to the cluster."""
+
         self.mailbox_to_task_dict: dict[int, uuid.UUID] = {}
+        """Used to convert internal RuntimeTasks to client CompilationTasks."""
+
         self.mailboxes: dict[int, Any] = {}
+        """A server mailbox is where CompilationTask results are stored."""
+
         self.mailbox_counter = 0
+        """Counter to ensure all mailboxes have unique IDs."""
+
         self.managers: list[Connection] = []
+        """Maintains one duplex connection with all connected managers."""
+
         self.manager_resources: list[int] = []
+        """Tracks the total number of workers each manager manages."""
+
         self.sel = selectors.DefaultSelector()
-        self.client_counter = 0
+        """Used to efficiently idle and wake when communication is ready."""
+
         self.running = True
+        """True while the server is running."""
+
+        self.lower_id_bound = 0
+        self.upper_id_bound = int(2 ** 30)
+        """
+        The server starts with an ID range from 0 -> 2^30
+        ID ranges are then assigned to managers by evenly splitting
+        this range. Managers then recursively split their range when
+        connecting the sub-managers. Finally, workers are assigned
+        specific ids from within this range.
+        """
 
         # Connect to managers
-        self.lower_id_bound = 0
-        self.upper_id_bound = int(2e9)
+        self._connect_to_managers(ipports)
+
+        # Task tracking data structures
+        self.total_resources = sum(self.manager_resources)
+        self.total_idle_resources = self.total_resources
+        self.manager_idle_resources: list[int] = self.manager_resources[:]
+
+        # Start client listener
+        self.listening_thread = Thread(target=listen, args=(self,))
+        self.listening_thread.start()
+
+        # Start outgoing thread
+        self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
+        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread.start()
+
+    def _connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
+        """Connect to all managers given by endpoints in `ipports`."""
         d = len(ipports)
         self.step_size = (self.upper_id_bound - self.lower_id_bound) // d
         for i, (ip, port) in enumerate(ipports):
@@ -74,23 +135,14 @@ class DetachedServer:
                 self.upper_id_bound,
             )
             self._connect_to_manager(ip, port, lb, ub)
-
-        # Task tracking data structure
-        self.total_resources = sum(self.manager_resources)
-        self.total_idle_resources = self.total_resources
-        self.manager_idle_resources: list[int] = [
-            r for r in self.manager_resources
-        ]
-
-        # Start listener
-        self.clients: dict[Connection, set[uuid.UUID]] = {}
-        self.listening_thread = Thread(target=listen, args=(self,))
-        self.listening_thread.start()
-
-        # Start outgoing thread
-        self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
-        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
-        self.outgoing_thread.start()
+            print("Connected to manager")
+        
+        for mconn in self.managers:
+            msg, payload = mconn.recv()
+            assert msg == RuntimeMessage.STARTED
+            self.manager_resources.append(payload)
+            self.sel.register(mconn, selectors.EVENT_READ, 'from_below')
+            print("Started a manager")
 
     def _connect_to_manager(self, ip: str, port: int, lb: int, ub: int) -> None:
         """Connect to a manager at the endpoint given by `ip` and `port`."""
@@ -105,10 +157,6 @@ class DetachedServer:
             else:
                 self.managers.append(conn)
                 conn.send((RuntimeMessage.CONNECT, (lb, ub)))
-                msg, payload = conn.recv()
-                assert msg == RuntimeMessage.STARTED
-                self.manager_resources.append(payload)
-                self.sel.register(conn, selectors.EVENT_READ, 'from_below')
                 return
         raise RuntimeError('Manager connection refused')
 
@@ -124,6 +172,7 @@ class DetachedServer:
                 for key, _ in events:
                     conn = cast(Connection, key.fileobj)
                     msg, payload = conn.recv()
+                    print(msg)
 
                     if key.data == 'from_client':
 
@@ -176,12 +225,14 @@ class DetachedServer:
             except Exception:
                 exc_info = sys.exc_info()
                 error_str = ''.join(traceback.format_exception(*exc_info))
+                print(error_str)
                 for client in self.clients.keys():
                     client.send((RuntimeMessage.ERROR, error_str))
                 self._handle_shutdown()
 
     def _handle_shutdown(self) -> None:
         """Shutdown the runtime."""
+        print("Shut down server")
         # Stop running
         self.running = False
 
@@ -282,9 +333,9 @@ class DetachedServer:
             box[1] = True
         else:
             self.outgoing.append((conn, RuntimeMessage.RESULT, box[0]))
-            self.tasks.pop(request)
+            # self.tasks.pop(request)
             self.mailboxes.pop(mailbox_id)
-            self.mailbox_to_task_dict.pop(mailbox_id)
+            # self.mailbox_to_task_dict.pop(mailbox_id)
             self.clients[conn].remove(request)
 
     def _handle_result(self, result: RuntimeResult) -> None:
@@ -303,15 +354,18 @@ class DetachedServer:
         # If it is for me
         else:
             mailbox_id = result.return_address.mailbox_index
+            if mailbox_id not in self.mailboxes:
+                return  # Silently discard results from cancelled tasks
+
             box = self.mailboxes[mailbox_id]
             box[0] = result.result
             if box[1]:
                 t_id = self.mailbox_to_task_dict[mailbox_id]
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box[0])
                 self.outgoing.append(m)
-                self.tasks.pop(t_id)
+                # self.tasks.pop(t_id)
                 self.mailboxes.pop(mailbox_id)
-                self.mailbox_to_task_dict.pop(mailbox_id)
+                # self.mailbox_to_task_dict.pop(mailbox_id)
 
     def _handle_status(self, conn: Connection, request: uuid.UUID) -> None:
         """Inform the client if the task is finished or not."""
@@ -329,12 +383,18 @@ class DetachedServer:
 
     def _handle_cancel_comp_task(self, request: uuid.UUID) -> None:
         """Cancel a compilation task in the system."""
-        addr = RuntimeAddress(-1, self.tasks[request][0], 0)
+        # Remove task from server data
+        mailbox_id, client_conn = self.tasks[request]  # .pop(request)
+        # self.mailbox_to_task_dict.pop(mailbox_id)
+        self.mailboxes.pop(mailbox_id)
+
+        # Forward internal cancel messages
+        addr = RuntimeAddress(-1, mailbox_id, 0)
         self._handle_cancel(addr)
-        client_conn = self.tasks[request][1]
+
+        # Acknowledge the cancel request
         if not client_conn.closed:
             client_conn.send((RuntimeMessage.CANCEL, None))
-        self.tasks.pop(request)
 
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """Cancel a runtime task in the system."""
@@ -343,18 +403,18 @@ class DetachedServer:
 
     def _handle_error(self, error_payload: tuple[int, str]) -> None:
         """Forward an error to the appropriate client and disconnect it."""
-        conn = self.tasks[self.mailbox_to_task_dict[error_payload[0]]][1]
-        conn.send((RuntimeMessage.ERROR, error_payload[1]))
+        if not isinstance(error_payload, tuple):
+            self._handle_shutdown()
+            raise RuntimeError(error_payload)
+
+        tid = error_payload[0]
+        conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
+        self.outgoing.append((conn, RuntimeMessage.ERROR, error_payload[1]))
         self._handle_disconnect(conn)
 
     def _handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
         """Forward logs to appropriate client."""
         tid = log_payload[0]
-
-        if tid == -1:  # Log message generated outside of an executing task.
-            print(log_payload[1].getMessage())  # Dump it in detached mode
-            return
-
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.append((conn, RuntimeMessage.LOG, log_payload[1]))
 
@@ -365,6 +425,47 @@ class DetachedServer:
         return new_id
 
 
-def start_detached_server(*args: Any, **kwargs: Any) -> None:
-    """Start a runtime server in detached mode."""
-    DetachedServer(*args, **kwargs)._run()
+def parse_ipports(ipports_str: list[str]) -> list[tuple[str, int]]:
+    """Parse command line ip and port inputs."""
+    ipports = []
+    for ipport_group in ipports_str:
+        for ipport in ipport_group.split(","):
+            if ipport.strip() == "":
+                continue
+            ip, port = ipport.strip().split(":")
+
+            octets = ip.split('.')
+            if len(octets) != 4 or not all(0 <= int(o) < 256 for o in octets):
+                raise ValueError(f"Invalid ip address: {ipport}")
+
+            if not (0 <= int(port) < 65536):
+                raise ValueError(f"Invalid port number: {ipport}")
+
+            ipports.append((ip, int(port)))
+    return ipports
+
+
+def start_server() -> None:
+    """Entry point for a detached runtime server process."""
+    parser = argparse.ArgumentParser(
+        prog = 'BQSKit Server',
+        description = 'Launch a BQSKit runtime server process.',
+    )
+    parser.add_argument(
+        'managers',
+        nargs='+',
+        help="The ip and port pairs were managers are expected to be waiting.",
+    )
+    parser.add_argument(
+        '-p', '--port',
+        type=int,
+        default=7472,
+        help="The port this server will listen for clients on.",
+    )
+    args = parser.parse_args()
+
+    # If ips and ports were provided parse them
+    ipports = parse_ipports(args.managers)
+
+    server = DetachedServer(ipports, args.port)
+    server._run()

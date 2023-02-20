@@ -1,9 +1,11 @@
-"""This module implements the AttachedServer runtime."""
+"""This module implements the Manager class."""
 from __future__ import annotations
 
+import argparse
 import os
 import signal
 import sys
+from threading import Thread
 import time
 import traceback
 from multiprocessing import Pipe
@@ -21,6 +23,8 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
+from bqskit.runtime.detached import send_outgoing
+from bqskit.runtime.detached import parse_ipports
 
 
 class Manager:
@@ -37,6 +41,7 @@ class Manager:
 
     def __init__(
         self,
+        port: int = 7473,
         num_workers: int = -1,
         ipports: list[tuple[str, int]] | None = None,
     ) -> None:
@@ -58,7 +63,7 @@ class Manager:
         is attempted and the manager terminates.
         """
         # Connect upstream
-        self._listen_once()
+        self._listen_once(port)
 
         self.workers: list[tuple[Connection, Process | None]] = []
         self.worker_resources: list[int] = []
@@ -67,15 +72,7 @@ class Manager:
             self._spawn_workers(num_workers)
 
         else:  # Case 2: Connect to managers at ipports
-            d = len(ipports)
-            sub_range = (self.upper_id_bound - self.lower_id_bound) // d
-            for i, (ip, port) in enumerate(ipports):
-                lb = self.lower_id_bound + (i * sub_range)
-                ub = min(
-                    self.lower_id_bound + ((i + 1) * sub_range),
-                    self.upper_id_bound,
-                )
-                self._connect_to_manager(ip, port, lb, ub)
+            self._connect_to_managers()
 
         # Task tracking data structure
         self.total_resources = sum(self.worker_resources)
@@ -84,11 +81,18 @@ class Manager:
             r for r in self.worker_resources
         ]
 
+        # Start outgoing thread
+        self.running = True
+        self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
+        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread.start()
+
         # Ready and inform upstream
         self.upstream.send((RuntimeMessage.STARTED, self.total_resources))
+        print("Sent upstream message")
 
-    def _listen_once(self) -> None:
-        listener = Listener(('localhost', 7472))
+    def _listen_once(self, port: int) -> None:
+        listener = Listener(('localhost', port))
         self.upstream = listener.accept()
         listener.close()
 
@@ -116,6 +120,23 @@ class Manager:
 
         for wconn, _ in self.workers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
+            print("Spawned worker.")
+
+    def _connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
+        d = len(ipports)
+        sub_range = (self.upper_id_bound - self.lower_id_bound) // d
+        for i, (ip, port) in enumerate(ipports):
+            lb = self.lower_id_bound + (i * sub_range)
+            ub = min(
+                self.lower_id_bound + ((i + 1) * sub_range),
+                self.upper_id_bound,
+            )
+            self._connect_to_manager(ip, port, lb, ub)
+        
+        for wconn, _ in self.workers:
+            msg, payload = wconn.recv()
+            assert msg == RuntimeMessage.STARTED
+            self.worker_resources.append(payload)
 
     def _connect_to_manager(self, ip: str, port: int, lb: int, ub: int) -> None:
         max_retries = 5
@@ -129,87 +150,86 @@ class Manager:
             else:
                 self.workers.append((conn, None))
                 conn.send((RuntimeMessage.CONNECT, (lb, ub)))
-                msg, payload = conn.recv()
-                assert msg == RuntimeMessage.STARTED
-                self.worker_resources.append(payload)
                 return
         raise RuntimeError('Worker connection refused')
 
     def __del__(self) -> None:
         """Shutdown the manager and clean up spawned processes."""
-        # Instruct workers to shutdown
-        for wconn, wproc in self.workers:
-            try:
-                wconn.send((RuntimeMessage.SHUTDOWN, None))
-            except Exception:
-                pass
-            if wproc is not None and wproc.pid is not None:
-                os.kill(wproc.pid, signal.SIGUSR1)
+        self._handle_shutdown()
 
-        # Clean up processes
-        for _, wproc in self.workers:
-            if wproc is None:
-                continue
-
-            if wproc.exitcode is None and wproc.pid is not None:
-                os.kill(wproc.pid, signal.SIGKILL)
-            wproc.join()
 
     def _run(self) -> None:
         """Main server loop."""
         connections = [self.upstream] + [wconn for wconn, _ in self.workers]
 
-        try:
-            while True:
-                for fd in wait(connections):
-                    conn = cast(Connection, fd)
-                    msg, payload = conn.recv()
+        while self.running:
+            for fd in wait(connections):
+                conn = cast(Connection, fd)
+                msg, payload = conn.recv()
+                print(msg)
 
-                    if conn == self.upstream:
+                if conn == self.upstream:
 
-                        if msg == RuntimeMessage.SUBMIT:
-                            task = cast(RuntimeTask, payload)
-                            self._assign_new_task(task)
+                    if msg == RuntimeMessage.SUBMIT:
+                        task = cast(RuntimeTask, payload)
+                        self._assign_new_task(task)
 
-                        elif msg == RuntimeMessage.SUBMIT_BATCH:
-                            tasks = cast(List[RuntimeTask], payload)
-                            self._assign_new_tasks(tasks)
+                    elif msg == RuntimeMessage.SUBMIT_BATCH:
+                        tasks = cast(List[RuntimeTask], payload)
+                        self._assign_new_tasks(tasks)
 
-                        elif msg == RuntimeMessage.RESULT:
-                            result = cast(RuntimeResult, payload)
-                            self._handle_result_coming_down(result)
+                    elif msg == RuntimeMessage.RESULT:
+                        result = cast(RuntimeResult, payload)
+                        self._handle_result_coming_down(result)
 
-                        elif msg == RuntimeMessage.CANCEL:
-                            addr = cast(RuntimeAddress, payload)
-                            self._handle_cancel(addr)
+                    elif msg == RuntimeMessage.CANCEL:
+                        addr = cast(RuntimeAddress, payload)
+                        self._handle_cancel(addr)
+                    
+                    elif msg == RuntimeMessage.SHUTDOWN:
+                        return
+
+                else:
+
+                    if msg == RuntimeMessage.SUBMIT:
+                        task = cast(RuntimeTask, payload)
+                        self._recieve_new_task(task)
+
+                    elif msg == RuntimeMessage.SUBMIT_BATCH:
+                        tasks = cast(List[RuntimeTask], payload)
+                        self._recieve_new_tasks(tasks)
+
+                    elif msg == RuntimeMessage.RESULT:
+                        result = cast(RuntimeResult, payload)
+                        self._handle_result_going_up(result)
 
                     else:
+                        # Forward all other messages up
+                        self.outgoing.append((self.upstream, msg, payload))
 
-                        if msg == RuntimeMessage.SUBMIT:
-                            task = cast(RuntimeTask, payload)
-                            self._recieve_new_task(task)
+    def _handle_shutdown(self) -> None:
+        """Shutdown the manager and clean up spawned processes."""
+        print("Shut down server")
+        # Stop running
+        self.running = False
 
-                        elif msg == RuntimeMessage.SUBMIT_BATCH:
-                            self._recieve_new_tasks(tasks)
+        # Instruct workers to shutdown
+        for wconn, _ in self.workers:
+            try:
+                wconn.send((RuntimeMessage.SHUTDOWN, None))
+                wconn.close()
+            except Exception:
+                pass
+        
+        for _, p in self.workers:
+            if p is not None:
+                p.join()
+                print("joined worker")
+        
+        self.workers.clear()
 
-                        elif msg == RuntimeMessage.RESULT:
-                            result = cast(RuntimeResult, payload)
-                            self._handle_result_going_up(result)
-
-                        elif msg == RuntimeMessage.ERROR:
-                            self.upstream.send((msg, payload))
-                            return
-
-                        elif msg == RuntimeMessage.LOG:
-                            self.upstream.send((msg, payload))
-
-                        elif msg == RuntimeMessage.CANCEL:
-                            self.upstream.send((msg, payload))
-
-        except Exception:
-            exc_info = sys.exc_info()
-            error_str = ''.join(traceback.format_exception(*exc_info))
-            self.upstream.send((RuntimeMessage.ERROR, error_str))
+        # Join threads
+        self.outgoing_thread.join()
 
     def _recieve_new_task(self, task: RuntimeTask) -> None:
         """Either send the task upstream or schedule it downstream."""
@@ -221,13 +241,13 @@ class Manager:
     def _assign_new_task(self, task: RuntimeTask) -> None:
         """Schedule a task on a worker."""
         # select worker
-        min_tasks = min(self.worker_idle_resources)
+        min_tasks = max(self.worker_idle_resources)
         best_id = self.worker_idle_resources.index(min_tasks)
         self.worker_idle_resources[best_id] -= 1
 
         # assign work
         worker = self.workers[best_id]
-        worker[0].send((RuntimeMessage.SUBMIT, task))
+        self.outgoing.append((worker[0], RuntimeMessage.SUBMIT, task))
 
     def _recieve_new_tasks(self, tasks: list[RuntimeTask]) -> None:
         """Either send the tasks upstream or schedule them downstream."""
@@ -241,7 +261,7 @@ class Manager:
         assignments: list[list[RuntimeTask]] = [[] for _ in self.workers]
         for task in tasks:
             # select worker
-            min_tasks = min(self.worker_idle_resources)
+            min_tasks = max(self.worker_idle_resources)
             best_id = self.worker_idle_resources.index(min_tasks)
             self.worker_idle_resources[best_id] -= 1
             assignments[best_id].append(task)
@@ -252,38 +272,52 @@ class Manager:
                 continue
 
             elif len(assignment) == 1:
-                msg = (RuntimeMessage.SUBMIT, assignment[0])
-                self.workers[i][0].send(msg)
+                m = (self.workers[i][0], RuntimeMessage.SUBMIT, assignment[0])
+                self.outgoing.append(m)
 
             else:
-                msgb = (RuntimeMessage.SUBMIT_BATCH, assignment)
-                self.workers[i][0].send(msgb)
+                n = (self.workers[i][0], RuntimeMessage.SUBMIT_BATCH, assignment)
+                self.outgoing.append(n)
 
     def _handle_result_coming_down(self, result: RuntimeResult) -> None:
         wid = result.return_address.worker_id - self.lower_id_bound
-        assert wid > 0 and wid < (self.upper_id_bound - self.lower_id_bound)
-        self.workers[wid][0].send((RuntimeMessage.RESULT, result))
+        assert 0 <= wid < (self.upper_id_bound - self.lower_id_bound)
+        msg = (self.workers[wid][0], RuntimeMessage.RESULT, result)
+        self.outgoing.append(msg)
 
     def _handle_result_going_up(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker."""
         self.worker_idle_resources[result.completed_by] += 1
         dest_wid = result.return_address.worker_id
 
-        # If it isn't for me
+        # If it isn't for me, send it up, other send it down
         if dest_wid < self.lower_id_bound or dest_wid >= self.upper_id_bound:
-            self.upstream.send((RuntimeMessage.RESULT, result))
-            return
+            msg = (self.upstream, RuntimeMessage.RESULT, result)
+            self.outgoing.append(msg)
+
         else:
             self._handle_result_coming_down(result)
 
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """Cancel a compilation task or a runtime task in the system."""
-        for wconn, p in self.workers:
-            if p is not None and p.pid is not None:
-                os.kill(p.pid, signal.SIGUSR1)
-            wconn.send((RuntimeMessage.CANCEL, addr))
+        for wconn, _ in self.workers:
+            self.outgoing.append((wconn, RuntimeMessage.CANCEL, addr))
 
 
-def start_manager(*args: Any, **kwargs: Any) -> None:
-    """Start a runtime manager."""
-    Manager(*args, **kwargs)._run()
+def start_manager() -> None:
+    """Entry point for runtime manager processes."""
+    parser = argparse.ArgumentParser(
+        prog = 'BQSKit Manager',
+        description = 'Launch a BQSKit runtime manager process.',
+    )
+    parser.add_argument('-n', '--num-workers', default=-1, type=int)
+    parser.add_argument('-m', '--managers', nargs='+')
+    parser.add_argument('-p', '--port', type=int, default=7473)
+    args = parser.parse_args()
+
+    # If ips and ports were provided parse them
+    ipports = None if args.managers is None  else parse_ipports(args.managers)
+
+    manager = Manager(args.port, args.num_workers, ipports)
+    manager._run()
+

@@ -301,6 +301,8 @@ class Compiler:
             raise RuntimeError('Connection unexpectedly none.')
 
         try:
+            self._recv_log_error_until_empty()
+            
             self.conn.send((msg, payload))
 
         except Exception as e:
@@ -317,6 +319,8 @@ class Compiler:
             raise RuntimeError('Connection unexpectedly none.')
 
         try:
+            self._recv_log_error_until_empty()
+
             self.conn.send((msg, payload))
 
             return self._recv_handle_log_error()
@@ -355,6 +359,25 @@ class Compiler:
                 to_return = (msg, payload)
 
         return to_return
+    
+    def _recv_log_error_until_empty(self) -> None:
+        """Handle all remaining log and error messages in the pipeline."""
+        if self.conn is None:
+            raise RuntimeError('Connection unexpectedly none.')
+
+        while self.conn.poll():
+            msg, payload = self.conn.recv()
+
+            if msg == RuntimeMessage.LOG:
+                logger = logging.getLogger(payload.name)
+                if logger.isEnabledFor(payload.levelno):
+                    logger.handle(payload)
+
+            elif msg == RuntimeMessage.ERROR:
+                raise RuntimeError(payload)
+            
+            else:
+                raise RuntimeError(f"Unexpected message type: {msg}.")
 
 
 def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
