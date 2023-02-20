@@ -88,11 +88,12 @@ class Manager:
         self.outgoing_thread.start()
 
         # Ready and inform upstream
-        self.upstream.send((RuntimeMessage.STARTED, self.total_resources))
+        msg = (self.upstream, RuntimeMessage.STARTED, self.total_resources)
+        self.outgoing.append(msg)
         print("Sent upstream message")
 
     def _listen_once(self, port: int) -> None:
-        listener = Listener(('localhost', port))
+        listener = Listener(('0.0.0.0', port))
         self.upstream = listener.accept()
         listener.close()
 
@@ -121,14 +122,16 @@ class Manager:
         for wconn, _ in self.workers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
             print("Spawned worker.")
+            
+        self.step_size = 1
 
     def _connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
         d = len(ipports)
-        sub_range = (self.upper_id_bound - self.lower_id_bound) // d
+        self.step_size = (self.upper_id_bound - self.lower_id_bound) // d
         for i, (ip, port) in enumerate(ipports):
-            lb = self.lower_id_bound + (i * sub_range)
+            lb = self.lower_id_bound + (i * self.step_size)
             ub = min(
-                self.lower_id_bound + ((i + 1) * sub_range),
+                self.lower_id_bound + ((i + 1) * self.step_size),
                 self.upper_id_bound,
             )
             self._connect_to_manager(ip, port, lb, ub)
@@ -236,7 +239,7 @@ class Manager:
         if self.total_idle_resources > 0:
             self._assign_new_task(task)
         else:
-            self.upstream.send((RuntimeMessage.SUBMIT, task))
+            self.outgoing.append((self.upstream, RuntimeMessage.SUBMIT, task))
 
     def _assign_new_task(self, task: RuntimeTask) -> None:
         """Schedule a task on a worker."""
@@ -254,7 +257,8 @@ class Manager:
         if len(tasks) < self.total_idle_resources:
             self._assign_new_tasks(tasks)
         else:
-            self.upstream.send((RuntimeMessage.SUBMIT_BATCH, tasks))
+            msg = (self.upstream, RuntimeMessage.SUBMIT_BATCH, tasks)
+            self.outgoing.append(msg)
 
     def _assign_new_tasks(self, tasks: list[RuntimeTask]) -> None:
         """Schedule many tasks between the workers."""
@@ -280,14 +284,16 @@ class Manager:
                 self.outgoing.append(n)
 
     def _handle_result_coming_down(self, result: RuntimeResult) -> None:
-        wid = result.return_address.worker_id - self.lower_id_bound
+        wid = (result.return_address.worker_id - self.lower_id_bound) // self.step_size
         assert 0 <= wid < (self.upper_id_bound - self.lower_id_bound)
         msg = (self.workers[wid][0], RuntimeMessage.RESULT, result)
         self.outgoing.append(msg)
 
     def _handle_result_going_up(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker."""
-        self.worker_idle_resources[result.completed_by] += 1
+        w_id = result.completed_by
+        m_id = (w_id - self.lower_id_bound) // self.step_size
+        self.worker_idle_resources[m_id] += 1
         dest_wid = result.return_address.worker_id
 
         # If it isn't for me, send it up, other send it down

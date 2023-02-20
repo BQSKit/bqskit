@@ -25,9 +25,9 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-def listen(server: DetachedServer) -> None:
+def listen(server: DetachedServer, port: int) -> None:
     """Listening thread listens for client connections."""
-    listener = Listener(('localhost', 7472))
+    listener = Listener(('0.0.0.0', port))
     while server.running:
         client = listener.accept()
         server.clients[client] = set()
@@ -116,7 +116,7 @@ class DetachedServer:
         self.manager_idle_resources: list[int] = self.manager_resources[:]
 
         # Start client listener
-        self.listening_thread = Thread(target=listen, args=(self,))
+        self.listening_thread = Thread(target=listen, args=(self, port))
         self.listening_thread.start()
 
         # Start outgoing thread
@@ -340,7 +340,9 @@ class DetachedServer:
 
     def _handle_result(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker."""
-        self.manager_idle_resources[result.completed_by] += 1
+        w_id = result.completed_by
+        m_id = (w_id - self.lower_id_bound) // self.step_size
+        self.manager_idle_resources[m_id] += 1
         dest_w_id = result.return_address.worker_id
 
         # If it isn't for me
@@ -363,6 +365,7 @@ class DetachedServer:
                 t_id = self.mailbox_to_task_dict[mailbox_id]
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box[0])
                 self.outgoing.append(m)
+                self.clients[self.tasks[t_id][1]].remove(t_id)
                 # self.tasks.pop(t_id)
                 self.mailboxes.pop(mailbox_id)
                 # self.mailbox_to_task_dict.pop(mailbox_id)
@@ -387,6 +390,7 @@ class DetachedServer:
         mailbox_id, client_conn = self.tasks[request]  # .pop(request)
         # self.mailbox_to_task_dict.pop(mailbox_id)
         self.mailboxes.pop(mailbox_id)
+        self.clients[client_conn].remove(request)
 
         # Forward internal cancel messages
         addr = RuntimeAddress(-1, mailbox_id, 0)
@@ -434,9 +438,8 @@ def parse_ipports(ipports_str: list[str]) -> list[tuple[str, int]]:
                 continue
             ip, port = ipport.strip().split(":")
 
-            octets = ip.split('.')
-            if len(octets) != 4 or not all(0 <= int(o) < 256 for o in octets):
-                raise ValueError(f"Invalid ip address: {ipport}")
+            if port == "":
+                port = 7473
 
             if not (0 <= int(port) < 65536):
                 raise ValueError(f"Invalid port number: {ipport}")
