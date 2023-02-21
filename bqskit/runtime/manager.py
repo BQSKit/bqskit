@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import functools
+import logging
 import os
 import signal
 import sys
@@ -23,7 +25,7 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
-from bqskit.runtime.detached import send_outgoing
+from bqskit.runtime.detached import send_outgoing, sigint_handler
 from bqskit.runtime.detached import parse_ipports
 
 
@@ -44,6 +46,7 @@ class Manager:
         port: int = 7473,
         num_workers: int = -1,
         ipports: list[tuple[str, int]] | None = None,
+        verbosity: int = 0,
     ) -> None:
         """
         Create a manager instance in one of two ways:
@@ -73,24 +76,34 @@ class Manager:
 
         else:  # Case 2: Connect to managers at ipports
             self._connect_to_managers()
+        
+        # Set up logging    
+        self.logger = logging.getLogger('bqskit-runtime')
+        self.logger.setLevel([30, 20, 10, 1][verbosity])
+        self.logger.addHandler(logging.StreamHandler())
+        if ipports is None:
+            self.logger.info(f'Spawned {len(self.workers)} workers.')
+        else:
+            self.logger.info(f'Connected to {len(self.workers)} managers.')
 
         # Task tracking data structure
         self.total_resources = sum(self.worker_resources)
         self.total_idle_resources = 0
-        self.worker_idle_resources: list[int] = [
-            r for r in self.worker_resources
-        ]
+        self.worker_idle_resources: list[int] = self.worker_resources[:]
+        self.logger.info(f"Manager has {self.total_resources} workers.")
+        self.logger.debug(f"{self.worker_resources = }")
 
         # Start outgoing thread
         self.running = True
         self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
         self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
         self.outgoing_thread.start()
+        self.logger.info(f"Started outgoing thread.")
 
         # Ready and inform upstream
         msg = (self.upstream, RuntimeMessage.STARTED, self.total_resources)
         self.outgoing.append(msg)
-        print("Sent upstream message")
+        self.logger.info(f"Sent start messaage upstream.")
 
     def _listen_once(self, port: int) -> None:
         listener = Listener(('0.0.0.0', port))
@@ -121,7 +134,6 @@ class Manager:
 
         for wconn, _ in self.workers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
-            print("Spawned worker.")
             
         self.step_size = 1
 
@@ -160,7 +172,6 @@ class Manager:
         """Shutdown the manager and clean up spawned processes."""
         self._handle_shutdown()
 
-
     def _run(self) -> None:
         """Main server loop."""
         connections = [self.upstream] + [wconn for wconn, _ in self.workers]
@@ -169,7 +180,8 @@ class Manager:
             for fd in wait(connections):
                 conn = cast(Connection, fd)
                 msg, payload = conn.recv()
-                print(msg)
+                self.logger.debug(f"Received message {msg}.")
+                self.logger.log(1, f"{payload}\n")
 
                 if conn == self.upstream:
 
@@ -190,6 +202,7 @@ class Manager:
                         self._handle_cancel(addr)
                     
                     elif msg == RuntimeMessage.SHUTDOWN:
+                        self._handle_shutdown()
                         return
 
                 else:
@@ -212,27 +225,42 @@ class Manager:
 
     def _handle_shutdown(self) -> None:
         """Shutdown the manager and clean up spawned processes."""
-        print("Shut down server")
+        if not self.running:
+            return
+            
         # Stop running
+        self.logger.info("Shutting down server.")
         self.running = False
 
         # Instruct workers to shutdown
-        for wconn, _ in self.workers:
-            try:
-                wconn.send((RuntimeMessage.SHUTDOWN, None))
-                wconn.close()
-            except Exception:
-                pass
-        
-        for _, p in self.workers:
-            if p is not None:
-                p.join()
-                print("joined worker")
-        
-        self.workers.clear()
+        if self.workers is not None:
+            for wconn, _ in self.workers:
+                try:
+                    wconn.send((RuntimeMessage.SHUTDOWN, None))
+                    wconn.close()
+                except Exception:
+                    pass
+            
+            for _, p in self.workers:
+                if p is not None:
+                    p.join()
+                    self.logger.debug("Joined worker.")
+            
+            self.workers.clear()
+            self.workers = None
 
         # Join threads
-        self.outgoing_thread.join()
+        if self.outgoing_thread is not None:
+            self.outgoing_thread.join()
+            self.outgoing_thread = None
+            self.logger.debug("Joined outgoing thread.")
+
+        # Forward shutdown message upwards if possible
+        try:
+            self.upstream.send((RuntimeMessage.SHUTDOWN, None))
+            self.upstream.close()
+        except Exception:
+            pass
 
     def _recieve_new_task(self, task: RuntimeTask) -> None:
         """Either send the task upstream or schedule it downstream."""
@@ -316,14 +344,41 @@ def start_manager() -> None:
         prog = 'BQSKit Manager',
         description = 'Launch a BQSKit runtime manager process.',
     )
-    parser.add_argument('-n', '--num-workers', default=-1, type=int)
-    parser.add_argument('-m', '--managers', nargs='+')
-    parser.add_argument('-p', '--port', type=int, default=7473)
+    parser.add_argument(
+        '-n', '--num-workers',
+        default=-1,
+        type=int,
+        help='The number of workers to spawn. If negative, will spawn'
+        ' one worker for each available CPU. Defaults to -1.',
+    )
+    parser.add_argument(
+        '-m', '--managers',
+        nargs='+',
+        help='The ip and port pairs were managers are expected to be waiting.',
+    )
+    parser.add_argument(
+        '-p', '--port',
+        type=int,
+        default=7473,
+        help='The port this manager will listen for servers on.',
+    )
+    parser.add_argument(
+        '--verbose', '-v',
+        action='count',
+        default=0,
+        help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.'
+    )
     args = parser.parse_args()
 
     # If ips and ports were provided parse them
     ipports = None if args.managers is None  else parse_ipports(args.managers)
 
-    manager = Manager(args.port, args.num_workers, ipports)
-    manager._run()
+    # Create the manager
+    manager = Manager(args.port, args.num_workers, ipports, args.verbose)
 
+    # Force shutdown on interrupt signals
+    handle = functools.partial(sigint_handler, server=manager)
+    signal.signal(signal.SIGINT, handle)
+
+    # Start the manager
+    manager._run()

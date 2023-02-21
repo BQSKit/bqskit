@@ -195,7 +195,7 @@ class Compiler:
 
         # Set task configuration
         task.request_data = request_data
-        task.logging_level = logging_level
+        task.logging_level = logging_level or self._discover_lowest_log_level()
         task.max_logging_depth = max_logging_depth
 
         # Submit task to runtime
@@ -290,6 +290,11 @@ class Compiler:
             max_logging_depth,
         )
         result = self.result(task_id)
+
+        # Ensure arrival of all log messages
+        time.sleep(0.05 if self.p is not None else 0.5)
+        self._recv_log_error_until_empty()
+
         return result
 
     def _send(
@@ -379,6 +384,18 @@ class Compiler:
             else:
                 raise RuntimeError(f"Unexpected message type: {msg}.")
 
+    def _discover_lowest_log_level(self) -> int:
+        """Searches through all python loggers for the lowest set level."""
+        lowest_level_found_so_far = logging.getLogger().getEffectiveLevel()
+
+        for _, logger in logging.getLogger().manager.loggerDict.items():
+            if isinstance(logger, logging.PlaceHolder):
+                continue
+
+            if logger.getEffectiveLevel() < lowest_level_found_so_far:
+                lowest_level_found_so_far = logger.getEffectiveLevel()
+    
+        return lowest_level_found_so_far
 
 def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
     signal.signal(signal.SIGINT, signal.SIG_IGN)

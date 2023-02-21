@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import logging
 import selectors
+import signal
+import socket
 import sys
 import time
 import traceback
+from types import FrameType
 import uuid
 from logging import LogRecord
 from multiprocessing.connection import Client
@@ -25,14 +29,15 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-def listen(server: DetachedServer, port: int) -> None:
+def listen(server: DetachedServer, listener: Listener) -> None:
     """Listening thread listens for client connections."""
-    listener = Listener(('0.0.0.0', port))
     while server.running:
         client = listener.accept()
-        server.clients[client] = set()
-        server.sel.register(client, selectors.EVENT_READ, 'from_client')
-        print("Client connected")
+        server.logger.debug("Connected to client.")
+        if server.running:
+            server.clients[client] = set()
+            server.sel.register(client, selectors.EVENT_READ, 'from_client')
+            server.logger.info("Registered client.")
 
 
 def send_outgoing(server: DetachedServer) -> None:
@@ -42,6 +47,9 @@ def send_outgoing(server: DetachedServer) -> None:
             time.sleep(0)
             outgoing = server.outgoing.pop()
             outgoing[0].send((outgoing[1], outgoing[2]))
+
+            server.logger.debug(f"Sent message {outgoing[1]}.")
+            server.logger.log(1, f"{outgoing[2]}\n")
 
 
 class DetachedServer:
@@ -97,6 +105,9 @@ class DetachedServer:
         self.running = True
         """True while the server is running."""
 
+        self.logger = logging.getLogger('bqskit-runtime')
+        """Logger used to print operational log messages."""
+
         self.lower_id_bound = 0
         self.upper_id_bound = int(2 ** 30)
         """
@@ -114,15 +125,21 @@ class DetachedServer:
         self.total_resources = sum(self.manager_resources)
         self.total_idle_resources = self.total_resources
         self.manager_idle_resources: list[int] = self.manager_resources[:]
+        self.logger.info(f"Server has {self.total_resources} workers.")
+        self.logger.debug(f"{self.manager_resources = }")
 
         # Start client listener
-        self.listening_thread = Thread(target=listen, args=(self, port))
+        self.port = port
+        self.listener = Listener(('0.0.0.0', self.port))
+        self.listening_thread = Thread(target=listen, args=(self, self.listener))
         self.listening_thread.start()
+        self.logger.info(f"Started client listener on port {self.port}.")
 
         # Start outgoing thread
         self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
         self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
         self.outgoing_thread.start()
+        self.logger.info(f"Started outgoing thread.")
 
     def _connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
         """Connect to all managers given by endpoints in `ipports`."""
@@ -135,14 +152,14 @@ class DetachedServer:
                 self.upper_id_bound,
             )
             self._connect_to_manager(ip, port, lb, ub)
-            print("Connected to manager")
+            self.logger.info(f"Connected to manager {i} at {ip}:{port}.")
         
         for mconn in self.managers:
             msg, payload = mconn.recv()
             assert msg == RuntimeMessage.STARTED
             self.manager_resources.append(payload)
             self.sel.register(mconn, selectors.EVENT_READ, 'from_below')
-            print("Started a manager")
+            self.logger.info(f"Registered manager {i}.")
 
     def _connect_to_manager(self, ip: str, port: int, lb: int, ub: int) -> None:
         """Connect to a manager at the endpoint given by `ip` and `port`."""
@@ -166,13 +183,15 @@ class DetachedServer:
 
     def _run(self) -> None:
         """Main server loop."""
+        self.logger.info("Server running...")
         while self.running:
             try:
-                events = self.sel.select(5)  # Say that 5 times fast
+                events = self.sel.select(1)  # Say that 5 times fast
                 for key, _ in events:
                     conn = cast(Connection, key.fileobj)
                     msg, payload = conn.recv()
-                    print(msg)
+                    self.logger.debug(f"Received message {msg}.")
+                    self.logger.log(1, f"{payload}\n")
 
                     if key.data == 'from_client':
 
@@ -225,34 +244,69 @@ class DetachedServer:
             except Exception:
                 exc_info = sys.exc_info()
                 error_str = ''.join(traceback.format_exception(*exc_info))
-                print(error_str)
+                self.logger.error(error_str)
                 for client in self.clients.keys():
                     client.send((RuntimeMessage.ERROR, error_str))
                 self._handle_shutdown()
 
     def _handle_shutdown(self) -> None:
         """Shutdown the runtime."""
-        print("Shut down server")
+        if not self.running:
+            return
+            
         # Stop running
+        self.logger.info("Shutting down server.")
         self.running = False
 
         # Instruct managers to shutdown
-        for mconn in self.managers:
-            try:
-                mconn.send((RuntimeMessage.SHUTDOWN, None))
-                mconn.close()
-            except Exception:
-                pass
-        self.managers.clear()
+        if self.managers is not None:
+            for mconn in self.managers:
+                try:
+                    mconn.send((RuntimeMessage.SHUTDOWN, None))
+                    mconn.close()
+                except Exception:
+                    pass
+            self.managers.clear()
+            self.managers = None
+            self.logger.debug("Cleared managers.")
 
         # Close client connections
-        for client in self.clients.keys():
-            client.close()
-        self.clients.clear()
+        if self.clients is not None:
+            for client in self.clients.keys():
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            self.clients.clear()
+            self.clients = None
+            self.logger.debug("Cleared clients.")
 
-        # Join threads
-        self.listening_thread.join()
-        self.outgoing_thread.join()
+        # Close selector
+        if self.sel is not None:
+            self.sel.close()
+            self.sel = None
+            self.logger.debug("Cleared selector.")
+
+        # Close listener
+        if self.listening_thread is not None:
+            # Listener will be blocked on the accept call
+            # Create a dummy connection to unblock it
+            # Workaround credit: https://stackoverflow.com/questions/16734534
+            # Related bug: https://github.com/python/cpython/issues/76425
+            dummy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            dummy_socket.connect(('localhost', self.port)) 
+            dummy_socket.close()
+            self.listener.close()
+            self.listener = None
+            self.listening_thread.join()
+            self.listening_thread = None
+            self.logger.debug("Joined listening thread.")
+
+        # Close outgoing thread
+        if self.outgoing_thread is not None:
+            self.outgoing_thread.join()
+            self.outgoing_thread = None
+            self.logger.debug("Joined outgoing thread.")
 
     def _handle_disconnect(self, conn: Connection) -> None:
         """Disconnect a client connection from the runtime."""
@@ -261,6 +315,7 @@ class DetachedServer:
         tasks = self.clients.pop(conn)
         for task_id in tasks:
             self._handle_cancel_comp_task(task_id)
+        self.logger.info("Unregistered client.")
 
     def _handle_new_comp_task(
         self,
@@ -272,6 +327,7 @@ class DetachedServer:
         self.tasks[task.task_id] = (mailbox_id, conn)
         self.mailbox_to_task_dict[mailbox_id] = task.task_id
         self.mailboxes[mailbox_id] = [None, False]
+        self.logger.info(f"New CompilationTask: {task.task_id}.")
 
         self.clients[conn].add(task.task_id)
 
@@ -332,6 +388,7 @@ class DetachedServer:
         if box[0] is None:
             box[1] = True
         else:
+            t_id = self.mailbox_to_task_dict[mailbox_id]
             self.outgoing.append((conn, RuntimeMessage.RESULT, box[0]))
             # self.tasks.pop(request)
             self.mailboxes.pop(mailbox_id)
@@ -361,8 +418,9 @@ class DetachedServer:
 
             box = self.mailboxes[mailbox_id]
             box[0] = result.result
+            t_id = self.mailbox_to_task_dict[mailbox_id]
+            self.logger.info(f"Finished: {t_id}.")
             if box[1]:
-                t_id = self.mailbox_to_task_dict[mailbox_id]
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box[0])
                 self.outgoing.append(m)
                 self.clients[self.tasks[t_id][1]].remove(t_id)
@@ -386,6 +444,8 @@ class DetachedServer:
 
     def _handle_cancel_comp_task(self, request: uuid.UUID) -> None:
         """Cancel a compilation task in the system."""
+        self.logger.info(f"Cancelling: {request}.")
+
         # Remove task from server data
         mailbox_id, client_conn = self.tasks[request]  # .pop(request)
         # self.mailbox_to_task_dict.pop(mailbox_id)
@@ -436,10 +496,16 @@ def parse_ipports(ipports_str: list[str]) -> list[tuple[str, int]]:
         for ipport in ipport_group.split(","):
             if ipport.strip() == "":
                 continue
-            ip, port = ipport.strip().split(":")
+            comps = ipport.strip().split(":")
 
-            if port == "":
-                port = 7473
+            if len(comps) == 1:
+                ip, port = comps[0], 7473
+            
+            elif len(comps) == 2:
+                ip, port = comps
+            
+            else:
+                raise ValueError(f"Invalid manager address: {ipport}.")
 
             if not (0 <= int(port) < 65536):
                 raise ValueError(f"Invalid port number: {ipport}")
@@ -465,10 +531,38 @@ def start_server() -> None:
         default=7472,
         help="The port this server will listen for clients on.",
     )
+    parser.add_argument(
+        '--verbose', '-v',
+        action='count',
+        default=0,
+        help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.'
+    )
     args = parser.parse_args()
 
     # If ips and ports were provided parse them
     ipports = parse_ipports(args.managers)
 
+    # Set up logging
+    _logger = logging.getLogger('bqskit-runtime')
+    _logger.setLevel([30, 20, 10, 1][args.verbose])
+    _logger.addHandler(logging.StreamHandler())
+
+    # Create the server
     server = DetachedServer(ipports, args.port)
+
+    # Force shutdown on interrupt signals
+    handle = functools.partial(sigint_handler, server=server)
+    signal.signal(signal.SIGINT, handle)
+
+    # Start the server
     server._run()
+
+
+def sigint_handler(
+    signum: int,
+    frame: FrameType | None,
+    server: DetachedServer,
+) -> None:
+    server.logger.critical("Server interrupted.")
+    server._handle_shutdown()
+    exit(-1)

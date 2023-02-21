@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import functools
+import logging
 import os
 import selectors
 import signal
@@ -14,7 +15,7 @@ from threading import Thread
 from types import FrameType
 from typing import Any
 
-from bqskit.runtime.detached import DetachedServer
+from bqskit.runtime.detached import DetachedServer, sigint_handler
 from bqskit.runtime.detached import send_outgoing
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.worker import start_worker
@@ -52,21 +53,24 @@ class AttachedServer(DetachedServer):
         # Start workers
         self._spawn_workers(num_workers)
 
+        self.logger = logging.getLogger('bqskit.runtime.attached')
+        self.logger.info(f'Spawned {len(self.worker_procs)} workers.')
+
         # Task tracking data structure
         self.total_resources = sum(self.manager_resources)
         self.total_idle_resources = self.total_resources
-        self.manager_idle_resources: list[int] = [
-            r for r in self.manager_resources
-        ]
+        self.manager_idle_resources: list[int] = self.manager_resources[:]
 
         # Connect to client
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         self._listen_once()
+        self.logger.info("Connected to compiler.")
 
         # Start outgoing thread
         self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
         self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
         self.outgoing_thread.start()
+        self.logger.info("Started outgoing thread.")
 
     def _spawn_workers(self, num_workers: int = -1) -> None:
         """
@@ -103,7 +107,11 @@ class AttachedServer(DetachedServer):
 
     def _handle_shutdown(self) -> None:
         """Shutdown the runtime."""
+        if not self.running:
+            return
+            
         # Stop running
+        self.logger.info("Shutting down server.")
         self.running = False
 
         # Instruct managers to shutdown
@@ -114,21 +122,26 @@ class AttachedServer(DetachedServer):
             except Exception:
                 pass
         self.managers.clear()
+        self.logger.debug("Cleared managers.")
 
         # Close client connections
         for client in self.clients.keys():
             client.close()
         self.clients.clear()
+        self.logger.debug("Cleared clients.")
 
         # Join workers
         for wproc in self.worker_procs:
             if wproc.exitcode is None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGKILL)
+                self.logger.debug("Killed worker.")
             wproc.join()
+            self.logger.debug("Joined worker.")
         self.worker_procs.clear()
 
         # Join thread
         self.outgoing_thread.join()
+        self.logger.debug("Joined outgoing thread.")
 
     def _handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""
@@ -140,7 +153,6 @@ def start_attached_server(*args: Any, **kwargs: Any) -> None:
     # When the server is started using fork instead of spawn
     # global variables are shared. This can leak erroneous logging
     # configurations into the workers. We clear the information here:
-    import logging
     for _, logger in logging.Logger.manager.loggerDict.items():
         if isinstance(logger, logging.PlaceHolder):
             continue
@@ -159,11 +171,3 @@ def start_attached_server(*args: Any, **kwargs: Any) -> None:
 
     # Run the server
     server._run()
-
-
-def sigint_handler(
-    signum: int,
-    frame: FrameType | None,
-    server: AttachedServer,
-) -> None:
-    server._handle_shutdown()

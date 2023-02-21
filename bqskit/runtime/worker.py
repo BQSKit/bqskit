@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import signal
 import sys
 import traceback
 from dataclasses import dataclass
@@ -488,6 +489,9 @@ _worker = None
 
 def start_worker(*args: Any, **kwargs: Any) -> None:
     """Start this process's worker."""
+    # Ignore interrupt signals on workers, manager will handle it for us
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
     global _worker
     _worker = Worker(*args, **kwargs)
     _worker._loop()
