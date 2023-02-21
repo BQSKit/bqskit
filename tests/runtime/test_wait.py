@@ -64,6 +64,6 @@ class TestWaitOnCompleteTask(BasePass):
     TestAwaitAfterDoubleWaitTask(),
     TestWaitOnCompleteTask(),
 ])
-def test_wait_pass(fresh_compiler: Compiler, test_pass: BasePass) -> None:
+def test_wait_pass(server_compiler: Compiler, test_pass: BasePass) -> None:
     circuit = Circuit(2)
-    fresh_compiler.compile(circuit, [test_pass])
+    server_compiler.compile(circuit, [test_pass])

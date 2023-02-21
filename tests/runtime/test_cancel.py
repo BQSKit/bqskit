@@ -31,12 +31,12 @@ class TestCantAwaitCancelTask(BasePass):
         await future
 
 
-def test_simple_cancel(compiler: Compiler) -> None:
+def test_simple_cancel(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    compiler.compile(circuit, [TestCancelTask()])
+    server_compiler.compile(circuit, [TestCancelTask()])
 
 
-def test_cant_await_cancel(fresh_compiler: Compiler) -> None:
+def test_cant_await_cancel(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
     with pytest.raises(RuntimeError):
-        fresh_compiler.compile(circuit, [TestCantAwaitCancelTask()])
+        server_compiler.compile(circuit, [TestCantAwaitCancelTask()])

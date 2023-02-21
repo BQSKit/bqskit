@@ -54,35 +54,35 @@ class TestPass4(BasePass):
         circuit.become(out)
 
 
-def test_simple_map(compiler: Compiler) -> None:
+def test_simple_map(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    compiler.compile(circuit, [TestPass1()])
+    server_compiler.compile(circuit, [TestPass1()])
 
 
-def test_2level_map(compiler: Compiler) -> None:
+def test_2level_map(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    compiler.compile(circuit, [TestPass2()])
+    server_compiler.compile(circuit, [TestPass2()])
 
 
-def test_circuit_change(compiler: Compiler) -> None:
+def test_circuit_change(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    out_circuit = compiler.compile(circuit, [TestPass3()])
+    out_circuit = server_compiler.compile(circuit, [TestPass3()])
     assert HGate() in out_circuit.gate_set
     assert out_circuit.num_operations == 1
 
 
-def test_reuse(compiler: Compiler) -> None:
+def test_reuse(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    compiler.compile(circuit, [TestPass1()])
-    compiler.compile(circuit, [TestPass1()])
+    server_compiler.compile(circuit, [TestPass1()])
+    server_compiler.compile(circuit, [TestPass1()])
 
 
-def test_parallel(compiler: Compiler) -> None:
+def test_parallel(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    t1 = compiler.submit(circuit, [TestPass3()])
-    t2 = compiler.submit(circuit, [TestPass4()])
-    c1 = compiler.result(t1)
-    c2 = compiler.result(t2)
+    t1 = server_compiler.submit(circuit, [TestPass3()])
+    t2 = server_compiler.submit(circuit, [TestPass4()])
+    c1 = server_compiler.result(t1)
+    c2 = server_compiler.result(t2)
     assert HGate() in c1.gate_set
     assert c1.num_operations == 1
     assert XGate() in c2.gate_set

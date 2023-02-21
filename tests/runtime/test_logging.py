@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from io import StringIO
+import time
 from typing import Any
 
 import pytest
@@ -52,17 +53,14 @@ class TestNestedLogPass(BasePass):
         await get_runtime().submit(nested1)
 
 
-def test_using_enable_logging() -> None:
+def test_using_enable_logging(server_compiler: Compiler) -> None:
     enable_logging()
     logger = logging.getLogger('bqskit')
     stream = StringIO()
     handler = logging.StreamHandler(stream)
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
-
-    with Compiler() as compiler:
-        compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
-
+    server_compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
     log = stream.getvalue()
     assert 'bqskit_info' in log
     assert 'bqskit_dummy_info' in log
@@ -74,16 +72,13 @@ def test_using_enable_logging() -> None:
     logger.setLevel(logging.WARNING)
 
 
-def test_using_enable_logging_verbose() -> None:
+def test_using_enable_logging_verbose(server_compiler: Compiler) -> None:
     enable_logging(True)
     logger = logging.getLogger('bqskit')
     handler = logging.StreamHandler(StringIO())
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
-
-    with Compiler() as compiler:
-        compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
-
+    server_compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
     log = handler.stream.getvalue()
     assert 'bqskit_info' in log
     assert 'bqskit_dummy_info' in log
@@ -95,16 +90,13 @@ def test_using_enable_logging_verbose() -> None:
     logger.setLevel(logging.WARNING)
 
 
-def test_using_standard_logging() -> None:
+def test_using_standard_logging(server_compiler: Compiler) -> None:
     logger = logging.getLogger('bqskit')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(StringIO())
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
-
-    with Compiler() as compiler:
-        compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
-
+    server_compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
     log = handler.stream.getvalue()
     assert 'bqskit_info' in log
     assert 'bqskit_dummy_info' in log
@@ -116,16 +108,13 @@ def test_using_standard_logging() -> None:
     logger.setLevel(logging.WARNING)
 
 
-def test_using_standard_logging_specific_only() -> None:
+def test_using_standard_logging_specific_only(server_compiler: Compiler) -> None:
     logger = logging.getLogger('bqskit.dummy')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(StringIO())
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
-
-    with Compiler() as compiler:
-        compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
-
+    server_compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
     log = handler.stream.getvalue()
     assert 'bqskit_info' not in log
     assert 'bqskit_dummy_info' in log
@@ -137,16 +126,13 @@ def test_using_standard_logging_specific_only() -> None:
     logger.setLevel(logging.WARNING)
 
 
-def test_using_external_logging() -> None:
+def test_using_external_logging(server_compiler: Compiler) -> None:
     logger = logging.getLogger('dummy2')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(StringIO())
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
-
-    with Compiler() as compiler:
-        compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
-
+    server_compiler.compile(Circuit(1), [TestInfoPass(), TestDebugPass()])
     log = handler.stream.getvalue()
     assert 'bqskit_info' not in log
     assert 'bqskit_dummy_info' not in log
@@ -159,7 +145,10 @@ def test_using_external_logging() -> None:
 
 
 @pytest.mark.parametrize('level', [-1, 0, 1, 2, 3, 4])
-def test_limiting_nested_calls_enable_logging(level: int) -> None:
+def test_limiting_nested_calls_enable_logging(
+    server_compiler: Compiler,
+    level: int,
+) -> None:
     enable_logging()
     logger = logging.getLogger('bqskit')
     stream = StringIO()
@@ -167,10 +156,11 @@ def test_limiting_nested_calls_enable_logging(level: int) -> None:
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
 
-    with Compiler() as compiler:
-        compiler.compile(
-            Circuit(1), [TestNestedLogPass()], max_logging_depth=level,
-        )
+    server_compiler.compile(
+        Circuit(1),
+        [TestNestedLogPass()],
+        max_logging_depth=level,
+    )
 
     log = stream.getvalue()
     if level != -1:
@@ -186,7 +176,10 @@ def test_limiting_nested_calls_enable_logging(level: int) -> None:
 
 
 @pytest.mark.parametrize('level', [-1, 0, 1, 2, 3, 4])
-def test_limiting_nested_calls_external_logging(level: int) -> None:
+def test_limiting_nested_calls_external_logging(
+    server_compiler: Compiler,
+    level: int,
+) -> None:
     logger = logging.getLogger('dummy2')
     logger.setLevel(logging.INFO)
     stream = StringIO()
@@ -194,10 +187,11 @@ def test_limiting_nested_calls_external_logging(level: int) -> None:
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
 
-    with Compiler() as compiler:
-        compiler.compile(
-            Circuit(1), [TestNestedLogPass()], max_logging_depth=level,
-        )
+    server_compiler.compile(
+        Circuit(1),
+        [TestNestedLogPass()],
+        max_logging_depth=level,
+    )
 
     log = stream.getvalue()
     if level != -1:

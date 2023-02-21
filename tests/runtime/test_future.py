@@ -33,12 +33,12 @@ class TestPassFutureCannotSend(BasePass):
         get_runtime().submit(iden, future)
 
 
-def test_future_done(compiler: Compiler) -> None:
+def test_future_done(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
-    compiler.compile(circuit, [TestPassFutureDone()])
+    server_compiler.compile(circuit, [TestPassFutureDone()])
 
 
-def test_future_cannot_send(fresh_compiler: Compiler) -> None:
+def test_future_cannot_send(server_compiler: Compiler) -> None:
     circuit = Circuit(2)
     with pytest.raises(RuntimeError):
-        fresh_compiler.compile(circuit, [TestPassFutureCannotSend()])
+        server_compiler.compile(circuit, [TestPassFutureCannotSend()])
