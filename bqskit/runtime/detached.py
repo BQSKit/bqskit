@@ -54,7 +54,7 @@ def send_outgoing(server: DetachedServer) -> None:
 
 class DetachedServer:
     """
-    BQSKit Runtime server in detached mode.
+    BQSKit Runtime Server in detached mode.
 
     In detached mode, the runtime is started separately from the client. Clients
     can connect and disconnect rather than shutdown a detached server. This

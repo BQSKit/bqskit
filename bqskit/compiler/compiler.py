@@ -171,7 +171,37 @@ class Compiler:
         logging_level: int | None = None,
         max_logging_depth: int = -1,
     ) -> uuid.UUID:
-        """Submit a CompilationTask to the Compiler."""
+        """
+        Submit a compilation job to the Compiler.
+
+        Args:
+            task_or_circuit (CompilationTask | Circuit): The task to compile,
+                or the input circuit. If a task is specified, no other
+                argument should be specified. If a task is not specified,
+                the circuit must be paired with a workflow argument.
+
+            workflow (Iterable[BasePass]): The compilation job submitted
+                is defined by executing this workflow on the input circuit.
+
+            request_data (bool): If true, the task result will contain the
+                associated pass data accumulated during compilation.
+                Defaults to False.
+
+            logging_level (int | None): Specify the python logging level
+                to be used during compilation. Defaults to None, which
+                will use current logging configuration.
+
+            max_logging_depth (int): Compilation jobs will create subtasks
+                which may also create subtasks. Tasks that have
+                `max_logging_depth` ancestors or more will stop logging.
+                Defaults to -1, which disables the feature, allowing all
+                tasks equal opportunity to log.
+
+        Returns:
+            (uuid.UUID): The ID of the generated task in the system. This
+                ID can be used to check the status of, cancel, and request
+                the result of the task.
+        """
         # Build CompilationTask
         if isinstance(task_or_circuit, CompilationTask):
             if workflow is not None:
@@ -203,9 +233,14 @@ class Compiler:
         return task.task_id
 
     def status(self, task_id: CompilationTask | uuid.UUID) -> CompilationStatus:
-        """Retrieve the status of the specified CompilationTask."""
+        """Retrieve the status of the specified task."""
         if isinstance(task_id, CompilationTask):
-            warnings.warn('DEPRECATED...')  # TODO
+            warnings.warn(
+                'Request a status from a CompilationTask is deprecated.'
+                ' Instead, pass a task ID to request a status.'
+                'This warning will turn into an error in a future update.',
+                DeprecationWarning,
+            )
             task_id = task_id.task_id
         assert isinstance(task_id, uuid.UUID)
 
@@ -218,9 +253,14 @@ class Compiler:
         self,
         task_id: CompilationTask | uuid.UUID,
     ) -> Circuit | tuple[Circuit, dict[str, Any]]:
-        """Block until the CompilationTask is finished, return its result."""
+        """Block until the task is finished, return its result."""
         if isinstance(task_id, CompilationTask):
-            warnings.warn('DEPRECATED...')  # TODO
+            warnings.warn(
+                'Request a result from a CompilationTask is deprecated.'
+                ' Instead, pass a task ID to request a result.'
+                'This warning will turn into an error in a future update.',
+                DeprecationWarning,
+            )
             task_id = task_id.task_id
         assert isinstance(task_id, uuid.UUID)
 
@@ -230,9 +270,14 @@ class Compiler:
         return payload
 
     def cancel(self, task_id: CompilationTask | uuid.UUID) -> bool:
-        """Remove a task from the compiler's workqueue."""
+        """Cancel the execution of a task in the system."""
         if isinstance(task_id, CompilationTask):
-            warnings.warn('DEPRECATED...')  # TODO
+            warnings.warn(
+                'Cancelling a CompilationTask is deprecated. Instead,'
+                ' cancel a task by passing its ID from `task.task_id`.'
+                'This warning will turn into an error in a future update.',
+                DeprecationWarning,
+            )
             task_id = task_id.task_id
         assert isinstance(task_id, uuid.UUID)
 
@@ -246,6 +291,7 @@ class Compiler:
         self,
         task_or_circuit: CompilationTask,
     ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+        """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     @overload
@@ -257,6 +303,7 @@ class Compiler:
         logging_level: int | None = None,
         max_logging_depth: int = -1,
     ) -> Circuit:
+        """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     @overload
@@ -268,6 +315,7 @@ class Compiler:
         logging_level: int | None = None,
         max_logging_depth: int = -1,
     ) -> tuple[Circuit, dict[str, Any]]:
+        """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     def compile(
@@ -278,9 +326,15 @@ class Compiler:
         logging_level: int | None = None,
         max_logging_depth: int = -1,
     ) -> Circuit | tuple[Circuit, dict[str, Any]]:
-        """Submit and execute the CompilationTask, block until its done."""
+        """Submit a task, wait for its results; see :func:`submit` for more."""
         if isinstance(task_or_circuit, CompilationTask):
-            warnings.warn('DEPRECATED...')  # TODO
+            warnings.warn(
+                'Manually constructing and compiling CompilationTasks'
+                ' is deprecated. Instead, call compile directly with'
+                ' your input circuit and workflow. This warning will'
+                ' turn into an error in a future update.',
+                DeprecationWarning,
+            )
 
         task_id = self.submit(
             task_or_circuit,
@@ -297,11 +351,8 @@ class Compiler:
 
         return result
 
-    def _send(
-        self,
-        msg: RuntimeMessage,
-        payload: Any,
-    ) -> None:
+    def _send(self, msg: RuntimeMessage, payload: Any) -> None:
+        """Send a message to the runtime."""
         if self.conn is None:
             raise RuntimeError('Connection unexpectedly none.')
 
@@ -320,6 +371,7 @@ class Compiler:
         msg: RuntimeMessage,
         payload: Any,
     ) -> tuple[RuntimeMessage, Any]:
+        """Send a message to the runtime, and wait for a response."""
         if self.conn is None:
             raise RuntimeError('Connection unexpectedly none.')
 

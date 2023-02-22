@@ -39,6 +39,26 @@ def enable_logging(verbose: bool = False) -> None:
     logging.getLogger('bqskit').setLevel(level)
 
 
+def enable_dashboard() -> None:
+    import warnings
+    warnings.warn(
+        'Dask has been removed from BQSKit. As a result, the'
+        ' enable_dashboard method has been removed.'
+        'This warning will turn into an error in a future update.',
+        DeprecationWarning,
+    )
+
+
+def disable_dashboard() -> None:
+    import warnings
+    warnings.warn(
+        'Dask has been removed from BQSKit. As a result, the'
+        ' disable_dashboard method has been removed.'
+        'This warning will turn into an error in a future update.',
+        DeprecationWarning,
+    )
+
+
 def disable_parallelism() -> None:
     import warnings
     warnings.warn(

@@ -45,7 +45,6 @@ synthesis pass to convert the circuit to native gates.
     Rebase2QuditGatePass
     ScanningGateRemovalPass
     SubstitutePass
-    WindowOptimizationPass
 
 .. rubric:: Control Passes
 

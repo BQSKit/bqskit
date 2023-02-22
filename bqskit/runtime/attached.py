@@ -31,7 +31,7 @@ class AttachedServer(DetachedServer):
     attached architecture, only workers directly managed by a single server.
     This architecture is designed for single-machine shared-memory settings.
     BQSKit will, by default, create, manage, and shutdown an AttachedServer when
-    a Compiler() object is created or when bqskit.compile is used.
+    a :class:`~bqskit.compiler.compiler.Compiler` object is created.
     """
 
     def __init__(self, num_workers: int = -1) -> None:
