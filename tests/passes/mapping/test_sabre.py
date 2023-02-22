@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.compiler import MachineModel
 from bqskit.ir import Circuit
@@ -34,18 +33,15 @@ def test_simple() -> None:
 
     in_utry = circuit.get_unitary()
 
-    task = CompilationTask(
-        circuit,
-        [
-            SetModelPass(model),
-            GreedyPlacementPass(),
-            GeneralizedSabreLayoutPass(),
-            GeneralizedSabreRoutingPass(),
-        ],
-    )
+    workflow = [
+        SetModelPass(model),
+        GreedyPlacementPass(),
+        GeneralizedSabreLayoutPass(),
+        GeneralizedSabreRoutingPass(),
+    ]
 
     with Compiler() as compiler:
-        cc, data = compiler.analyze(task)
+        cc, data = compiler.compile(circuit, workflow, True)
         pi = data['initial_mapping']
         pf = data['final_mapping']
         PI = PermutationMatrix.from_qubit_location(5, pi)

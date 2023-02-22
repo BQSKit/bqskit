@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
@@ -26,7 +25,7 @@ class TestQFAST:
             utry = UnitaryMatrix.random(2)
             circuit = Circuit.from_unitary(utry)
             qfast = QFASTDecompositionPass()
-            circuit = compiler.compile(CompilationTask(circuit, [qfast]))
+            circuit = compiler.compile(circuit, [qfast])
             dist = circuit.get_unitary().get_distance_from(utry)
             assert dist <= 1e-5
 
@@ -43,7 +42,7 @@ class TestQFAST:
             utry = UnitaryMatrix.random(3)
             circuit = Circuit.from_unitary(utry)
             qfast = QFASTDecompositionPass()
-            circuit = compiler.compile(CompilationTask(circuit, [qfast]))
+            circuit = compiler.compile(circuit, [qfast])
             dist = circuit.get_unitary().get_distance_from(utry)
             assert dist <= 1e-5
 

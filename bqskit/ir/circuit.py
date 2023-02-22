@@ -2613,7 +2613,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         with Compiler() as compiler:
             task = CompilationTask(self, [compiler_pass])
             task.data = data
-            self.become(compiler.compile(task))
+            self.become(compiler.compile(task))  # type: ignore
 
     def instantiate(
         self,

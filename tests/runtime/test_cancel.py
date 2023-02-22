@@ -10,6 +10,7 @@ from bqskit.compiler import Compiler
 from bqskit.ir import Circuit
 from bqskit.runtime import get_runtime
 
+
 def iden(i: Any) -> Any:
     return i
 

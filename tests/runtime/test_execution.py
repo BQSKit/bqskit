@@ -83,6 +83,8 @@ def test_parallel(server_compiler: Compiler) -> None:
     t2 = server_compiler.submit(circuit, [TestPass4()])
     c1 = server_compiler.result(t1)
     c2 = server_compiler.result(t2)
+    assert isinstance(c1, Circuit)
+    assert isinstance(c2, Circuit)
     assert HGate() in c1.gate_set
     assert c1.num_operations == 1
     assert XGate() in c2.gate_set

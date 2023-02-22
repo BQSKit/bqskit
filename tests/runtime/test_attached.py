@@ -46,12 +46,14 @@ def test_cleanup_with_clause(num_workers: int) -> None:
 @pytest.mark.parametrize('num_workers', [1, 2, 4])
 def test_create_workers(num_workers: int) -> None:
     compiler = Compiler(num_workers=num_workers)
+    assert compiler.p is not None
     assert len(psutil.Process(compiler.p.pid).children()) == num_workers
     compiler.close()
 
 
 def test_one_thread_per_worker() -> None:
     compiler = Compiler(num_workers=1)
+    assert compiler.p is not None
     assert len(psutil.Process(compiler.p.pid).children()) == 1
     assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 1
     compiler.close()

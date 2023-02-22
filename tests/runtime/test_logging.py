@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from io import StringIO
-import time
 from typing import Any
 
 import pytest
@@ -108,7 +107,7 @@ def test_using_standard_logging(server_compiler: Compiler) -> None:
     logger.setLevel(logging.WARNING)
 
 
-def test_using_standard_logging_specific_only(server_compiler: Compiler) -> None:
+def test_using_standard_logging_specific(server_compiler: Compiler) -> None:
     logger = logging.getLogger('bqskit.dummy')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(StringIO())

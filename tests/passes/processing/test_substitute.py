@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
@@ -37,7 +36,7 @@ class TestSubstitute:
             assert circuit.get_unitary().get_distance_from(utry) < 1e-5
 
             substitute = SubstitutePass(is_variable, VariableUnitaryGate(1))
-            circuit = compiler.compile(CompilationTask(circuit, [substitute]))
+            circuit = compiler.compile(circuit, [substitute])
             dist = circuit.get_unitary().get_distance_from(utry)
             assert dist <= 1e-5
             assert circuit.num_operations == 1

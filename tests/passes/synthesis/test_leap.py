@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant.cpi import CPIGate
@@ -24,7 +23,7 @@ class TestLeap:
             utry = UnitaryMatrix.random(2)
             circuit = Circuit.from_unitary(utry)
             leap = LEAPSynthesisPass()
-            circuit = compiler.compile(CompilationTask(circuit, [leap]))
+            circuit = compiler.compile(circuit, [leap])
             dist = circuit.get_unitary().get_distance_from(utry)
             assert dist <= 1e-5
 

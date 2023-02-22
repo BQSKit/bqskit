@@ -253,9 +253,9 @@ class Compiler:
         self,
         task_or_circuit: Circuit,
         workflow: Iterable[BasePass],
-        request_data: None,
-        logging_level: int | None,
-        max_logging_depth: int,
+        request_data: None = None,
+        logging_level: int | None = None,
+        max_logging_depth: int = -1,
     ) -> Circuit:
         ...
 
@@ -265,8 +265,8 @@ class Compiler:
         task_or_circuit: Circuit,
         workflow: Iterable[BasePass],
         request_data: bool,
-        logging_level: int | None,
-        max_logging_depth: int,
+        logging_level: int | None = None,
+        max_logging_depth: int = -1,
     ) -> tuple[Circuit, dict[str, Any]]:
         ...
 
@@ -307,7 +307,7 @@ class Compiler:
 
         try:
             self._recv_log_error_until_empty()
-            
+
             self.conn.send((msg, payload))
 
         except Exception as e:
@@ -364,7 +364,7 @@ class Compiler:
                 to_return = (msg, payload)
 
         return to_return
-    
+
     def _recv_log_error_until_empty(self) -> None:
         """Handle all remaining log and error messages in the pipeline."""
         if self.conn is None:
@@ -380,9 +380,9 @@ class Compiler:
 
             elif msg == RuntimeMessage.ERROR:
                 raise RuntimeError(payload)
-            
+
             else:
-                raise RuntimeError(f"Unexpected message type: {msg}.")
+                raise RuntimeError(f'Unexpected message type: {msg}.')
 
     def _discover_lowest_log_level(self) -> int:
         """Searches through all python loggers for the lowest set level."""
@@ -394,8 +394,9 @@ class Compiler:
 
             if logger.getEffectiveLevel() < lowest_level_found_so_far:
                 lowest_level_found_so_far = logger.getEffectiveLevel()
-    
+
         return lowest_level_found_so_far
+
 
 def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
     signal.signal(signal.SIGINT, signal.SIG_IGN)

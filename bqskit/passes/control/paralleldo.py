@@ -84,13 +84,13 @@ class ParallelDo(BasePass):
         future = runtime.map(
             _sub_do_work,
             self.pass_seqs,
-            circuit = circuit,
-            data = data,
+            circuit=circuit,
+            data=data,
         )
 
         # Wait for results
         if self.pick_first:
-            circuits_and_ids = await runtime.wait(future) # Wake on next result
+            circuits_and_ids = await runtime.wait(future)  # Wake on next result
             circuits = [x[1] for x in circuits_and_ids]
         else:
             circuits = await future
@@ -105,7 +105,7 @@ class ParallelDo(BasePass):
 
         if best_circ is None or best_data is None:
             raise RuntimeError('No valid circuit found.')
-        
+
         # Become best result
         circuit.become(best_circ)
         data.update(best_data)
@@ -116,7 +116,7 @@ async def _sub_do_work(
     circuit: Circuit,
     data: dict[str, Any],
 ) -> tuple[Circuit, dict[str, Any]]:
-    """Execute a sequence of passes on circuit"""
+    """Execute a sequence of passes on circuit."""
     # TODO: Move to BasePass
     for loop_pass in loop_body:
         await loop_pass.run(circuit, data)

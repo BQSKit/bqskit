@@ -25,7 +25,7 @@ class RuntimeFuture:
         """
         if self.wait_flag:
             return (yield ('BQSKIT_WAIT_ID', self.mailbox_id))
-            
+
         return (yield ('BQSKIT_MAIL_ID', self.mailbox_id))
 
     def __getstate__(self) -> Any:

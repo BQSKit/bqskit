@@ -6,27 +6,26 @@ import functools
 import logging
 import os
 import signal
-import sys
-from threading import Thread
 import time
-import traceback
 from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
 from multiprocessing.connection import wait
+from threading import Thread
 from typing import Any
 from typing import cast
 from typing import List
 
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.detached import parse_ipports
+from bqskit.runtime.detached import send_outgoing
+from bqskit.runtime.detached import sigint_handler
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
-from bqskit.runtime.detached import send_outgoing, sigint_handler
-from bqskit.runtime.detached import parse_ipports
 
 
 class Manager:
@@ -75,9 +74,9 @@ class Manager:
             self._spawn_workers(num_workers)
 
         else:  # Case 2: Connect to managers at ipports
-            self._connect_to_managers()
-        
-        # Set up logging    
+            self._connect_to_managers(ipports)
+
+        # Set up logging
         self.logger = logging.getLogger('bqskit-runtime')
         self.logger.setLevel([30, 20, 10, 1][verbosity])
         self.logger.addHandler(logging.StreamHandler())
@@ -90,20 +89,20 @@ class Manager:
         self.total_resources = sum(self.worker_resources)
         self.total_idle_resources = 0
         self.worker_idle_resources: list[int] = self.worker_resources[:]
-        self.logger.info(f"Manager has {self.total_resources} workers.")
-        self.logger.debug(f"{self.worker_resources = }")
+        self.logger.info(f'Manager has {self.total_resources} workers.')
+        self.logger.debug(f'{self.worker_resources = }')
 
         # Start outgoing thread
         self.running = True
         self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
         self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
         self.outgoing_thread.start()
-        self.logger.info(f"Started outgoing thread.")
+        self.logger.info('Started outgoing thread.')
 
         # Ready and inform upstream
         msg = (self.upstream, RuntimeMessage.STARTED, self.total_resources)
         self.outgoing.append(msg)
-        self.logger.info(f"Sent start messaage upstream.")
+        self.logger.info('Sent start messaage upstream.')
 
     def _listen_once(self, port: int) -> None:
         listener = Listener(('0.0.0.0', port))
@@ -134,7 +133,7 @@ class Manager:
 
         for wconn, _ in self.workers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
-            
+
         self.step_size = 1
 
     def _connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
@@ -147,7 +146,7 @@ class Manager:
                 self.upper_id_bound,
             )
             self._connect_to_manager(ip, port, lb, ub)
-        
+
         for wconn, _ in self.workers:
             msg, payload = wconn.recv()
             assert msg == RuntimeMessage.STARTED
@@ -180,8 +179,8 @@ class Manager:
             for fd in wait(connections):
                 conn = cast(Connection, fd)
                 msg, payload = conn.recv()
-                self.logger.debug(f"Received message {msg}.")
-                self.logger.log(1, f"{payload}\n")
+                self.logger.debug(f'Received message {msg}.')
+                self.logger.log(1, f'{payload}\n')
 
                 if conn == self.upstream:
 
@@ -200,7 +199,7 @@ class Manager:
                     elif msg == RuntimeMessage.CANCEL:
                         addr = cast(RuntimeAddress, payload)
                         self._handle_cancel(addr)
-                    
+
                     elif msg == RuntimeMessage.SHUTDOWN:
                         self._handle_shutdown()
                         return
@@ -227,9 +226,9 @@ class Manager:
         """Shutdown the manager and clean up spawned processes."""
         if not self.running:
             return
-            
+
         # Stop running
-        self.logger.info("Shutting down server.")
+        self.logger.info('Shutting down server.')
         self.running = False
 
         # Instruct workers to shutdown
@@ -240,20 +239,20 @@ class Manager:
                     wconn.close()
                 except Exception:
                     pass
-            
+
             for _, p in self.workers:
                 if p is not None:
                     p.join()
-                    self.logger.debug("Joined worker.")
-            
+                    self.logger.debug('Joined worker.')
+
             self.workers.clear()
-            self.workers = None
+            self.workers = None  # type: ignore
 
         # Join threads
         if self.outgoing_thread is not None:
             self.outgoing_thread.join()
-            self.outgoing_thread = None
-            self.logger.debug("Joined outgoing thread.")
+            self.outgoing_thread = None  # type: ignore
+            self.logger.debug('Joined outgoing thread.')
 
         # Forward shutdown message upwards if possible
         try:
@@ -308,13 +307,17 @@ class Manager:
                 self.outgoing.append(m)
 
             else:
-                n = (self.workers[i][0], RuntimeMessage.SUBMIT_BATCH, assignment)
+                n = (
+                    self.workers[i][0],
+                    RuntimeMessage.SUBMIT_BATCH, assignment,
+                )
                 self.outgoing.append(n)
 
     def _handle_result_coming_down(self, result: RuntimeResult) -> None:
-        wid = (result.return_address.worker_id - self.lower_id_bound) // self.step_size
-        assert 0 <= wid < (self.upper_id_bound - self.lower_id_bound)
-        msg = (self.workers[wid][0], RuntimeMessage.RESULT, result)
+        w_id = result.return_address.worker_id
+        w_id = (w_id - self.lower_id_bound) // self.step_size
+        assert 0 <= w_id < (self.upper_id_bound - self.lower_id_bound)
+        msg = (self.workers[w_id][0], RuntimeMessage.RESULT, result)
         self.outgoing.append(msg)
 
     def _handle_result_going_up(self, result: RuntimeResult) -> None:
@@ -341,8 +344,8 @@ class Manager:
 def start_manager() -> None:
     """Entry point for runtime manager processes."""
     parser = argparse.ArgumentParser(
-        prog = 'BQSKit Manager',
-        description = 'Launch a BQSKit runtime manager process.',
+        prog='BQSKit Manager',
+        description='Launch a BQSKit runtime manager process.',
     )
     parser.add_argument(
         '-n', '--num-workers',
@@ -366,12 +369,12 @@ def start_manager() -> None:
         '--verbose', '-v',
         action='count',
         default=0,
-        help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.'
+        help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     args = parser.parse_args()
 
     # If ips and ports were provided parse them
-    ipports = None if args.managers is None  else parse_ipports(args.managers)
+    ipports = None if args.managers is None else parse_ipports(args.managers)
 
     # Create the manager
     manager = Manager(args.port, args.num_workers, ipports, args.verbose)

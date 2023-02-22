@@ -45,8 +45,8 @@ class RuntimeTask:
         self.breadcrumbs = breadcrumbs
         self.max_logging_depth = max_logging_depth
         self.coro: Coroutine[Any, Any, Any] | None = None
-        self.send = None
-        self.owned_mailboxes = []
+        self.send: Any = None
+        self.owned_mailboxes: list[int] = []
         self.wake_on_next: bool = False
 
     def step(self) -> Any:
@@ -72,10 +72,10 @@ class RuntimeTask:
         # Reset send value, if set
         if self.send is not None:
             self.send = None
-        
+
         # Reset logging
         logging.getLogger().setLevel(old_level)
-        
+
         return to_return
 
     def start(self) -> None:

@@ -6,6 +6,7 @@ import logging
 import warnings
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -321,10 +322,12 @@ def compile(
     if error_threshold is None:
         out = compiler.compile(task)
     else:
-        out, data = compiler.analyze(task)
+        task.request_data = True
+        out, data = compiler.compile(task)  # type: ignore
 
     # Log error if necessary
     if error_threshold is not None:
+        data = cast(dict[str, Any], data)
         error = data['error']
         nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
         if nonsq_error > error_threshold:
@@ -337,7 +340,7 @@ def compile(
     if managed_compiler:
         compiler.close()
 
-    return out
+    return cast(Circuit, out)
 
 
 def _circuit_workflow(

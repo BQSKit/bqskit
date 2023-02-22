@@ -57,13 +57,15 @@ class TestWaitOnCompleteTask(BasePass):
             _ = await get_runtime().wait(future)
 
 
-@pytest.mark.parametrize('test_pass', [
-    TestWaitTask(),
-    TestDoubleWaitTask(),
-    TestAwaitAfterWaitTask(),
-    TestAwaitAfterDoubleWaitTask(),
-    TestWaitOnCompleteTask(),
-])
+@pytest.mark.parametrize(
+    'test_pass', [
+        TestWaitTask(),
+        TestDoubleWaitTask(),
+        TestAwaitAfterWaitTask(),
+        TestAwaitAfterDoubleWaitTask(),
+        TestWaitOnCompleteTask(),
+    ],
+)
 def test_wait_pass(server_compiler: Compiler, test_pass: BasePass) -> None:
     circuit = Circuit(2)
     server_compiler.compile(circuit, [test_pass])

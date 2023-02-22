@@ -12,11 +12,11 @@ from multiprocessing import Process
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
 from threading import Thread
-from types import FrameType
 from typing import Any
 
-from bqskit.runtime.detached import DetachedServer, sigint_handler
+from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.detached import send_outgoing
+from bqskit.runtime.detached import sigint_handler
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.worker import start_worker
 
@@ -64,13 +64,13 @@ class AttachedServer(DetachedServer):
         # Connect to client
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         self._listen_once()
-        self.logger.info("Connected to compiler.")
+        self.logger.info('Connected to compiler.')
 
         # Start outgoing thread
         self.outgoing: list[tuple[Connection, RuntimeMessage, Any]] = []
         self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
         self.outgoing_thread.start()
-        self.logger.info("Started outgoing thread.")
+        self.logger.info('Started outgoing thread.')
 
     def _spawn_workers(self, num_workers: int = -1) -> None:
         """
@@ -109,9 +109,9 @@ class AttachedServer(DetachedServer):
         """Shutdown the runtime."""
         if not self.running:
             return
-            
+
         # Stop running
-        self.logger.info("Shutting down server.")
+        self.logger.info('Shutting down server.')
         self.running = False
 
         # Instruct managers to shutdown
@@ -122,26 +122,26 @@ class AttachedServer(DetachedServer):
             except Exception:
                 pass
         self.managers.clear()
-        self.logger.debug("Cleared managers.")
+        self.logger.debug('Cleared managers.')
 
         # Close client connections
         for client in self.clients.keys():
             client.close()
         self.clients.clear()
-        self.logger.debug("Cleared clients.")
+        self.logger.debug('Cleared clients.')
 
         # Join workers
         for wproc in self.worker_procs:
             if wproc.exitcode is None and wproc.pid is not None:
                 os.kill(wproc.pid, signal.SIGKILL)
-                self.logger.debug("Killed worker.")
+                self.logger.debug('Killed worker.')
             wproc.join()
-            self.logger.debug("Joined worker.")
+            self.logger.debug('Joined worker.')
         self.worker_procs.clear()
 
         # Join thread
         self.outgoing_thread.join()
-        self.logger.debug("Joined outgoing thread.")
+        self.logger.debug('Joined outgoing thread.')
 
     def _handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant.cpi import CPIGate
@@ -27,7 +26,7 @@ class TestQSearch:
             utry = UnitaryMatrix.random(2)
             circuit = Circuit.from_unitary(utry)
             qsearch = QSearchSynthesisPass()
-            circuit = compiler.compile(CompilationTask(circuit, [qsearch]))
+            circuit = compiler.compile(circuit, [qsearch])
             dist = circuit.get_unitary().get_distance_from(utry, 1)
             assert dist <= 1e-5
 
