@@ -25,8 +25,8 @@ def big_qasm_file(request: Any) -> str:
 def test_parters(big_qasm_file: str) -> None:
     c = Circuit.from_file(big_qasm_file)
     wc = c.copy()
-    QuickPartitioner(3).run(wc)
-    UnfoldPass().run(wc)
+    wc.perform(QuickPartitioner(3))
+    wc.perform(UnfoldPass())
 
     for q in range(c.num_qudits):
         gate_list1 = list(c.operations_with_cycles(qudits_or_region=[q]))

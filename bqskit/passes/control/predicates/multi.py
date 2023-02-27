@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING
 
-from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
 from bqskit.passes.control.predicate import PassPredicate
+
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
 
@@ -19,9 +21,9 @@ class MultiPhysicalPredicate(PassPredicate):
     in the native gate set.
     """
 
-    def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
+    def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
-        model = BasePass.get_model(circuit, data)
+        model = data.model
         for gate in circuit.gate_set:
             if gate.num_qudits < 2:
                 continue

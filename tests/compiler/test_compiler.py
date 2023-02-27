@@ -3,36 +3,46 @@ from __future__ import annotations
 
 import logging
 from io import StringIO
-from typing import Any
-from unittest.mock import patch
 
 import pytest
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 
 
-def test_errors_raised_locally(compiler: Compiler) -> None:
-    class ErrorPass(BasePass):
-        def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-            raise RuntimeError()
+class ErrorPass(BasePass):
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        raise RuntimeError()
 
+
+class LogPass(BasePass):
+    async def run(
+        self,
+        circuit: Circuit,
+        data: PassData,
+    ) -> None:
+        logging.getLogger('bqskit.dummy').debug('Test.')
+
+
+def test_errors_raised_locally() -> None:
     task = CompilationTask(Circuit(1), [ErrorPass()])
-
     with pytest.raises(RuntimeError):
-        compiler.compile(task)
+        with Compiler() as compiler:
+            compiler.compile(task)
 
 
-def test_log_msg_printed_locally(compiler: Compiler) -> None:
-    class LogPass(BasePass):
-        def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
-            logging.getLogger('bqskit.dummy').debug('Test.')
-
+def test_log_msg_printed_locally() -> None:
     task = CompilationTask(Circuit(1), [LogPass()])
-    logging.getLogger('bqskit').setLevel(logging.DEBUG)
-    with patch('sys.stdout', new_callable=StringIO) as mock_out:
+    logger = logging.getLogger('bqskit')
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(StringIO())
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    with Compiler() as compiler:
         compiler.compile(task)
-        print(mock_out.getvalue())
-    logging.getLogger('bqskit').setLevel(logging.WARNING)
+    assert 'Test.' in handler.stream.getvalue()
+    logger.removeHandler(handler)
+    logger.setLevel(logging.WARNING)

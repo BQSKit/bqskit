@@ -31,3 +31,4 @@ our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
    source/qis
    source/utils
    source/exec
+   source/runtime

@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 from scipy.stats import linregress
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -18,6 +19,7 @@ from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
@@ -154,20 +156,25 @@ class LEAPSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
-    def synthesize(self, utry: UnitaryMatrix | StateVector, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix | StateVector,
+        data: PassData,
+    ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
-        data['window_markers'] = []
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer = self.execute(
-            data,
+        initial_layer = await get_runtime().submit(
             Circuit.instantiate,
-            [initial_layer],
+            initial_layer,
             target=utry,
-            **self.instantiate_options,
-        )[0]
+            **instantiate_options,
+        )
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -196,12 +203,11 @@ class LEAPSynthesisPass(SynthesisPass):
             successors = self.layer_gen.gen_successors(top_circuit, data)
 
             # Instantiate successors
-            circuits = self.execute(
-                data,
+            circuits = await get_runtime().map(
                 Circuit.instantiate,
                 successors,
                 target=utry,
-                **self.instantiate_options,
+                **instantiate_options,
             )
 
             # Evaluate successors

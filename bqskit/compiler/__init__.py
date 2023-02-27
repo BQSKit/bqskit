@@ -34,7 +34,6 @@ from __future__ import annotations
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compile import compile
 from bqskit.compiler.compiler import Compiler
-from bqskit.compiler.executor import Executor
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.task import CompilationTask
 
@@ -42,7 +41,6 @@ __all__ = [
     'BasePass',
     'compile',
     'Compiler',
-    'Executor',
     'MachineModel',
     'CompilationTask',
 ]

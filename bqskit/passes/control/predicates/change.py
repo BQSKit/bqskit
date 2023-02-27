@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING
 
-from bqskit.ir.circuit import Circuit
 from bqskit.passes.control.predicate import PassPredicate
+
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
+
 
 _logger = logging.getLogger(__name__)
 
@@ -20,7 +24,7 @@ class ChangePredicate(PassPredicate):
 
     key = 'ChangePredicate_circuit_hash'
 
-    def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
+    def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
 
         # If first call, record data and return true
@@ -32,6 +36,7 @@ class ChangePredicate(PassPredicate):
         # Otherwise, check for a change and return accordingly
         new_hash = self.get_hash(circuit)
         if data[self.key] == new_hash:
+            # TODO: hash collisions?
             _logger.debug('Hashes match; no change detected.')
             return False
 

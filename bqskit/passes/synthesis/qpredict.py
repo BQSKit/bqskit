@@ -7,6 +7,7 @@ from typing import Sequence
 
 import numpy as np
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
@@ -181,8 +182,18 @@ class QPredictDecompositionPass(SynthesisPass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def synthesize(self, utry: UnitaryMatrix | StateVector, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix | StateVector,
+        data: PassData,
+    ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        if isinstance(utry, StateVector):
+            raise RuntimeError('Unable to synthesize a state with qpredict.')
+
+        instantiate_options = self.instantiate_options.copy()
+        if data.seed is not None:
+            instantiate_options['seed'] = data.seed
 
         # 0. Skip any unitaries too small for the configured block.
         if self.block_size_start >= utry.num_qudits:
@@ -225,7 +236,7 @@ class QPredictDecompositionPass(SynthesisPass):
                 circuit.append_gate(VariableUnitaryGate(len(loc)), loc)
                 circuit.instantiate(
                     utry,
-                    **self.instantiate_options,  # type: ignore
+                    **instantiate_options,  # type: ignore
                 )
                 cost = self.cost.calc_cost(circuit, utry)
                 _logger.info(f'Instantiated; layers: {layer}, cost: {cost:e}.')

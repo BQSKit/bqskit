@@ -2,16 +2,21 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import Callable
-from typing import Sequence
+from typing import Iterable
+from typing import TYPE_CHECKING
 
-from distributed import as_completed
-from distributed import worker_client
-
+from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
-from bqskit.utils.typing import is_sequence
+from bqskit.compiler.workflow import Workflow
+from bqskit.runtime import get_runtime
+from bqskit.utils.typing import is_iterable
+
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.compiler.workflow import WorkflowLike
+    from bqskit.ir.circuit import Circuit
+
 
 _logger = logging.getLogger(__name__)
 
@@ -20,12 +25,14 @@ class ParallelDo(BasePass):
     """
     The ParallelDo class.
 
-    This is a control pass that executes a group of pass sequences in parallel.
+    This is a control pass that executes a sequence of workflows in parallel.
+    The branch that is accepted can either be the first to complete or one
+    selected by a provided ordering.
     """
 
     def __init__(
         self,
-        pass_sequences: Sequence[BasePass | Sequence[BasePass]],
+        pass_sequences: Iterable[WorkflowLike],
         less_than: Callable[[Circuit, Circuit], bool],
         pick_fisrt: bool = False,
     ) -> None:
@@ -33,8 +40,8 @@ class ParallelDo(BasePass):
         Construct a ParallelDo.
 
         Args:
-            pass_sequences (Sequence[BasePass | Sequence[BasePass]]):
-                The group of pass sequences to run in parallel.
+            pass_sequences (Iterable[WorkflowLike]): The group of workflows
+                to run in parallel.
 
             less_than (Callable[[Circuit, Circuit], bool]): Return True
                 if the first circuit is preferred to the second one.
@@ -42,84 +49,57 @@ class ParallelDo(BasePass):
                 select.
 
             pick_first (bool): If true, then the pass will complete as
-                soon as one of the subsequences finishes and will return
-                the first result.
-
-        Raises:
-            ValueError: If a Sequence[BasePass] is given, but it is empty.
+                soon as one of the workflows finishes and will return
+                the first result. Defaults to False.
         """
-        if not is_sequence(pass_sequences):
-            raise TypeError(
-                'Expected sequence of sequences of passes, got %s.'
-                % type(pass_sequences),
-            )
+        if not is_iterable(pass_sequences):
+            bad_type = type(pass_sequences)
+            raise TypeError(f'Expected sequence of workflows, got {bad_type}.')
 
-        self.pass_seqs = []
-        for ps in pass_sequences:
-            if not is_sequence(ps) and not isinstance(ps, BasePass):
-                raise TypeError(
-                    'Expected Pass or sequence of Passes, got %s.'
-                    % type(ps),
-                )
+        if not callable(less_than):
+            bad_type = type(less_than)
+            msg = f'Expected callable function for less_than, got {bad_type}'
+            raise TypeError(msg)
 
-            if is_sequence(ps):
-                truth_list = [isinstance(elem, BasePass) for elem in ps]
-                if not all(truth_list):
-                    raise TypeError(
-                        'Expected Pass or sequence of Passes, got %s.'
-                        % type(ps[truth_list.index(False)]),
-                    )
-                if len(ps) == 0:
-                    raise ValueError('Expected at least one pass.')
-
-            self.pass_seqs.append(ps if is_sequence(ps) else [ps])
-
+        self.workflows = [Workflow(p) for p in pass_sequences]
         self.less_than = less_than
         self.pick_first = pick_fisrt
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        if len(self.workflows) == 0:
+            raise ValueError('Must specify at least one workflow.')
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Running pass sequences in parallel.')
 
-        if 'parallel' not in data:
-            raise RuntimeError(
-                'Parallel pass cannot be executed without a compiler.',
-            )
+        # Submit jobs to the runtime
+        runtime = get_runtime()
+        future = runtime.map(
+            _sub_do_work,
+            self.workflows,
+            circuit=circuit,
+            data=data,
+        )
 
-        with worker_client() as client:
-            futures = []
-            for pass_seq in self.pass_seqs:
-                future = client.submit(_sub_do_work, pass_seq, circuit, data)
-                futures.append(future)
+        # Wait for results
+        if self.pick_first:
+            circuits_and_ids = await runtime.wait(future)  # Wake on next result
+            circuits = [x[1] for x in circuits_and_ids]
+            runtime.cancel(future)  # Cancel remaining
+        else:
+            circuits = await future
 
-            if self.pick_first:
-                _, result = next(as_completed(futures, with_results=True))
-                for future in futures:
-                    if not future.done:
-                        client.cancel(future)
+        # Find the best result
+        best_circ = None
+        best_data = None
+        for _circ, _data in circuits:
+            if best_circ is None or self.less_than(_circ, best_circ):
+                best_circ = _circ
+                best_data = _data
 
-                circuit.become(result[0])
-                data.update(result[1])
+        if best_circ is None or best_data is None:
+            raise RuntimeError('No valid circuit found.')
 
-            else:
-                best_circ = None
-                best_data = None
-                for future in futures:
-                    _circ, _data = future.result()
-                    if best_circ is None or self.less_than(_circ, best_circ):
-                        best_circ = _circ
-                        best_data = _data
-                if best_circ is None or best_data is None:
-                    raise RuntimeError('No valid circuit found.')
-                circuit.become(best_circ)
-                data.update(best_data)
-
-
-def _sub_do_work(
-    loop_body: Sequence[BasePass],
-    circuit: Circuit,
-    data: dict[str, Any],
-) -> tuple[Circuit, dict[str, Any]]:
-    for loop_pass in loop_body:
-        loop_pass.run(circuit, data)
-    return circuit, data
+        # Become best result
+        circuit.become(best_circ)
+        data.become(best_data)

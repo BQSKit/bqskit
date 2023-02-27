@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -21,14 +21,10 @@ class LayerGenerator(abc.ABC):
     def gen_initial_layer(
         self,
         target: UnitaryMatrix | StateVector,
-        data: dict[str, Any],
+        data: PassData,
     ) -> Circuit:
         """Generate the initial layer for search."""
 
     @abc.abstractmethod
-    def gen_successors(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any],
-    ) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
         """Generate the successors of a circuit node."""

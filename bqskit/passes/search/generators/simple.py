@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
@@ -144,7 +144,7 @@ class SimpleLayerGenerator(LayerGenerator):
     def gen_initial_layer(
         self,
         target: UnitaryMatrix | StateVector,
-        data: dict[str, Any],
+        data: PassData,
     ) -> Circuit:
         """
         Generate the initial layer, see LayerGenerator for more.
@@ -170,11 +170,7 @@ class SimpleLayerGenerator(LayerGenerator):
             init_circuit.append_gate(self.initial_layer_gate, [i])
         return init_circuit
 
-    def gen_successors(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any],
-    ) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
         """
         Generate the successors of a circuit node.
 

@@ -39,7 +39,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if isinstance(graph, CouplingGraph):
             self.num_qudits: int = graph.num_qudits
             self._edges: set[tuple[int, int]] = graph._edges
-            self._adj: list[list[int]] = graph._adj
+            self._adj: list[set[int]] = graph._adj
             return
 
         if not CouplingGraph.is_valid_coupling_graph(graph):
@@ -59,10 +59,10 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         else:
             self.num_qudits = num_qudits
 
-        self._adj = [[] for _ in range(self.num_qudits)]
+        self._adj = [set() for _ in range(self.num_qudits)]
         for q1, q2 in self._edges:
-            self._adj[q1].append(q2)
-            self._adj[q2].append(q1)
+            self._adj[q1].add(q2)
+            self._adj[q2].add(q1)
 
         self._mat = [
             [np.inf for _ in range(self.num_qudits)]
@@ -94,7 +94,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
     def get_neighbors_of(self, qudit: int) -> list[int]:
         """Return the qudits adjacent to `qudit`."""
-        return self._adj[qudit]
+        return list(self._adj[qudit])
 
     def __contains__(self, __o: object) -> bool:
         return self._edges.__contains__(__o)
@@ -190,9 +190,10 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             renumbering = {q: i for i, q in enumerate(location)}
 
         subgraph = []
-        for q0, q1 in self._edges:
-            if q0 in location and q1 in location:
-                subgraph.append((renumbering[q0], renumbering[q1]))
+        location_set = {loc for loc in location}
+        for q_i in location:
+            for q_i_neighbor in location_set.intersection(self._adj[q_i]):
+                subgraph.append((renumbering[q_i], renumbering[q_i_neighbor]))
         return CouplingGraph(subgraph, len(location))
 
     def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:

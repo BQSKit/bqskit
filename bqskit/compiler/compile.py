@@ -1,17 +1,19 @@
 """This module defines a standard `compile` function using BQSKit."""
 from __future__ import annotations
 
+import functools
 import logging
 import warnings
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
@@ -34,6 +36,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from bqskit.qis.unitary import UnitaryLike
     from bqskit.qis.state import StateLike
+    from bqskit.compiler.basepass import BasePass
 
 
 
@@ -93,11 +96,11 @@ def compile(
             when calling `compile` multiple times. (Default: None)
 
         compiler_args (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a dask cluster can go here.
+            Arguments for connecting to a cluster can go here.
             See :class:`Compiler` for more info.
 
         compiler_kwargs (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a dask cluster can go here.
+            Arguments for connecting to a cluster can go here.
             See :class:`Compiler` for more info.
 
     Returns:
@@ -319,11 +322,16 @@ def compile(
         )
 
     # Perform the compilation
-    out = compiler.compile(task)
+    if error_threshold is None:
+        out = compiler.compile(task)
+    else:
+        task.request_data = True
+        out, data = compiler.compile(task)  # type: ignore
 
     # Log error if necessary
     if error_threshold is not None:
-        error = compiler.analyze(task, 'error')
+        data = cast(PassData, data)
+        error = data.error
         nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
         if nonsq_error > error_threshold:
             warnings.warn(
@@ -335,7 +343,7 @@ def compile(
     if managed_compiler:
         compiler.close()
 
-    return out
+    return cast(Circuit, out)
 
 
 def _circuit_workflow(
@@ -976,34 +984,36 @@ def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
     ])
 
 
+def _replace_filter(new: Circuit, old: Operation, model: MachineModel) -> bool:
+    # return true if old doesn't satisfy model
+    if not isinstance(old.gate, CircuitGate):
+        return True
+
+    org = old.gate._circuit
+    org_mq_gates = [g for g in org.gate_set if g.num_qudits > 1]
+
+    if any(g not in model.gate_set for g in org_mq_gates):
+        return True
+
+    if any(
+        (old.location[e[0]], old.location[e[1]]) not in model.coupling_graph
+        for e in org.coupling_graph
+    ):
+        return True
+
+    # else pick shortest circuit
+    org_sq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
+    org_mq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
+    new_sq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
+    new_mq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
+    return (new_mq_n, new_sq_n) < (org_mq_n, org_sq_n)
+
+
 def _gen_replace_filter(
     model: MachineModel,
 ) -> Callable[[Circuit, Operation], bool]:
     """Generate a replace filter for use during the standard workflow."""
-    def _replace_filter(new: Circuit, old: Operation) -> bool:
-        # return true if old doesn't satisfy model
-        if not isinstance(old.gate, CircuitGate):
-            return True
-
-        org = old.gate._circuit
-        org_mq_gates = [g for g in org.gate_set if g.num_qudits > 1]
-
-        if any(g not in model.gate_set for g in org_mq_gates):
-            return True
-
-        if any(
-            (old.location[e[0]], old.location[e[1]]) not in model.coupling_graph
-            for e in org.coupling_graph
-        ):
-            return True
-
-        # else pick shortest circuit
-        org_sq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
-        org_mq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
-        new_sq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
-        new_mq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
-        return (new_mq_n, new_sq_n) < (org_mq_n, org_sq_n)
-    return _replace_filter
+    return functools.partial(_replace_filter, model=model)
 
 
 def _mq_gate_collection_filter(op: Operation) -> bool:
