@@ -6,6 +6,7 @@ from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir import Gate
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import U3Gate
@@ -152,8 +153,11 @@ class Rebase2QuditGatePass(BasePass):
         self.sq = single_qudit_gate
         self.generate_new_gate_templates()
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
         _logger.debug(f'Rebasing gates from {self.gates} to {self.ngates}.')
 
         target = self.get_target(circuit, data)
@@ -191,7 +195,7 @@ class Rebase2QuditGatePass(BasePass):
                     Circuit.instantiate,
                     circuits_with_new_gate,
                     target=target,
-                    **self.instantiate_options,
+                    **instantiate_options,
                 )
 
                 dists = [self.cost(c, target) for c in instantiated_circuits]

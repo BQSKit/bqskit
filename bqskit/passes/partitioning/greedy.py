@@ -4,9 +4,9 @@ from __future__ import annotations
 import bisect
 import logging
 import warnings
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.interval import CycleInterval
@@ -59,7 +59,7 @@ class GreedyPartitioner(BasePass):
 
         self.block_size = block_size
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         if self.block_size > circuit.num_qudits:

@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import ConstantUnitaryGate
@@ -68,7 +68,7 @@ class BlockConversionPass(BasePass):
         else:
             raise ValueError('Unexpected input for conversion target.')
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Variable -> Constant

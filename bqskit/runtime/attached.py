@@ -6,6 +6,7 @@ import logging
 import os
 import selectors
 import signal
+import time
 import uuid
 from multiprocessing import Pipe
 from multiprocessing import Process
@@ -145,6 +146,20 @@ class AttachedServer(DetachedServer):
 
     def _handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""
+        self._handle_shutdown()
+
+    def _handle_error(self, error_payload: tuple[int, str]) -> None:
+        """Forward an error to the appropriate client and disconnect it."""
+        client_conn = list(self.clients.keys())[0]
+        if not isinstance(error_payload, tuple):
+            m = (client_conn, RuntimeMessage.ERROR, error_payload)
+            self.outgoing.append(m)
+            time.sleep(1)
+            self._handle_shutdown()
+
+        m = (client_conn, RuntimeMessage.ERROR, error_payload[1])
+        self.outgoing.append(m)
+        time.sleep(1)
         self._handle_shutdown()
 
 

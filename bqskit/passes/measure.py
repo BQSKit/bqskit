@@ -3,9 +3,9 @@ passes."""
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.point import CircuitPoint
@@ -17,7 +17,7 @@ class ExtractMeasurements(BasePass):
 
     key = '__measurement_data__'
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.info('Extracting measurements from circuit.')
         points_to_remove: list[CircuitPoint] = []
@@ -41,7 +41,7 @@ class ExtractMeasurements(BasePass):
 class RestoreMeasurements(BasePass):
     """A pass that restores the measurements in a circuit."""
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.info('Restoring measurements to circuit.')
         if ExtractMeasurements.key in data:

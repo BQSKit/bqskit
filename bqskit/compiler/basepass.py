@@ -2,22 +2,18 @@
 from __future__ import annotations
 
 import abc
-import logging
+import warnings
 from typing import Any
 from typing import TYPE_CHECKING
-from typing import TypeVar
-
-from bqskit.compiler.machine import MachineModel
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
+    from bqskit.compiler.machine import MachineModel
+    from bqskit.compiler.passdata import PassData
+    from bqskit.compiler.workflow import Workflow
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.graph import CouplingGraph
-
-_logger = logging.getLogger(__name__)
-
-T = TypeVar('T')
+    from bqskit.qis.state.state import StateVector
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class BasePass(abc.ABC):
@@ -30,7 +26,7 @@ class BasePass(abc.ABC):
 
     Examples:
         >>> class PrintCNOTCountPass(BasePass):
-        ...     def run(self, circ: Circuit, data: dict[str, Any] = {}) -> None:
+        ...     def run(self, circ: Circuit, }one:
         ...         print(f"Number of CNOTs: {circ.count(CNOTGate())}")
     """
 
@@ -40,14 +36,14 @@ class BasePass(abc.ABC):
         return self.__class__.__name__
 
     @abc.abstractmethod
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """
         Perform the pass's operation on `circuit`.
 
         Args:
             circuit (Circuit): The circuit to operate on.
 
-            data (Dict[str, Any]): Associated data for the pass.
+            data (PassData): Associated data for the pass.
                 Can be used to get auxillary information from previous
                 passes and to store information for future passes.
                 This function should never error based on what is in
@@ -59,136 +55,118 @@ class BasePass(abc.ABC):
         """
 
     @staticmethod
-    def get_model(
-        circuit: Circuit | UnitaryMatrix,
-        data: dict[str, Any],
-    ) -> MachineModel:
+    def get_model(_: Any, data: PassData) -> MachineModel:
         """
         Retrieve the machine model from the data dictionary.
 
-        Args:
-            circuit (Circuit): The pass circuit.
-
-            data (dict[str, Any]): The data dictionary.
-
-        Returns:
-            MachineModel: The machine model in the data dictionary, or
-                a default one.
+        (Deprecated)
         """
-
-        if len(data) == 0:
-            return MachineModel(circuit.num_qudits)
-
-        if 'machine_model' not in data:
-            data['machine_model'] = MachineModel(circuit.num_qudits)
-
-        if (
-            not isinstance(data['machine_model'], MachineModel)
-            or data['machine_model'].num_qudits < circuit.num_qudits
-        ):
-            _logger.warning('Expected machine_model to be a valid model.')
-            return MachineModel(circuit.num_qudits)
-
-        return data['machine_model']
+        warnings.warn(
+            'BasePass calls to retrieve elements from the data dictionary'
+            ' are now deprecated. We have upgraded the features of the data'
+            ' dictionary. It can now be used directly to retrieve elements'
+            " and provide defaults if they don't exist. This warning will"
+            ' become an error in the future.',
+            DeprecationWarning,
+        )
+        return data.model
 
     @staticmethod
-    def get_placement(
-        circuit: Circuit | UnitaryMatrix,
-        data: dict[str, Any],
-    ) -> list[int]:
+    def get_placement(_: Any, data: PassData) -> list[int]:
         """
         Retrieve the logical to physical qubit map from the data dictionary.
 
-        Args:
-            circuit (Circuit | UnitaryMatrix): The pass circuit.
-
-            data (dict[str, Any]): The data dictionary.
-
-        Returns:
-            (list[int]): A list with length equal to circuit.num_qudits.
-            Logical qubit i is mapped to the physical qubit described
-            by the i-th element in the list.
+        (Deprecated)
         """
-        # Default placement is trivial map: i -> i
-        default_placement = list(range(circuit.num_qudits))
-        model = BasePass.get_model(circuit, data)
-        sg = model.coupling_graph.get_subgraph(default_placement)
-
-        # Check in data for existing placement
-        if 'placement' in data:
-            p = data['placement']
-
-            # Check it's valid
-            if is_sequence(p) and len(p) == circuit.num_qudits:
-                return data['placement']
-
-        # If none found try to return default placement
-        if sg.is_fully_connected():
-            if len(data) != 0:
-                data['placement'] = default_placement
-            return default_placement
-
-        raise RuntimeError(
-            "No valid placement found and trivial one doesn't work."
-            '\nConsider running a placement pass before the current pass.',
+        warnings.warn(
+            'BasePass calls to retrieve elements from the data dictionary'
+            ' are now deprecated. We have upgraded the features of the data'
+            ' dictionary. It can now be used directly to retrieve elements'
+            " and provide defaults if they don't exist. This warning will"
+            ' become an error in the future.',
+            DeprecationWarning,
         )
+        return data.placement
 
     @staticmethod
-    def get_connectivity(
-        circuit: Circuit | UnitaryMatrix,
-        data: dict[str, Any],
-    ) -> CouplingGraph:
+    def get_connectivity(_: Any, data: PassData) -> CouplingGraph:
         """
         Retrieve the current connectivity of the circuit.
 
-        Args:
-            circuit (Circuit | UnitaryMatrix): The pass circuit.
-
-            data (dict[str, Any]): The data dictionary.
-
-        Returns:
-            (list[int]): A coupling graph of the connectivity.
+        (Deprecated)
         """
-        model = BasePass.get_model(circuit, data)
-        try:
-            placement = BasePass.get_placement(circuit, data)
-        except RuntimeError:
-            placement = list(range(circuit.num_qudits))
-        return model.coupling_graph.get_subgraph(placement)
+        warnings.warn(
+            'BasePass calls to retrieve elements from the data dictionary'
+            ' are now deprecated. We have upgraded the features of the data'
+            ' dictionary. It can now be used directly to retrieve elements'
+            " and provide defaults if they don't exist. This warning will"
+            ' become an error in the future.',
+            DeprecationWarning,
+        )
+        return data.connectivity
 
     @staticmethod
-    def get_target(circuit: Circuit, data: dict[str, Any]) -> UnitaryMatrix:
+    def get_target(_: Any, data: PassData) -> UnitaryMatrix | StateVector:
         """
-        Retrieve the target unitary from the data dictionary.
+        Retrieve the target from the data dictionary.
 
-        Args:
-            circuit (Circuit): The pass circuit.
-
-            data (dict[str, Any]): The data dictionary.
-
-        Returns:
-            UnitaryMatrix: The target unitary.
+        (Deprecated)
         """
-        if len(data) == 0:
-            return circuit.get_unitary()
-
-        if 'target_unitary' not in data:
-            data['target_unitary'] = circuit.get_unitary()
-
-        if not isinstance(data['target_unitary'], UnitaryMatrix):
-            _logger.warning('Expected target_unitary to be a unitary.')
-            return circuit.get_unitary()
-
-        return data['target_unitary']
+        warnings.warn(
+            'BasePass calls to retrieve elements from the data dictionary'
+            ' are now deprecated. We have upgraded the features of the data'
+            ' dictionary. It can now be used directly to retrieve elements'
+            " and provide defaults if they don't exist. This warning will"
+            ' become an error in the future.',
+            DeprecationWarning,
+        )
+        return data.target
 
     @staticmethod
     def in_parallel(data: dict[str, Any]) -> bool:
-        """Return true if pass is being executed in a parallel environment."""
-        if 'parallel' not in data:
-            return False
+        """
+        Return true if pass is being executed in a parallel.
 
-        if not isinstance(data['parallel'], bool):
-            _logger.warning('Expected parallel to be a bool.')
-            return False
+        (Deprecated)
+        """
+        warnings.warn(
+            'BasePass calls to `in_parallel` are deprecated and will always'
+            ' return True. This warning will become an error in the future.',
+            DeprecationWarning,
+        )
+        return True
 
-        return data['parallel']
+    @staticmethod
+    def execute(*args: Any, **kwargs: Any) -> Any:
+        """
+        Map a function over iterable arguments in parallel.
+
+        (Defunct)
+        """
+        raise RuntimeError(
+            'Since Dask was removed, the execute function became defunct.'
+            ' We have switched to using `get_runtime().map(...)`. You can'
+            ' import `get_runtime` from `bqskit.runtime`, and alongside a'
+            ' an `await` keyword, should be a  drop-in replacement for the'
+            ' execute function. See the following link for more info: '
+            'https://bqskit.readthedocs.io/en/latest/source/runtime.html'
+            'In a future version, this error will become an AttributeError.',
+        )
+
+
+async def _sub_do_work(
+    workflow: Workflow,
+    circuit: Circuit,
+    data: PassData,
+) -> tuple[Circuit, PassData]:
+    """Execute a sequence of passes on circuit."""
+    if 'calculate_error_bound' in data and data['calculate_error_bound']:
+        old_utry = circuit.get_unitary()
+
+    await workflow.run(circuit, data)
+
+    if 'calculate_error_bound' in data and data['calculate_error_bound']:
+        new_utry = circuit.get_unitary()
+        data.error = new_utry.get_distance_from(old_utry)
+
+    return circuit, data

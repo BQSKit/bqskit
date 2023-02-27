@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
@@ -54,7 +54,7 @@ class SeedLayerGenerator(LayerGenerator):
     def gen_initial_layer(
         self,
         target: UnitaryMatrix | StateVector,
-        data: dict[str, Any],
+        data: PassData,
     ) -> Circuit:
         """
         Generate the initial layer, see LayerGenerator for more.
@@ -76,11 +76,7 @@ class SeedLayerGenerator(LayerGenerator):
 
         return self.seed
 
-    def gen_successors(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any],
-    ) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
         """
         Generate the successors of a circuit node.
 

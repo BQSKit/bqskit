@@ -13,6 +13,7 @@ import numpy as np
 
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
@@ -327,8 +328,8 @@ def compile(
 
     # Log error if necessary
     if error_threshold is not None:
-        data = cast(dict[str, Any], data)
-        error = data['error']
+        data = cast(PassData, data)
+        error = data.error
         nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
         if nonsq_error > error_threshold:
             warnings.warn(

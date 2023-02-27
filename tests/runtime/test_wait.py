@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any
 
 import pytest
 
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.runtime import get_runtime
 
@@ -18,7 +18,7 @@ def sleepi(i: int) -> int:
 
 
 class TestWaitTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         int_ids = await get_runtime().wait(future)
         assert len(int_ids) == 1  # The 2, 3, and 4 sec sleep shouldn't arrive
@@ -26,7 +26,7 @@ class TestWaitTask(BasePass):
 
 
 class TestDoubleWaitTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         _ = await get_runtime().wait(future)
         int_ids = await get_runtime().wait(future)
@@ -35,14 +35,14 @@ class TestDoubleWaitTask(BasePass):
 
 
 class TestAwaitAfterWaitTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         _ = await get_runtime().wait(future)
         assert (await future) == [3, 4, 1, 2]
 
 
 class TestAwaitAfterDoubleWaitTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         _ = await get_runtime().wait(future)
         _ = await get_runtime().wait(future)
@@ -50,7 +50,7 @@ class TestAwaitAfterDoubleWaitTask(BasePass):
 
 
 class TestWaitOnCompleteTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         _ = await future
         with pytest.raises(RuntimeError):

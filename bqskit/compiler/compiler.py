@@ -13,19 +13,19 @@ import warnings
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from types import FrameType
-from typing import Iterable
 from typing import overload
 from typing import TYPE_CHECKING
 
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.workflow import Workflow
+from bqskit.compiler.workflow import WorkflowLike
 from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
-from bqskit.utils.typing import is_iterable
 
 if TYPE_CHECKING:
     from typing import Any
-    from bqskit.compiler.basepass import BasePass
     from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ class Compiler:
     def submit(
         self,
         task_or_circuit: CompilationTask | Circuit,
-        workflow: Iterable[BasePass] | None = None,
+        workflow: WorkflowLike | None = None,
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
@@ -180,7 +180,7 @@ class Compiler:
                 argument should be specified. If a task is not specified,
                 the circuit must be paired with a workflow argument.
 
-            workflow (Iterable[BasePass]): The compilation job submitted
+            workflow (WorkflowLike): The compilation job submitted
                 is defined by executing this workflow on the input circuit.
 
             request_data (bool): If true, the task result will contain the
@@ -214,14 +214,10 @@ class Compiler:
 
         else:
             if workflow is None:
-                raise TypeError(
-                    'Must specify workflow when providing a circuit to submit.',
-                )
+                m = 'Must specify workflow when providing a circuit to submit.'
+                raise TypeError(m)
 
-            if not is_iterable(workflow):
-                raise TypeError('Expected sequence of bqskit passes.')
-
-            task = CompilationTask(task_or_circuit, list(workflow))
+            task = CompilationTask(task_or_circuit, Workflow(workflow))
 
         # Set task configuration
         task.request_data = request_data
@@ -252,7 +248,7 @@ class Compiler:
     def result(
         self,
         task_id: CompilationTask | uuid.UUID,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    ) -> Circuit | tuple[Circuit, PassData]:
         """Block until the task is finished, return its result."""
         if isinstance(task_id, CompilationTask):
             warnings.warn(
@@ -290,7 +286,7 @@ class Compiler:
     def compile(
         self,
         task_or_circuit: CompilationTask,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
@@ -298,7 +294,7 @@ class Compiler:
     def compile(
         self,
         task_or_circuit: Circuit,
-        workflow: Iterable[BasePass],
+        workflow: WorkflowLike,
         request_data: None = None,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
@@ -310,22 +306,22 @@ class Compiler:
     def compile(
         self,
         task_or_circuit: Circuit,
-        workflow: Iterable[BasePass],
+        workflow: WorkflowLike,
         request_data: bool,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
-    ) -> tuple[Circuit, dict[str, Any]]:
+    ) -> tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     def compile(
         self,
         task_or_circuit: CompilationTask | Circuit,
-        workflow: Iterable[BasePass] | None = None,
+        workflow: WorkflowLike | None = None,
         request_data: bool | None = None,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         if isinstance(task_or_circuit, CompilationTask):
             warnings.warn(

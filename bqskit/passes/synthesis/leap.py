@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 from scipy.stats import linregress
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -16,6 +17,7 @@ from bqskit.passes.search.generators import SimpleLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
@@ -156,12 +158,14 @@ class LEAPSynthesisPass(SynthesisPass):
 
     async def synthesize(
         self,
-        utry: UnitaryMatrix,
-        data: dict[str, Any],
+        utry: UnitaryMatrix | StateVector,
+        data: PassData,
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         frontier = Frontier(utry, self.heuristic_function)
-        data['window_markers'] = []
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
@@ -169,7 +173,7 @@ class LEAPSynthesisPass(SynthesisPass):
             Circuit.instantiate,
             initial_layer,
             target=utry,
-            **self.instantiate_options,
+            **instantiate_options,
         )
         frontier.add(initial_layer, 0)
 
@@ -203,7 +207,7 @@ class LEAPSynthesisPass(SynthesisPass):
                 Circuit.instantiate,
                 successors,
                 target=utry,
-                **self.instantiate_options,
+                **instantiate_options,
             )
 
             # Evaluate successors

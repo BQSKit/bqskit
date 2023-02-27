@@ -6,6 +6,7 @@ import logging
 from typing import Any
 from typing import Sequence
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PauliGate
@@ -15,6 +16,7 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -125,15 +127,17 @@ class QFASTDecompositionPass(SynthesisPass):
 
     async def synthesize(
         self,
-        utry: UnitaryMatrix,
-        data: dict[str, Any],
+        utry: UnitaryMatrix | StateVector,
+        data: PassData,
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
 
         # Skip any unitaries too small for the configured gate.
         if self.gate.num_qudits > utry.num_qudits:
-            _logger.warning('Skipping unitary synthesis since gate is larger.')
-            return Circuit.from_unitary(utry)
+            raise RuntimeError('Gate is too small for circuit')
 
         # Create empty circuit with same size and radixes as `utry`.
         circuit = Circuit(utry.num_qudits, utry.radixes)
@@ -153,12 +157,12 @@ class QFASTDecompositionPass(SynthesisPass):
         while True:
 
             # Instantiate circuit
-            circuit.instantiate(utry, **self.instantiate_options)
+            circuit.instantiate(utry, **instantiate_options)
             dist = self.cost.calc_cost(circuit, utry)
             _logger.info(f'Instantiated depth {depth} at {dist} cost.')
 
             if dist < self.success_threshold:
-                self.finalize(circuit, utry, data)
+                self.finalize(circuit, utry, instantiate_options)
                 _logger.info('Successful synthesis.')
                 return circuit
 
@@ -195,8 +199,8 @@ class QFASTDecompositionPass(SynthesisPass):
     def finalize(
         self,
         circuit: Circuit,
-        utry: UnitaryMatrix,
-        data: dict[str, Any],
+        utry: UnitaryMatrix | StateVector,
+        instantiate_options: dict[str, Any],
     ) -> None:
         """Finalize the circuit by replacing the head with self.gate."""
         # Replace Head with self.gate
@@ -208,7 +212,7 @@ class QFASTDecompositionPass(SynthesisPass):
         # Reinstantiate
         dist = self.cost.calc_cost(circuit, utry)
         while dist > self.success_threshold:
-            circuit.instantiate(utry, **self.instantiate_options)
+            circuit.instantiate(utry, **instantiate_options)
             dist = self.cost.calc_cost(circuit, utry)
 
         _logger.info(f'Final circuit found with cost: {dist}.')

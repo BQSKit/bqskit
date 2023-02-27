@@ -1,9 +1,8 @@
 """This module implements the SwapToCNOTPass."""
 from __future__ import annotations
 
-from typing import Any
-
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CNOTGate
@@ -26,7 +25,7 @@ class SwapToCNOTPass(BasePass):
         circuit.append_gate(CNOTGate(), (1, 0))
         self.cg = CircuitGate(circuit)
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find all cnots

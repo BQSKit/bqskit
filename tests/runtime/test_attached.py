@@ -4,13 +4,13 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
-from typing import Any
 
 import psutil
 import pytest
 
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.runtime import get_runtime
 
@@ -88,7 +88,7 @@ def test_interrupt_handling() -> None:
 
 
 class TestErrorPass(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         raise RuntimeError('Boo!')
 
 
@@ -97,12 +97,12 @@ def raise_error() -> None:
 
 
 class TestNestedErrorPass(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         await get_runtime().submit(raise_error)
 
 
 class TestWorkerExitPass(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         exit()
 
 

@@ -141,6 +141,13 @@ def compiler() -> Iterator[Compiler]:
 
 
 @pytest.fixture
+def fresh_compiler() -> Iterator[Compiler]:
+    compiler = Compiler()
+    yield compiler
+    compiler.close()
+
+
+@pytest.fixture
 def toffoli_unitary() -> UnitaryMatrix:
     return UnitaryMatrix(TOFFOLI)
 

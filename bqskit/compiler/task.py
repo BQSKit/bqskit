@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any
-from typing import Iterable
 from typing import TYPE_CHECKING
 
+from bqskit.compiler.passdata import PassData
+from bqskit.compiler.workflow import Workflow
+from bqskit.compiler.workflow import WorkflowLike
+
 if TYPE_CHECKING:
-    from bqskit.compiler.basepass import BasePass
     from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -22,31 +23,27 @@ class CompilationTask():
     can be submitted to a BQSKit compiler to be efficiently executed.
     """
 
-    def __init__(self, input: Circuit, workflow: Iterable[BasePass]) -> None:
+    def __init__(self, input: Circuit, workflow: WorkflowLike) -> None:
         """
         Construct a CompilationTask.
 
         Args:
             input (Circuit): The input circuit to be compiled.
 
-            workflow (Iterable[BasePass]): The configured workflow to be
+            workflow (WorkflowLike): The configured workflow to be
                 performed on the circuit.
         """
         self.task_id = uuid.uuid4()
         self.circuit = input
-        self.workflow = workflow
-        self.data: dict[str, Any] = {}
-        self.done = False
+        self.workflow = Workflow(workflow)
+        self.data = PassData(input)
         self.request_data = False
         self.logging_level: int | None = None
         self.max_logging_depth = -1
 
-    async def run(self) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    async def run(self) -> Circuit | tuple[Circuit, PassData]:
         """Execute the task."""
-        for pass_obj in self.workflow:
-            await pass_obj.run(self.circuit, self.data)
-
-        self.done = True
+        await self.workflow.run(self.circuit, self.data)
 
         if not self.request_data:
             return self.circuit

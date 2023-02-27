@@ -20,8 +20,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.compiler.compiler import Compiler
-from bqskit.compiler.task import CompilationTask
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
@@ -2607,13 +2605,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             data (dict[str, Any] | None): Optionally provide additional
                 pass data to the compiler pass.
         """
-        if data is None:
-            data = {}
+        from bqskit.compiler.compiler import Compiler
+        from bqskit.compiler.passdata import PassData
+        from bqskit.compiler.task import CompilationTask
+
+        pass_data = PassData(self)
+        if data is not None:
+            pass_data.update(data)
 
         with Compiler() as compiler:
             task = CompilationTask(self, [compiler_pass])
-            task.data = data
-            self.become(compiler.compile(task))  # type: ignore
+            task.data = pass_data
+            task_id = compiler.submit(task)
+            self.become(compiler.result(task_id))  # type: ignore
 
     def instantiate(
         self,
@@ -2623,7 +2627,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         seed: int | None = None,
         multistart_gen: MultiStartGenerator = RandomStartGenerator(),
         score_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
-        parallel: bool = False,
         **kwargs: Any,
     ) -> Circuit:
         """

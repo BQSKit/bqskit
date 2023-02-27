@@ -6,6 +6,7 @@ from typing import Any
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
@@ -94,8 +95,12 @@ class ScanningGateRemovalPass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
+
         start = 'left' if self.start_from_left else 'right'
         _logger.debug(f'Starting scanning gate removal on the {start}.')
 
@@ -125,7 +130,7 @@ class ScanningGateRemovalPass(BasePass):
                 Circuit.instantiate,
                 working_copy,
                 target=target,
-                **self.instantiate_options,
+                **instantiate_options,
             )
 
             if self.cost(working_copy, target) < self.success_threshold:

@@ -7,6 +7,7 @@ from typing import Any
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.operation import Operation
@@ -92,8 +93,11 @@ class SubstitutePass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
 
         # Collect locations in circuit where self.init_gate exists
         points = [
@@ -130,7 +134,7 @@ class SubstitutePass(BasePass):
                     Circuit.instantiate,
                     circuit_copy,
                     target=target,
-                    **self.instantiate_options,
+                    **instantiate_options,
                 )
 
                 if self.cost(circuit_copy, target) < self.success_threshold:

@@ -101,7 +101,12 @@ class MachineModel:
         """Return all `block_size` connected blocks of qudit indicies."""
         return self.coupling_graph.get_subgraphs_of_size(block_size)
 
-    def is_compatible(self, circuit: Circuit) -> bool:
+    # TODO: add placement support
+    def is_compatible(
+        self,
+        circuit: Circuit,
+        placement: list[int] | None = None,
+    ) -> bool:
         """Check if a circuit is compatible with this model."""
         if circuit.num_qudits > self.num_qudits:
             return False

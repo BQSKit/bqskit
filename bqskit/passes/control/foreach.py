@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import Callable
-from typing import Sequence
 
+from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passdata import PassData
+from bqskit.compiler.workflow import Workflow
+from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
@@ -16,8 +18,6 @@ from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.runtime import get_runtime
-from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
 
@@ -26,8 +26,8 @@ class ForEachBlockPass(BasePass):
     """
     A pass that executes other passes on each block in the circuit.
 
-    This is a control pass that executes another pass or passes on every block
-    in the circuit. This will be done in parallel if run from a compiler.
+    This is a control pass that executes a workflow on every block in the
+    circuit. This will be done in parallel.
     """
 
     key = 'ForEachBlockPass_data'
@@ -35,18 +35,17 @@ class ForEachBlockPass(BasePass):
 
     def __init__(
         self,
-        loop_body: BasePass | Sequence[BasePass],
+        loop_body: WorkflowLike,
         calculate_error_bound: bool = False,
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: Callable[[Circuit, Operation], bool] | None = None,
-        batch_size: int = 1,
+        batch_size: int | None = None,
     ) -> None:
         """
         Construct a ForEachBlockPass.
 
         Args:
-            loop_body (BasePass | Sequence[BasePass]): The pass or passes
-                to execute on every block.
+            loop_body (WorkflowLike): The workflow to execute on every block.
 
             calculate_error_bound (bool): If set to true, will calculate
                 errors on blocks after running `loop_body` on them and
@@ -69,61 +68,34 @@ class ForEachBlockPass(BasePass):
                 operation will be replaced with the new circuit.
                 Defaults to always replace.
 
-            batch_size (int): The amount of blocks to batch in one job.
-                If zero, batch all blocks in one job. (Default: 1).
-
-        Raises:
-            ValueError: If a Sequence[BasePass] is given, but it is empty.
+            batch_size (int): (Deprecated).
         """
-
-        if not is_sequence(loop_body) and not isinstance(loop_body, BasePass):
-            raise TypeError(
-                'Expected Pass or sequence of Passes, got %s.'
-                % type(loop_body),
+        if batch_size is not None:
+            import warnings
+            warnings.warn(
+                'Batch size is no longer supported, this warning will'
+                ' become an error in a future update.',
+                DeprecationWarning,
             )
 
-        if is_sequence(loop_body):
-            truth_list = [isinstance(elem, BasePass) for elem in loop_body]
-            if not all(truth_list):
-                raise TypeError(
-                    'Expected Pass or sequence of Passes, got %s.'
-                    % type(loop_body[truth_list.index(False)]),
-                )
-            if len(loop_body) == 0:
-                raise ValueError('Expected at least one pass.')
-
-        if not is_integer(batch_size):
-            raise TypeError(
-                'Expected integer for batch_size'
-                f', got {type(batch_size)}',
-            )
-
-        if batch_size < 0:
-            raise ValueError(
-                'Expected nonnegative integer for batch_size'
-                f', got {batch_size}',
-            )
-
-        self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
         self.calculate_error_bound = calculate_error_bound
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
-        self.batch_size = batch_size
+        self.workflow = Workflow(loop_body)
 
         if not callable(self.collection_filter):
             raise TypeError(
                 'Expected callable method that maps Operations to booleans for'
-                ' collection_filter, got %s.' % type(self.collection_filter),
+                f' collection_filter, got {type(self.collection_filter)}.',
             )
 
         if not callable(self.replace_filter):
             raise TypeError(
                 'Expected callable method that maps Circuit and Operations to'
-                ' booleans for replace_filter'
-                ', got %s.' % type(self.replace_filter),
+                f' bools for replace_filter, got {type(self.replace_filter)}.',
             )
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         # Make room in data for block data
         if self.key not in data:
@@ -135,15 +107,19 @@ class ForEachBlockPass(BasePass):
             if self.collection_filter(op):
                 blocks.append((cycle, op))
 
+        # No blocks, no work
+        if len(blocks) == 0:
+            data[self.key].append([])
+            return
+
         # Get the machine model
-        model = self.get_model(circuit, data)
-        coupling_graph = self.get_connectivity(circuit, data)
+        model = data.model
+        coupling_graph = data.connectivity
 
         # Preprocess blocks
         subcircuits: list[Circuit] = []
-        block_datas: list[dict[str, Any]] = []
+        block_datas: list[PassData] = []
         for i, (cycle, op) in enumerate(blocks):
-            block_data: dict[str, Any] = {}
 
             # Form Subcircuit
             if isinstance(op.gate, CircuitGate):
@@ -152,7 +128,7 @@ class ForEachBlockPass(BasePass):
             else:
                 subcircuit = Circuit.from_operation(op)
 
-            # Form Subtopology
+            # Form Submodel
             subradixes = [circuit.radixes[q] for q in op.location]
             subnumbering = {op.location[i]: i for i in range(len(op.location))}
             submodel = MachineModel(
@@ -162,43 +138,26 @@ class ForEachBlockPass(BasePass):
                 subradixes,
             )
 
-            # Form subdata
+            # Form Subdata
+            block_data: PassData = PassData(subcircuit)
             block_data['subnumbering'] = subnumbering
-            block_data['machine_model'] = submodel
-            block_data['parallel'] = self.in_parallel(data)
+            block_data['model'] = submodel
             block_data['point'] = CircuitPoint(cycle, op.location[0])
             block_data['calculate_error_bound'] = self.calculate_error_bound
 
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
 
-        # Group them into batches
-        if self.batch_size == 0:
-            batched_subcircuits = [subcircuits]
-            batched_block_datas = [block_datas]
-        else:
-            batched_subcircuits = [
-                subcircuits[i:i + self.batch_size]
-                for i in range(0, len(blocks), self.batch_size)
-            ]
-            batched_block_datas = [
-                block_datas[i:i + self.batch_size]
-                for i in range(0, len(blocks), self.batch_size)
-            ]
-
         # Do the work
         results = await get_runtime().map(
             _sub_do_work,
-            [self.loop_body] * len(batched_subcircuits),
-            batched_subcircuits,
-            batched_block_datas,
+            [self.workflow] * len(subcircuits),
+            subcircuits,
+            block_datas,
         )
 
         # Unpack results
-        completed_subcircuits, completed_block_datas = [], []
-        for batch in results:
-            completed_subcircuits.extend(list(zip(*batch))[0])
-            completed_block_datas.extend(list(zip(*batch))[1])
+        completed_subcircuits, completed_block_datas = zip(*results)
 
         # Postprocess blocks
         points: list[CircuitPoint] = []
@@ -223,7 +182,7 @@ class ForEachBlockPass(BasePass):
 
                 # Calculate Error
                 if self.calculate_error_bound:
-                    error_sum += block_data['error']
+                    error_sum += block_data.error
             else:
                 block_data['replaced'] = False
 
@@ -235,11 +194,8 @@ class ForEachBlockPass(BasePass):
 
         # Record error
         if self.calculate_error_bound:
-            if 'error' in data:
-                data['error'] += error_sum
-            else:
-                data['error'] = error_sum
-            _logger.debug(f"New circuit error is {data['error']}.")
+            data.error = (1 - ((1 - data.error) * (1 - error_sum)))
+            _logger.debug(f'New circuit error is {data.error}.')
 
 
 def default_collection_filter(op: Operation) -> bool:
@@ -255,25 +211,3 @@ def default_collection_filter(op: Operation) -> bool:
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
     return True
-
-
-async def _sub_do_work(
-    loop_body: Sequence[BasePass],
-    subcircuits: list[Circuit],
-    subdatas: list[dict[str, Any]],
-) -> list[tuple[Circuit, dict[str, Any]]]:
-    results = []
-    for subcircuit, subdata in zip(subcircuits, subdatas):
-        if subdata['calculate_error_bound']:
-            old_utry = subcircuit.get_unitary()
-
-        for loop_pass in loop_body:
-            await loop_pass.run(subcircuit, subdata)
-
-        if subdata['calculate_error_bound']:
-            new_utry = subcircuit.get_unitary()
-            error = new_utry.get_distance_from(old_utry)
-            subdata['error'] = error
-
-        results.append((subcircuit, subdata))
-    return results

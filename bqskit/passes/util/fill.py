@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 
@@ -25,7 +25,7 @@ class FillSingleQuditGatesPass(BasePass):
         """
         self.success_threshold = success_threshold
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Completing circuit with single-qudit gates.')
         target = self.get_target(circuit, data)
@@ -33,7 +33,7 @@ class FillSingleQuditGatesPass(BasePass):
         complete_circuit = Circuit(circuit.num_qudits, circuit.radixes)
 
         if target.num_qudits == 1:
-            params = U3Gate.calc_params(target)
+            params = U3Gate.calc_params(circuit.get_unitary())
             complete_circuit.append_gate(U3Gate(), 0, params)
             circuit.become(complete_circuit)
             return
@@ -52,7 +52,8 @@ class FillSingleQuditGatesPass(BasePass):
         dist = 1.0
         for i in range(10):
             complete_circuit.instantiate(target)
-            dist = complete_circuit.get_unitary().get_distance_from(target, 1)
+            dist = complete_circuit.get_unitary().get_distance_from(target, 1)  # type: ignore  # noqa
+            # TODO: State update
 
         if dist <= self.success_threshold:
             circuit.become(complete_circuit)

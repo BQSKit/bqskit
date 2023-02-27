@@ -3,22 +3,18 @@ from __future__ import annotations
 
 import logging
 from io import StringIO
-from typing import Any
 
 import pytest
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 
 
 class ErrorPass(BasePass):
-    async def run(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any] = {},
-    ) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         raise RuntimeError()
 
 
@@ -26,7 +22,7 @@ class LogPass(BasePass):
     async def run(
         self,
         circuit: Circuit,
-        data: dict[str, Any] = {},
+        data: PassData,
     ) -> None:
         logging.getLogger('bqskit.dummy').debug('Test.')
 
