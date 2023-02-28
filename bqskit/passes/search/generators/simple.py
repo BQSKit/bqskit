@@ -185,7 +185,7 @@ class SimpleLayerGenerator(LayerGenerator):
             raise ValueError('Cannot expand a single-qudit circuit.')
 
         # Get the coupling graph
-        coupling_graph = BasePass.get_connectivity(circuit, data)
+        coupling_graph = data.connectivity
 
         # Generate successors
         successors = []

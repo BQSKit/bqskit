@@ -429,6 +429,9 @@ class Worker:
         else:
             for subargs in zip(*args):
                 fnargs.append((fn, subargs, kwargs))
+        
+        if len(fnargs) == 0:
+            raise RuntimeError("Unable to map 0 tasks.")
 
         # Create a new mailbox
         mailbox_id = self._get_new_mailbox_id()

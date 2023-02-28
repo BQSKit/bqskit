@@ -16,9 +16,7 @@ from bqskit.qis.graph import CouplingGraph
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
-
-if TYPE_CHECKING:
-    from bqskit.ir.circuit import Circuit
+from bqskit.ir.circuit import Circuit
 
 
 class PassData(MutableMapping[str, Any]):

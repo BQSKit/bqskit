@@ -1,5 +1,5 @@
 
-import pytest
+# import pytest
 
 from bqskit import compile
 from bqskit import MachineModel
@@ -15,3 +15,5 @@ def test_state_prep() -> None:
     out_circuit = compile(state)
     out_state = out_circuit.get_statevector(StateVector.zero(3))
     assert out_state.get_distance_from(state) < 1e-7
+
+test_state_prep()

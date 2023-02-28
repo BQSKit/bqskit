@@ -71,7 +71,7 @@ class FourParamGenerator(LayerGenerator):
             raise ValueError('Cannot expand a single-qudit circuit.')
 
         # Get the machine model
-        coupling_graph = BasePass.get_connectivity(circuit, data)
+        coupling_graph = data.connectivity
 
         # Generate successors
         successors = []

@@ -10,7 +10,7 @@ from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
-
+from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
@@ -23,7 +23,6 @@ from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u3 import U3Gate
-from bqskit.ir.gates.state import StateGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
@@ -842,20 +841,21 @@ def _stateprep_workflow(
     error_sim_size: int = 8,
 ) -> CompilationTask:
     """Build a workflow for state preparation."""
-    circuit = Circuit(state.num_qudits, state.radixes)
-    circuit.append_gate(StateGate(state), list(range(state.num_qudits)))
+    circuit = Circuit(1)
     layer_gen = _get_layer_gen(model)
 
     if optimization_level == 1:
         inst_ops = {
             'multistarts': 1,
             'method': 'minimization',
+            'minimizer': LBFGSMinimizer(),
         }
         synthesis = LEAPSynthesisPass(
             success_threshold=synthesis_epsilon,
             layer_generator=layer_gen,
             instantiate_options=inst_ops,
             min_prefix_size=3,
+            cost=HilbertSchmidtCostGenerator(),
         )
     
     elif optimization_level == 2:
@@ -909,6 +909,7 @@ def _stateprep_workflow(
     
     workflow = [
         SetModelPass(model),
+        SetTargetPass(state),
         synthesis,
         scan,
     ]

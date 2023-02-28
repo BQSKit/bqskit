@@ -213,6 +213,7 @@ class LEAPSynthesisPass(SynthesisPass):
             # Evaluate successors
             for circuit in circuits:
                 dist = self.cost.calc_cost(circuit, utry)
+                print("x", dist)
 
                 if dist < self.success_threshold:
                     _logger.debug('Successful synthesis.')
