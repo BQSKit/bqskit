@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -28,7 +29,7 @@ class SynthesisPass(BasePass):
     @abstractmethod
     async def synthesize(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """

@@ -8,6 +8,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -31,7 +32,7 @@ class StairLayerGenerator(LayerGenerator):
 
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """
@@ -42,7 +43,7 @@ class StairLayerGenerator(LayerGenerator):
                 `self.seed`.
         """
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )

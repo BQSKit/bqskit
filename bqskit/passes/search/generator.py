@@ -6,6 +6,7 @@ import abc
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -20,7 +21,7 @@ class LayerGenerator(abc.ABC):
     @abc.abstractmethod
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """Generate the initial layer for search."""

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 
-from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
@@ -13,6 +12,7 @@ from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class FourParamGenerator(LayerGenerator):
 
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """
@@ -43,7 +43,7 @@ class FourParamGenerator(LayerGenerator):
             ValueError: If `target` is not qubit only.
         """
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )
@@ -71,7 +71,7 @@ class FourParamGenerator(LayerGenerator):
             raise ValueError('Cannot expand a single-qudit circuit.')
 
         # Get the machine model
-        coupling_graph = BasePass.get_connectivity(circuit, data)
+        coupling_graph = data.connectivity
 
         # Generate successors
         successors = []

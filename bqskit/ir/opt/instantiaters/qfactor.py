@@ -12,6 +12,7 @@ from bqskitrs import QFactorInstantiatorNative
 
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -38,7 +39,7 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
     def instantiate(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         x0: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""

@@ -8,6 +8,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 _logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ class SeedLayerGenerator(LayerGenerator):
 
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """
@@ -64,7 +65,7 @@ class SeedLayerGenerator(LayerGenerator):
                 `self.seed`.
         """
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )

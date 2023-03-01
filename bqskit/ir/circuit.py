@@ -45,6 +45,7 @@ from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
@@ -55,9 +56,7 @@ from bqskit.utils.typing import is_bool
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int
-from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
-from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
@@ -2621,7 +2620,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def instantiate(
         self,
-        target: StateLike | UnitaryLike,
+        target: StateLike | UnitaryLike | StateSystem,
         method: str | Instantiater | None = None,
         multistarts: int = 1,
         seed: int | None = None,
@@ -2637,12 +2636,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         state to the target state.
 
         Args:
-            target (StateLike | UnitaryLike): The target unitary or state.
-                If a unitary is specified, the method changes the circuit's
-                parameters in an effort to get closer to implementing the
-                target. If a state is specified, the method changes the
-                circuit's parameters in an effort to get closer to producing
-                the target state when starting from the zero state.
+            target (StateLike | UnitaryLike | StateSystem): The target unitary
+                or state. If a unitary is specified, the method changes
+                the circuit's parameters in an effort to get closer to
+                implementing the target. If a state is specified, the
+                method changes the circuit's parameters in an effort to
+                get closer to producing the target state when starting
+                from the zero state.
 
             method (str | Instantiater | None): The method with which to
                 instantiate the circuit. Currently, `"qfactor"` and
@@ -2743,15 +2743,27 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         instantiater = cast(Instantiater, instantiater)
 
         # Check Target
-        if is_square_matrix(target):
-            target = UnitaryMatrix(target)  # type: ignore
-        elif is_vector(target):
-            target = StateVector(target)  # type: ignore
-        else:
+        try:
+            if UnitaryMatrix.is_unitary(target):
+                target = UnitaryMatrix(target)
+
+            elif StateVector.is_pure_state(target):
+                target = StateVector(target)
+
+            elif StateSystem.is_state_system(target):
+                target = StateSystem(target)
+
+            else:
+                raise TypeError(
+                    'Target is neither a unitary, a state system'
+                    f', nor a state. Got {type(input)}.',
+                )
+        except Exception as e:
             raise TypeError(
-                'Expected either StateVector or UnitaryMatrix'
-                ' for target, got %s.' % type(target),
-            )
+                'Unable to determine type of input.'
+                ' Ensure that you are trying to compile a valid'
+                ' circuit, unitary, or state.',
+            ) from e
 
         if target.dim != self.dim:
             raise ValueError('Target dimension mismatch with circuit.')

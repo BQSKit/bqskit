@@ -18,6 +18,7 @@ from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
@@ -158,7 +159,7 @@ class LEAPSynthesisPass(SynthesisPass):
 
     async def synthesize(
         self,
-        utry: UnitaryMatrix | StateVector,
+        utry: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
@@ -239,7 +240,6 @@ class LEAPSynthesisPass(SynthesisPass):
                         _logger.debug(f'Prefix formed at {layer + 1} layers.')
                         last_prefix_layer = layer + 1
                         frontier.clear()
-                        data['window_markers'].append(circuit.num_cycles)
                         if self.max_layer is None or layer + 1 < self.max_layer:
                             frontier.add(circuit, layer + 1)
 

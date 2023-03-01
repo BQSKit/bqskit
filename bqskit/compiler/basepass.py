@@ -6,6 +6,8 @@ import warnings
 from typing import Any
 from typing import TYPE_CHECKING
 
+from bqskit.qis.state.system import StateSystem
+
 if TYPE_CHECKING:
     from bqskit.compiler.machine import MachineModel
     from bqskit.compiler.passdata import PassData
@@ -106,7 +108,10 @@ class BasePass(abc.ABC):
         return data.connectivity
 
     @staticmethod
-    def get_target(_: Any, data: PassData) -> UnitaryMatrix | StateVector:
+    def get_target(
+        _: Any,
+        data: PassData,
+    ) -> UnitaryMatrix | StateVector | StateSystem:
         """
         Retrieve the target from the data dictionary.
 
