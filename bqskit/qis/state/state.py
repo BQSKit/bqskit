@@ -187,7 +187,7 @@ class StateVector(NDArrayOperatorsMixin):
             return False
 
         return True
-    
+
     @staticmethod
     def zero(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
         """Prepares the zero state."""
@@ -238,6 +238,10 @@ class StateVector(NDArrayOperatorsMixin):
 
         U = unitary_group.rvs(int(np.prod(radixes)))
         return StateVector(U[:, 0], radixes)
+
+    def __hash__(self) -> int:
+        """Hash the state vector."""
+        return hash(tuple(self.numpy))
 
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""

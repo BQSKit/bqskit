@@ -13,6 +13,7 @@ from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
@@ -54,7 +55,7 @@ class Minimization(Instantiater):
     def instantiate(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         x0: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""

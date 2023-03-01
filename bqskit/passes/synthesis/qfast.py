@@ -17,6 +17,7 @@ from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -127,7 +128,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
     async def synthesize(
         self,
-        utry: UnitaryMatrix | StateVector,
+        utry: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
@@ -199,7 +200,7 @@ class QFASTDecompositionPass(SynthesisPass):
     def finalize(
         self,
         circuit: Circuit,
-        utry: UnitaryMatrix | StateVector,
+        utry: UnitaryMatrix | StateVector | StateSystem,
         instantiate_options: dict[str, Any],
     ) -> None:
         """Finalize the circuit by replacing the head with self.gate."""

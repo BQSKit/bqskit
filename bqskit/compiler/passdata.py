@@ -7,16 +7,16 @@ from typing import Any
 from typing import Iterator
 from typing import MutableMapping
 from typing import Sequence
-from typing import TYPE_CHECKING
 
 from bqskit.compiler.machine import MachineModel
+from bqskit.ir.circuit import Circuit
 from bqskit.qis import StateVector
 from bqskit.qis import UnitaryMatrix
 from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.state.system import StateSystem
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
-from bqskit.ir.circuit import Circuit
 
 
 class PassData(MutableMapping[str, Any]):
@@ -32,7 +32,7 @@ class PassData(MutableMapping[str, Any]):
 
     def __init__(self, circuit: Circuit) -> None:
         """Initialize a PassData object from `circuit`."""
-        self._target: Circuit | StateVector | UnitaryMatrix
+        self._target: Circuit | StateVector | UnitaryMatrix | StateSystem
         if circuit.num_qudits <= 8:
             self._target = circuit.get_unitary()
         else:
@@ -45,7 +45,7 @@ class PassData(MutableMapping[str, Any]):
         self._seed: int | None = None
 
     @property
-    def target(self) -> StateVector | UnitaryMatrix:
+    def target(self) -> StateVector | UnitaryMatrix | StateSystem:
         """Return the current target unitary or state."""
         if isinstance(self._target, Circuit):
             self._target = self._target.get_unitary()
@@ -53,11 +53,12 @@ class PassData(MutableMapping[str, Any]):
         return self._target
 
     @target.setter
-    def target(self, _val: StateVector | UnitaryMatrix) -> None:
-        if not isinstance(_val, (StateVector, UnitaryMatrix)):
+    def target(self, _val: StateVector | UnitaryMatrix | StateSystem) -> None:
+        if not isinstance(_val, (StateVector, UnitaryMatrix, StateSystem)):
             raise TypeError(
                 f'Cannot assign type {type(_val)} to target.'
-                ' Expected either a StateVector or UnitaryMatrix.',
+                ' Expected either a StateVector, StateSystem,'
+                ' or UnitaryMatrix.',
             )
         self._target = _val
 

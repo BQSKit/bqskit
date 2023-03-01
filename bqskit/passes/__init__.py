@@ -235,6 +235,7 @@ from bqskit.passes.synthesis.qfast import QFASTDecompositionPass
 from bqskit.passes.synthesis.qpredict import QPredictDecompositionPass
 from bqskit.passes.synthesis.qsearch import QSearchSynthesisPass
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.passes.synthesis.target import SetTargetPass
 from bqskit.passes.util.compress import CompressPass
 from bqskit.passes.util.conversion import BlockConversionPass
 from bqskit.passes.util.converttou3 import ToU3Pass
@@ -246,7 +247,6 @@ from bqskit.passes.util.random import SetRandomSeedPass
 from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
-from bqskit.passes.synthesis.target import SetTargetPass
 
 
 __all__ = [

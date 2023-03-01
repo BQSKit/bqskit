@@ -15,6 +15,7 @@ from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import pauli_expansion
 from bqskit.utils.math import unitary_log_no_i
@@ -184,11 +185,11 @@ class QPredictDecompositionPass(SynthesisPass):
 
     async def synthesize(
         self,
-        utry: UnitaryMatrix | StateVector,
+        utry: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
-        if isinstance(utry, StateVector):
+        if isinstance(utry, (StateVector, StateSystem)):
             raise RuntimeError('Unable to synthesize a state with qpredict.')
 
         instantiate_options = self.instantiate_options.copy()

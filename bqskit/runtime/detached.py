@@ -566,6 +566,6 @@ def sigint_handler(
     frame: FrameType | None,
     server: DetachedServer,
 ) -> None:
-    server.logger.critical('Server interrupted.')
+    server.logger.debug('Server interrupted.')
     server._handle_shutdown()
     exit(-1)

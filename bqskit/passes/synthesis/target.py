@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.qis.state import StateSystem
 from bqskit.qis.state import StateVector
+from bqskit.qis.unitary import UnitaryMatrix
 
 if TYPE_CHECKING:
     from bqskit.compiler.passdata import PassData
@@ -15,17 +16,20 @@ if TYPE_CHECKING:
 class SetTargetPass(BasePass):
     """Sets a synthesis target for future passes."""
 
-    def __init__(self, target: UnitaryMatrix | StateVector) -> None:
+    def __init__(
+        self,
+        target: UnitaryMatrix | StateVector | StateSystem,
+    ) -> None:
         """
         Construct a SetTargetPass.
 
         Args:
-            target (UnitaryMatrix | StateVector): The target to synthesize
-                in future passes.
+            target (UnitaryMatrix | StateVector | StateSystem): The target
+                to synthesize in future passes.
         """
-        if not isinstance(target, (StateVector, UnitaryMatrix)):
+        if not isinstance(target, (StateVector, UnitaryMatrix, StateSystem)):
             bad_type = type(target)
-            m = f"Expected valid unitary or state for target, got {bad_type}."
+            m = f'Expected valid unitary or state for target, got {bad_type}.'
             raise TypeError(m)
 
         self.target = target

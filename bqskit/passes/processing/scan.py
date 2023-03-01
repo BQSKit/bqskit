@@ -92,6 +92,7 @@ class ScanningGateRemovalPass(BasePass):
         self.instantiate_options: dict[str, Any] = {
             'dist_tol': self.success_threshold,
             'min_iters': 100,
+            'cost_fn_gen': self.cost,
         }
         self.instantiate_options.update(instantiate_options)
 
