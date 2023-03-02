@@ -440,7 +440,7 @@ class DetachedServer:
         box = self.mailboxes[mailbox_id]
 
         if box[0] is None:
-            conn.send((RuntimeMessage.STATUS, CompilationStatus.STARTED))
+            conn.send((RuntimeMessage.STATUS, CompilationStatus.RUNNING))
 
         else:
             conn.send((RuntimeMessage.STATUS, CompilationStatus.DONE))
