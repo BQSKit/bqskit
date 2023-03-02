@@ -28,7 +28,14 @@ class PassData(MutableMapping[str, Any]):
     mapping `str` keys to any type of value.
     """
 
-    _reserved_keys = ['target', 'model', 'placement', 'error', 'seed']
+    _reserved_keys = [
+        'target',
+        'model',
+        'placement',
+        'error',
+        'seed',
+        'machine_model',
+    ]
 
     def __init__(self, circuit: Circuit) -> None:
         """Initialize a PassData object from `circuit`."""
@@ -134,6 +141,8 @@ class PassData(MutableMapping[str, Any]):
     def __getitem__(self, _key: str) -> Any:
         """Retrieve the value associated with `_key` from the pass data."""
         if _key in self._reserved_keys:
+            if _key == 'machine_model':
+                _key = 'model'
             return self.__getattribute__(_key)
 
         return self._data.__getitem__(_key)
@@ -141,6 +150,8 @@ class PassData(MutableMapping[str, Any]):
     def __setitem__(self, _key: str, _val: Any) -> None:
         """Update the value associated with `_key` in the pass data."""
         if _key in self._reserved_keys:
+            if _key == 'machine_model':
+                _key = 'model'
             return self.__setattr__(_key, _val)
 
         return self._data.__setitem__(_key, _val)

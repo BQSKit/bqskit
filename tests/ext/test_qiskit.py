@@ -50,7 +50,7 @@ class TestTranslate:
         circuit.cnot(0, 1)
         circuit.cnot(0, 2)
         circuit.cnot(0, 2)
-        circuit.u3(1, 2.4, 3, 0)
+        circuit.u(1, 2.4, 3, 0)
         circuit.u(1, 2.2, 3, 1)
         circuit.u(1, 2.1, 3, 2)
         circuit.u(1, 2.1, 3, 2)

@@ -350,10 +350,12 @@ def compile(
 
     # Perform the compilation
     if error_threshold is None:
-        out = compiler.compile(task)
+        t_id = compiler.submit(task)
+        out = compiler.result(t_id)
     else:
         task.request_data = True
-        out, data = compiler.compile(task)  # type: ignore
+        t_id = compiler.submit(task)
+        out, data = compiler.result(t_id)  # type: ignore
 
     # Log error if necessary
     if error_threshold is not None:
