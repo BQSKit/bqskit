@@ -40,8 +40,14 @@ class RuntimeFuture:
         )
 
     @property
-    def done(self) -> bool:
-        """Return true if the future is ready."""
+    def _done(self) -> bool:
+        """
+        Return true if the future is ready.
+
+        Note: Polling on futures in a busy-wait loop can cause deadlock.
+        It is best to await on futures rather than continuously polling.
+        Use at your own risk.
+        """
         from bqskit.runtime.worker import get_worker
 
         if self.mailbox_id not in get_worker()._mailboxes:
