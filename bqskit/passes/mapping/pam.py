@@ -8,6 +8,7 @@ from typing import Sequence
 from typing import Tuple
 
 import numpy as np
+
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import SwapGate
 from bqskit.ir.point import CircuitPoint

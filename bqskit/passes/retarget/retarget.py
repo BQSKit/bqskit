@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+
 class RetargetGatesPass(BassPass):
     """Retarget the gates in the circuit to match the pass model."""
 
@@ -22,19 +24,20 @@ class RetargetGatesPass(BassPass):
         error_sim_size: int = 8,
     ) -> None:
         pass
-    
+
     async def run(self, circuit: Circuit, data: PassData) -> None:
         pass
         # circuit is single-qudit
         # qudit mismatch
 
+
 class RetargetManyQuditGatesPass(BasePass):
     """Retargets many-qudit gates in the circuit to match the pass model."""
-    pass
+
 
 class RetargetTwoQuditGatesPass(BasePass):
     """Retargets two-qudit gates in the circuit to match the pass model."""
-    pass
+
 
 class RetargetSingleQuditGatesPass(BasePass):
     """Retargets single-qudit gates in the circuit to match the pass model."""
@@ -44,13 +47,15 @@ class RetargetSingleQuditGatesPass(BasePass):
         input_gates = {g for g in circuit.gate_set if g.num_qudits == 1}
 
         if len(input_gates) == 0 or input_gates.issubset(target_gates):
-            _logger.info("No single-qudit gates to retarget")
+            _logger.info('No single-qudit gates to retarget')
             return
-        
-        if len(target_gates) == 0:
-            _logger.warning("No valid target single-qudit gate in model.")
 
-        _logger.info("Retargeting single-qudit gates from {input_gates} to {target_gates}.")
+        if len(target_gates) == 0:
+            _logger.warning('No valid target single-qudit gate in model.')
+
+        _logger.info(
+            'Retargeting single-qudit gates from {input_gates} to {target_gates}.',
+        )
 
     if len(sq_gates) == 0:
         return NOOPPass()

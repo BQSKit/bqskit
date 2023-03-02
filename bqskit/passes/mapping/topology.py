@@ -19,7 +19,7 @@ from bqskit.utils.typing import is_integer
 def powerset(iterable: Iterable[Any]) -> Iterable[Any]:
     """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
     s = list(iterable)
-    all_combos = (it.combinations(s, r) for r in range(len(s)+1))
+    all_combos = (it.combinations(s, r) for r in range(len(s) + 1))
     return it.chain.from_iterable(all_combos)
 
 
@@ -54,6 +54,7 @@ def all_coupling_graphs_of_size(n: int) -> list[CouplingGraph]:
 
     return to_ret
 
+
 class GraphDAGNode():
     """A node in the GraphDAG."""
 
@@ -66,12 +67,13 @@ class GraphDAGNode():
         """Provide index of this kind of graph in list."""
         return self.indices[0]
 
+
 class GraphDAG():
     """
     DAG for organizing the embeddability relations of graphs.
 
-    The DAG is organized so that a node is guaranteed to be embedded within
-    all of its successor nodes.
+    The DAG is organized so that a node is guaranteed to be embedded within all
+    of its successor nodes.
     """
 
     def __init__(self, graph_list: list[CouplingGraphLike]):
@@ -101,11 +103,11 @@ class GraphDAG():
 
     def _insert_node(self, graph_id: int) -> None:
         """
-        Insert a new node corresponding to the graph `graph_list[graph_id]`
-        into the DAG.
+        Insert a new node corresponding to the graph `graph_list[graph_id]` into
+        the DAG.
 
-        Append it to the "least embeddable" graph that is still embedded
-        within it.
+        Append it to the "least embeddable" graph that is still embedded within
+        it.
         """
         node = GraphDAGNode(graph_id)
         if len(self.roots) == 0:
@@ -147,8 +149,7 @@ class GraphDAG():
         graphs: list[CouplingGraph] | CouplingGraph,
     ) -> list[int]:
         """Given a list of graphs, return the indices of subgraphs in the
-        `self.graph_list` list that are embedded in a subgraph in
-        `graphs`."""
+        `self.graph_list` list that are embedded in a subgraph in `graphs`."""
         embedded_indices: set[int] = set()
         if type(graphs) is CouplingGraph:
             graphs = [graphs]
@@ -176,6 +177,7 @@ class GraphDAG():
                                 )
                                 preds.extend(p.predecessors)
         return sorted(list(embedded_indices))
+
 
 def filter_compatible_subgraphs(
     candidate_subgraphs: list[CouplingGraphLike],
@@ -252,18 +254,17 @@ class SubTopologySelectionPass(BasePass):
 
         Args:
             block_size (int): The max block size to select subtopologies for.
-        
+
         Raises:
             ValueError: If block_size is <= 1.
         """
         if not is_integer(block_size):
-            raise TypeError(f"Expected integer, got {type(block_size)}.")
-        
+            raise TypeError(f'Expected integer, got {type(block_size)}.')
+
         if block_size <= 1:
-            raise ValueError(f"Expected integer > 1, got {block_size}.")
+            raise ValueError(f'Expected integer > 1, got {block_size}.')
 
         self.block_size = block_size
-
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""

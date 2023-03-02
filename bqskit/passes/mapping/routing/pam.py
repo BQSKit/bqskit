@@ -9,14 +9,12 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control.foreach import ForEachBlockPass
-
 from bqskit.passes.mapping.pam import PermutationAwareMappingAlgorithm
 
 _logger = logging.getLogger(__name__)
 
 
 class PAMRoutingPass(PermutationAwareMappingAlgorithm, BasePass):
-
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         model = self.get_model(circuit, data)

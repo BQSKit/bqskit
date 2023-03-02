@@ -1,9 +1,9 @@
 """This module implements the EmbedAllPermutationsPass pass."""
 from __future__ import annotations
-import copy
 
-import logging
+import copy
 import itertools as it
+import logging
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
@@ -12,10 +12,9 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.passes import LEAPSynthesisPass
 from bqskit.passes import SynthesisPass
+from bqskit.passes.mapping.topology import SubTopologySelectionPass
 from bqskit.qis import CouplingGraph
 from bqskit.qis import PermutationMatrix
-
-from bqskit.passes.mapping.topology import SubTopologySelectionPass
 from bqskit.runtime import get_runtime
 
 
@@ -63,10 +62,10 @@ class EmbedAllPermutationsPass(BasePass):
         if not isinstance(inner_synthesis, SynthesisPass):
             bad_type = type(inner_synthesis)
             raise TypeError(f'Expected SynthesisPass object, got {bad_type}.')
-        
+
         if not callable(scoring_fn):
             bad_type = type(scoring_fn)
-            m = f"Expected a function from circuits to scores, got {bad_type}."
+            m = f'Expected a function from circuits to scores, got {bad_type}.'
             raise TypeError(m)
 
         self.input_perm = input_perm
@@ -82,7 +81,7 @@ class EmbedAllPermutationsPass(BasePass):
         # Calculate all permuted targets
         width = utry.num_qudits
         perms = list(it.permutations(range(width)))
-        no_perm =[tuple(range(width))]
+        no_perm = [tuple(range(width))]
         Pis = [PermutationMatrix.from_qubit_location(width, p) for p in perms]
         Pos = [PermutationMatrix.from_qubit_location(width, p) for p in perms]
 
@@ -99,7 +98,7 @@ class EmbedAllPermutationsPass(BasePass):
             targets = [Po.T @ utry for Po in Pos]
 
         else:
-            _logger.warning("No permutation is being used in PAS.")
+            _logger.warning('No permutation is being used in PAS.')
             permsbyperms = list(it.product(no_perm, no_perm))
             targets = [utry]
 
@@ -113,8 +112,8 @@ class EmbedAllPermutationsPass(BasePass):
 
             if width not in data[SubTopologySelectionPass.key]:
                 raise RuntimeError(
-                    "Subtopology information for block size"
-                    f" {width} is not available."
+                    'Subtopology information for block size'
+                    f' {width} is not available.',
                 )
 
             graphs = data[SubTopologySelectionPass.key][width]
@@ -153,7 +152,7 @@ class EmbedAllPermutationsPass(BasePass):
             perm = permsbyperms[i // len(graphs)]
             if graph not in perm_data:
                 perm_data[graph] = {}
-            
+
             if perm in perm_data[graph]:
                 # Update if it is better than whats already there
                 s1 = self.scoring_fn(perm_data[graph][perm])

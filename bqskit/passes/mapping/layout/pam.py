@@ -2,14 +2,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control.foreach import ForEachBlockPass
-
 from bqskit.passes.mapping.pam import PermutationAwareMappingAlgorithm
 
 _logger = logging.getLogger(__name__)

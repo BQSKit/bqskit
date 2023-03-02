@@ -1,9 +1,13 @@
 """This module implements the StateSystem class."""
 from __future__ import annotations
 
-import numpy as np
+from typing import Any
+from typing import Iterator
+from typing import Mapping
+from typing import TypeGuard
+from typing import Union
 
-from typing import Any, Iterator, Mapping, TypeGuard, Union
+import numpy as np
 
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
@@ -21,7 +25,7 @@ class StateSystem(Mapping[StateVector, StateVector]):
             self._vec_count = system._vec_count
             self.target = system.target
             return
-        
+
         self._system = {
             StateVector(k): StateVector(v)
             for k, v in system.items()
@@ -32,9 +36,9 @@ class StateSystem(Mapping[StateVector, StateVector]):
 
         for k, v in system.items():
             if k.radixes != self.radixes:
-                raise ValueError("States in system have mismatch in dimension.")
+                raise ValueError('States in system have mismatch in dimension.')
             if v.radixes != self.radixes:
-                raise ValueError("States in system have mismatch in dimension.")
+                raise ValueError('States in system have mismatch in dimension.')
 
         # Check overlap matrices
         V = np.column_stack(list(self._system.keys()))
@@ -43,8 +47,8 @@ class StateSystem(Mapping[StateVector, StateVector]):
         Wv = W.conj().T @ W
         if not np.allclose(Ov, Wv):
             raise ValueError(
-                "State system is unsolvable:"
-                " input and output overlap matrices do not match."
+                'State system is unsolvable:'
+                ' input and output overlap matrices do not match.',
             )
         self.target = W @ V.conj().T
 
@@ -62,16 +66,16 @@ class StateSystem(Mapping[StateVector, StateVector]):
     def radixes(self) -> tuple[int, ...]:
         """The number of orthogonal states for each qudit."""
         return self._radixes
-    
+
     def __iter__(self) -> Iterator[StateVector]:
         return self._system.__iter__()
-    
+
     def __len__(self) -> int:
         return self._system.__len__()
-    
+
     def __getitem__(self, _key: StateVector) -> StateVector:
         return self._system.__getitem__(_key)
-    
+
     def __contains__(self, _key: StateVector) -> bool:
         return self._system.__contains__(_key)
 
@@ -82,7 +86,7 @@ class StateSystem(Mapping[StateVector, StateVector]):
     def is_qutrit_only(self) -> bool:
         """Return true if this unitary can only act on qutrits."""
         return all([radix == 3 for radix in self.radixes])
-    
+
     @staticmethod
     def is_state_system(V: Any) -> TypeGuard[StateSystemLike]:
         """
@@ -96,17 +100,17 @@ class StateSystem(Mapping[StateVector, StateVector]):
         """
         if isinstance(V, StateSystem):
             return True
-        
+
         if not isinstance(V, dict):
             return False
-        
+
         for k, v in V.items():
             if not StateVector.is_pure_state(k):
                 return False
 
             if not StateVector.is_pure_state(v):
                 return False
-        
+
         return True
 
 
