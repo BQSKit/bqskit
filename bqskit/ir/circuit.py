@@ -2610,6 +2610,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             data (dict[str, Any] | None): Optionally provide additional
                 pass data to the compiler pass.
+
+        Note:
+            You cannot perform a pass using this method while a local
+            :class:`~bqskit.compiler.compiler.Compiler` object is live.
+            Rather, you should use the
+            :class:`~bqskit.compiler.compiler.Compiler` directly.
         """
         if data is None:
             data = {}

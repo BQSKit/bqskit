@@ -14,6 +14,7 @@ from multiprocessing.connection import Listener
 from threading import Thread
 from typing import Any
 
+from bqskit.runtime import default_server_port
 from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.detached import send_outgoing
 from bqskit.runtime.detached import sigint_handler
@@ -35,7 +36,14 @@ class AttachedServer(DetachedServer):
     """
 
     def __init__(self, num_workers: int = -1) -> None:
-        """Create a server with `num_workers` workers."""
+        """
+        Create a server with `num_workers` workers.
+
+        Args:
+            num_workers (int): The number of workers to spawn. If -1,
+                then spawn as many workers as CPUs on the system.
+                (Default: -1).
+        """
         self.tasks: dict[uuid.UUID, tuple[int, Connection]] = {}
         self.mailbox_to_task_dict: dict[int, uuid.UUID] = {}
         self.mailboxes: dict[int, Any] = {}
@@ -95,10 +103,14 @@ class AttachedServer(DetachedServer):
         for wconn in self.managers:
             assert wconn.recv() == ((RuntimeMessage.STARTED, None))
             self.sel.register(wconn, selectors.EVENT_READ, 'from_below')
+            # The `from_below` tag, will signal to the server that the
+            # message came from a worker. It is called `from_below` to
+            # share functionality with the detached server, where the
+            # `from_below` tag means either manager or worker.
 
     def _listen_once(self) -> None:
         """Listen for a single client connection."""
-        listener = Listener(('localhost', 7472))
+        listener = Listener(('localhost', default_server_port))
         client = listener.accept()
         listener.close()
 
