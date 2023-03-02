@@ -18,6 +18,7 @@ from typing import Any
 from typing import cast
 from typing import List
 
+from bqskit.runtime import default_manager_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.detached import parse_ipports
 from bqskit.runtime.detached import send_outgoing
@@ -42,7 +43,7 @@ class Manager:
 
     def __init__(
         self,
-        port: int = 7473,
+        port: int = default_manager_port,
         num_workers: int = -1,
         ipports: list[tuple[str, int]] | None = None,
         verbosity: int = 0,
@@ -63,6 +64,18 @@ class Manager:
 
         In either case, if any problems arise during startup, no recovery
         is attempted and the manager terminates.
+
+        Args:
+            port (int): The port this manager listens for server connections.
+
+            num_workers (int): The number of workers to spawn. If -1,
+                then spawn as many workers as CPUs on the system.
+                (Default: -1). Ignored if `ipports` is not None.
+
+            ipports (list[tuple[str, int]] | None): If not None, then all
+                the addresses and ports of running managers to connect to.
+
+            verbosity (int): The manager's logging verbosity.
         """
         # Connect upstream
         self._listen_once(port)
@@ -76,7 +89,7 @@ class Manager:
         else:  # Case 2: Connect to managers at ipports
             self._connect_to_managers(ipports)
 
-        # Set up logging
+        # Set up logging (done now to avoid leaking logging config to workers)
         self.logger = logging.getLogger('bqskit-runtime')
         self.logger.setLevel([30, 20, 10, 1][verbosity])
         self.logger.addHandler(logging.StreamHandler())
@@ -137,6 +150,7 @@ class Manager:
         self.step_size = 1
 
     def _connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
+        """Connect to and initialize managers at `ipports`."""
         d = len(ipports)
         self.step_size = (self.upper_id_bound - self.lower_id_bound) // d
         for i, (ip, port) in enumerate(ipports):
@@ -146,11 +160,14 @@ class Manager:
                 self.upper_id_bound,
             )
             self._connect_to_manager(ip, port, lb, ub)
+            self.logger.info(f'Connected to manager {i} at {ip}:{port}.')
+            self.logger.debug(f'Gave bounds {lb=} and {ub=} to manager {i}.')
 
         for wconn, _ in self.workers:
             msg, payload = wconn.recv()
             assert msg == RuntimeMessage.STARTED
             self.worker_resources.append(payload)
+            self.logger.info(f'Registered manager {i}.')
 
     def _connect_to_manager(self, ip: str, port: int, lb: int, ub: int) -> None:
         max_retries = 5
@@ -165,7 +182,7 @@ class Manager:
                 self.workers.append((conn, None))
                 conn.send((RuntimeMessage.CONNECT, (lb, ub)))
                 return
-        raise RuntimeError('Worker connection refused')
+        raise RuntimeError(f'Manager connection refused at {ip}:{port}')
 
     def __del__(self) -> None:
         """Shutdown the manager and clean up spawned processes."""
@@ -321,7 +338,7 @@ class Manager:
         self.outgoing.append(msg)
 
     def _handle_result_going_up(self, result: RuntimeResult) -> None:
-        """Either store the result here or ship it to the destination worker."""
+        """Forward the result to the destination worker and track sender."""
         w_id = result.completed_by
         m_id = (w_id - self.lower_id_bound) // self.step_size
         self.worker_idle_resources[m_id] += 1
@@ -362,7 +379,7 @@ def start_manager() -> None:
     parser.add_argument(
         '-p', '--port',
         type=int,
-        default=7473,
+        default=default_manager_port,
         help='The port this manager will listen for servers on.',
     )
     parser.add_argument(

@@ -12,12 +12,9 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.gates.parameterized.pauli import PauliGate
-from bqskit.ir.gates.parameterized.u3 import U3Gate
-from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
-from bqskit.ir.point import CircuitPoint
+from bqskit.passes.util.converttou3 import ToU3Pass
 
 _logger = logging.getLogger(__name__)
 
@@ -105,20 +102,7 @@ class SaveIntermediatePass(BasePass):
                 block.params,
             )
             subcircuit.unfold((0, 0))
-            for cycle, op in subcircuit.operations_with_cycles():
-                if (
-                    (
-                        isinstance(op.gate, VariableUnitaryGate)
-                        or isinstance(op.gate, PauliGate)
-                    )
-                    and len(op.location) == 1
-                    and op.radixes == (2,)
-                ):
-                    params = U3Gate.calc_params(op.get_unitary())
-                    point = CircuitPoint(cycle, op.location[0])
-                    subcircuit.replace_gate(
-                        point, U3Gate(), op.location, params,
-                    )
+            await ToU3Pass().run(subcircuit, PassData(subcircuit))
             if self.as_qasm:
                 with open(block_skeleton + f'{enum}.qasm', 'w') as f:
                     f.write(OPENQASM2Language().encode(subcircuit))

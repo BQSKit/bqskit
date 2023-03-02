@@ -23,6 +23,8 @@ from typing import List
 
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
+from bqskit.runtime import default_manager_port
+from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
@@ -43,13 +45,13 @@ def listen(server: DetachedServer, listener: Listener) -> None:
 def send_outgoing(server: DetachedServer) -> None:
     """Outgoing thread forwards messages as they are created."""
     while server.running:
-        if len(server.outgoing) > 0:
-            time.sleep(0)
+        while len(server.outgoing) > 0:
             outgoing = server.outgoing.pop()
             outgoing[0].send((outgoing[1], outgoing[2]))
 
             server.logger.debug(f'Sent message {outgoing[1]}.')
             server.logger.log(1, f'{outgoing[2]}\n')
+        time.sleep(0)
 
 
 class DetachedServer:
@@ -57,7 +59,7 @@ class DetachedServer:
     BQSKit Runtime Server in detached mode.
 
     In detached mode, the runtime is started separately from the client. Clients
-    can connect and disconnect rather than shutdown a detached server. This
+    can connect and disconnect while not shutting down the server. This
     architecture is designed for the distributed setting, where managers manage
     workers in shared memory and communicate with the server over a network.
     """
@@ -65,7 +67,7 @@ class DetachedServer:
     def __init__(
         self,
         ipports: list[tuple[str, int]],
-        port: int = 7472,
+        port: int = default_server_port,
     ) -> None:
         """
         Create a server and connect to the managers at `ipports`.
@@ -75,7 +77,8 @@ class DetachedServer:
                 managers are expected to be waiting.
 
             port (int): The port this server will listen for clients on.
-                Default is 7472.
+                Default can be found in the
+                :obj:`~bqskit.runtime.default_server_port` global variable.
         """
 
         self.clients: dict[Connection, set[uuid.UUID]] = {}
@@ -88,7 +91,11 @@ class DetachedServer:
         """Used to convert internal RuntimeTasks to client CompilationTasks."""
 
         self.mailboxes: dict[int, Any] = {}
-        """A server mailbox is where CompilationTask results are stored."""
+        """
+        A server mailbox is where CompilationTask results are stored.
+
+        This is a mapping from mailbox IDs to mailboxes.
+        """
 
         self.mailbox_counter = 0
         """Counter to ensure all mailboxes have unique IDs."""
@@ -156,6 +163,7 @@ class DetachedServer:
             )
             self._connect_to_manager(ip, port, lb, ub)
             self.logger.info(f'Connected to manager {i} at {ip}:{port}.')
+            self.logger.debug(f'Gave bounds {lb=} and {ub=} to manager {i}.')
 
         for mconn in self.managers:
             msg, payload = mconn.recv()
@@ -178,7 +186,7 @@ class DetachedServer:
                 self.managers.append(conn)
                 conn.send((RuntimeMessage.CONNECT, (lb, ub)))
                 return
-        raise RuntimeError('Manager connection refused')
+        raise RuntimeError(f'Manager connection refused at {ip}:{port}')
 
     def __del__(self) -> None:
         """Shutdown the server and clean up spawned processes."""
@@ -243,6 +251,9 @@ class DetachedServer:
 
                         elif msg == RuntimeMessage.CANCEL:
                             self._handle_cancel(payload)
+
+                        else:
+                            raise RuntimeError(f'Unknown message type: {msg}')
 
             except Exception:
                 exc_info = sys.exc_info()
@@ -388,15 +399,21 @@ class DetachedServer:
 
         mailbox_id = self.tasks[request][0]
         box = self.mailboxes[mailbox_id]
+
+        # If the result has not arrived yet
         if box[0] is None:
+            # Let the server know the client is waiting on this result
             box[1] = True
+
+        # Otherwise the result is already ready
         else:
-            self.logger.info(f'Registering request for task {request}.')
+            self.logger.info(f'Responding to request for task {request}.')
             self.outgoing.append((conn, RuntimeMessage.RESULT, box[0]))
-            # self.tasks.pop(request)
             self.mailboxes.pop(mailbox_id)
-            # self.mailbox_to_task_dict.pop(mailbox_id)
             self.clients[conn].remove(request)
+            # t_id is not removed from self.tasks or
+            # self.mailbox_to_task_dict incase there are left
+            # over log messages arriving.
 
     def _handle_result(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker."""
@@ -424,12 +441,14 @@ class DetachedServer:
             t_id = self.mailbox_to_task_dict[mailbox_id]
             self.logger.info(f'Finished: {t_id}.')
             if box[1]:
+                self.logger.info(f'Responding to request for task {t_id}.')
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box[0])
                 self.outgoing.append(m)
                 self.clients[self.tasks[t_id][1]].remove(t_id)
-                # self.tasks.pop(t_id)
                 self.mailboxes.pop(mailbox_id)
-                # self.mailbox_to_task_dict.pop(mailbox_id)
+                # t_id is not removed from self.tasks or
+                # self.mailbox_to_task_dict incase there are left
+                # over log messages arriving.
 
     def _handle_status(self, conn: Connection, request: uuid.UUID) -> None:
         """Inform the client if the task is finished or not."""
@@ -440,7 +459,7 @@ class DetachedServer:
         box = self.mailboxes[mailbox_id]
 
         if box[0] is None:
-            conn.send((RuntimeMessage.STATUS, CompilationStatus.STARTED))
+            conn.send((RuntimeMessage.STATUS, CompilationStatus.RUNNING))
 
         else:
             conn.send((RuntimeMessage.STATUS, CompilationStatus.DONE))
@@ -502,7 +521,7 @@ def parse_ipports(ipports_str: list[str]) -> list[tuple[str, int]]:
             comps = ipport.strip().split(':')
 
             if len(comps) == 1:
-                ip, port = comps[0], '7473'
+                ip, port = comps[0], str(default_manager_port)
 
             elif len(comps) == 2:
                 ip, port = comps
@@ -531,7 +550,7 @@ def start_server() -> None:
     parser.add_argument(
         '-p', '--port',
         type=int,
-        default=7472,
+        default=default_server_port,
         help='The port this server will listen for clients on.',
     )
     parser.add_argument(
@@ -547,7 +566,7 @@ def start_server() -> None:
 
     # Set up logging
     _logger = logging.getLogger('bqskit-runtime')
-    _logger.setLevel([30, 20, 10, 1][args.verbose])
+    _logger.setLevel([30, 20, 10, 1][min(args.verbose, 3)])
     _logger.addHandler(logging.StreamHandler())
 
     # Create the server

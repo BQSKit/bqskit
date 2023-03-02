@@ -83,7 +83,7 @@ class ParallelDo(BasePass):
 
         # Wait for results
         if self.pick_first:
-            circuits_and_ids = await runtime.wait(future)  # Wake on next result
+            circuits_and_ids = await runtime.next(future)  # Wake on next result
             circuits = [x[1] for x in circuits_and_ids]
             runtime.cancel(future)  # Cancel remaining
         else:

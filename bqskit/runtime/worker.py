@@ -33,7 +33,7 @@ class WorkerMailbox:
     ready queue.
     """
     expecting_single_result: bool = False
-    total_num_results: int = 0
+    expected_num_results: int = 0
     result: Any = None
     num_results: int = 0
     dest_addr: RuntimeAddress | None = None
@@ -43,7 +43,7 @@ class WorkerMailbox:
     def ready(self) -> bool:
         """Return true if the mailbox has all expected results."""
         return (
-            self.num_results >= self.total_num_results
+            self.num_results >= self.expected_num_results
             and self.num_results != 0
         )
 
@@ -316,7 +316,7 @@ class Worker:
             if (
                 isinstance(result, tuple)
                 and len(result) == 2
-                and result[0] in ['BQSKIT_MAIL_ID', 'BQSKIT_WAIT_ID']
+                and result[0] in ['BQSKIT_MAIL_ID', 'BQSKIT_NEXT_ID']
             ):
                 mailbox_id = result[1]
                 if mailbox_id not in self._mailboxes:
@@ -329,7 +329,7 @@ class Worker:
                     self._ready_tasks.put(addr)
                 else:
                     box.dest_addr = addr
-                    if result[0] == 'BQSKIT_WAIT_ID':
+                    if result[0] == 'BQSKIT_NEXT_ID':
                         task.wake_on_next = True
             else:
                 raise RuntimeError('Can only await on a BQSKit RuntimeFuture.')
@@ -462,7 +462,7 @@ class Worker:
     def cancel(self, future: RuntimeFuture) -> None:
         """Cancel all tasks associated with `future`."""
         assert self._active_task is not None
-        num_slots = self._mailboxes[future.mailbox_id].total_num_results
+        num_slots = self._mailboxes[future.mailbox_id].expected_num_results
         self._active_task.owned_mailboxes.remove(future.mailbox_id)
         self._mailboxes.pop(future.mailbox_id)
         addrs = [
@@ -472,7 +472,7 @@ class Worker:
         msgs = [(RuntimeMessage.CANCEL, addr) for addr in addrs]
         self._outgoing.extend(msgs)
 
-    async def wait(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
+    async def next(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
         """
         Wait for and return the next batch of results from a map task.
 
@@ -483,9 +483,9 @@ class Worker:
         """
         if future.done:
             raise RuntimeError('Cannot wait on an already completed result.')
-        future.wait_flag = True
+        future._next_flag = True
         next_result_batch = await future
-        future.wait_flag = False
+        future._next_flag = False
         return next_result_batch
 
 

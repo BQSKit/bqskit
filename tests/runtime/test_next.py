@@ -17,55 +17,55 @@ def sleepi(i: int) -> int:
     return i
 
 
-class TestWaitTask(BasePass):
+class TestNextTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
-        int_ids = await get_runtime().wait(future)
+        int_ids = await get_runtime().next(future)
         assert len(int_ids) == 1  # The 2, 3, and 4 sec sleep shouldn't arrive
         assert int_ids[0] == (2, 1)  # 2nd index in map and result is 1
 
 
-class TestDoubleWaitTask(BasePass):
+class TestDoubleNextTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
-        _ = await get_runtime().wait(future)
-        int_ids = await get_runtime().wait(future)
+        _ = await get_runtime().next(future)
+        int_ids = await get_runtime().next(future)
         assert len(int_ids) == 1  # The 3 and 4 sec sleep shouldn't arrive
         assert int_ids[0] == (3, 2)  # 2nd index in map and result is 1
 
 
-class TestAwaitAfterWaitTask(BasePass):
+class TestAwaitAfterNextTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
-        _ = await get_runtime().wait(future)
+        _ = await get_runtime().next(future)
         assert (await future) == [3, 4, 1, 2]
 
 
-class TestAwaitAfterDoubleWaitTask(BasePass):
+class TestAwaitAfterDoubleNextTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
-        _ = await get_runtime().wait(future)
-        _ = await get_runtime().wait(future)
+        _ = await get_runtime().next(future)
+        _ = await get_runtime().next(future)
         assert (await future) == [3, 4, 1, 2]
 
 
-class TestWaitOnCompleteTask(BasePass):
+class TestNextOnCompleteTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         _ = await future
         with pytest.raises(RuntimeError):
-            _ = await get_runtime().wait(future)
+            _ = await get_runtime().next(future)
 
 
 @pytest.mark.parametrize(
     'test_pass', [
-        TestWaitTask(),
-        TestDoubleWaitTask(),
-        TestAwaitAfterWaitTask(),
-        TestAwaitAfterDoubleWaitTask(),
-        TestWaitOnCompleteTask(),
+        TestNextTask(),
+        TestDoubleNextTask(),
+        TestAwaitAfterNextTask(),
+        TestAwaitAfterDoubleNextTask(),
+        TestNextOnCompleteTask(),
     ],
 )
-def test_wait_pass(server_compiler: Compiler, test_pass: BasePass) -> None:
+def test_next_pass(server_compiler: Compiler, test_pass: BasePass) -> None:
     circuit = Circuit(2)
     server_compiler.compile(circuit, [test_pass])

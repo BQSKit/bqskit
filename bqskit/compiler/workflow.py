@@ -78,18 +78,18 @@ class Workflow(BasePass, Sequence[BasePass]):
         import pickle
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
-    
+
     @staticmethod
-    def load(self, filename: str) -> Workflow:
+    def load(filename: str) -> Workflow:
         import pickle
         with open(filename, 'rb') as f:
             return pickle.load(f)
-    
-    def __str__(self) -> str:
-        pass  # TODO:
 
-    def __repr__(self) -> str:
-        pass  # TODO:
+    # def __str__(self) -> str:
+    #     pass  # TODO:
+
+    # def __repr__(self) -> str:
+    #     pass  # TODO:
 
     def __add__(self, other: Workflow) -> Workflow:
         return Workflow(self._passes + other._passes)

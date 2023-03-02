@@ -21,6 +21,7 @@ from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
+from bqskit.runtime import default_server_port
 from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
 
@@ -71,7 +72,7 @@ class Compiler:
         self.p: mp.Process | None = None
         self.conn: Connection | None = None
         if port is None:
-            port = 7472
+            port = default_server_port
 
         atexit.register(self.close)
         if ip is None:
