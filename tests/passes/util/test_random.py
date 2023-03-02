@@ -11,7 +11,6 @@ from bqskit.passes import SetRandomSeedPass
 from bqskit.qis import UnitaryMatrix
 
 
-@pytest.mark.xfail(reason='Bug #107')
 def test_two_qubit_syn_with_seed(compiler: Compiler) -> None:
     in_utry = UnitaryMatrix.random(2)
 
@@ -32,7 +31,6 @@ def test_two_qubit_syn_with_seed(compiler: Compiler) -> None:
         assert op1 == op2
 
 
-@pytest.mark.xfail(reason='Bug #107')
 def test_three_qubit_syn_with_seed(compiler: Compiler) -> None:
     in_utry = CCXGate().get_unitary()
 
