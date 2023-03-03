@@ -179,7 +179,7 @@ class Worker:
         no_delayed_tasks = len(self._delayed_tasks) == 0
 
         if empty_out_box and no_ready_tasks and no_delayed_tasks:
-            # self.outgoing.append(''..,)  # TODO
+            self._outgoing.append((RuntimeMessage.WAITING, None))
             wait([self._conn])
 
     def _handle_comms(self) -> None:

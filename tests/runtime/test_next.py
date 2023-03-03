@@ -31,7 +31,7 @@ class TestDoubleNextTask(BasePass):
         _ = await get_runtime().next(future)
         int_ids = await get_runtime().next(future)
         assert len(int_ids) == 1  # The 3 and 4 sec sleep shouldn't arrive
-        assert int_ids[0] == (3, 2)  # 2nd index in map and result is 1
+        assert int_ids[0] == (3, 2)  # 3rd index in map and result is 2
 
 
 class TestAwaitAfterNextTask(BasePass):

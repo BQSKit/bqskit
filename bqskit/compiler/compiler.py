@@ -156,10 +156,10 @@ class Compiler:
         # Reset interrupt signal handler and remove exit handler
         if hasattr(self, 'old_signal'):
             signal.signal(signal.SIGINT, self.old_signal)
-        atexit.unregister(self.close)
 
     def __del__(self) -> None:
         self.close()
+        atexit.unregister(self.close)
         _logger.debug('Compiler successfully shutdown.')
 
     def submit(

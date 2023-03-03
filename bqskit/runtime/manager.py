@@ -118,10 +118,9 @@ class Manager(NodeBase):
 
             elif msg == RuntimeMessage.SHUTDOWN:
                 self.handle_shutdown()
-                return
 
             else:
-                raise RuntimeError(f'Unexpected message type: {msg}')
+                raise RuntimeError(f'Unexpected message type: {msg.name}')
 
         elif direction == MessageDirection.BELOW:
 
@@ -137,19 +136,31 @@ class Manager(NodeBase):
                 result = cast(RuntimeResult, payload)
                 self.handle_result_from_below(result)
 
+            elif msg == RuntimeMessage.WAITING:
+                self.handle_waiting(conn)
+
             else:
                 # Forward all other messages up
                 self.outgoing.put((self.upstream, msg, payload))
 
         else:
-            raise RuntimeError(f'Unexpected message from {direction}.')
+            raise RuntimeError(f'Unexpected message from {direction.name}.')
 
     def handle_system_error(self, error_str: str) -> None:
-        """Handle an error in runtime code as opposed to client code."""
+        """
+        Handle an error in runtime code as opposed to client code.
+
+        This is called when an error arises in runtime code not in a
+        RuntimeTask's coroutine code.
+        """
         try:
             self.upstream.send((RuntimeMessage.ERROR, error_str))
+
+            # Sleep to ensure server receives error message before shutdown
             time.sleep(1)
+
         except Exception:
+            # If server has crashed then just exit
             pass
 
     def handle_shutdown(self) -> None:
@@ -160,7 +171,9 @@ class Manager(NodeBase):
         try:
             self.upstream.send((RuntimeMessage.SHUTDOWN, None))
             self.upstream.close()
+
         except Exception:
+            # If server has already shutdown or crashed, just exit
             pass
 
     def send_up_or_schedule_tasks(self, tasks: list[RuntimeTask]) -> None:
@@ -168,14 +181,12 @@ class Manager(NodeBase):
         # if len(tasks) < self.total_idle_resources:
         #     self._assign_new_tasks(tasks)
         # else:
-        msg = (self.upstream, RuntimeMessage.SUBMIT_BATCH, tasks)
-        self.outgoing.put(msg)
+        self.outgoing.put((self.upstream, RuntimeMessage.SUBMIT_BATCH, tasks))
 
     def handle_result_from_below(self, result: RuntimeResult) -> None:
         """Forward the result to its destination and track the completion."""
         # Record a task has been completed
-        src_worker_id = result.completed_by
-        self.get_employee_responsible_for(src_worker_id).num_tasks -= 1
+        self.get_employee_responsible_for(result.completed_by).num_tasks -= 1
 
         # Forward result to final destination
         if self.is_my_worker(result.return_address.worker_id):
@@ -185,6 +196,13 @@ class Manager(NodeBase):
             # If its destination worker is not an employee of mine,
             # then my boss will know where to send this result.
             self.outgoing.put((self.upstream, RuntimeMessage.RESULT, result))
+
+    def handle_waiting(self, conn: Connection) -> None:
+        """Record a worker as waiting and let server know if necessary."""
+        self.acknowledge_waiting_employee(conn)
+
+        if all(e.is_waiting for e in self.employees):
+            self.outgoing.put((self.upstream, RuntimeMessage.WAITING, None))
 
 
 def start_manager() -> None:

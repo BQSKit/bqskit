@@ -67,7 +67,7 @@ def send_outgoing(node: NodeBase) -> None:
             break
 
         outgoing[0].send((outgoing[1], outgoing[2]))
-        node.logger.debug(f'Sent message {outgoing[1]}.')
+        node.logger.debug(f'Sent message {outgoing[1].name}.')
         node.logger.log(1, f'{outgoing[2]}\n')
 
 
@@ -82,6 +82,8 @@ def sigint_handler(signum: int, _: FrameType | None, node: NodeBase) -> None:
 
 
 class NodeBase:
+    """Base class for all non-worker process nodes in the BQSKit Runtime."""
+
     def __init__(self) -> None:
         """Initialize a runtime node component."""
 
@@ -101,14 +103,19 @@ class NodeBase:
 
         self.sel = selectors.DefaultSelector()
         """Used to efficiently idle and wake when communication is ready."""
+
         self.terminate_hotline, p = Pipe()
         self.sel.register(p, selectors.EVENT_READ, MessageDirection.SIGNAL)
+        """Terminate hotline is used to unblock select while running."""
 
         self.logger = logging.getLogger('bqskit-runtime')
         """Logger used to print operational log messages."""
 
         self.employees: list[Employee] = []
         """Tracks this node's employees, which are managers or workers."""
+
+        self.conn_to_employee_dict: dict[Connection, Employee] = {}
+        """Used to find the employee associated with a message."""
 
         # Safely and immediately exit on interrupt signals
         handle = functools.partial(sigint_handler, node=self)
@@ -143,6 +150,7 @@ class NodeBase:
             msg, num_workers = conn.recv()
             assert msg == RuntimeMessage.STARTED
             self.employees.append(Employee(conn, num_workers))
+            self.conn_to_employee_dict[conn] = self.employees[-1]
             self.sel.register(
                 conn,
                 selectors.EVENT_READ,
@@ -210,6 +218,7 @@ class NodeBase:
             args = (self.lower_id_bound + i, q)
             proc = Process(target=start_worker, args=args)
             self.employees.append(Employee(p, 1, proc))
+            self.conn_to_employee_dict[p] = self.employees[-1]
             proc.start()
 
         for i, employee in enumerate(self.employees):
@@ -254,10 +263,13 @@ class NodeBase:
                         return
 
                     # Unpack and Log message
-                    msg, payload = conn.recv()
-                    self.logger.debug(
-                        f'Received message {msg} from {direction}.',
-                    )
+                    try:
+                        msg, payload = conn.recv()
+                    except EOFError:
+                        self.handle_disconnect(conn)
+                        continue
+                    log = f'Received message {msg.name} from {direction.name}.'
+                    self.logger.debug(log)
                     self.logger.log(1, f'{payload}\n')
 
                     # Handle message
@@ -278,11 +290,27 @@ class NodeBase:
         conn: Connection,
         payload: Any,
     ) -> None:
-        """Process the message coming from `direction`."""
+        """
+        Process the message coming from `direction`.
+
+        Args:
+            msg (RuntimeMessage): The message type to handle.
+
+            direction (MessageDirection): The direction the message came from.
+
+            conn (Connection): The connection object where this came from.
+
+            payload (Any): The message data.
+        """
 
     @abc.abstractmethod
     def handle_system_error(self, error_str: str) -> None:
-        """Handle an error in runtime code as opposed to client code."""
+        """
+        Handle an error in runtime code as opposed to client code.
+
+        This is called when an error arises in runtime code not in a
+        RuntimeTask's coroutine code.
+        """
 
     def handle_shutdown(self) -> None:
         """Shutdown the node and release resources."""
@@ -306,26 +334,52 @@ class NodeBase:
             self.outgoing_thread.join()
             self.logger.debug('Joined outgoing thread.')
 
+    def handle_disconnect(self, conn: Connection) -> None:
+        self.sel.unregister(conn)
+        conn.close()
+
+        # If one of my employees crashed/shutdown/disconnected, I shutdown
+        if conn in self.conn_to_employee_dict:
+            self.handle_shutdown()
+
     def __del__(self) -> None:
         """Ensure resources are cleaned up."""
         self.handle_shutdown()
 
     def schedule_tasks(self, tasks: list[RuntimeTask]) -> None:
-        """Schedule many tasks between the workers."""
+        """Schedule tasks between this node's employees."""
+
+        # Go through the tasks and assign each one to an employee
+        # assignments will contain the assigned task list for each employee
         assignments: list[list[RuntimeTask]] = [[] for _ in self.employees]
-        employee_task_counts = [e.num_tasks for e in self.employees]
-        for task in tasks:
-            # For each task, we assign it to an employee
-            min_tasks = min(employee_task_counts)
-            best_ids = [
-                i for i, x in enumerate(employee_task_counts)
-                if x == min_tasks
-            ]
-            random.shuffle(best_ids)
-            best_id = best_ids[0]
-            employee_task_counts[best_id] += 1
-            self.employees[best_id].num_tasks += 1
-            assignments[best_id].append(task)
+
+        # First assign a task to all idle employees
+        idle_employee_ids = [
+            i for i, e in enumerate(self.employees)
+            if e.is_waiting
+        ]
+        random.shuffle(idle_employee_ids)
+        for idle_employee_id, task in zip(idle_employee_ids, tasks):
+            assignments[idle_employee_id].append(task)
+            self.employees[idle_employee_id].is_waiting = False
+            # That employee is no longer waiting
+
+        # If there are more tasks to schedule, go by open num_tasks
+        if len(idle_employee_ids) < len(tasks):
+            employee_task_counts = [e.num_tasks for e in self.employees]
+
+            for task in tasks[len(idle_employee_ids):]:
+                # For each task, we assign it to an employee with minimum tasks
+                min_tasks = min(employee_task_counts)
+                best_ids = [
+                    i for i, x in enumerate(employee_task_counts)
+                    if x == min_tasks
+                ]
+                random.shuffle(best_ids)
+                best_id = best_ids[0]
+                employee_task_counts[best_id] += 1
+                self.employees[best_id].num_tasks += 1
+                assignments[best_id].append(task)
 
         # Send the work out
         for employee, assignment in zip(self.employees, assignments):
@@ -351,7 +405,7 @@ class NodeBase:
         self.outgoing.put((employee.conn, RuntimeMessage.RESULT, result))
 
     def is_my_worker(self, worker_id: int) -> bool:
-        """Return true if `worker_id` is one of my workers."""
+        """Return true if `worker_id` is one of my workers (recursively)."""
         employee_id = (worker_id - self.lower_id_bound) // self.step_size
         return 0 <= employee_id < len(self.employees)
 
@@ -364,3 +418,19 @@ class NodeBase:
         """Broadcast a cancel message to my employees."""
         for employee in self.employees:
             self.outgoing.put((employee.conn, RuntimeMessage.CANCEL, addr))
+
+    def acknowledge_waiting_employee(self, conn: Connection) -> None:
+        """
+        Record that an employee is idle with nothing to do.
+
+        There is a race condition here that is allowed. If an employee
+        sends a waiting message at the same time that this sends it a
+        task, it will still be marked waiting even though it is running
+        a task. We allow this for two reasons. First, the consequences are
+        minimal: having the `is_waiting` flag on while it is running will
+        lead to one extra task assigned to it that could otherwise go to
+        a truly idle worker. Second, it is unlikely in the common BQSKit
+        workflows, which have wide and shallow task graphs and each leaf
+        task can require seconds of runtime.
+        """
+        self.conn_to_employee_dict[conn].is_waiting = True

@@ -45,7 +45,7 @@ class AttachedServer(DetachedServer):
         """
         NodeBase.__init__(self)
 
-        # See DetachedServer for more info on the following fields
+        # See DetachedServer for more info on the following fields:
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         self.tasks: dict[uuid.UUID, tuple[int, Connection]] = {}
         self.mailbox_to_task_dict: dict[int, uuid.UUID] = {}

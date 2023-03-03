@@ -33,23 +33,31 @@ def listen(server: DetachedServer, port: int) -> None:
     listener = Listener(('0.0.0.0', port))
     while server.running:
         client = listener.accept()
-        server.logger.debug('Connected to client.')
+
         if server.running:
+            # We check again that the server is running before registering
+            # the client because dummy data is sent to unblock
+            # listener.accept() during server shutdown
             server.clients[client] = set()
             server.sel.register(
                 client,
                 selectors.EVENT_READ,
                 MessageDirection.CLIENT,
             )
-            server.logger.info('Registered client.')
+            server.logger.debug('Connected and registered new client.')
+
     listener.close()
 
 
 @dataclass
 class ServerMailbox:
     """A mailbox on a server is a final destination for a compilation task."""
+
     result: Any = None
+    """Where the mailbox will store the result once it arrives."""
+
     client_waiting: bool = False
+    """If true, the server knows a client is blocked waiting on this result."""
 
     @property
     def ready(self) -> bool:
@@ -77,7 +85,7 @@ class DetachedServer(NodeBase):
 
         Args:
             ipports (list[tuple[str, int]]): The ip and port pairs were
-                managers are expected to be waiting.
+                managers are expected to be listening for server connections.
 
             port (int): The port this server will listen for clients on.
                 Default can be found in the
@@ -142,7 +150,7 @@ class DetachedServer(NodeBase):
                 self.handle_cancel_comp_task(request)
 
             else:
-                raise RuntimeError(f'Unexpected message type: {msg}')
+                raise RuntimeError(f'Unexpected message type: {msg.name}')
 
         elif direction == MessageDirection.BELOW:
 
@@ -168,16 +176,29 @@ class DetachedServer(NodeBase):
             elif msg == RuntimeMessage.CANCEL:
                 self.broadcast_cancel(payload)
 
+            elif msg == RuntimeMessage.SHUTDOWN:
+                self.handle_shutdown()
+
+            elif msg == RuntimeMessage.WAITING:
+                self.acknowledge_waiting_employee(conn)
+
             else:
-                raise RuntimeError(f'Unexpected message type: {msg}')
+                raise RuntimeError(f'Unexpected message type: {msg.name}')
 
         else:
-            raise RuntimeError(f'Unexpected message from {direction}.')
+            raise RuntimeError(f'Unexpected message from {direction.name}.')
 
     def handle_system_error(self, error_str: str) -> None:
-        """Handle an error in runtime code as opposed to client code."""
+        """
+        Handle an error in runtime code as opposed to client code.
+
+        This is called when an error arises in runtime code not in a
+        RuntimeTask's coroutine code.
+        """
         for client in self.clients.keys():
             client.send((RuntimeMessage.ERROR, error_str))
+
+        # Sleep to ensure clients receive error message before shutdown
         time.sleep(1)
 
     def handle_shutdown(self) -> None:
@@ -207,8 +228,7 @@ class DetachedServer(NodeBase):
 
     def handle_disconnect(self, conn: Connection) -> None:
         """Disconnect a client connection from the runtime."""
-        self.sel.unregister(conn)
-        conn.close()
+        super().handle_disconnect(conn)
         tasks = self.clients.pop(conn)
         for task_id in tasks:
             self.handle_cancel_comp_task(task_id)
@@ -297,7 +317,7 @@ class DetachedServer(NodeBase):
         addr = RuntimeAddress(-1, mailbox_id, 0)
         self.broadcast_cancel(addr)
 
-        # Acknowledge the cancel request
+        # Acknowledge the client's cancel request
         if not client_conn.closed:
             # Check if it closed first since the client may have disconnected
             self.outgoing.put((client_conn, RuntimeMessage.CANCEL, None))
@@ -305,10 +325,10 @@ class DetachedServer(NodeBase):
     def handle_result(self, result: RuntimeResult) -> None:
         """Either store the result here or ship it to the destination worker."""
         # Record a task has been completed
-        src_worker_id = result.completed_by
-        self.get_employee_responsible_for(src_worker_id).num_tasks -= 1
+        self.get_employee_responsible_for(result.completed_by).num_tasks -= 1
 
-        if result.return_address.worker_id == -1:  # For the server
+        # Check if the result is for a client
+        if result.return_address.worker_id == -1:
             mailbox_id = result.return_address.mailbox_index
             if mailbox_id not in self.mailboxes:
                 return  # Silently discard results from cancelled tasks
@@ -317,6 +337,7 @@ class DetachedServer(NodeBase):
             box.result = result.result
             t_id = self.mailbox_to_task_dict[mailbox_id]
             self.logger.info(f'Finished: {t_id}.')
+
             if box.client_waiting:
                 self.logger.info(f'Responding to request for task {t_id}.')
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box.result)
@@ -333,13 +354,15 @@ class DetachedServer(NodeBase):
     def handle_error(self, error_payload: tuple[int, str]) -> None:
         """Forward an error to the appropriate client and disconnect it."""
         if not isinstance(error_payload, tuple):
+            # Internal errors may bubble up without a task_id
+            assert isinstance(error_payload, str)
+            self.handle_system_error(error_payload)
             self.handle_shutdown()
             raise RuntimeError(error_payload)
 
         tid = error_payload[0]
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.ERROR, error_payload[1]))
-        self.handle_disconnect(conn)
 
     def handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
         """Forward logs to appropriate client."""
