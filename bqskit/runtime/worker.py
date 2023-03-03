@@ -179,6 +179,7 @@ class Worker:
         no_delayed_tasks = len(self._delayed_tasks) == 0
 
         if empty_out_box and no_ready_tasks and no_delayed_tasks:
+            # self.outgoing.append(''..,)  # TODO
             wait([self._conn])
 
     def _handle_comms(self) -> None:
@@ -430,6 +431,9 @@ class Worker:
             for subargs in zip(*args):
                 fnargs.append((fn, subargs, kwargs))
 
+        if len(fnargs) == 0:
+            raise RuntimeError('Unable to map 0 tasks.')
+
         # Create a new mailbox
         mailbox_id = self._get_new_mailbox_id()
         self._mailboxes[mailbox_id] = WorkerMailbox.new_mailbox(len(fnargs))
@@ -478,7 +482,7 @@ class Worker:
                 while the task was waiting. Each result is paired with
                 the index of its arguments in the original map call.
         """
-        if future.done:
+        if future._done:
             raise RuntimeError('Cannot wait on an already completed result.')
         future._next_flag = True
         next_result_batch = await future
@@ -494,6 +498,13 @@ def start_worker(*args: Any, **kwargs: Any) -> None:
     """Start this process's worker."""
     # Ignore interrupt signals on workers, manager will handle it for us
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    # Clear all logging configurations
+    for _, logger in logging.Logger.manager.loggerDict.items():
+        if isinstance(logger, logging.PlaceHolder):
+            continue
+        logger.handlers.clear()
+    logging.Logger.manager.loggerDict = {}
 
     global _worker
     _worker = Worker(*args, **kwargs)

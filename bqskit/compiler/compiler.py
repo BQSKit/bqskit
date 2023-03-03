@@ -97,11 +97,8 @@ class Compiler:
                 wait_time *= 2
             else:
                 self.conn = conn
-                self.old_signal = signal.signal(
-                    signal.SIGINT, functools.partial(
-                        sigint_handler, compiler=self,
-                    ),
-                )
+                handle = functools.partial(sigint_handler, compiler=self)
+                self.old_signal = signal.signal(signal.SIGINT, handle)
                 if self.conn is None:
                     raise RuntimeError('Connection unexpectedly none.')
                 self.conn.send((RuntimeMessage.CONNECT, None))
@@ -157,7 +154,8 @@ class Compiler:
                 self.p = None
 
         # Reset interrupt signal handler and remove exit handler
-        signal.signal(signal.SIGINT, self.old_signal)
+        if hasattr(self, 'old_signal'):
+            signal.signal(signal.SIGINT, self.old_signal)
         atexit.unregister(self.close)
 
     def __del__(self) -> None:

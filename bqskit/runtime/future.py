@@ -44,7 +44,7 @@ class RuntimeFuture:
         """
         Return true if the future is ready.
 
-        Note: Polling on futures in a busy-wait loop can cause deadlock.
+        Warning: Polling on futures in a busy-wait loop can cause deadlock.
         It is best to await on futures rather than continuously polling.
         Use at your own risk.
         """

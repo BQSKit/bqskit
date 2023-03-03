@@ -5,6 +5,7 @@ from enum import Enum
 
 
 class MyInt(int):
+    """Int-subclass to workaround enum pickle issues."""
     __reduce_ex__ = int.__reduce_ex__
 
 
