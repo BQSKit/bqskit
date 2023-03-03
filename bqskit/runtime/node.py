@@ -5,6 +5,7 @@ import abc
 import functools
 import logging
 import os
+import random
 import selectors
 import signal
 import sys
@@ -316,9 +317,12 @@ class NodeBase:
         for task in tasks:
             # For each task, we assign it to an employee
             min_tasks = min(employee_task_counts)
-            best_id = employee_task_counts.index(
-                min_tasks,
-            )  # TODO: Change to random
+            best_ids = [
+                i for i, x in enumerate(employee_task_counts)
+                if x == min_tasks
+            ]
+            random.shuffle(best_ids)
+            best_id = best_ids[0]
             employee_task_counts[best_id] += 1
             self.employees[best_id].num_tasks += 1
             assignments[best_id].append(task)
