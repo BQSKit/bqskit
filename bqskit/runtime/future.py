@@ -28,9 +28,9 @@ class RuntimeFuture:
         Informs the event loop which mailbox this is waiting on.
         """
         if self._next_flag:
-            return (yield ('BQSKIT_NEXT_ID', self.mailbox_id))
+            return (yield self)
 
-        return (yield ('BQSKIT_MAIL_ID', self.mailbox_id))
+        return (yield self)
 
     def __getstate__(self) -> Any:
         """Prevent a future from being sent to another process."""

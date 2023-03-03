@@ -170,7 +170,7 @@ class Worker:
         while self._running:
             self._try_idle()
             self._handle_comms()
-            self._step_next_ready_task()
+            self._try_step_next_ready_task()
 
     def _try_idle(self) -> None:
         """If there is nothing to do, wait until we recieve a message."""
@@ -286,12 +286,12 @@ class Worker:
         for task in to_remove:
             self._delayed_tasks.remove(task)
 
-    def _step_next_ready_task(self) -> None:
+    def _try_step_next_ready_task(self) -> None:
         """Select a task to run, and advance it one step."""
-        # Get next ready task
         if not self._running:
             return
 
+        # Get next ready task
         if self._ready_tasks.empty():
             if len(self._delayed_tasks) > 0:
                 self._add_task(self._delayed_tasks.pop())
@@ -300,11 +300,16 @@ class Worker:
         addr = self._ready_tasks.get()
 
         if addr in self._cancelled_tasks or addr not in self._tasks:
+            # When a task is cancelled on the worker it is not removed
+            # from the ready queue because it is much cheaper to just
+            # discard cancelled tasks as they come out.
             return
 
         task = self._tasks[addr]
 
         if any(bcb in self._cancelled_tasks for bcb in task.breadcrumbs):
+            # If any of the selected tasks ancestor tasks are cancelled
+            # then discard this one too.
             return
 
         try:
@@ -314,26 +319,23 @@ class Worker:
             result = task.step()
 
             # Handle an await on a RuntimeFuture
-            if (
-                isinstance(result, tuple)
-                and len(result) == 2
-                and result[0] in ['BQSKIT_MAIL_ID', 'BQSKIT_NEXT_ID']
-            ):
-                mailbox_id = result[1]
-                if mailbox_id not in self._mailboxes:
-                    raise RuntimeError('Cannot await on a canceled task.')
-                box = self._mailboxes[mailbox_id]
-                if box.ready and result[0] == 'BQSKIT_MAIL_ID':
-                    task.send = box.result
-                    task.owned_mailboxes.remove(result[1])
-                    self._mailboxes.pop(result[1])
-                    self._ready_tasks.put(addr)
-                else:
-                    box.dest_addr = addr
-                    if result[0] == 'BQSKIT_NEXT_ID':
-                        task.wake_on_next = True
-            else:
+            if not isinstance(result, RuntimeFuture):
                 raise RuntimeError('Can only await on a BQSKit RuntimeFuture.')
+
+            if result.mailbox_id not in self._mailboxes:
+                raise RuntimeError('Cannot await on a canceled task.')
+
+            box = self._mailboxes[result.mailbox_id]
+            if box.ready and not result._next_flag:
+                task.send = box.result
+                task.owned_mailboxes.remove(result.mailbox_id)
+                self._mailboxes.pop(result.mailbox_id)
+                self._ready_tasks.put(addr)
+
+            else:
+                box.dest_addr = addr
+                if result._next_flag:
+                    task.wake_on_next = True
 
         except StopIteration as e:
             assert self._active_task is not None
