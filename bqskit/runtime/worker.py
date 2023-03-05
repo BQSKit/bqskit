@@ -340,7 +340,7 @@ class Worker:
             self._active_task = task
 
             # Perform a step of the task and get the future it awaits on
-            future = task.step(self.get_desired_result(task))
+            future = task.step(self._get_desired_result(task))
 
             self._process_await(task, future)
 
@@ -407,7 +407,7 @@ class Worker:
         if self._ready_task_ids.empty() and len(self._delayed_tasks) > 0:
             self._add_task(self._delayed_tasks.pop())
 
-    def get_desired_result(self, task: RuntimeTask) -> Any:
+    def _get_desired_result(self, task: RuntimeTask) -> Any:
         """Retrieve the task's desired result from the mailboxes."""
         if task.desired_box_id is None:
             return None
