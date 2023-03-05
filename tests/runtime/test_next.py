@@ -21,17 +21,27 @@ class TestNextTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
         int_ids = await get_runtime().next(future)
-        assert len(int_ids) == 1  # The 2, 3, and 4 sec sleep shouldn't arrive
-        assert int_ids[0] == (2, 1)  # 2nd index in map and result is 1
+        seen = [0]
+        for int_id in int_ids:
+            assert int_id[1] == max(seen) + 1
+            seen.append(int_id[1])
 
 
 class TestDoubleNextTask(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [3, 4, 1, 2])
-        _ = await get_runtime().next(future)
+        seen = [0]
         int_ids = await get_runtime().next(future)
-        assert len(int_ids) == 1  # The 3 and 4 sec sleep shouldn't arrive
-        assert int_ids[0] == (3, 2)  # 2nd index in map and result is 1
+
+        for int_id in int_ids:
+            assert int_id[1] == max(seen) + 1
+            seen.append(int_id[1])
+
+        int_ids = await get_runtime().next(future)
+
+        for int_id in int_ids:
+            assert int_id[1] == max(seen) + 1
+            seen.append(int_id[1])
 
 
 class TestAwaitAfterNextTask(BasePass):
@@ -57,6 +67,15 @@ class TestNextOnCompleteTask(BasePass):
             _ = await get_runtime().next(future)
 
 
+class TestNextAfterSleepTask(BasePass):
+    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+        future = get_runtime().map(sleepi, [1, 2])
+        time.sleep(1.5)
+        int_ids = await get_runtime().next(future)
+        assert len(int_ids) == 1  # Only one should have been received
+        assert int_ids[0] == (0, 1)  # the 0th index 1 element
+
+
 @pytest.mark.parametrize(
     'test_pass', [
         TestNextTask(),
@@ -64,6 +83,7 @@ class TestNextOnCompleteTask(BasePass):
         TestAwaitAfterNextTask(),
         TestAwaitAfterDoubleNextTask(),
         TestNextOnCompleteTask(),
+        TestNextAfterSleepTask(),
     ],
 )
 def test_next_pass(server_compiler: Compiler, test_pass: BasePass) -> None:

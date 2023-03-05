@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import traceback
 from io import StringIO
 
 import pytest
@@ -14,7 +15,7 @@ from bqskit.ir.circuit import Circuit
 
 class ErrorPass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        raise RuntimeError()
+        raise RuntimeError('TestError')
 
 
 class LogPass(BasePass):
@@ -27,9 +28,13 @@ class LogPass(BasePass):
 
 
 def test_errors_raised_locally() -> None:
-    with pytest.raises(RuntimeError):
+    task = CompilationTask(Circuit(1), [ErrorPass()])
+    with pytest.raises(RuntimeError) as exc_info:
         with Compiler() as compiler:
             compiler.compile(Circuit(1), [ErrorPass()])
+
+    error_str = ''.join(traceback.format_exception(*exc_info._excinfo))
+    assert 'TestError' in error_str
 
 
 def test_log_msg_printed_locally() -> None:

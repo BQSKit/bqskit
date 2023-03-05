@@ -28,9 +28,9 @@ class RuntimeFuture:
         Informs the event loop which mailbox this is waiting on.
         """
         if self._next_flag:
-            return (yield ('BQSKIT_NEXT_ID', self.mailbox_id))
+            return (yield self)
 
-        return (yield ('BQSKIT_MAIL_ID', self.mailbox_id))
+        return (yield self)
 
     def __getstate__(self) -> Any:
         """Prevent a future from being sent to another process."""
@@ -40,8 +40,14 @@ class RuntimeFuture:
         )
 
     @property
-    def done(self) -> bool:
-        """Return true if the future is ready."""
+    def _done(self) -> bool:
+        """
+        Return true if the future is ready.
+
+        Warning: Polling on futures in a busy-wait loop can cause deadlock.
+        It is best to await on futures rather than continuously polling.
+        Use at your own risk.
+        """
         from bqskit.runtime.worker import get_worker
 
         if self.mailbox_id not in get_worker()._mailboxes:

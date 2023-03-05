@@ -28,7 +28,7 @@ class RuntimeTask:
 
     def __init__(
         self,
-        fnargs: Any,
+        fnargs: tuple[Any, Any, Any],
         return_address: RuntimeAddress,
         comp_task_id: int,
         breadcrumbs: tuple[RuntimeAddress, ...],
@@ -38,25 +38,48 @@ class RuntimeTask:
         """Create the task with a new id and return address."""
         RuntimeTask.task_counter += 1
         self.task_id = RuntimeTask.task_counter
-        self.fnargs = fnargs
-        self.return_address = return_address
-        self.logging_level = logging_level
-        self.comp_task_id = comp_task_id
-        self.breadcrumbs = breadcrumbs
-        self.max_logging_depth = max_logging_depth
-        self.coro: Coroutine[Any, Any, Any] | None = None
-        self.send: Any = None
-        self.owned_mailboxes: list[int] = []
-        self.wake_on_next: bool = False
 
-    def step(self) -> Any:
+        self.fnargs = fnargs
+        """Tuple of function pointer, arguments, and keyword arguments."""
+
+        self.return_address = return_address
+        """Where the result of this task should be sent."""
+
+        self.logging_level = logging_level
+        """Logs with levels >= to this get emitted, if None always emit."""
+
+        self.comp_task_id = comp_task_id
+        """The mailbox id of the this task's root task."""
+
+        self.breadcrumbs = breadcrumbs
+        """All of this task's parent tasks' addresses in order."""
+
+        self.max_logging_depth = max_logging_depth
+        """Logs are not emitted for tasks with this many or more parents."""
+
+        self.coro: Coroutine[Any, Any, Any] | None = None
+        """The coroutine containing this tasks code."""
+
+        # self.send: Any = None
+        # """A register that both the coroutine and task have access to."""
+
+        self.desired_box_id: int | None = None
+        """When waiting on a mailbox, this stores that mailbox's id."""
+
+        self.owned_mailboxes: list[int] = []
+        """The mailbox ids that this task owns."""
+
+        self.wake_on_next: bool = False
+        """Set to true if this task should wake immediately on a result."""
+
+    def step(self, send_val: Any = None) -> Any:
         """Execute one step of the task."""
         if self.coro is None:
             raise RuntimeError('Task has not been initialized.')
 
-        # Remove previously set await flags
-        if self.wake_on_next:
-            self.wake_on_next = False
+        # Reset previously set await flags
+        self.wake_on_next = False
+        self.desired_box_id = None
 
         # Set logging level
         old_level = logging.getLogger().getEffectiveLevel()
@@ -67,11 +90,7 @@ class RuntimeTask:
             logging.getLogger().setLevel(0)
 
         # Execute a task step
-        to_return = self.coro.send(self.send)
-
-        # Reset send value, if set
-        if self.send is not None:
-            self.send = None
+        to_return = self.coro.send(send_val)
 
         # Reset logging
         logging.getLogger().setLevel(old_level)
