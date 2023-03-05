@@ -3,16 +3,18 @@ from __future__ import annotations
 
 import argparse
 import logging
+import selectors
 import time
 from multiprocessing.connection import Connection
 from typing import Any
 from typing import cast
 from typing import List
+from typing import Sequence
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.base import parse_ipports
 from bqskit.runtime.base import ServerBase
-from bqskit.runtime.detached import parse_ipports
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
@@ -76,6 +78,11 @@ class Manager(ServerBase):
         assert msg == RuntimeMessage.CONNECT
         self.lower_id_bound = payload[0]
         self.upper_id_bound = payload[1]
+        self.sel.register(
+            self.upstream,
+            selectors.EVENT_READ,
+            MessageDirection.ABOVE,
+        )
 
         # Case 1: spawn and manage workers
         if ipports is None:
@@ -84,6 +91,9 @@ class Manager(ServerBase):
         # Case 2: Connect to managers at ipports
         else:
             self.connect_to_managers(ipports)
+
+        # Track info on sent messages to reduce redundant messages:
+        self.last_num_idle_sent_up = self.total_workers
 
         # Inform upstream we are starting
         msg = (self.upstream, RuntimeMessage.STARTED, self.total_workers)
@@ -145,6 +155,10 @@ class Manager(ServerBase):
                 self.handle_waiting(conn, num_idle)
                 self.update_upstream_idle_workers()
 
+            elif msg == RuntimeMessage.UPDATE:
+                task_diff = cast(int, payload)
+                self.handle_update(conn, task_diff)
+
             else:
                 # Forward all other messages up
                 self.outgoing.put((self.upstream, msg, payload))
@@ -182,11 +196,15 @@ class Manager(ServerBase):
             # If server has already shutdown or crashed, just exit
             pass
 
-    def send_up_or_schedule_tasks(self, tasks: list[RuntimeTask]) -> None:
+    def send_up_or_schedule_tasks(self, tasks: Sequence[RuntimeTask]) -> None:
         """Either send the tasks upstream or schedule them downstream."""
-        # if len(tasks) < self.total_idle_resources:
-        #     self._assign_new_tasks(tasks)
-        # else:
+        num_tasks = len(tasks)
+
+        if num_tasks < self.num_idle_workers:
+            self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, num_tasks))
+            self.schedule_tasks(tasks)
+            return
+
         self.outgoing.put((self.upstream, RuntimeMessage.SUBMIT_BATCH, tasks))
 
     def handle_result_from_below(self, result: RuntimeResult) -> None:
@@ -197,6 +215,7 @@ class Manager(ServerBase):
         # Forward result to final destination
         if self.is_my_worker(result.return_address.worker_id):
             self.send_result_down(result)
+            self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, -1))
 
         else:
             # If its destination worker is not an employee of mine,
@@ -205,8 +224,15 @@ class Manager(ServerBase):
 
     def update_upstream_idle_workers(self) -> None:
         """Update the total number of idle workers upstream."""
-        total_idle = sum(e.num_idle_workers for e in self.employees)
-        self.outgoing.put((self.upstream, RuntimeMessage.WAITING, total_idle))
+        if self.num_idle_workers != self.last_num_idle_sent_up:
+            self.last_num_idle_sent_up = self.num_idle_workers
+            m = (self.upstream, RuntimeMessage.WAITING, self.num_idle_workers)
+            self.outgoing.put(m)
+
+    def handle_update(self, conn: Connection, task_diff: int) -> None:
+        """Handle a task count update from a lower level manager or worker."""
+        self.conn_to_employee_dict[conn].num_tasks += task_diff
+        self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, task_diff))
 
 
 def start_manager() -> None:

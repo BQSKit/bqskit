@@ -263,6 +263,7 @@ class Worker:
         box.deposit_result(result)
 
         if box.has_task_waiting:
+            assert box.dest_addr is not None
             task = self._tasks[box.dest_addr]
 
             if task.wake_on_next or box.ready:
@@ -387,7 +388,14 @@ class Worker:
         """Package and send out task result."""
         assert task is self._active_task
         packaged_result = RuntimeResult(task.return_address, result, self._id)
-        self._outgoing.append((RuntimeMessage.RESULT, packaged_result))
+
+        if task.return_address.worker_id == self._id:
+            self._handle_result(packaged_result)
+            self._outgoing.append((RuntimeMessage.UPDATE, -1))
+            # Let manager know this worker has one less task
+            # without sending a result
+        else:
+            self._outgoing.append((RuntimeMessage.RESULT, packaged_result))
 
         # Remove task
         self._tasks.pop(task.return_address)

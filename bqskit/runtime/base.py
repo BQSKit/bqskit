@@ -23,6 +23,7 @@ from typing import Any
 from typing import cast
 from typing import Sequence
 
+from bqskit.runtime import default_manager_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
@@ -110,7 +111,7 @@ class ServerBase:
         range.
         """
 
-        self.running = False
+        self.running = True
         """True while the node is running."""
 
         self.sel = selectors.DefaultSelector()
@@ -170,6 +171,7 @@ class ServerBase:
             )
             self.logger.info(f'Registered manager {i} with {num_workers = }.')
             self.total_workers += num_workers
+        self.num_idle_workers = self.total_workers
 
         self.logger.info(f'Node has {self.total_workers} total workers.')
 
@@ -244,6 +246,7 @@ class ServerBase:
 
         self.step_size = 1
         self.total_workers = num_workers
+        self.num_idle_workers = num_workers
         self.logger.info(f'Node has spawned {num_workers} workers.')
 
     def listen_once(self, port: int) -> Connection:
@@ -256,7 +259,6 @@ class ServerBase:
     def run(self) -> None:
         """Main loop."""
         self.logger.info(f'{self.__class__.__name__} running...')
-        self.running = True
 
         try:
             while self.running:
@@ -277,7 +279,7 @@ class ServerBase:
                     # Unpack and Log message
                     try:
                         msg, payload = conn.recv()
-                    except EOFError:
+                    except (EOFError, ConnectionResetError):
                         self.handle_disconnect(conn)
                         continue
                     log = f'Received message {msg.name} from {direction.name}.'
@@ -292,6 +294,8 @@ class ServerBase:
             error_str = ''.join(traceback.format_exception(*exc_info))
             self.logger.error(error_str)
             self.handle_system_error(error_str)
+
+        finally:
             self.handle_shutdown()
 
     @abc.abstractmethod
@@ -348,6 +352,7 @@ class ServerBase:
             assert not self.outgoing_thread.is_alive()
 
     def handle_disconnect(self, conn: Connection) -> None:
+        """Remove `conn` from the server."""
         self.sel.unregister(conn)
         conn.close()
 
@@ -359,7 +364,10 @@ class ServerBase:
         """Ensure resources are cleaned up."""
         self.handle_shutdown()
 
-    def assign_tasks(self, tasks: Sequence[RuntimeTask]) -> list[list[RuntimeTask]]:
+    def assign_tasks(
+        self,
+        tasks: Sequence[RuntimeTask],
+    ) -> list[list[RuntimeTask]]:
         """
         Go through the tasks and assign each one to an employee.
 
@@ -428,6 +436,8 @@ class ServerBase:
             e.num_tasks += num_tasks
             e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
 
+        self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
+
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""
         dest_worker_id = result.return_address.worker_id
@@ -467,4 +477,34 @@ class ServerBase:
         wide and shallow task graphs and each leaf task can require seconds
         of runtime.
         """
+        old_count = self.conn_to_employee_dict[conn].num_idle_workers
         self.conn_to_employee_dict[conn].num_idle_workers = new_idle_count
+        self.num_idle_workers += (new_idle_count - old_count)
+        assert 0 <= self.num_idle_workers <= self.total_workers
+
+
+def parse_ipports(ipports_str: Sequence[str]) -> list[tuple[str, int]]:
+    """Parse command line ip and port inputs."""
+    ipports = []
+    for ipport_group in ipports_str:
+        for ipport in ipport_group.split(','):
+            if ipport.strip() == '':
+                continue
+            comps = ipport.strip().split(':')
+
+            if len(comps) == 1:
+                ip, port = comps[0], str(default_manager_port)
+                # Expect only managers to be listening on these ips
+                # so default port is manager's default port.
+
+            elif len(comps) == 2:
+                ip, port = comps
+
+            else:
+                raise ValueError(f'Invalid manager address: {ipport}.')
+
+            if not (0 <= int(port) < 65536):
+                raise ValueError(f'Invalid port number: {ipport}')
+
+            ipports.append((ip, int(port)))
+    return ipports

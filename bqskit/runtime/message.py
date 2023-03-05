@@ -19,3 +19,4 @@ class RuntimeMessage(IntEnum):
     LOG = 10
     CANCEL = 11
     WAITING = 12
+    UPDATE = 13

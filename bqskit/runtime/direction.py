@@ -1,3 +1,4 @@
+"""This module import the MessageDirection enum."""
 from __future__ import annotations
 
 from enum import IntEnum

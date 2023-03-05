@@ -15,12 +15,13 @@ from threading import Thread
 from typing import Any
 from typing import cast
 from typing import List
+from typing import Sequence
 
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
-from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.base import parse_ipports
 from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
@@ -77,7 +78,7 @@ class DetachedServer(ServerBase):
 
     def __init__(
         self,
-        ipports: list[tuple[str, int]],
+        ipports: Sequence[tuple[str, int]],
         port: int = default_server_port,
     ) -> None:
         """
@@ -183,6 +184,10 @@ class DetachedServer(ServerBase):
                 num_idle = cast(int, payload)
                 self.handle_waiting(conn, num_idle)
 
+            elif msg == RuntimeMessage.UPDATE:
+                task_diff = cast(int, payload)
+                self.conn_to_employee_dict[conn].num_tasks += task_diff
+
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 
@@ -272,7 +277,7 @@ class DetachedServer(ServerBase):
         box = self.mailboxes[mailbox_id]
 
         if box.ready:
-            # If the result has already arrived ship it to the client.
+            # If the result has already arrived, ship it to the client.
             self.logger.info(f'Responding to request for task {request}.')
             self.outgoing.put((conn, RuntimeMessage.RESULT, box.result))
             self.mailboxes.pop(mailbox_id)
@@ -297,13 +302,9 @@ class DetachedServer(ServerBase):
         mailbox_id = self.tasks[request][0]
         box = self.mailboxes[mailbox_id]
 
-        if box.ready:
-            m = (conn, RuntimeMessage.STATUS, CompilationStatus.DONE)
-
-        else:
-            m = (conn, RuntimeMessage.STATUS, CompilationStatus.RUNNING)
-
-        self.outgoing.put(m)
+        # Send status
+        s = CompilationStatus.DONE if box.ready else CompilationStatus.RUNNING
+        self.outgoing.put((conn, RuntimeMessage.STATUS, s))
 
     def handle_cancel_comp_task(self, request: uuid.UUID) -> None:
         """Cancel a compilation task in the system."""
@@ -312,7 +313,8 @@ class DetachedServer(ServerBase):
         # Remove task from server data
         mailbox_id, client_conn = self.tasks[request]
         self.mailboxes.pop(mailbox_id)
-        self.clients[client_conn].remove(request)
+        if client_conn in self.clients:
+            self.clients[client_conn].remove(request)
 
         # Forward internal cancel messages
         addr = RuntimeAddress(-1, mailbox_id, 0)
@@ -378,31 +380,6 @@ class DetachedServer(ServerBase):
         return new_id
 
 
-def parse_ipports(ipports_str: list[str]) -> list[tuple[str, int]]:
-    """Parse command line ip and port inputs."""
-    ipports = []
-    for ipport_group in ipports_str:
-        for ipport in ipport_group.split(','):
-            if ipport.strip() == '':
-                continue
-            comps = ipport.strip().split(':')
-
-            if len(comps) == 1:
-                ip, port = comps[0], str(default_manager_port)
-
-            elif len(comps) == 2:
-                ip, port = comps
-
-            else:
-                raise ValueError(f'Invalid manager address: {ipport}.')
-
-            if not (0 <= int(port) < 65536):
-                raise ValueError(f'Invalid port number: {ipport}')
-
-            ipports.append((ip, int(port)))
-    return ipports
-
-
 def start_server() -> None:
     """Entry point for a detached runtime server process."""
     parser = argparse.ArgumentParser(
@@ -427,8 +404,6 @@ def start_server() -> None:
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     args = parser.parse_args()
-
-    # If ips and ports were provided parse them
     ipports = parse_ipports(args.managers)
 
     # Set up logging

@@ -40,7 +40,7 @@ and::
     bqskit-server <address_of_bqskit_managers>
 
 Typically, you start managers first on all nodes in the desired cluster.
-Then you can start the server with a comma seperated list of all managers
+Then you can start the server with a comma-separated list of all managers
 ip address and optionally ports. Once a server is started and has connected
 to the requested managers, no more managers can be added. You can see
 the `-h` option of each command or the

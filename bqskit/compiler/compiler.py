@@ -120,6 +120,11 @@ class Compiler:
         if self.conn is not None:
             try:
                 self.conn.send((RuntimeMessage.DISCONNECT, None))
+                try:
+                    self.conn.recv()
+                except EOFError:
+                    # When the server disconnects the conn, we then proceed
+                    pass
                 self.conn.close()
             except Exception as e:
                 _logger.debug(
