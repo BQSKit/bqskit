@@ -11,15 +11,15 @@ from typing import List
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.base import ServerBase
 from bqskit.runtime.detached import parse_ipports
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
-from bqskit.runtime.node import NodeBase
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-class Manager(NodeBase):
+class Manager(ServerBase):
     """
     BQSKit Runtime Manager.
 
@@ -103,10 +103,12 @@ class Manager(NodeBase):
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.schedule_tasks([rtask])
+                self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
                 self.schedule_tasks(rtasks)
+                self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
@@ -127,17 +129,21 @@ class Manager(NodeBase):
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.send_up_or_schedule_tasks([rtask])
+                self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
                 self.send_up_or_schedule_tasks(rtasks)
+                self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                self.handle_waiting(conn)
+                num_idle = cast(int, payload)
+                self.handle_waiting(conn, num_idle)
+                self.update_upstream_idle_workers()
 
             else:
                 # Forward all other messages up
@@ -197,12 +203,10 @@ class Manager(NodeBase):
             # then my boss will know where to send this result.
             self.outgoing.put((self.upstream, RuntimeMessage.RESULT, result))
 
-    def handle_waiting(self, conn: Connection) -> None:
-        """Record a worker as waiting and let server know if necessary."""
-        self.acknowledge_waiting_employee(conn)
-
-        if all(e.is_waiting for e in self.employees):
-            self.outgoing.put((self.upstream, RuntimeMessage.WAITING, None))
+    def update_upstream_idle_workers(self) -> None:
+        """Update the total number of idle workers upstream."""
+        total_idle = sum(e.num_idle_workers for e in self.employees)
+        self.outgoing.put((self.upstream, RuntimeMessage.WAITING, total_idle))
 
 
 def start_manager() -> None:

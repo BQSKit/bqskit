@@ -7,10 +7,10 @@ from multiprocessing.connection import Connection
 from typing import Any
 
 from bqskit.runtime import default_server_port
+from bqskit.runtime.base import ServerBase
 from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.detached import ServerMailbox
 from bqskit.runtime.direction import MessageDirection
-from bqskit.runtime.node import NodeBase
 
 
 class AttachedServer(DetachedServer):
@@ -43,7 +43,7 @@ class AttachedServer(DetachedServer):
                 Default can be found in the
                 :obj:`~bqskit.runtime.default_server_port` global variable.
         """
-        NodeBase.__init__(self)
+        ServerBase.__init__(self)
 
         # See DetachedServer for more info on the following fields:
         self.clients: dict[Connection, set[uuid.UUID]] = {}

@@ -21,9 +21,9 @@ from bqskit.compiler.task import CompilationTask
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
-from bqskit.runtime.node import NodeBase
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
@@ -65,7 +65,7 @@ class ServerMailbox:
         return self.result is not None
 
 
-class DetachedServer(NodeBase):
+class DetachedServer(ServerBase):
     """
     BQSKit Runtime Server in detached mode.
 
@@ -180,7 +180,8 @@ class DetachedServer(NodeBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                self.acknowledge_waiting_employee(conn)
+                num_idle = cast(int, payload)
+                self.handle_waiting(conn, num_idle)
 
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')

@@ -11,7 +11,6 @@ import signal
 import sys
 import time
 import traceback
-from dataclasses import dataclass
 from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing.connection import Client
@@ -22,6 +21,7 @@ from threading import Thread
 from types import FrameType
 from typing import Any
 from typing import cast
+from typing import Sequence
 
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.direction import MessageDirection
@@ -31,14 +31,22 @@ from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
 
 
-@dataclass
-class Employee:
+class RuntimeEmployee:
     """Data structure for a boss's view of an employee."""
-    conn: Connection
-    total_workers: int
-    process: Process | None = None
-    num_tasks: int = 0
-    is_waiting: bool = True
+
+    def __init__(
+        self,
+        conn: Connection,
+        total_workers: int,
+        process: Process | None = None,
+        num_tasks: int = 0,
+    ) -> None:
+        """Construct an employee with all resources idle."""
+        self.conn: Connection = conn
+        self.total_workers = total_workers
+        self.process = process
+        self.num_tasks = num_tasks
+        self.num_idle_workers = total_workers
 
     def shutdown(self) -> None:
         """Shutdown the employee."""
@@ -53,8 +61,12 @@ class Employee:
         self.process = None
         self.conn.close()
 
+    @property
+    def has_idle_resources(self) -> bool:
+        return self.num_idle_workers > 0
 
-def send_outgoing(node: NodeBase) -> None:
+
+def send_outgoing(node: ServerBase) -> None:
     """Outgoing thread forwards messages as they are created."""
     while True:
         outgoing = node.outgoing.get()
@@ -71,7 +83,7 @@ def send_outgoing(node: NodeBase) -> None:
         node.logger.log(1, f'{outgoing[2]}\n')
 
 
-def sigint_handler(signum: int, _: FrameType | None, node: NodeBase) -> None:
+def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
     """Interrupt the node."""
     if not node.running:
         return
@@ -81,7 +93,7 @@ def sigint_handler(signum: int, _: FrameType | None, node: NodeBase) -> None:
     node.logger.info('Server interrupted.')
 
 
-class NodeBase:
+class ServerBase:
     """Base class for all non-worker process nodes in the BQSKit Runtime."""
 
     def __init__(self) -> None:
@@ -90,7 +102,7 @@ class NodeBase:
         self.lower_id_bound = 0
         self.upper_id_bound = int(2 ** 30)
         """
-        The node starts with an ID range from 0 -> 2^30 ID ranges are then
+        The node starts with an ID range from 0 -> 2^30. ID ranges are then
         assigned to managers by evenly splitting this range.
 
         Managers then recursively split their range when connecting the sub-
@@ -111,10 +123,10 @@ class NodeBase:
         self.logger = logging.getLogger('bqskit-runtime')
         """Logger used to print operational log messages."""
 
-        self.employees: list[Employee] = []
+        self.employees: list[RuntimeEmployee] = []
         """Tracks this node's employees, which are managers or workers."""
 
-        self.conn_to_employee_dict: dict[Connection, Employee] = {}
+        self.conn_to_employee_dict: dict[Connection, RuntimeEmployee] = {}
         """Used to find the employee associated with a message."""
 
         # Safely and immediately exit on interrupt signals
@@ -127,7 +139,7 @@ class NodeBase:
         self.outgoing_thread.start()
         self.logger.info('Started outgoing thread.')
 
-    def connect_to_managers(self, ipports: list[tuple[str, int]]) -> None:
+    def connect_to_managers(self, ipports: Sequence[tuple[str, int]]) -> None:
         """Connect to all managers given by endpoints in `ipports`."""
         d = len(ipports)
         self.step_size = (self.upper_id_bound - self.lower_id_bound) // d
@@ -149,7 +161,7 @@ class NodeBase:
         for i, conn in enumerate(manager_conns):
             msg, num_workers = conn.recv()
             assert msg == RuntimeMessage.STARTED
-            self.employees.append(Employee(conn, num_workers))
+            self.employees.append(RuntimeEmployee(conn, num_workers))
             self.conn_to_employee_dict[conn] = self.employees[-1]
             self.sel.register(
                 conn,
@@ -210,14 +222,14 @@ class NodeBase:
             oscount = os.cpu_count()
             num_workers = oscount if oscount else 1
 
-        for i in range(num_workers):
-            if self.lower_id_bound + i == self.upper_id_bound:
-                raise RuntimeError('Insufficient id range for workers.')
+        if self.lower_id_bound + num_workers >= self.upper_id_bound:
+            raise RuntimeError('Insufficient id range for workers.')
 
+        for i in range(num_workers):
             p, q = Pipe()
             args = (self.lower_id_bound + i, q)
             proc = Process(target=start_worker, args=args)
-            self.employees.append(Employee(p, 1, proc))
+            self.employees.append(RuntimeEmployee(p, 1, proc))
             self.conn_to_employee_dict[p] = self.employees[-1]
             proc.start()
 
@@ -333,6 +345,7 @@ class NodeBase:
             self.outgoing.put(b'\0')  # type: ignore
             self.outgoing_thread.join()
             self.logger.debug('Joined outgoing thread.')
+            assert not self.outgoing_thread.is_alive()
 
     def handle_disconnect(self, conn: Connection) -> None:
         self.sel.unregister(conn)
@@ -346,53 +359,74 @@ class NodeBase:
         """Ensure resources are cleaned up."""
         self.handle_shutdown()
 
-    def schedule_tasks(self, tasks: list[RuntimeTask]) -> None:
-        """Schedule tasks between this node's employees."""
+    def assign_tasks(self, tasks: Sequence[RuntimeTask]) -> list[list[RuntimeTask]]:
+        """
+        Go through the tasks and assign each one to an employee.
 
-        # Go through the tasks and assign each one to an employee
+        Strategy:
+            - Assign first to idle workers evenly and randomly
+            - Employees with more idle workers get prioritized
+            - Assign remaining tasks to employees with the fewest tasks
+        """
         # assignments will contain the assigned task list for each employee
         assignments: list[list[RuntimeTask]] = [[] for _ in self.employees]
 
-        # First assign a task to all idle employees
-        idle_employee_ids = [
-            i for i, e in enumerate(self.employees)
-            if e.is_waiting
-        ]
-        random.shuffle(idle_employee_ids)
-        for idle_employee_id, task in zip(idle_employee_ids, tasks):
+        # Every employee's id repeated as many time as it has idle workers:
+        idle_id_repeated_list: list[int] = sum(
+            (
+                [i] * e.num_idle_workers
+                for i, e in enumerate(self.employees)
+            ), [],
+        )
+
+        # Shuffle to reduce chance of inefficiency described in handle_waiting
+        random.shuffle(idle_id_repeated_list)
+
+        # Assign tasks to idle workers in random order
+        for idle_employee_id, task in zip(idle_id_repeated_list, tasks):
             assignments[idle_employee_id].append(task)
-            self.employees[idle_employee_id].is_waiting = False
-            # That employee is no longer waiting
 
-        # If there are more tasks to schedule, go by open num_tasks
-        if len(idle_employee_ids) < len(tasks):
-            employee_task_counts = [e.num_tasks for e in self.employees]
+        # Check if there are more tasks to be assigned
+        num_remaining_tasks = len(tasks) - len(idle_id_repeated_list)
 
-            for task in tasks[len(idle_employee_ids):]:
-                # For each task, we assign it to an employee with minimum tasks
-                min_tasks = min(employee_task_counts)
-                best_ids = [
-                    i for i, x in enumerate(employee_task_counts)
-                    if x == min_tasks
-                ]
-                random.shuffle(best_ids)
-                best_id = best_ids[0]
-                employee_task_counts[best_id] += 1
-                self.employees[best_id].num_tasks += 1
-                assignments[best_id].append(task)
+        if num_remaining_tasks <= 0:
+            return assignments
 
-        # Send the work out
-        for employee, assignment in zip(self.employees, assignments):
-            if len(assignment) == 0:
+        remaining_tasks = list(tasks[-num_remaining_tasks:])
+
+        # Sort the employees by how many tasks they have
+        ntasks = sorted([
+            (e.num_tasks, random.random(), i)  # Random value for tie breaker
+            for i, e in enumerate(self.employees)
+        ])
+
+        while len(remaining_tasks) > 0:
+            num_tasks, r, employee_id = ntasks[0]
+            assignments[employee_id].append(remaining_tasks.pop())
+            ntasks[0] = (num_tasks + 1, r, employee_id)
+
+            # Maintain sorted order by swapping up the updated count
+            idx = 0
+            while idx + 1 < len(ntasks) and ntasks[idx] > ntasks[idx + 1]:
+                ntasks[idx + 1], ntasks[idx] = ntasks[idx], ntasks[idx + 1]
+                idx += 1
+
+        return assignments
+
+    def schedule_tasks(self, tasks: Sequence[RuntimeTask]) -> None:
+        """Schedule tasks between this node's employees."""
+        assignments = self.assign_tasks(tasks)
+
+        for e, assignment in zip(self.employees, assignments):
+            num_tasks = len(assignment)
+
+            if num_tasks == 0:
                 continue
 
-            elif len(assignment) == 1:
-                m = (employee.conn, RuntimeMessage.SUBMIT, assignment[0])
-                self.outgoing.put(m)
+            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, assignment))
 
-            else:
-                n = (employee.conn, RuntimeMessage.SUBMIT_BATCH, assignment)
-                self.outgoing.put(n)
+            e.num_tasks += num_tasks
+            e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
 
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""
@@ -409,7 +443,7 @@ class NodeBase:
         employee_id = (worker_id - self.lower_id_bound) // self.step_size
         return 0 <= employee_id < len(self.employees)
 
-    def get_employee_responsible_for(self, worker_id: int) -> Employee:
+    def get_employee_responsible_for(self, worker_id: int) -> RuntimeEmployee:
         """Return the employee that manages `worker_id`."""
         employee_id = (worker_id - self.lower_id_bound) // self.step_size
         return self.employees[employee_id]
@@ -419,7 +453,7 @@ class NodeBase:
         for employee in self.employees:
             self.outgoing.put((employee.conn, RuntimeMessage.CANCEL, addr))
 
-    def acknowledge_waiting_employee(self, conn: Connection) -> None:
+    def handle_waiting(self, conn: Connection, new_idle_count: int) -> None:
         """
         Record that an employee is idle with nothing to do.
 
@@ -427,10 +461,10 @@ class NodeBase:
         sends a waiting message at the same time that this sends it a
         task, it will still be marked waiting even though it is running
         a task. We allow this for two reasons. First, the consequences are
-        minimal: having the `is_waiting` flag on while it is running will
-        lead to one extra task assigned to it that could otherwise go to
-        a truly idle worker. Second, it is unlikely in the common BQSKit
-        workflows, which have wide and shallow task graphs and each leaf
-        task can require seconds of runtime.
+        minimal: this situation can only lead to one extra task assigned
+        to the worker that could otherwise go to a truly idle worker.
+        Second, it is unlikely in the common BQSKit workflows, which have
+        wide and shallow task graphs and each leaf task can require seconds
+        of runtime.
         """
-        self.conn_to_employee_dict[conn].is_waiting = True
+        self.conn_to_employee_dict[conn].num_idle_workers = new_idle_count

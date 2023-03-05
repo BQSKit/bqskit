@@ -60,8 +60,11 @@ class RuntimeTask:
         self.coro: Coroutine[Any, Any, Any] | None = None
         """The coroutine containing this tasks code."""
 
-        self.send: Any = None
-        """A register that both the coroutine and task have access to."""
+        # self.send: Any = None
+        # """A register that both the coroutine and task have access to."""
+
+        self.desired_box_id: int | None = None
+        """When waiting on a mailbox, this stores that mailbox's id."""
 
         self.owned_mailboxes: list[int] = []
         """The mailbox ids that this task owns."""
@@ -69,14 +72,14 @@ class RuntimeTask:
         self.wake_on_next: bool = False
         """Set to true if this task should wake immediately on a result."""
 
-    def step(self) -> Any:
+    def step(self, send_val: Any = None) -> Any:
         """Execute one step of the task."""
         if self.coro is None:
             raise RuntimeError('Task has not been initialized.')
 
-        # Remove previously set await flags
-        if self.wake_on_next:
-            self.wake_on_next = False
+        # Reset previously set await flags
+        self.wake_on_next = False
+        self.desired_box_id = None
 
         # Set logging level
         old_level = logging.getLogger().getEffectiveLevel()
@@ -87,11 +90,7 @@ class RuntimeTask:
             logging.getLogger().setLevel(0)
 
         # Execute a task step
-        to_return = self.coro.send(self.send)
-
-        # Reset send value, if set
-        if self.send is not None:
-            self.send = None
+        to_return = self.coro.send(send_val)
 
         # Reset logging
         logging.getLogger().setLevel(old_level)

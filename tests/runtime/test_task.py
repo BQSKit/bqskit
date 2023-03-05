@@ -38,9 +38,7 @@ def test_task_step() -> None:
     task.start()
     assert task.step() == 'test1'
     assert task.step() == 'test2'
-    task.send = 'test_send'
-    assert task.step() == 'test3'
-    task.send = None
+    assert task.step('test_send') == 'test3'
     assert task.step() == 'test4'
 
     try:
