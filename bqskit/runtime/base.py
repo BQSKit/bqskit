@@ -423,6 +423,9 @@ class ServerBase:
 
     def schedule_tasks(self, tasks: Sequence[RuntimeTask]) -> None:
         """Schedule tasks between this node's employees."""
+        if len(tasks) == 0:
+            return
+
         assignments = self.assign_tasks(tasks)
 
         for e, assignment in zip(self.employees, assignments):
