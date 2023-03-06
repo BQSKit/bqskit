@@ -198,14 +198,18 @@ class Manager(ServerBase):
 
     def send_up_or_schedule_tasks(self, tasks: Sequence[RuntimeTask]) -> None:
         """Either send the tasks upstream or schedule them downstream."""
-        num_tasks = len(tasks)
+        num_idle = self.num_idle_workers
 
-        if num_tasks < self.num_idle_workers:
-            self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, num_tasks))
-            self.schedule_tasks(tasks)
-            return
+        if num_idle != 0:
+            self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, num_idle))
+            self.schedule_tasks(tasks[:num_idle])
 
-        self.outgoing.put((self.upstream, RuntimeMessage.SUBMIT_BATCH, tasks))
+        if len(tasks) > num_idle:
+            self.outgoing.put((
+                self.upstream,
+                RuntimeMessage.SUBMIT_BATCH,
+                tasks[num_idle:],
+            ))
 
     def handle_result_from_below(self, result: RuntimeResult) -> None:
         """Forward the result to its destination and track the completion."""
