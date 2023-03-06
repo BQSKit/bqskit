@@ -236,28 +236,26 @@ class ServerBase:
             procs[id], conn = self.spawn_worker(id)
             conns.append(conn)
 
-
         if sys.platform == 'win32':
             # Pipes don't work on win32 with select :(
             # So we create a listener that will create connections
             # wrapping a socket rather than a pipe.
 
             conns = []
-            listener = Listener(('localhost',7474), 'AF_INET')
+            listener = Listener(('localhost', 7474), 'AF_INET')
 
             for i in range(num_workers):
                 conns.append(listener.accept())
-            
+
         for conn in conns:
             msg = conn.recv()
             assert msg[0] == RuntimeMessage.STARTED
             id = msg[1]
             self.employees.append(RuntimeEmployee(conn, 1, procs[id]))
             self.conn_to_employee_dict[conn] = self.employees[-1]
-        
+
         if sys.platform == 'win32':
             listener.close()
-            
 
         for i, employee in enumerate(self.employees):
             self.sel.register(
@@ -272,17 +270,17 @@ class ServerBase:
         self.num_idle_workers = num_workers
         self.logger.info(f'Node has spawned {num_workers} workers.')
 
-    def spawn_worker(self, id: int) -> tuple[Process, None|Connection]:
+    def spawn_worker(self, id: int) -> tuple[Process, None | Connection]:
         """Spawn and register a single worker."""
- 
+
         if sys.platform != 'win32':
             p, q = Pipe()
             proc = Process(target=start_worker, args=(id, q))
 
-        else:            
+        else:
             proc = Process(target=start_worker, args=(id, 7474))
             p = None
-        
+
         proc.start()
         return proc, p
 

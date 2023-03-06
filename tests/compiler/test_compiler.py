@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import time
 import traceback
 from io import StringIO
 
@@ -38,7 +37,6 @@ def test_errors_raised_locally() -> None:
 
 
 def test_simple_creation() -> None:
-
     com = Compiler(num_workers=6)
     com.close()
 
