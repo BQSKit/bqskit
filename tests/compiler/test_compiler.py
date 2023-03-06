@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import traceback
 from io import StringIO
 
 import pytest
@@ -9,13 +10,12 @@ import pytest
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.passdata import PassData
-from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 
 
 class ErrorPass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        raise RuntimeError()
+        raise RuntimeError('TestError')
 
 
 class LogPass(BasePass):
@@ -28,21 +28,22 @@ class LogPass(BasePass):
 
 
 def test_errors_raised_locally() -> None:
-    task = CompilationTask(Circuit(1), [ErrorPass()])
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError) as exc_info:
         with Compiler() as compiler:
-            compiler.compile(task)
+            compiler.compile(Circuit(1), [ErrorPass()])
+
+    error_str = ''.join(traceback.format_exception(*exc_info._excinfo))
+    assert 'TestError' in error_str
 
 
 def test_log_msg_printed_locally() -> None:
-    task = CompilationTask(Circuit(1), [LogPass()])
     logger = logging.getLogger('bqskit')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(StringIO())
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
     with Compiler() as compiler:
-        compiler.compile(task)
+        compiler.compile(Circuit(1), [LogPass()])
     assert 'Test.' in handler.stream.getvalue()
     logger.removeHandler(handler)
     logger.setLevel(logging.WARNING)

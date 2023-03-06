@@ -2597,12 +2597,22 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         Execute the provided `compiler_pass` on this circuit.
 
+        This function is necessary since BQSKit Pass objects cannot have
+        their :func:`~bqskit.compiler.basepass.run` function directly called
+        on a circuit.
+
         Args:
             compiler_pass (BasePass): The BQSKit pass to perform on this
                 circuit.
 
             data (dict[str, Any] | None): Optionally provide additional
                 pass data to the compiler pass.
+
+        Note:
+            You cannot perform a pass using this method while a local
+            :class:`~bqskit.compiler.compiler.Compiler` object is live.
+            Rather, you should use the
+            :class:`~bqskit.compiler.compiler.Compiler` directly.
         """
         from bqskit.compiler.compiler import Compiler
         from bqskit.compiler.passdata import PassData

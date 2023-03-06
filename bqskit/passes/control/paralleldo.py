@@ -83,22 +83,18 @@ class ParallelDo(BasePass):
 
         # Wait for results
         if self.pick_first:
-            circuits_and_ids = await runtime.wait(future)  # Wake on next result
+            circuits_and_ids = await runtime.next(future)  # Wake on next result
             circuits = [x[1] for x in circuits_and_ids]
             runtime.cancel(future)  # Cancel remaining
         else:
             circuits = await future
 
         # Find the best result
-        best_circ = None
-        best_data = None
-        for _circ, _data in circuits:
-            if best_circ is None or self.less_than(_circ, best_circ):
+        best_circ, best_data = circuits[0]
+        for _circ, _data in circuits[1:]:
+            if self.less_than(_circ, best_circ):
                 best_circ = _circ
                 best_data = _data
-
-        if best_circ is None or best_data is None:
-            raise RuntimeError('No valid circuit found.')
 
         # Become best result
         circuit.become(best_circ)

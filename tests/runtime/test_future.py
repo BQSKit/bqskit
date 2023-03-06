@@ -23,9 +23,9 @@ def sleep1() -> None:
 class TestPassFutureDone(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().submit(sleep1)
-        assert not future.done
+        assert not future._done
         await future
-        assert future.done
+        assert future._done
 
 
 class TestPassFutureCannotSend(BasePass):

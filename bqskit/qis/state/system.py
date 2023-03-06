@@ -4,13 +4,16 @@ from __future__ import annotations
 from typing import Any
 from typing import Iterator
 from typing import Mapping
-from typing import TypeGuard
+from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
 
-from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    from typing import TypeGuard
 
 
 class StateSystem(Mapping[StateVector, StateVector]):
@@ -19,11 +22,11 @@ class StateSystem(Mapping[StateVector, StateVector]):
     def __init__(self, system: StateSystemLike) -> None:
         """Construct a state system."""
         if isinstance(system, StateSystem):
-            self._system = system._system
-            self._radixes = system._radixes
-            self._dim = system._dim
-            self._vec_count = system._vec_count
-            self.target = system.target
+            self._system: dict[StateVector, StateVector] = system._system
+            self._radixes: tuple[int, ...] = system._radixes
+            self._dim: int = system._dim
+            self._vec_count: int = system._vec_count
+            self.target: npt.NDArray[np.complex128] = system.target
             return
 
         self._system = {
@@ -76,7 +79,7 @@ class StateSystem(Mapping[StateVector, StateVector]):
     def __getitem__(self, _key: StateVector) -> StateVector:
         return self._system.__getitem__(_key)
 
-    def __contains__(self, _key: StateVector) -> bool:
+    def __contains__(self, _key: object) -> bool:
         return self._system.__contains__(_key)
 
     def is_qubit_only(self) -> bool:

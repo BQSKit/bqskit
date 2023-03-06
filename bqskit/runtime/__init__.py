@@ -40,9 +40,11 @@ and::
     bqskit-server <address_of_bqskit_managers>
 
 Typically, you start managers first on all nodes in the desired cluster.
-Then you can start the server with a comma seperated list of all managers
-ip address and optionally ports. You can see the `-h` option of each
-command or the :func:`~bqskit.runtime.detached.start_server` and
+Then you can start the server with a comma-separated list of all managers
+ip address and optionally ports. Once a server is started and has connected
+to the requested managers, no more managers can be added. You can see
+the `-h` option of each command or the
+:func:`~bqskit.runtime.detached.start_server` and
 :func:`~bqskit.runtime.manager.start_manager` entry points for
 more information.
 
@@ -126,7 +128,8 @@ class RuntimeHandle(Protocol):
     events.
 
     This should never be constructed directly and only accessed through
-    the :func:`get_runtime` function.
+    the :func:`get_runtime` function, since this is a structural type
+    definition and does not contain any implementation.
     """
 
     def submit(
@@ -158,7 +161,7 @@ class RuntimeHandle(Protocol):
         """
         ...
 
-    async def wait(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
+    async def next(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
         """
         Wait for and return the next batch of results from a map task.
 
@@ -180,4 +183,6 @@ def get_runtime() -> RuntimeHandle:
     return get_worker()
 
 
+default_server_port = 7472
+default_manager_port = 7473
 __all__ = ['get_runtime']

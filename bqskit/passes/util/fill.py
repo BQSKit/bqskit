@@ -7,6 +7,8 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.parameterized.u8 import U8Gate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 
 
 _logger = logging.getLogger(__name__)
@@ -28,18 +30,24 @@ class FillSingleQuditGatesPass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Completing circuit with single-qudit gates.')
-        target = self.get_target(circuit, data)
+        target = data.target
 
         complete_circuit = Circuit(circuit.num_qudits, circuit.radixes)
 
-        if target.num_qudits == 1:
+        if target.num_qudits == 1 and circuit.radixes[0] == 2:
             params = U3Gate.calc_params(circuit.get_unitary())
             complete_circuit.append_gate(U3Gate(), 0, params)
             circuit.become(complete_circuit)
             return
 
         for q in range(circuit.num_qudits):
-            complete_circuit.append_gate(U3Gate(), q)
+            radix = circuit.radixes[q]
+            if radix == 2:
+                complete_circuit.append_gate(U3Gate(), q)
+            elif radix == 3:
+                complete_circuit.append_gate(U8Gate(), q)
+            else:
+                complete_circuit.append_gate(VariableUnitaryGate(1, ), q)
 
         for op in circuit:
             if op.num_qudits == 1:
@@ -47,7 +55,13 @@ class FillSingleQuditGatesPass(BasePass):
 
             complete_circuit.append(op)
             for q in op.location:
-                complete_circuit.append_gate(U3Gate(), q)
+                radix = circuit.radixes[q]
+                if radix == 2:
+                    complete_circuit.append_gate(U3Gate(), q)
+                elif radix == 3:
+                    complete_circuit.append_gate(U8Gate(), q)
+                else:
+                    complete_circuit.append_gate(VariableUnitaryGate(1, ), q)
 
         dist = 1.0
         for i in range(10):
@@ -57,3 +71,5 @@ class FillSingleQuditGatesPass(BasePass):
 
         if dist <= self.success_threshold:
             circuit.become(complete_circuit)
+        else:
+            _logger.warning("Unable to instantiate completed circuit.")

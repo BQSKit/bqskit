@@ -65,10 +65,7 @@ class TestTranslate:
         return circuit
 
     def get_unitary(self, qc: QubitCircuit) -> np.ndarray:  # type: ignore
-        backend = AerUnitaryBackend()
-        handle = backend.process_circuit(qc)
-        result = backend.get_result(handle)
-        return result.get_unitary()
+        return qc.get_unitary()
 
     def test_bqskit_to_bqskit(self, bqskit_circuit: Circuit) -> None:
         in_utry = bqskit_circuit.get_unitary()

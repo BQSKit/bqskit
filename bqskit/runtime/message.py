@@ -1,14 +1,10 @@
 """This module implements the RuntimeMessage enum."""
 from __future__ import annotations
 
-from enum import Enum
+from enum import IntEnum
 
 
-class MyInt(int):
-    __reduce_ex__ = int.__reduce_ex__
-
-
-class RuntimeMessage(MyInt, Enum):  # type: ignore
+class RuntimeMessage(IntEnum):
     """An message sent between processes in the BQSKit runtime."""
     CONNECT = 0
     DISCONNECT = 1
@@ -22,3 +18,5 @@ class RuntimeMessage(MyInt, Enum):  # type: ignore
     STATUS = 9
     LOG = 10
     CANCEL = 11
+    WAITING = 12
+    UPDATE = 13

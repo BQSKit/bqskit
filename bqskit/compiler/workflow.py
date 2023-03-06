@@ -74,9 +74,25 @@ class Workflow(BasePass, Sequence[BasePass]):
     # def build_prepare_flow() -> Workflow:
     #     pass
 
-    # def __add__
-    # def pretty_print
-    # def save
+    def save(self, filename: str) -> None:
+        import pickle
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load(filename: str) -> Workflow:
+        import pickle
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+
+    # def __str__(self) -> str:
+    #     pass  # TODO:
+
+    # def __repr__(self) -> str:
+    #     pass  # TODO:
+
+    def __add__(self, other: Workflow) -> Workflow:
+        return Workflow(self._passes + other._passes)
 
     def __len__(self) -> int:
         return self._passes.__len__()

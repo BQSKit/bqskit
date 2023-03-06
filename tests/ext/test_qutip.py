@@ -8,8 +8,8 @@ from bqskit.ext import qutip_to_bqskit
 from bqskit.ext import bqskit_to_qutip
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.compile import compile
-from qutip import QubitCircuit
-from qutip import CircuitSimulator
+from qutip.qip.circuit import QubitCircuit
+from qutip.qip.circuit import CircuitSimulator
 
 import pytest
 pytest.importorskip('qutip')

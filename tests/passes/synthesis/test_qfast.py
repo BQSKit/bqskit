@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
@@ -46,7 +44,6 @@ class TestQFAST:
             dist = circuit.get_unitary().get_distance_from(utry)
             assert dist <= 1e-5
 
-    @pytest.mark.skip(reason='Issue in bqskitrs supporting CircuitGates.')
     def test_3_qubit_with_cnot_block(self) -> None:
         circuit = Circuit(2)
         circuit.append_gate(CNOTGate(), (0, 1))

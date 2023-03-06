@@ -36,10 +36,21 @@ class CompilationTask():
         self.task_id = uuid.uuid4()
         self.circuit = input
         self.workflow = Workflow(workflow)
+
         self.data = PassData(input)
+        """The task's data for use in BQSKit passes."""
+
+        self.done = False
+        """True when the task is complete."""
+
         self.request_data = False
+        """If true, :func:`run` will additionally return the PassData."""
+
         self.logging_level: int | None = None
+        """A general filter on all logging messages in the system."""
+
         self.max_logging_depth = -1
+        """No logging for tasks with more than `max_logging_depth` parents."""
 
     async def run(self) -> Circuit | tuple[Circuit, PassData]:
         """Execute the task."""
@@ -49,7 +60,3 @@ class CompilationTask():
             return self.circuit
 
         return self.circuit, self.data
-
-    def set_max_logging_depth(self, max_depth: int) -> None:
-        """Restrict logging for tasks with more than `max_depth` parents."""
-        self.max_logging_depth = max_depth
