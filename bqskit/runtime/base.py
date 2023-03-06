@@ -368,12 +368,10 @@ class ServerBase:
         """Shutdown the node and release resources."""
         # Stop running
         self.logger.info('Shutting down node.')
-        print('Shutting down node.')
         self.running = False
 
         # Instruct employees to shutdown
         for employee in self.employees:
-            print(f'will shutsown {employee = }')
             employee.shutdown()
         self.employees.clear()
         self.logger.debug('Shutdown employees.')
