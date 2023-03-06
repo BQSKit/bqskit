@@ -574,7 +574,7 @@ def start_worker(id: int, conn: Connection | int) -> None:
         for _ in range(max_retries):
             try:
                 assert isinstance(conn, int)
-                conn = Client(('localhost', conn))
+                conn = Client(('localhost', conn), 'AF_INET')
             except ConnectionRefusedError:
                 time.sleep(wait_time)
                 wait_time *= 2

@@ -268,7 +268,8 @@ class ServerBase:
 
     def listen_once(self, port: int) -> Connection:
         """Listen on `port` for a connection and return on first one."""
-        listener = Listener(('0.0.0.0', port))
+        family = 'AF_INET' if sys.platform == 'win32' else None
+        listener = Listener(('0.0.0.0', port), family)
         conn = listener.accept()
         listener.close()
         return conn
