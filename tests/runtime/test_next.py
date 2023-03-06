@@ -68,7 +68,7 @@ class TestNextOnCompleteTask(BasePass):
 
 
 class TestNextAfterSleepTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [1, 2])
         time.sleep(1.5)
         int_ids = await get_runtime().next(future)
