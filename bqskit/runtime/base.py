@@ -8,6 +8,7 @@ import os
 import random
 import selectors
 import signal
+import socket
 import sys
 import time
 import traceback
@@ -117,7 +118,7 @@ class ServerBase:
         self.sel = selectors.DefaultSelector()
         """Used to efficiently idle and wake when communication is ready."""
 
-        self.terminate_hotline, p = Pipe()
+        p, self.terminate_hotline = socket.socketpair()
         self.sel.register(p, selectors.EVENT_READ, MessageDirection.SIGNAL)
         """Terminate hotline is used to unblock select while running."""
 
@@ -228,12 +229,7 @@ class ServerBase:
             raise RuntimeError('Insufficient id range for workers.')
 
         for i in range(num_workers):
-            p, q = Pipe()
-            args = (self.lower_id_bound + i, q)
-            proc = Process(target=start_worker, args=args)
-            self.employees.append(RuntimeEmployee(p, 1, proc))
-            self.conn_to_employee_dict[p] = self.employees[-1]
-            proc.start()
+            self.spawn_worker(self.lower_id_bound + i)
 
         for i, employee in enumerate(self.employees):
             assert employee.conn.recv() == ((RuntimeMessage.STARTED, None))
@@ -248,6 +244,27 @@ class ServerBase:
         self.total_workers = num_workers
         self.num_idle_workers = num_workers
         self.logger.info(f'Node has spawned {num_workers} workers.')
+
+    def spawn_worker(self, id: int) -> None:
+        """Spawn and register a single worker."""
+        if sys.platform != 'win32':
+            p, q = Pipe()
+            proc = Process(target=start_worker, args=(id, q))
+            self.employees.append(RuntimeEmployee(p, 1, proc))
+            self.conn_to_employee_dict[p] = self.employees[-1]
+            proc.start()
+
+        else:
+            # Pipes don't work on win32 with select :(
+            # So we create a listener that will create connections
+            # wrapping a socket rather than a pipe.
+            listener = Listener('localhost', 'AF_INET')
+            proc = Process(target=start_worker, args=(id, 7474))
+            proc.start()
+            conn = listener.accept()
+            self.employees.append(RuntimeEmployee(conn, 1, proc))
+            self.conn_to_employee_dict[p] = self.employees[-1]
+            listener.close()
 
     def listen_once(self, port: int) -> Connection:
         """Listen on `port` for a connection and return on first one."""
