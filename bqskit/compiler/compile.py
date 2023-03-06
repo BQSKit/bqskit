@@ -468,7 +468,7 @@ def _opt1_workflow(
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
-                single_qudit_gate=sq_gate
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
