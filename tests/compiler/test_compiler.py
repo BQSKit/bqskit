@@ -28,7 +28,6 @@ class LogPass(BasePass):
 
 
 def test_errors_raised_locally() -> None:
-    task = CompilationTask(Circuit(1), [ErrorPass()])
     with pytest.raises(RuntimeError) as exc_info:
         with Compiler() as compiler:
             compiler.compile(Circuit(1), [ErrorPass()])
