@@ -1,5 +1,9 @@
 # flake8: noqa
 from __future__ import annotations
+
+import pytest
+pytest.importorskip('qutip')
+
 from bqskit.qis import UnitaryMatrix
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import CNOTGate
@@ -10,9 +14,6 @@ from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.compile import compile
 from qutip.qip.circuit import QubitCircuit
 from qutip.qip.circuit import CircuitSimulator
-
-import pytest
-pytest.importorskip('qutip')
 
 
 class TestTranslate:

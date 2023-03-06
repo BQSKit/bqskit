@@ -5,10 +5,10 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.constant.csum import CSUMGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.u8 import U8Gate
-from bqskit.ir.gates.constant.csum import CSUMGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.graph import CouplingGraph
@@ -103,7 +103,7 @@ class MachineModel:
                 gate_set = default_qutrit_gate_set
             else:
                 gate_set = {VariableUnitaryGate(2, [r, r])}
-                
+
         if not isinstance(gate_set, set):
             raise TypeError(f'Expected set of gates, got {type(gate_set)}.')
 

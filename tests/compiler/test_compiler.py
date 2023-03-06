@@ -36,6 +36,13 @@ def test_errors_raised_locally() -> None:
     assert 'TestError' in error_str
 
 
+def test_simple_creation() -> None:
+    com = Compiler(num_workers=6)
+    com.close()
+
+    assert True
+
+
 def test_log_msg_printed_locally() -> None:
     logger = logging.getLogger('bqskit')
     logger.setLevel(logging.DEBUG)

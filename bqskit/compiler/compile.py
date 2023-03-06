@@ -16,6 +16,7 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SqrtXGate
@@ -458,7 +459,7 @@ def _opt1_workflow(
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
             if model.radixes[0] == 2:
-                sq_gate = U3Gate()
+                sq_gate: Gate = U3Gate()
             elif model.radixes[0] == 3:
                 sq_gate = U8Gate()
             else:
@@ -468,7 +469,7 @@ def _opt1_workflow(
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
-                single_qudit_gate=sq_gate
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
@@ -595,7 +596,7 @@ def _opt2_workflow(
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
             if model.radixes[0] == 2:
-                sq_gate = U3Gate()
+                sq_gate: Gate = U3Gate()
             elif model.radixes[0] == 3:
                 sq_gate = U8Gate()
             else:
@@ -749,7 +750,7 @@ def _opt3_workflow(
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
             if model.radixes[0] == 2:
-                sq_gate = U3Gate()
+                sq_gate: Gate = U3Gate()
             elif model.radixes[0] == 3:
                 sq_gate = U8Gate()
             else:
@@ -1062,11 +1063,11 @@ def _statemap_workflow(
 def _get_layer_gen(model: MachineModel) -> LayerGenerator:
     """Build a `model`-compliant layer generator."""
     if model.radixes[0] == 2:
-        sq_gate = U3Gate()
+        sq_gate: Gate = U3Gate()
     elif model.radixes[0] == 3:
         sq_gate = U8Gate()
     else:
-        sq_gate = VariableUnitaryGate(1, model.radixes[0])
+        sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
 
     tq_gates = [gate for gate in model.gate_set if gate.num_qudits == 2]
     mq_gates = [gate for gate in model.gate_set if gate.num_qudits > 2]

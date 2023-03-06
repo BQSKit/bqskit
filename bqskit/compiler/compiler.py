@@ -7,6 +7,7 @@ import logging
 import multiprocessing as mp
 import os
 import signal
+import sys
 import time
 import uuid
 import warnings
@@ -91,7 +92,8 @@ class Compiler:
         wait_time = .25
         for _ in range(max_retries):
             try:
-                conn = Client((ip, port))
+                family = 'AF_INET' if sys.platform == 'win32' else None
+                conn = Client((ip, port), family)
             except ConnectionRefusedError:
                 time.sleep(wait_time)
                 wait_time *= 2

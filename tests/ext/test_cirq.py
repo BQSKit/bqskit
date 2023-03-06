@@ -1,5 +1,9 @@
 # flake8: noqa
 from __future__ import annotations
+
+import pytest
+pytest.importorskip('cirq')
+
 from bqskit.qis import UnitaryMatrix
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import CNOTGate
@@ -10,9 +14,6 @@ from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.compile import compile
 from cirq import Circuit as QuantumCircuit
 import cirq
-
-import pytest
-pytest.importorskip('cirq')
 
 
 class TestTranslate:

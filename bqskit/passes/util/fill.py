@@ -47,7 +47,7 @@ class FillSingleQuditGatesPass(BasePass):
             elif radix == 3:
                 complete_circuit.append_gate(U8Gate(), q)
             else:
-                complete_circuit.append_gate(VariableUnitaryGate(1, ), q)
+                complete_circuit.append_gate(VariableUnitaryGate(1), q)
 
         for op in circuit:
             if op.num_qudits == 1:
@@ -61,7 +61,7 @@ class FillSingleQuditGatesPass(BasePass):
                 elif radix == 3:
                     complete_circuit.append_gate(U8Gate(), q)
                 else:
-                    complete_circuit.append_gate(VariableUnitaryGate(1, ), q)
+                    complete_circuit.append_gate(VariableUnitaryGate(1), q)
 
         dist = 1.0
         for i in range(10):
@@ -72,4 +72,4 @@ class FillSingleQuditGatesPass(BasePass):
         if dist <= self.success_threshold:
             circuit.become(complete_circuit)
         else:
-            _logger.warning("Unable to instantiate completed circuit.")
+            _logger.warning('Unable to instantiate completed circuit.')

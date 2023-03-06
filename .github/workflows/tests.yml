@@ -21,7 +21,7 @@ jobs:
     - name: Upgrade python environment
       run: python -m pip install --upgrade virtualenv setuptools pip
     - name: Upgrade test dependencies
-      run: python -m pip install psutil pytest hypothesis
+      run: python -m pip install psutil pytest hypothesis qiskit pytket qutip cirq
     - name: Install BQSKit
       env:
         SYSTEM_VERSION_COMPAT: 0

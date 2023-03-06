@@ -4,8 +4,10 @@ from __future__ import annotations
 import logging
 import signal
 import sys
+import time
 import traceback
 from dataclasses import dataclass
+from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
 from queue import Queue
@@ -188,7 +190,7 @@ class Worker:
         logging.setLogRecordFactory(record_factory)
 
         # Communicate that this worker is ready
-        self._conn.send((RuntimeMessage.STARTED, None))
+        self._conn.send((RuntimeMessage.STARTED, self._id))
 
     def _loop(self) -> None:
         """Main worker event loop."""
@@ -553,7 +555,7 @@ class Worker:
 _worker = None
 
 
-def start_worker(*args: Any, **kwargs: Any) -> None:
+def start_worker(id: int, conn: Connection | int) -> None:
     """Start this process's worker."""
     # Ignore interrupt signals on workers, boss will handle it for us
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -565,8 +567,25 @@ def start_worker(*args: Any, **kwargs: Any) -> None:
         logger.handlers.clear()
     logging.Logger.manager.loggerDict = {}
 
+    if isinstance(conn, int):
+        # On windows, the workers create a socket connection themselves
+        max_retries = 5
+        wait_time = .25
+        for _ in range(max_retries):
+            try:
+                assert isinstance(conn, int)
+                conn = Client(('localhost', conn), 'AF_INET')
+            except ConnectionRefusedError:
+                time.sleep(wait_time)
+                wait_time *= 2
+            else:
+                break
+
+    if not isinstance(conn, Connection):
+        raise RuntimeError('Unable to establish connection with manager.')
+
     global _worker
-    _worker = Worker(*args, **kwargs)
+    _worker = Worker(id, conn)
     _worker._loop()
 
 

@@ -8,6 +8,7 @@ import os
 import random
 import selectors
 import signal
+import socket
 import sys
 import time
 import traceback
@@ -117,7 +118,7 @@ class ServerBase:
         self.sel = selectors.DefaultSelector()
         """Used to efficiently idle and wake when communication is ready."""
 
-        self.terminate_hotline, p = Pipe()
+        p, self.terminate_hotline = socket.socketpair()
         self.sel.register(p, selectors.EVENT_READ, MessageDirection.SIGNAL)
         """Terminate hotline is used to unblock select while running."""
 
@@ -227,16 +228,36 @@ class ServerBase:
         if self.lower_id_bound + num_workers >= self.upper_id_bound:
             raise RuntimeError('Insufficient id range for workers.')
 
+        procs = {}
+        conns = []
+
         for i in range(num_workers):
-            p, q = Pipe()
-            args = (self.lower_id_bound + i, q)
-            proc = Process(target=start_worker, args=args)
-            self.employees.append(RuntimeEmployee(p, 1, proc))
-            self.conn_to_employee_dict[p] = self.employees[-1]
-            proc.start()
+            id = self.lower_id_bound + i
+            procs[id], conn = self.spawn_worker(id)
+            conns.append(conn)
+
+        if sys.platform == 'win32':
+            # Pipes don't work on win32 with select :(
+            # So we create a listener that will create connections
+            # wrapping a socket rather than a pipe.
+
+            conns = []
+            listener = Listener(('localhost', 7474), 'AF_INET')
+
+            for i in range(num_workers):
+                conns.append(listener.accept())
+
+        for conn in conns:
+            msg = conn.recv()
+            assert msg[0] == RuntimeMessage.STARTED
+            id = msg[1]
+            self.employees.append(RuntimeEmployee(conn, 1, procs[id]))
+            self.conn_to_employee_dict[conn] = self.employees[-1]
+
+        if sys.platform == 'win32':
+            listener.close()
 
         for i, employee in enumerate(self.employees):
-            assert employee.conn.recv() == ((RuntimeMessage.STARTED, None))
             self.sel.register(
                 employee.conn,
                 selectors.EVENT_READ,
@@ -249,9 +270,24 @@ class ServerBase:
         self.num_idle_workers = num_workers
         self.logger.info(f'Node has spawned {num_workers} workers.')
 
+    def spawn_worker(self, id: int) -> tuple[Process, None | Connection]:
+        """Spawn and register a single worker."""
+
+        if sys.platform != 'win32':
+            p, q = Pipe()
+            proc = Process(target=start_worker, args=(id, q))
+
+        else:
+            proc = Process(target=start_worker, args=(id, 7474))
+            p = None
+
+        proc.start()
+        return proc, p
+
     def listen_once(self, port: int) -> Connection:
         """Listen on `port` for a connection and return on first one."""
-        listener = Listener(('0.0.0.0', port))
+        family = 'AF_INET' if sys.platform == 'win32' else None
+        listener = Listener(('0.0.0.0', port), family)
         conn = listener.accept()
         listener.close()
         return conn
@@ -332,10 +368,12 @@ class ServerBase:
         """Shutdown the node and release resources."""
         # Stop running
         self.logger.info('Shutting down node.')
+        print('Shutting down node.')
         self.running = False
 
         # Instruct employees to shutdown
         for employee in self.employees:
+            print(f'will shutsown {employee = }')
             employee.shutdown()
         self.employees.clear()
         self.logger.debug('Shutdown employees.')
