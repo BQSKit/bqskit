@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import traceback
 from io import StringIO
 
@@ -34,6 +35,14 @@ def test_errors_raised_locally() -> None:
 
     error_str = ''.join(traceback.format_exception(*exc_info._excinfo))
     assert 'TestError' in error_str
+
+
+def test_simple_creation() -> None:
+
+    com = Compiler(num_workers=6)
+    com.close()
+
+    assert True
 
 
 def test_log_msg_printed_locally() -> None:
