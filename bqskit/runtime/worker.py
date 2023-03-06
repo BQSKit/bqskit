@@ -190,7 +190,7 @@ class Worker:
         logging.setLogRecordFactory(record_factory)
 
         # Communicate that this worker is ready
-        self._conn.send((RuntimeMessage.STARTED, None))
+        self._conn.send((RuntimeMessage.STARTED, self._id))
 
     def _loop(self) -> None:
         """Main worker event loop."""
