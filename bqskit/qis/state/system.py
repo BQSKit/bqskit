@@ -1,7 +1,8 @@
 """This module implements the StateSystem class."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 from typing import Iterator
 from typing import Mapping
 from typing import TYPE_CHECKING
