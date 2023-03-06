@@ -23,6 +23,8 @@ from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.parameterized.u8 import U8Gate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
@@ -145,15 +147,17 @@ def compile(
 
     assert isinstance(input, (Circuit, UnitaryMatrix, StateVector, StateSystem))
 
-    if not all(r == 2 for r in input.radixes):
+    if not all(r == input.radixes[0] for r in input.radixes):
         raise ValueError(
             'Currently, can only automatically build a workflow '
-            'for qubit-only systems.',
-        )  # TODO
+            'for same-level systems, such as qubit-only or qutrit-only'
+            'systems. Heterogenous-radix systems are not yet supported'
+            'with the standard workflows.',
+        )
 
     # Check `model`
     if model is None:
-        model = MachineModel(input.num_qudits)
+        model = MachineModel(input.num_qudits, radixes=input.radixes)
 
     if not isinstance(model, MachineModel):
         raise TypeError(f'Expected MachineModel for model, got {type(model)}.')
@@ -161,11 +165,13 @@ def compile(
     if model.num_qudits < input.num_qudits:
         raise ValueError('Machine is too small for circuit.')
 
-    if not all(r == 2 for r in model.radixes):
+    if not all(r == input.radixes[0] for r in model.radixes):
         raise ValueError(
             'Currently, can only automatically build a workflow '
-            'for qubit-only systems.',
-        )  # TODO
+            'for same-level systems, such as qubit-only or qutrit-only'
+            'systems. Heterogenous-radix systems are not yet supported'
+            'with the standard workflows.',
+        )
 
     model_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
@@ -443,19 +449,26 @@ def _opt1_workflow(
             g for g in non_native_gates
             if g.num_qudits == 2
         ]
-        if SwapGate() not in model.gate_set:
-            non_native_tq_gates.append(SwapGate())
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
         all_gates = model.gate_set.union(circuit.gate_set)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
+            if model.radixes[0] == 2:
+                sq_gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
                 non_native_tq_gates,
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
+                single_qudit_gate=sq_gate
             )
     else:
         smallest_entangler_size = 1
@@ -573,19 +586,26 @@ def _opt2_workflow(
             g for g in non_native_gates
             if g.num_qudits == 2
         ]
-        if SwapGate() not in model.gate_set:
-            non_native_tq_gates.append(SwapGate())
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
         all_gates = model.gate_set.union(circuit.gate_set)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
+            if model.radixes[0] == 2:
+                sq_gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
                 non_native_tq_gates,
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
@@ -719,8 +739,8 @@ def _opt3_workflow(
             g for g in non_native_gates
             if g.num_qudits == 2
         ]
-        if SwapGate() not in model.gate_set:
-            non_native_tq_gates.append(SwapGate())
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
@@ -728,11 +748,18 @@ def _opt3_workflow(
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
+            if model.radixes[0] == 2:
+                sq_gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
                 non_native_tq_gates,
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
@@ -1034,6 +1061,13 @@ def _statemap_workflow(
 
 def _get_layer_gen(model: MachineModel) -> LayerGenerator:
     """Build a `model`-compliant layer generator."""
+    if model.radixes[0] == 2:
+        sq_gate = U3Gate()
+    elif model.radixes[0] == 3:
+        sq_gate = U8Gate()
+    else:
+        sq_gate = VariableUnitaryGate(1, model.radixes[0])
+
     tq_gates = [gate for gate in model.gate_set if gate.num_qudits == 2]
     mq_gates = [gate for gate in model.gate_set if gate.num_qudits > 2]
 
@@ -1041,9 +1075,9 @@ def _get_layer_gen(model: MachineModel) -> LayerGenerator:
         if CNOTGate() in tq_gates:
             return FourParamGenerator()
         else:
-            return SimpleLayerGenerator(tq_gates[0])
+            return SimpleLayerGenerator(tq_gates[0], sq_gate)
 
-    return WideLayerGenerator(tq_gates + mq_gates)
+    return WideLayerGenerator(tq_gates + mq_gates, sq_gate)
 
 
 def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:

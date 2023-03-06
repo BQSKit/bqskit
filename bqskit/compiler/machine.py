@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.parameterized.u8 import U8Gate
+from bqskit.ir.gates.constant.csum import CSUMGate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.graph import CouplingGraphLike
@@ -17,9 +20,13 @@ if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 
 
-default_gate_set: set[Gate] = {
+default_qubit_gate_set: set[Gate] = {
     CNOTGate(),
     U3Gate(),
+}
+default_qutrit_gate_set: set[Gate] = {
+    CSUMGate(),
+    U8Gate(),
 }
 
 
@@ -30,7 +37,7 @@ class MachineModel:
         self,
         num_qudits: int,
         coupling_graph: CouplingGraphLike | None = None,
-        gate_set: set[Gate] = default_gate_set,
+        gate_set: set[Gate] | None = None,
         radixes: Sequence[int] = [],
     ) -> None:
         """
@@ -46,7 +53,8 @@ class MachineModel:
                 (Default: None)
 
             gate_set (set[Gate]): The native gate set available on the
-                machine.
+                machine. Defaults to CNOTs+U3s for qubits, CSUM+U8s for
+                qutrits, and variable unitary gates for arbitrary qudits.
 
             radixes (Sequence[int]): A sequence with its length equal
                 to `num_qudits`. Each element specifies the base of a
@@ -87,6 +95,15 @@ class MachineModel:
         ):
             raise TypeError('Invalid coupling graph, expected list of tuples')
 
+        if gate_set is None:
+            r = self.radixes[0]
+            if r == 2:
+                gate_set = default_qubit_gate_set
+            elif r == 3:
+                gate_set = default_qutrit_gate_set
+            else:
+                gate_set = {VariableUnitaryGate(2, [r, r])}
+                
         if not isinstance(gate_set, set):
             raise TypeError(f'Expected set of gates, got {type(gate_set)}.')
 

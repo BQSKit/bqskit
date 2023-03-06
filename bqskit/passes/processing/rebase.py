@@ -281,7 +281,7 @@ class Rebase2QuditGatePass(BasePass):
         self.circs = []
         self.counts = []
 
-        circ = Circuit(2)
+        circ = Circuit(2, self.ngates[0].radixes)
         circ.append_gate(self.sq, 0)
         circ.append_gate(self.sq, 1)
         self.circs.append(circ)
@@ -289,7 +289,7 @@ class Rebase2QuditGatePass(BasePass):
 
         for g in self.ngates:
             for i in range(1, self.max_depth + 1):
-                circ = Circuit(2)
+                circ = Circuit(2, self.ngates[0].radixes)
                 circ.append_gate(self.sq, 0)
                 circ.append_gate(self.sq, 1)
 
