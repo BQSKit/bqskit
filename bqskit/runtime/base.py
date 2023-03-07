@@ -245,7 +245,7 @@ class ServerBase:
 
         # Listen for the worker connections
         family = 'AF_INET' if sys.platform == 'win32' else None
-        listener = Listener(('localhost', port), family)
+        listener = Listener(('localhost', port), family, backlog=5)
         conns = [listener.accept() for i in range(num_workers)]
         listener.close()
 
