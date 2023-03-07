@@ -246,7 +246,7 @@ class ServerBase:
         # Listen for the worker connections
         family = 'AF_INET' if sys.platform == 'win32' else None
         listener = Listener(('localhost', port), family)
-        conns = [listener.accept() for i in range(num_workers)]
+        conns = [listener.accept() for _ in range(num_workers)]
         listener.close()
 
         # Organize all workers into the employees data structure
@@ -258,6 +258,7 @@ class ServerBase:
             temp_reorder[w_id - self.lower_id_bound] = employee
             self.conn_to_employee_dict[conn] = employee
 
+        # The employess list needs to be sorted according to the IDs
         for i in range(num_workers):
             self.employees.append(temp_reorder[i])
 
