@@ -23,6 +23,7 @@ from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.runtime import default_server_port
+from bqskit.runtime import default_worker_port
 from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
 
@@ -66,24 +67,33 @@ class Compiler:
     def __init__(
         self,
         ip: None | str = None,
-        port: None | int = None,
+        port: int = default_server_port,
         num_workers: int = -1,
+        runtime_log_level: int = logging.WARNING,
+        worker_port: int = default_worker_port,
     ) -> None:
         """Construct a Compiler object."""
         self.p: mp.Process | None = None
         self.conn: Connection | None = None
-        if port is None:
-            port = default_server_port
 
         atexit.register(self.close)
         if ip is None:
             ip = 'localhost'
-            self._start_server(num_workers)
+            self._start_server(num_workers, runtime_log_level, worker_port)
 
         self._connect_to_server(ip, port)
 
-    def _start_server(self, num_workers: int) -> None:
-        self.p = mp.Process(target=start_attached_server, args=(num_workers,))
+    def _start_server(
+        self,
+        num_workers: int,
+        runtime_log_level: int,
+        worker_port: int,
+    ) -> None:
+        self.p = mp.Process(
+            target=start_attached_server,
+            args=(num_workers, runtime_log_level),
+            kwargs={'worker_port': worker_port},
+        )
         _logger.debug('Starting runtime server process.')
         self.p.start()
 

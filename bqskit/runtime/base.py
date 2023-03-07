@@ -12,7 +12,6 @@ import socket
 import sys
 import time
 import traceback
-from multiprocessing import Pipe
 from multiprocessing import Process
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
@@ -25,6 +24,7 @@ from typing import cast
 from typing import Sequence
 
 from bqskit.runtime import default_manager_port
+from bqskit.runtime import default_worker_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
@@ -212,7 +212,11 @@ class ServerBase:
 
         raise RuntimeError(f'Manager connection refused at {ip}:{port}')
 
-    def spawn_workers(self, num_workers: int = -1) -> None:
+    def spawn_workers(
+        self,
+        num_workers: int = -1,
+        port: int = default_worker_port,
+    ) -> None:
         """
         Spawn worker processes.
 
@@ -220,6 +224,10 @@ class ServerBase:
             num_workers (int): The number of workers to spawn. If -1,
                 then spawn as many workers as CPUs on the system.
                 (Default: -1).
+
+            port (int): The port this server will listen for workers on.
+                Default can be found in the
+                :obj:`~bqskit.runtime.default_worker_port` global variable.
         """
         if num_workers == -1:
             oscount = os.cpu_count()
@@ -228,35 +236,32 @@ class ServerBase:
         if self.lower_id_bound + num_workers >= self.upper_id_bound:
             raise RuntimeError('Insufficient id range for workers.')
 
+        # Create and start all worker processed
         procs = {}
-        conns = []
+        for i in range(num_workers):
+            w_id = self.lower_id_bound + i
+            procs[w_id] = Process(target=start_worker, args=(w_id, port))
+            procs[w_id].start()
+
+        # Listen for the worker connections
+        family = 'AF_INET' if sys.platform == 'win32' else None
+        listener = Listener(('localhost', port), family)
+        conns = [listener.accept() for i in range(num_workers)]
+        listener.close()
+
+        # Organize all workers into the employees data structure
+        temp_reorder = {}
+        for i, conn in enumerate(conns):
+            msg, w_id = conn.recv()
+            assert msg == RuntimeMessage.STARTED
+            employee = RuntimeEmployee(conn, 1, procs[w_id])
+            temp_reorder[w_id - self.lower_id_bound] = employee
+            self.conn_to_employee_dict[conn] = employee
 
         for i in range(num_workers):
-            id = self.lower_id_bound + i
-            procs[id], conn = self.spawn_worker(id)
-            conns.append(conn)
+            self.employees.append(temp_reorder[i])
 
-        if sys.platform == 'win32':
-            # Pipes don't work on win32 with select :(
-            # So we create a listener that will create connections
-            # wrapping a socket rather than a pipe.
-
-            conns = []
-            listener = Listener(('localhost', 7474), 'AF_INET')
-
-            for i in range(num_workers):
-                conns.append(listener.accept())
-
-        for conn in conns:
-            msg = conn.recv()
-            assert msg[0] == RuntimeMessage.STARTED
-            id = msg[1]
-            self.employees.append(RuntimeEmployee(conn, 1, procs[id]))
-            self.conn_to_employee_dict[conn] = self.employees[-1]
-
-        if sys.platform == 'win32':
-            listener.close()
-
+        # Register employee communication
         for i, employee in enumerate(self.employees):
             self.sel.register(
                 employee.conn,
@@ -269,20 +274,6 @@ class ServerBase:
         self.total_workers = num_workers
         self.num_idle_workers = num_workers
         self.logger.info(f'Node has spawned {num_workers} workers.')
-
-    def spawn_worker(self, id: int) -> tuple[Process, None | Connection]:
-        """Spawn and register a single worker."""
-
-        if sys.platform != 'win32':
-            p, q = Pipe()
-            proc = Process(target=start_worker, args=(id, q))
-
-        else:
-            proc = Process(target=start_worker, args=(id, 7474))
-            p = None
-
-        proc.start()
-        return proc, p
 
     def listen_once(self, port: int) -> Connection:
         """Listen on `port` for a connection and return on first one."""

@@ -1,12 +1,14 @@
 """This module implements the AttachedServer runtime."""
 from __future__ import annotations
 
+import logging
 import selectors
 import uuid
 from multiprocessing.connection import Connection
 from typing import Any
 
 from bqskit.runtime import default_server_port
+from bqskit.runtime import default_worker_port
 from bqskit.runtime.base import ServerBase
 from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.detached import ServerMailbox
@@ -30,6 +32,7 @@ class AttachedServer(DetachedServer):
         self,
         num_workers: int = -1,
         port: int = default_server_port,
+        worker_port: int = default_worker_port,
     ) -> None:
         """
         Create a server with `num_workers` workers.
@@ -42,6 +45,10 @@ class AttachedServer(DetachedServer):
             port (int): The port this server will listen for clients on.
                 Default can be found in the
                 :obj:`~bqskit.runtime.default_server_port` global variable.
+
+            worker_port (int): The port this server will listen for workers
+                on. Default can be found in the
+                :obj:`~bqskit.runtime.default_worker_port` global variable.
         """
         ServerBase.__init__(self)
 
@@ -69,10 +76,19 @@ class AttachedServer(DetachedServer):
         self.handle_shutdown()
 
 
-def start_attached_server(*args: Any, **kwargs: Any) -> None:
+def start_attached_server(
+    num_workers: int,
+    log_level: int,
+    **kwargs: Any,
+) -> None:
     """Start a runtime server in attached mode."""
+    # Initialize runtime logging
+    _logger = logging.getLogger('bqskit-runtime')
+    _logger.setLevel(log_level)
+    _logger.addHandler(logging.StreamHandler())
+
     # Initialize the server
-    server = AttachedServer(*args, **kwargs)
+    server = AttachedServer(num_workers, **kwargs)
 
     # Run the server
     server.run()

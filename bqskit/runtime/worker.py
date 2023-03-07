@@ -257,6 +257,7 @@ class Worker:
     def _handle_result(self, result: RuntimeResult) -> None:
         """Insert result into appropriate mailbox and wake waiting task."""
         mailbox_id = result.return_address.mailbox_index
+        assert result.return_address.worker_id == self._id
         if mailbox_id not in self._mailboxes:
             # If the mailbox has been dropped due to a cancel, ignore result
             return
@@ -555,7 +556,7 @@ class Worker:
 _worker = None
 
 
-def start_worker(id: int, conn: Connection | int) -> None:
+def start_worker(id: int, port: int) -> None:
     """Start this process's worker."""
     # Ignore interrupt signals on workers, boss will handle it for us
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -567,21 +568,20 @@ def start_worker(id: int, conn: Connection | int) -> None:
         logger.handlers.clear()
     logging.Logger.manager.loggerDict = {}
 
-    if isinstance(conn, int):
-        # On windows, the workers create a socket connection themselves
-        max_retries = 5
-        wait_time = .25
-        for _ in range(max_retries):
-            try:
-                assert isinstance(conn, int)
-                conn = Client(('localhost', conn), 'AF_INET')
-            except ConnectionRefusedError:
-                time.sleep(wait_time)
-                wait_time *= 2
-            else:
-                break
+    max_retries = 5
+    wait_time = .1
+    conn: Connection | None = None
+    family = 'AF_INET' if sys.platform == 'win32' else None
+    for _ in range(max_retries):
+        try:
+            conn = Client(('localhost', port), family)
+        except ConnectionRefusedError:
+            time.sleep(wait_time)
+            wait_time *= 2
+        else:
+            break
 
-    if not isinstance(conn, Connection):
+    if conn is None:
         raise RuntimeError('Unable to establish connection with manager.')
 
     global _worker

@@ -36,7 +36,7 @@ def server_compiler(request: Any) -> Iterator[Compiler]:
         server = subprocess.Popen(['bqskit-server', 'localhost'])
         compiler = Compiler('localhost')
     else:
-        compiler = Compiler()
+        compiler = Compiler(runtime_log_level=1)
 
     yield compiler
 

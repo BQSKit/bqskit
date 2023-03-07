@@ -12,6 +12,7 @@ from typing import List
 from typing import Sequence
 
 from bqskit.runtime import default_manager_port
+from bqskit.runtime import default_worker_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.base import parse_ipports
 from bqskit.runtime.base import ServerBase
@@ -38,6 +39,7 @@ class Manager(ServerBase):
         port: int = default_manager_port,
         num_workers: int = -1,
         ipports: list[tuple[str, int]] | None = None,
+        worker_port: int = default_worker_port,
     ) -> None:
         """
         Create a manager instance in one of two ways:
@@ -67,6 +69,10 @@ class Manager(ServerBase):
 
             ipports (list[tuple[str, int]] | None): If not None, then all
                 the addresses and ports of running managers to connect to.
+
+            worker_port (int): The port this server will listen for workers
+                on. Default can be found in the
+                :obj:`~bqskit.runtime.default_worker_port` global variable.
         """
         super().__init__()
 
@@ -86,7 +92,7 @@ class Manager(ServerBase):
 
         # Case 1: spawn and manage workers
         if ipports is None:
-            self.spawn_workers(num_workers)
+            self.spawn_workers(num_workers, worker_port)
 
         # Case 2: Connect to managers at ipports
         else:
@@ -264,6 +270,12 @@ def start_manager() -> None:
         help='The port this manager will listen for servers on.',
     )
     parser.add_argument(
+        '-w', '--worker-port',
+        type=int,
+        default=default_worker_port,
+        help='The port this manager will listen for workers on.',
+    )
+    parser.add_argument(
         '--verbose', '-v',
         action='count',
         default=0,
@@ -280,7 +292,7 @@ def start_manager() -> None:
     _logger.addHandler(logging.StreamHandler())
 
     # Create the manager
-    manager = Manager(args.port, args.num_workers, ipports)
+    manager = Manager(args.port, args.num_workers, ipports, args.worker_port)
 
     # Start the manager
     manager.run()
