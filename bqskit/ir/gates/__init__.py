@@ -23,6 +23,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    BGate
     CCXGate
     ToffoliGate
     CHGate

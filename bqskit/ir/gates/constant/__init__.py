@@ -34,6 +34,7 @@ from bqskit.ir.gates.constant.y import YGate
 from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
+from bqskit.ir.gates.constant.b import BGate
 
 __all__ = [
     'CCXGate',
@@ -69,4 +70,5 @@ __all__ = [
     'YYGate',
     'ZGate',
     'ZZGate',
+    'BGate',
 ]
