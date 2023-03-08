@@ -432,7 +432,11 @@ class ServerBase:
 
         # Sort the employees by how many tasks they have
         ntasks = sorted([
-            (e.num_tasks, random.random(), i)  # Random value for tie breaker
+            (
+                e.num_tasks + len(assignments[i]),  # Consider idle assignments
+                random.random(),  # Random value for tie breaker
+                i,
+            )
             for i, e in enumerate(self.employees)
         ])
 
