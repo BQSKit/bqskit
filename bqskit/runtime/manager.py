@@ -14,7 +14,8 @@ from typing import Sequence
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
 from bqskit.runtime.address import RuntimeAddress
-from bqskit.runtime.base import import_tests_package, parse_ipports
+from bqskit.runtime.base import import_tests_package
+from bqskit.runtime.base import parse_ipports
 from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage

@@ -21,7 +21,8 @@ from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
-from bqskit.runtime.base import import_tests_package, parse_ipports
+from bqskit.runtime.base import import_tests_package
+from bqskit.runtime.base import parse_ipports
 from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
