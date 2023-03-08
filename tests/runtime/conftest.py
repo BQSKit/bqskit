@@ -31,16 +31,16 @@ def attached_compiler() -> Iterator[Compiler]:
 
 @pytest.fixture(params=['attached', 'detached'])
 def server_compiler(request: Any) -> Iterator[Compiler]:
-    if request.param[0] == 'detached':
-        manager = subprocess.Popen(['bqskit-manager', '-n1'])
-        server = subprocess.Popen(['bqskit-server', 'localhost'])
+    if request.param == 'detached':
+        manager = subprocess.Popen(['bqskit-manager', '-n2', '-i'])
+        server = subprocess.Popen(['bqskit-server', 'localhost', '-i'])
         compiler = Compiler('localhost')
     else:
-        compiler = Compiler(runtime_log_level=1)
+        compiler = Compiler(num_workers=2, runtime_log_level=1)
 
     yield compiler
 
-    if request.param[0] == 'detached':
+    if request.param == 'detached':
         compiler.close()
         server.send_signal(signal.SIGINT)
         server.wait()

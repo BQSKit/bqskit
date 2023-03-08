@@ -543,3 +543,16 @@ def parse_ipports(ipports_str: Sequence[str]) -> list[tuple[str, int]]:
 
             ipports.append((ip, int(port)))
     return ipports
+
+
+def import_tests_package() -> None:
+    """
+    Import tests package recursively during detached architecture testing.
+
+    credit: https://www.youtube.com/watch?v=t43zBsVcva0
+    """
+    import tests
+    import pkgutil
+    for mod in pkgutil.walk_packages(tests.__path__, f'{tests.__name__}.'):
+        __import__(mod.name, fromlist=['_trash'])
+        
