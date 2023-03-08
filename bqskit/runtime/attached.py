@@ -70,6 +70,7 @@ class AttachedServer(DetachedServer):
             selectors.EVENT_READ,
             MessageDirection.CLIENT,
         )
+        self.logger.info('Connected to client.')
 
     def handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""

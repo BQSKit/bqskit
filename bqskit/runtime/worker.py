@@ -568,14 +568,14 @@ def start_worker(id: int, port: int) -> None:
         logger.handlers.clear()
     logging.Logger.manager.loggerDict = {}
 
-    max_retries = 5
+    max_retries = 7
     wait_time = .1
     conn: Connection | None = None
     family = 'AF_INET' if sys.platform == 'win32' else None
     for _ in range(max_retries):
         try:
             conn = Client(('localhost', port), family)
-        except ConnectionRefusedError:
+        except (ConnectionRefusedError, TimeoutError):
             time.sleep(wait_time)
             wait_time *= 2
         else:
