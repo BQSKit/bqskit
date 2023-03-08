@@ -556,4 +556,3 @@ def import_tests_package() -> None:
     import pkgutil
     for mod in pkgutil.walk_packages(tests.__path__, f'{tests.__name__}.'):
         __import__(mod.name, fromlist=['_trash'])
-        
