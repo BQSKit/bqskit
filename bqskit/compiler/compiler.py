@@ -24,7 +24,6 @@ from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.runtime import default_server_port
 from bqskit.runtime import default_worker_port
-from bqskit.runtime.attached import start_attached_server
 from bqskit.runtime.message import RuntimeMessage
 
 if TYPE_CHECKING:
@@ -89,6 +88,7 @@ class Compiler:
         runtime_log_level: int,
         worker_port: int,
     ) -> None:
+        from bqskit.runtime.attached import start_attached_server
         self.p = mp.Process(
             target=start_attached_server,
             args=(num_workers, runtime_log_level),
