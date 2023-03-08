@@ -98,7 +98,7 @@ class Compiler:
         self.p.start()
 
     def _connect_to_server(self, ip: str, port: int) -> None:
-        max_retries = 5
+        max_retries = 7
         wait_time = .25
         for _ in range(max_retries):
             try:

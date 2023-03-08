@@ -242,10 +242,11 @@ class ServerBase:
             w_id = self.lower_id_bound + i
             procs[w_id] = Process(target=start_worker, args=(w_id, port))
             procs[w_id].start()
+            self.logger.debug(f"Stated worker process {i}.")
 
         # Listen for the worker connections
         family = 'AF_INET' if sys.platform == 'win32' else None
-        listener = Listener(('localhost', port), family, backlog=5)
+        listener = Listener(('localhost', port), family, backlog=num_workers)
         conns = [listener.accept() for _ in range(num_workers)]
         listener.close()
 
