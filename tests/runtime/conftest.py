@@ -12,6 +12,7 @@ from bqskit.compiler import Compiler
 
 params = ['attached', 'detached'] if sys.platform != 'win32' else ['attached']
 
+
 @pytest.fixture(params=params)
 def server_compiler(request: Any) -> Iterator[Compiler]:
     if request.param == 'detached':
