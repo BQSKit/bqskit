@@ -24,16 +24,29 @@ from bqskit.runtime.task import RuntimeTask
 
 
 class WorkerQueue():
+    """The worker's task FIFO queue."""
+
     def __init__(self) -> None:
-        self._queue: dict[RuntimeAddress, None] = OrderedDict()
+        """
+        Initialize the worker queue.
+
+        An OrderedDict is used to internally store the task. This prevents
+        the same task appearing multiple times in the queue, while also
+        ensuring O(1) operations.
+        """
+        self._queue: OrderedDict[RuntimeAddress, None] = OrderedDict()
 
     def put(self, addr: RuntimeAddress) -> None:
-        self._queue[addr] = None
+        """Enqueue a task by its address."""
+        if addr not in self._queue:
+            self._queue[addr] = None
 
     def get(self) -> RuntimeAddress:
+        """Get the next task to run."""
         return self._queue.popitem(last=False)[0]
 
     def empty(self) -> bool:
+        """Check if the queue is empty."""
         return len(self._queue) == 0
 
 
