@@ -70,12 +70,11 @@ def test_double_close() -> None:
 
 
 def test_interrupt_handling() -> None:
-    
     if sys.platform == 'win32':
         sig = signal.SIGTERM
     else:
         sig = signal.SIGINT
-    
+
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     p = subprocess.Popen([
         'python', '-c',
@@ -89,10 +88,14 @@ def test_interrupt_handling() -> None:
     p.send_signal(sig)
 
     if sys.platform != 'win32':
-        out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+        out_num_childs = len(
+            psutil.Process(
+            os.getpid(),
+            ).children(recursive=True),
+        )
         assert in_num_childs + 1 == out_num_childs
         p.wait()
-        
+
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
