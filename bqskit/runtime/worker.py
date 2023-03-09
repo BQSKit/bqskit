@@ -30,9 +30,9 @@ class WorkerQueue():
         """
         Initialize the worker queue.
 
-        An OrderedDict is used to internally store the task. This prevents
-        the same task appearing multiple times in the queue, while also
-        ensuring O(1) operations.
+        An OrderedDict is used to internally store the task. This prevents the
+        same task appearing multiple times in the queue, while also ensuring
+        O(1) operations.
         """
         self._queue: OrderedDict[RuntimeAddress, None] = OrderedDict()
 
