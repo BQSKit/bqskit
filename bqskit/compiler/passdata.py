@@ -67,8 +67,8 @@ class PassData(MutableMapping[str, Any]):
                 ' Expected either a StateVector, StateSystem,'
                 ' or UnitaryMatrix.',
             )
-        if len(self.placement) != self._target.num_qudits:
-            self.placement = list(range(self._target.num_qudits))
+        if len(self.placement) != _val.num_qudits:
+            self.placement = list(range(_val.num_qudits))
         self._target = _val
 
     @property
