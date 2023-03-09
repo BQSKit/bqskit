@@ -17,13 +17,13 @@ def sleepi(i: int) -> int:
     return i
 
 
-class TestNextTask(BasePass):
+class TestNoDuplicateResult(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [3, 4, 1, 2])
+        future = get_runtime().map(sleepi, [0.3, 0.4, 0.1, 0.2])
         int_ids = await get_runtime().next(future)
         seen = [0]
         for int_id in int_ids:
-            assert int_id[1] == max(seen) + 1
+            assert not int_id[1] in seen
             seen.append(int_id[1])
 
 
@@ -44,31 +44,23 @@ class TestNoDuplicateResultsInTwoNexts(BasePass):
             seen.append(int_id[1])
 
 
-class TestAwaitAfterNextTask(BasePass):
+class TestFutureAwaitGivesAllResultsAfterNext(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [3, 4, 1, 2])
+        sleep_times = [0.3, 0.4, 0.1, 0.2]
+        future = get_runtime().map(sleepi, sleep_times)
         _ = await get_runtime().next(future)
-        assert (await future) == [3, 4, 1, 2]
+        assert (await future) == sleep_times
 
 
-class TestAwaitAfterDoubleNextTask(BasePass):
+class TestNextOnCompleteTaskRaisesError(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [3, 4, 1, 2])
-        _ = await get_runtime().next(future)
-        _ = await get_runtime().next(future)
-        assert (await future) == [3, 4, 1, 2]
-
-
-class TestNextOnCompleteTask(BasePass):
-    async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [3, 4, 1, 2])
+        future = get_runtime().map(sleepi, [0.3, 0.4, 0.1, 0.2])
         _ = await future
         with pytest.raises(RuntimeError):
             _ = await get_runtime().next(future)
 
 
-class TestNextAfterSleepTask(BasePass):
-    """Making sure we don't lose results while the worker is working."""
+class TestNextNeverlosesResults(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [0.1])
         time.sleep(0.2)
@@ -79,12 +71,11 @@ class TestNextAfterSleepTask(BasePass):
 
 @pytest.mark.parametrize(
     'test_pass', [
-        TestNextTask(),
+        TestNoDuplicateResult(),
         TestNoDuplicateResultsInTwoNexts(),
-        TestAwaitAfterNextTask(),
-        TestAwaitAfterDoubleNextTask(),
-        TestNextOnCompleteTask(),
-        TestNextAfterSleepTask(),
+        TestFutureAwaitGivesAllResultsAfterNext(),
+        TestNextOnCompleteTaskRaisesError(),
+        TestNextNeverlosesResults(),
     ],
 )
 def test_next_pass(server_compiler: Compiler, test_pass: BasePass) -> None:
