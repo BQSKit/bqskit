@@ -11,8 +11,13 @@ from bqskit.passes import QuickPartitioner
 from bqskit.passes import UnfoldPass
 
 
+if os.path.isdir(os.path.join(os.path.dirname(__file__), '_data')):
+    params = os.listdir(os.path.join(os.path.dirname(__file__), '_data'))
+else:
+    params = []
+
 @pytest.fixture(
-    params=os.listdir(os.path.join(os.path.dirname(__file__), '_data')),
+    params=params,
     ids=lambda qasm_file: os.path.splitext(os.path.basename(qasm_file))[0],
 )
 def big_qasm_file(request: Any) -> str:
