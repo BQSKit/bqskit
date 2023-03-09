@@ -550,8 +550,11 @@ def import_tests_package() -> None:
     """
     Import tests package recursively during detached architecture testing.
 
+    This should only be run by the CI test suite from the root bqskit folder.
+
     credit: https://www.youtube.com/watch?v=t43zBsVcva0
     """
+    sys.path.append(os.path.join(os.getcwd()))
     import tests
     import pkgutil
     for mod in pkgutil.walk_packages(tests.__path__, f'{tests.__name__}.'):
