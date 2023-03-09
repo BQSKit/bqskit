@@ -16,6 +16,7 @@ if os.path.isdir(os.path.join(os.path.dirname(__file__), '_data')):
 else:
     params = []
 
+
 @pytest.fixture(
     params=params,
     ids=lambda qasm_file: os.path.splitext(os.path.basename(qasm_file))[0],
