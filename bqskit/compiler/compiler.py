@@ -156,7 +156,10 @@ class Compiler:
 
                 self.p.join(1)
                 if self.p.exitcode is None:
-                    os.kill(self.p.pid, signal.SIGKILL)
+                    if sys.platform == 'win32':
+                        self.p.terminate()
+                    else:
+                        os.kill(self.p.pid, signal.SIGKILL)
                     _logger.debug('Killed attached runtime server.')
 
             except Exception as e:
