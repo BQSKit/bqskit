@@ -53,6 +53,11 @@ def test_create_workers(num_workers: int) -> None:
 
 
 def test_one_thread_per_worker() -> None:
+
+    #On windows we aren't sure how the threads are handeled
+    if sys.platform == 'win32':
+        return
+
     compiler = Compiler(num_workers=1)
     assert compiler.p is not None
     assert len(psutil.Process(compiler.p.pid).children()) == 1

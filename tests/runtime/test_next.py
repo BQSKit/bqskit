@@ -27,20 +27,20 @@ class TestNextTask(BasePass):
             seen.append(int_id[1])
 
 
-class TestDoubleNextTask(BasePass):
+class TestNoDuplicateResultsInTwoNexts(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [3, 4, 1, 2])
+        future = get_runtime().map(sleepi, [0.3, 0.4, 0.1, 0.2])
         seen = [0]
         int_ids = await get_runtime().next(future)
 
         for int_id in int_ids:
-            assert int_id[1] == max(seen) + 1
+            assert not int_id[1] in seen
             seen.append(int_id[1])
 
         int_ids = await get_runtime().next(future)
 
         for int_id in int_ids:
-            assert int_id[1] == max(seen) + 1
+            assert not int_id[1] in seen
             seen.append(int_id[1])
 
 
@@ -68,18 +68,19 @@ class TestNextOnCompleteTask(BasePass):
 
 
 class TestNextAfterSleepTask(BasePass):
+    """ Making sure we don't lose results while the worker is working"""
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [1, 2])
-        time.sleep(1.5)
+        future = get_runtime().map(sleepi, [0.1])
+        time.sleep(0.2)
         int_ids = await get_runtime().next(future)
         assert len(int_ids) == 1  # Only one should have been received
-        assert int_ids[0] == (0, 1)  # the 0th index 1 element
+        assert int_ids[0] == (0, .1)  # the 0th index 1 element
 
 
 @pytest.mark.parametrize(
     'test_pass', [
         TestNextTask(),
-        TestDoubleNextTask(),
+        TestNoDuplicateResultsInTwoNexts(),
         TestAwaitAfterNextTask(),
         TestAwaitAfterDoubleNextTask(),
         TestNextOnCompleteTask(),

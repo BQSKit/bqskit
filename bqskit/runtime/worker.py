@@ -23,6 +23,23 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
+from collections import OrderedDict
+
+class WorkerQueue():
+    
+    def __init__(self) -> None:
+        self._queue:dict[RuntimeAddress, None] = OrderedDict()
+
+    def put(self, addr:RuntimeAddress) -> None:
+        self._queue[addr] = None
+
+    def get(self) -> RuntimeAddress:
+        return self._queue.popitem(last=False)[0]
+    
+    def empty(self) -> bool:
+        return len(self._queue) == 0
+
+
 @dataclass
 class WorkerMailbox:
     """
@@ -156,7 +173,7 @@ class Worker:
         self._delayed_tasks: list[RuntimeTask] = []
         """Store all delayed tasks in LIFO order."""
 
-        self._ready_task_ids: Queue[RuntimeAddress] = Queue()
+        self._ready_task_ids: WorkerQueue = WorkerQueue()
         """Tasks queued up for execution."""
 
         self._cancelled_task_ids: set[RuntimeAddress] = set()
