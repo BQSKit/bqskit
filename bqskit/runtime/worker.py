@@ -6,11 +6,11 @@ import signal
 import sys
 import time
 import traceback
+from collections import OrderedDict
 from dataclasses import dataclass
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
-from queue import Queue
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -23,19 +23,16 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-from collections import OrderedDict
-
 class WorkerQueue():
-    
     def __init__(self) -> None:
-        self._queue:dict[RuntimeAddress, None] = OrderedDict()
+        self._queue: dict[RuntimeAddress, None] = OrderedDict()
 
-    def put(self, addr:RuntimeAddress) -> None:
+    def put(self, addr: RuntimeAddress) -> None:
         self._queue[addr] = None
 
     def get(self) -> RuntimeAddress:
         return self._queue.popitem(last=False)[0]
-    
+
     def empty(self) -> bool:
         return len(self._queue) == 0
 

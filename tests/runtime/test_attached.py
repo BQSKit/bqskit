@@ -53,8 +53,7 @@ def test_create_workers(num_workers: int) -> None:
 
 
 def test_one_thread_per_worker() -> None:
-
-    #On windows we aren't sure how the threads are handeled
+    # On windows we aren't sure how the threads are handeled
     if sys.platform == 'win32':
         return
 
@@ -95,7 +94,7 @@ def test_interrupt_handling() -> None:
     if sys.platform != 'win32':
         out_num_childs = len(
             psutil.Process(
-            os.getpid(),
+                os.getpid(),
             ).children(recursive=True),
         )
         assert in_num_childs + 1 == out_num_childs
