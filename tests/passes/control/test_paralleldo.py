@@ -52,7 +52,7 @@ def pick_z(c1: Circuit, c2: Circuit) -> bool:
         return False
 
 
-def test_parallel_do(compiler: Compiler) -> None:
+def test_parallel_do_chooses_correct_result(compiler: Compiler) -> None:
     pd_pass = ParallelDo([[AddXGate()], [AddYGate()], [AddZGate()]], pick_z)
     out_circuit, data = compiler.compile(Circuit(1), pd_pass, True)
     assert ZGate() in out_circuit.gate_set
