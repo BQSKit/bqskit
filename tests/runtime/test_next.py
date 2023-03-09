@@ -68,7 +68,7 @@ class TestNextOnCompleteTask(BasePass):
 
 
 class TestNextAfterSleepTask(BasePass):
-    """ Making sure we don't lose results while the worker is working"""
+    """Making sure we don't lose results while the worker is working."""
     async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().map(sleepi, [0.1])
         time.sleep(0.2)
