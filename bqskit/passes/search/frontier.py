@@ -9,6 +9,7 @@ from typing import NamedTuple
 from bqskit.ir.circuit import Circuit
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -25,21 +26,21 @@ class Frontier:
 
     def __init__(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         heuristic_function: HeuristicFunction,
     ) -> None:
         """
         Construct an empty frontier.
 
         Args:
-            target (UnitaryMatrix | StateVector): The target to pass to
-                the heuristic_function.
+            target (UnitaryMatrix | StateVector | StateSystem): The target to
+                pass to the heuristic_function.
 
             heuristic_function (HeuristicFunction): The heuristic used
                 to sort the Frontier.
         """
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )

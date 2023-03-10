@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ class RecordStatsPass(BasePass):
 
     key = 'RecordStatsPass_stats_list'
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         stats: dict[str, Any] = {}
         stats['cycles'] = circuit.num_cycles

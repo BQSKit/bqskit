@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import itertools as it
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
@@ -23,11 +23,7 @@ class MiddleOutLayerGenerator(SimpleLayerGenerator):
         self.generated_circuits = set()
         super().__init__()
 
-    def gen_successors(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any],
-    ) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
         """
         Generate the successors of a circuit node.
 

@@ -14,7 +14,7 @@ def test_cnot2cz_only_cnots() -> None:
         circuit.append_gate(CNOTGate(), (1, 2))
 
     utry = circuit.get_unitary()
-    CNOTToCZPass().run(circuit)
+    circuit.perform(CNOTToCZPass())
     assert CNOTGate() not in circuit.gate_set
     assert CZGate() in circuit.gate_set
     assert circuit.get_unitary().get_distance_from(utry) < 5e-8
@@ -35,7 +35,7 @@ def test_cnot2cz_with_single_qubit() -> None:
         circuit.append_gate(U3Gate(), 2)
 
     utry = circuit.get_unitary()
-    CNOTToCZPass().run(circuit)
+    circuit.perform(CNOTToCZPass())
     assert CNOTGate() not in circuit.gate_set
     assert CZGate() in circuit.gate_set
     assert circuit.get_unitary().get_distance_from(utry) < 5e-8

@@ -7,11 +7,13 @@ from typing import Any
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
@@ -91,8 +93,11 @@ class SubstitutePass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
 
         # Collect locations in circuit where self.init_gate exists
         points = [
@@ -125,13 +130,12 @@ class SubstitutePass(BasePass):
                 _logger.debug(f'Trying location: {loc}')
                 circuit_copy = circuit.copy()
                 circuit_copy.replace_gate(point, self.gate, loc)
-                circuit_copy = self.execute(
-                    data,
+                circuit_copy = await get_runtime().submit(
                     Circuit.instantiate,
-                    [circuit_copy],
+                    circuit_copy,
                     target=target,
-                    **self.instantiate_options,
-                )[0]
+                    **instantiate_options,
+                )
 
                 if self.cost(circuit_copy, target) < self.success_threshold:
                     _logger.info('Successfully substituted operation.')

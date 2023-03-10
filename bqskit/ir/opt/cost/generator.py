@@ -4,6 +4,8 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
+from bqskit.qis.state.system import StateSystem
+
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost import CostFunction
     from bqskit.ir.circuit import Circuit
@@ -30,7 +32,7 @@ class CostFunctionGenerator(abc.ABC):
     def gen_cost(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> CostFunction:
         """
         Generate a function from a circuit and target that maps params to cost.
@@ -38,7 +40,8 @@ class CostFunctionGenerator(abc.ABC):
         Args:
             circuit (Circuit): The circuit the cost function is generated for.
 
-            target (UnitaryMatrix | StateVector): The target object.
+            target (UnitaryMatrix | StateVector | StateSystem): The target
+                object.
 
         Returns:
             (CostFunction): The primitive cost function
@@ -49,7 +52,7 @@ class CostFunctionGenerator(abc.ABC):
     def calc_cost(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Generate and calculate the cost from the CostFunction."""
         return self.gen_cost(circuit, target).get_cost(circuit.params)
@@ -57,7 +60,7 @@ class CostFunctionGenerator(abc.ABC):
     def __call__(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Generate and calculate the cost from the CostFunction."""
         return self.calc_cost(circuit, target)
