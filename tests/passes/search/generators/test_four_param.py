@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-
 from bqskit.ir import Circuit
-from bqskit.ir.gates import CNOTGate, RXGate, RYGate, RZGate
+from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import RXGate
+from bqskit.ir.gates import RYGate
+from bqskit.ir.gates import RZGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.passes.search.generators import FourParamGenerator
 
@@ -10,6 +12,7 @@ from bqskit.passes.search.generators import FourParamGenerator
 def test_fringe_cnot_count_empty_circuit() -> None:
     gen = FourParamGenerator()
     assert gen.count_outer_cnots(Circuit(1), (0, 1)) == 0
+
 
 def test_fringe_cnot_count_2q_circuit() -> None:
     gen = FourParamGenerator()
@@ -23,6 +26,7 @@ def test_fringe_cnot_count_2q_circuit() -> None:
         circuit.append_gate(RYGate(), 1)
         circuit.append_gate(RXGate(), 1)
         assert gen.count_outer_cnots(circuit, (0, 1)) == i
+
 
 def test_fringe_cnot_count_4q_circuit() -> None:
     gen = FourParamGenerator()

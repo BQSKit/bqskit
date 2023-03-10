@@ -10,7 +10,6 @@ from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import U3Gate
-from bqskit.ir.point import CircuitPoint
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
@@ -91,13 +90,13 @@ class FourParamGenerator(LayerGenerator):
             successors.append(successor)
 
         return successors
-    
+
     def count_outer_cnots(self, circuit: Circuit, edge: tuple[int, int]) -> int:
         """
         Count how many uninterrupted 4-param cnot blocks are on `edge`.
 
-        This will count backwards from the right-side of the circuit and
-        stop when a cnot is encountered including other qudits.
+        This will count backwards from the right-side of the circuit and stop
+        when a cnot is encountered including other qudits.
         """
         rear_point = circuit._rear[edge[0]]
         num_cx_seen = 0
@@ -119,8 +118,7 @@ class FourParamGenerator(LayerGenerator):
             if cx_op.location != edge:
                 # If CX is on a different edge stop counting
                 break
-            
-            num_cx_seen += 1
-        
-        return num_cx_seen
 
+            num_cx_seen += 1
+
+        return num_cx_seen
