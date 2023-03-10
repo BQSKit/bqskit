@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
@@ -31,7 +31,7 @@ class ExtendBlockSizePass(BasePass):
 
         self.minimum_size = minimum_size
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if circuit.num_qudits < self.minimum_size:
             raise RuntimeError('Cannot extend block larger than circuit.')

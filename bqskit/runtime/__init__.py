@@ -185,4 +185,5 @@ def get_runtime() -> RuntimeHandle:
 
 default_server_port = 7472
 default_manager_port = 7473
+default_worker_port = 7474
 __all__ = ['get_runtime']

@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import logging
 from io import StringIO
-from typing import Any
 
 import pytest
 
 from bqskit import enable_logging
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.runtime import get_runtime
 
@@ -32,21 +32,21 @@ async def nested3() -> None:
 
 
 class TestInfoPass(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         logging.getLogger('bqskit').info('bqskit_info')
         logging.getLogger('bqskit.dummy').info('bqskit_dummy_info')
         logging.getLogger('dummy2').info('dummy2_info')
 
 
 class TestDebugPass(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         logging.getLogger('bqskit').debug('bqskit_debug')
         logging.getLogger('bqskit.dummy').debug('bqskit_dummy_debug')
         logging.getLogger('dummy2').debug('dummy2_debug')
 
 
 class TestNestedLogPass(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         logging.getLogger('bqskit').info('bqskit_level0')
         logging.getLogger('dummy2').info('dummy2_level0')
         await get_runtime().submit(nested1)

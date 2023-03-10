@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 
@@ -34,7 +35,7 @@ class UpdateDataPass(BasePass):
         self.key = key
         self.val = val
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug(f'Injecting {self.key}:{self.val} into the data dict.')
         data[self.key] = self.val

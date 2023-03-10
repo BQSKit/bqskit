@@ -7,6 +7,7 @@ import pytest
 
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.runtime import get_runtime
 
@@ -20,13 +21,13 @@ def sleep1() -> None:
 
 
 class TestCancelTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().submit(sleep1)
         get_runtime().cancel(future)
 
 
 class TestCantAwaitCancelTask(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         future = get_runtime().submit(sleep1)
         get_runtime().cancel(future)
         await future

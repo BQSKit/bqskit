@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import cast
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.location import CircuitLocation
@@ -48,7 +48,7 @@ class QuickPartitioner(BasePass):
 
         self.block_size = block_size
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """
         Partition gates in a circuit into a series of CircuitGates.
 

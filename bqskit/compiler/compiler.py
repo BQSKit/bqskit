@@ -7,26 +7,27 @@ import logging
 import multiprocessing as mp
 import os
 import signal
+import sys
 import time
 import uuid
 import warnings
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from types import FrameType
-from typing import Iterable
 from typing import overload
 from typing import TYPE_CHECKING
 
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.workflow import Workflow
+from bqskit.compiler.workflow import WorkflowLike
 from bqskit.runtime import default_server_port
-from bqskit.runtime.attached import start_attached_server
+from bqskit.runtime import default_worker_port
 from bqskit.runtime.message import RuntimeMessage
-from bqskit.utils.typing import is_iterable
 
 if TYPE_CHECKING:
     from typing import Any
-    from bqskit.compiler.basepass import BasePass
     from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -65,33 +66,44 @@ class Compiler:
     def __init__(
         self,
         ip: None | str = None,
-        port: None | int = None,
+        port: int = default_server_port,
         num_workers: int = -1,
+        runtime_log_level: int = logging.WARNING,
+        worker_port: int = default_worker_port,
     ) -> None:
         """Construct a Compiler object."""
         self.p: mp.Process | None = None
         self.conn: Connection | None = None
-        if port is None:
-            port = default_server_port
 
         atexit.register(self.close)
         if ip is None:
             ip = 'localhost'
-            self._start_server(num_workers)
+            self._start_server(num_workers, runtime_log_level, worker_port)
 
         self._connect_to_server(ip, port)
 
-    def _start_server(self, num_workers: int) -> None:
-        self.p = mp.Process(target=start_attached_server, args=(num_workers,))
+    def _start_server(
+        self,
+        num_workers: int,
+        runtime_log_level: int,
+        worker_port: int,
+    ) -> None:
+        from bqskit.runtime.attached import start_attached_server
+        self.p = mp.Process(
+            target=start_attached_server,
+            args=(num_workers, runtime_log_level),
+            kwargs={'worker_port': worker_port},
+        )
         _logger.debug('Starting runtime server process.')
         self.p.start()
 
     def _connect_to_server(self, ip: str, port: int) -> None:
-        max_retries = 5
+        max_retries = 7
         wait_time = .25
         for _ in range(max_retries):
             try:
-                conn = Client((ip, port))
+                family = 'AF_INET' if sys.platform == 'win32' else None
+                conn = Client((ip, port), family)
             except ConnectionRefusedError:
                 time.sleep(wait_time)
                 wait_time *= 2
@@ -144,7 +156,10 @@ class Compiler:
 
                 self.p.join(1)
                 if self.p.exitcode is None:
-                    os.kill(self.p.pid, signal.SIGKILL)
+                    if sys.platform == 'win32':
+                        self.p.terminate()
+                    else:
+                        os.kill(self.p.pid, signal.SIGKILL)
                     _logger.debug('Killed attached runtime server.')
 
             except Exception as e:
@@ -170,7 +185,7 @@ class Compiler:
     def submit(
         self,
         task_or_circuit: CompilationTask | Circuit,
-        workflow: Iterable[BasePass] | None = None,
+        workflow: WorkflowLike | None = None,
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
@@ -184,7 +199,7 @@ class Compiler:
                 argument should be specified. If a task is not specified,
                 the circuit must be paired with a workflow argument.
 
-            workflow (Iterable[BasePass]): The compilation job submitted
+            workflow (WorkflowLike): The compilation job submitted
                 is defined by executing this workflow on the input circuit.
 
             request_data (bool): If true, the task result will contain the
@@ -218,14 +233,10 @@ class Compiler:
 
         else:
             if workflow is None:
-                raise TypeError(
-                    'Must specify workflow when providing a circuit to submit.',
-                )
+                m = 'Must specify workflow when providing a circuit to submit.'
+                raise TypeError(m)
 
-            if not is_iterable(workflow):
-                raise TypeError('Expected sequence of bqskit passes.')
-
-            task = CompilationTask(task_or_circuit, list(workflow))
+            task = CompilationTask(task_or_circuit, Workflow(workflow))
 
         # Set task configuration
         task.request_data = request_data
@@ -256,7 +267,7 @@ class Compiler:
     def result(
         self,
         task_id: CompilationTask | uuid.UUID,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    ) -> Circuit | tuple[Circuit, PassData]:
         """Block until the task is finished, return its result."""
         if isinstance(task_id, CompilationTask):
             warnings.warn(
@@ -294,7 +305,7 @@ class Compiler:
     def compile(
         self,
         task_or_circuit: CompilationTask,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
@@ -302,7 +313,7 @@ class Compiler:
     def compile(
         self,
         task_or_circuit: Circuit,
-        workflow: Iterable[BasePass],
+        workflow: WorkflowLike,
         request_data: None = None,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
@@ -314,22 +325,22 @@ class Compiler:
     def compile(
         self,
         task_or_circuit: Circuit,
-        workflow: Iterable[BasePass],
+        workflow: WorkflowLike,
         request_data: bool,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
-    ) -> tuple[Circuit, dict[str, Any]]:
+    ) -> tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     def compile(
         self,
         task_or_circuit: CompilationTask | Circuit,
-        workflow: Iterable[BasePass] | None = None,
+        workflow: WorkflowLike | None = None,
         request_data: bool | None = None,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
-    ) -> Circuit | tuple[Circuit, dict[str, Any]]:
+    ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         if isinstance(task_or_circuit, CompilationTask):
             warnings.warn(

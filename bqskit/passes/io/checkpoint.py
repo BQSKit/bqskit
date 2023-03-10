@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import logging
 import pickle
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class SaveCheckpointPass(BasePass):
         """
         self.checkpoint_filename = checkpoint_filename
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see BasePass for more info."""
         with open(self.checkpoint_filename, 'wb') as f:
             pickle.dump((circuit, data), f)
@@ -49,7 +49,7 @@ class LoadCheckpointPass(BasePass):
         """
         self.checkpoint_filename = checkpoint_filename
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see BasePass for more info."""
         with open(self.checkpoint_filename, 'rb') as f:
             checkpoint = pickle.load(f)

@@ -13,6 +13,7 @@ from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ class Minimization(Instantiater):
     def __init__(
         self,
         cost_fn_gen: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
-        minimizer: Minimizer | None = None,
+        minimizer: Minimizer = CeresMinimizer(),
         **kwargs: dict[str, Any],  # TODO: handle dist_tol and other options
     ) -> None:
         """
@@ -36,7 +37,7 @@ class Minimization(Instantiater):
                 functions that are minimized.
                 (Default: HilbertSchmidtGenerator())
 
-            minimizer (Minimizer | None): The minimizer to use. If left as
+            minimizer (Minimizer): The minimizer to use. If left as
                 None, attempts to select best one.
         """
 
@@ -45,12 +46,8 @@ class Minimization(Instantiater):
                 'Expected CostFunctionGenerator, got %s.' % type(cost_fn_gen),
             )
 
-        if minimizer is not None and not isinstance(minimizer, Minimizer):
+        if not isinstance(minimizer, Minimizer):
             raise TypeError('Expected Minimizer, got %s.' % type(minimizer))
-
-        # Default to the fast CeresMinimizer
-        if minimizer is None:
-            minimizer = CeresMinimizer()
 
         self.cost_fn_gen = cost_fn_gen
         self.minimizer = minimizer
@@ -58,7 +55,7 @@ class Minimization(Instantiater):
     def instantiate(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         x0: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""

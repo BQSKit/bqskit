@@ -1,10 +1,9 @@
 """Checks the runtime's ability and correctness when executing tasks."""
 from __future__ import annotations
 
-from typing import Any
-
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
+from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import XGate
@@ -30,26 +29,26 @@ async def add_xgate_to_circuit(c: Circuit) -> Circuit:
 
 
 class TestPass1(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         results = await get_runtime().map(iden, list(range(10)))
         assert results == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
 class TestPass2(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         results = await get_runtime().map(parent, list(range(1000)))
         assert len(results) == 1000
         assert all(r == [2 * i, 2 * i + 1] for i, r in enumerate(results))
 
 
 class TestPass3(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         out = await get_runtime().submit(add_hgate_to_circuit, circuit)
         circuit.become(out)
 
 
 class TestPass4(BasePass):
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         out = await get_runtime().submit(add_xgate_to_circuit, circuit)
         circuit.become(out)
 

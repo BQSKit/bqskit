@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.passes.mapping.sabre import GeneralizedSabreAlgorithm
 
@@ -20,7 +20,7 @@ class GeneralizedSabreRoutingPass(BasePass, GeneralizedSabreAlgorithm):
     See :class:`GeneralizedSabreAlgorithm` for more info.
     """
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         subgraph = self.get_connectivity(circuit, data)
         if not subgraph.is_fully_connected():

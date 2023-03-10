@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 import numpy as np
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 _logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 class GreedyPlacementPass(BasePass):
     """Find a placement by starting with the most connected qudit."""
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find physical qudit with highest degree

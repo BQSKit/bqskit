@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 class ToU3Pass(BasePass):
     """Converts single-qubit general unitary gates to U3 Gates."""
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Converting single-qubit general gates to U3Gates.')
         for cycle, op in circuit.operations_with_cycles():

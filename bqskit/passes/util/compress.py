@@ -1,9 +1,8 @@
 """This module implements the CompressPass class."""
 from __future__ import annotations
 
-from typing import Any
-
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 
@@ -15,6 +14,6 @@ class CompressPass(BasePass):
     passes slightly more efficient without actually changing the circuit.
     """
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         circuit.compress()

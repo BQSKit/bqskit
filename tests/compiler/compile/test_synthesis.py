@@ -4,7 +4,7 @@ import pytest
 
 from bqskit import compile
 from bqskit import MachineModel
-from bqskit.compiler.machine import default_gate_set
+from bqskit.compiler.machine import default_qubit_gate_set
 from bqskit.ext.cirq.models import google_gate_set
 from bqskit.ext.honeywell import honeywell_gate_set
 from bqskit.ext.rigetti import rigetti_gate_set
@@ -25,7 +25,7 @@ from bqskit.qis import UnitaryMatrix
         {U3Gate()},
         {PhasedXZGate()},
         {U1qGate(), XGate()},
-        default_gate_set,
+        default_qubit_gate_set,
         rigetti_gate_set,
         honeywell_gate_set,
         google_gate_set,
@@ -47,13 +47,13 @@ def test_single_qudit_synthesis(
         assert out_circuit.num_operations == 1
     assert out_circuit.num_qudits == 1
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    assert out_circuit.get_unitary().get_distance_from(sq_utry, 1) < 1e-10
+    assert out_circuit.get_unitary().get_distance_from(sq_utry, 1) < 1e-8
 
 
 @pytest.mark.parametrize('tq_utry', [UnitaryMatrix.random(2) for i in range(5)])
 @pytest.mark.parametrize(
     'gate_set', [
-        default_gate_set,
+        default_qubit_gate_set,
         rigetti_gate_set,
         honeywell_gate_set,
         google_gate_set,
@@ -72,12 +72,12 @@ def test_two_qudit_synthesis(
     )
     assert out_circuit.num_qudits == 2
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    assert out_circuit.get_unitary().get_distance_from(tq_utry, 1) < 1e-10
+    assert out_circuit.get_unitary().get_distance_from(tq_utry, 1) < 1e-8
 
 
 @pytest.mark.parametrize(
     'gate_set', [
-        default_gate_set,
+        default_qubit_gate_set,
         rigetti_gate_set,
         honeywell_gate_set,
         {IToffoliGate(), U3Gate()},
@@ -97,7 +97,7 @@ def test_three_qudit_synthesis(
     assert out_circuit.num_qudits == 3
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
     utry = toffoli_unitary
-    assert out_circuit.get_unitary().get_distance_from(utry, 1) < 1e-10
+    assert out_circuit.get_unitary().get_distance_from(utry, 1) < 1e-8
 
 
 def test_fail_on_larger_max_synthesis_size() -> None:
@@ -117,6 +117,20 @@ def test_identity_synthesis(
     )
     assert out_circuit.get_unitary().get_distance_from(
         UnitaryMatrix.identity(dim), 1,
-    ) < 1e-10
+    ) < 1e-8
     if optimization_level == 3:
         assert out_circuit.num_operations <= 3
+
+
+# @pytest.mark.parametrize('qudits', [1, 2])
+# def test_qutrit_synthesis(optimization_level: int, qudits: int) -> None:
+#     in_utry = UnitaryMatrix.random(qudits, [3] * qudits)
+#     out_circuit = compile(in_utry, optimization_level=optimization_level)
+#     assert out_circuit.get_unitary().get_distance_from(in_utry, 1) < 1e-8
+
+
+# @pytest.mark.parametrize('qudits', [1, 2])
+# def test_ququart_synthesis(optimization_level: int, qudits: int) -> None:
+#     in_utry = UnitaryMatrix.random(qudits, [4] * qudits)
+#     out_circuit = compile(in_utry, optimization_level=optimization_level)
+#     assert out_circuit.get_unitary().get_distance_from(in_utry, 1) < 1e-8

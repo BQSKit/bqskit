@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 
@@ -15,7 +15,7 @@ class PassAlias(BasePass):
     def get_passes(self) -> list[BasePass]:
         """Return the passes that should be run, when this alias is called."""
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         for bqskit_pass in self.get_passes():
             await bqskit_pass.run(circuit, data)

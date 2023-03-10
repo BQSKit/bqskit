@@ -21,6 +21,7 @@ from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.base import import_tests_package
 from bqskit.runtime.base import parse_ipports
 from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
@@ -403,6 +404,11 @@ def start_server() -> None:
         default=0,
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
+    parser.add_argument(
+        '--import-tests', '-i',
+        action='store_true',
+        help='Import the bqskit tests package; used during testing.',
+    )
     args = parser.parse_args()
     ipports = parse_ipports(args.managers)
 
@@ -410,6 +416,10 @@ def start_server() -> None:
     _logger = logging.getLogger('bqskit-runtime')
     _logger.setLevel([30, 20, 10, 1][min(args.verbose, 3)])
     _logger.addHandler(logging.StreamHandler())
+
+    # Import tests package recursively
+    if args.import_tests:
+        import_tests_package()
 
     # Create the server
     server = DetachedServer(ipports, args.port)

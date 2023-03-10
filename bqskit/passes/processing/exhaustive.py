@@ -8,6 +8,7 @@ from typing import Callable
 import numpy as np
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
@@ -105,8 +106,12 @@ class ExhaustiveGateRemovalPass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    async def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
+
         _logger.debug('Starting exhaustive gate removal.')
 
         target = self.get_target(circuit, data)
@@ -142,7 +147,7 @@ class ExhaustiveGateRemovalPass(BasePass):
                 Circuit.instantiate,
                 expanded_circuits,
                 target=target,
-                **self.instantiate_options,
+                **instantiate_options,
             )
 
             # Process them

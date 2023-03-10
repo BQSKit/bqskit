@@ -1,5 +1,10 @@
 # flake8: noqa
 from __future__ import annotations
+
+import pytest
+pytest.importorskip('pytket')
+pytest.importorskip('pytket.extensions.qiskit')
+
 from bqskit.qis import UnitaryMatrix
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import CNOTGate
@@ -12,9 +17,6 @@ from pytket.extensions.qiskit import AerUnitaryBackend
 from pytket.circuit import Circuit as QubitCircuit
 from pytket import OpType
 import numpy as np
-
-import pytest
-pytest.importorskip('pytket')
 
 
 class TestTranslate:
@@ -65,10 +67,7 @@ class TestTranslate:
         return circuit
 
     def get_unitary(self, qc: QubitCircuit) -> np.ndarray:  # type: ignore
-        backend = AerUnitaryBackend()
-        handle = backend.process_circuit(qc)
-        result = backend.get_result(handle)
-        return result.get_unitary()
+        return qc.get_unitary()
 
     def test_bqskit_to_bqskit(self, bqskit_circuit: Circuit) -> None:
         in_utry = bqskit_circuit.get_unitary()
