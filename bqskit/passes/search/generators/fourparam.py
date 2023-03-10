@@ -10,6 +10,7 @@ from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import U3Gate
+from bqskit.ir.point import CircuitPoint
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
@@ -76,8 +77,13 @@ class FourParamGenerator(LayerGenerator):
         # Generate successors
         successors = []
         for edge in coupling_graph:
+
+            if self.count_outer_cnots(circuit, edge) >= 3:
+                # No need to build circuits with more than 3 cnots in a row
+                continue
+
             successor = circuit.copy()
-            successor.append_gate(CNOTGate(), [edge[0], edge[1]])
+            successor.append_gate(CNOTGate(), edge)
             successor.append_gate(RYGate(), edge[0])
             successor.append_gate(RZGate(), edge[0])
             successor.append_gate(RYGate(), edge[1])
@@ -85,3 +91,36 @@ class FourParamGenerator(LayerGenerator):
             successors.append(successor)
 
         return successors
+    
+    def count_outer_cnots(self, circuit: Circuit, edge: tuple[int, int]) -> int:
+        """
+        Count how many uninterrupted 4-param cnot blocks are on `edge`.
+
+        This will count backwards from the right-side of the circuit and
+        stop when a cnot is encountered including other qudits.
+        """
+        rear_point = circuit._rear[edge[0]]
+        num_cx_seen = 0
+
+        while rear_point is not None:
+            rear_points = circuit.prev(rear_point)
+
+            if len(rear_points) == 0:
+                break
+
+            rear_point = rear_points.pop()
+
+            if circuit[rear_point].num_qudits == 1:
+                # Move past single-qubit gates
+                continue
+
+            cx_op = circuit[rear_point]
+
+            if cx_op.location != edge:
+                # If CX is on a different edge stop counting
+                break
+            
+            num_cx_seen += 1
+        
+        return num_cx_seen
+
