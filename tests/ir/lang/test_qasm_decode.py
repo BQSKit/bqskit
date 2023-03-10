@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from bqskit.ext.qiskit import qiskit_to_bqskit
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
@@ -360,3 +361,65 @@ def test_CX_gate() -> None:
     circuit = OPENQASM2Language().decode(input)
     assert circuit.num_operations == 1
     assert circuit[0, 0].gate == CNOTGate()
+
+
+def test_barrier_full_register() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[2];
+        CX q[0],q[1];
+        barrier q;
+        CX q[0],q[1];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 3
+    assert circuit[0, 0].gate == CNOTGate()
+    assert circuit[1, 0].gate == BarrierPlaceholder(2)
+    assert circuit[2, 0].gate == CNOTGate()
+
+
+def test_barrier_indiviual_qubits() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[2];
+        CX q[0],q[1];
+        barrier q[0], q[1];
+        CX q[0],q[1];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 3
+    assert circuit[0, 0].gate == CNOTGate()
+    assert circuit[1, 0].gate == BarrierPlaceholder(2)
+    assert circuit[2, 0].gate == CNOTGate()
+
+
+def test_barrier_mixed() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[2];
+        qreg r[2];
+        CX q[0],q[1];
+        barrier q, r[0];
+        CX q[0],q[1];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 3
+    assert circuit[0, 0].gate == CNOTGate()
+    assert circuit[1, 0].gate == BarrierPlaceholder(2)
+    assert circuit[2, 0].gate == CNOTGate()
+
+
+def test_barrier_mixed_three() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[2];
+        qreg r[2];
+        CX q[0],q[1];
+        barrier q, r[0], r[1];
+        CX q[0],q[1];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 3
+    assert circuit[0, 0].gate == CNOTGate()
+    assert circuit[1, 0].gate == BarrierPlaceholder(2)
+    assert circuit[2, 0].gate == CNOTGate()

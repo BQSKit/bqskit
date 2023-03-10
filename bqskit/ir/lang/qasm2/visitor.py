@@ -16,6 +16,7 @@ from lark import Visitor
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
@@ -250,6 +251,61 @@ class OPENQASMVisitor(Visitor):
         reg = QubitReg(reg_name, reg_size)
         _logger.debug('Qubit register %s declared with size %d.' % reg)
         self.qubit_regs.append(reg)
+    
+    def barrier(self, tree: lark.Tree) -> None:
+        """
+        Apply a barrier to the circuit.
+
+        TODO: Redo without using horrible code :) (when lowering to rust)
+        """
+        location = []
+        print(tree.children[0].children)
+        for qubit_ids in tree.children[0].children:
+            if qubit_ids.data == 'idlist':
+                outer_idx = 0
+                for reg in self.qubit_regs:
+                    if reg.name == str(qubit_ids.children[0]):
+                        location.extend([i + outer_idx for i in range(reg.size)])
+                        break
+                    outer_idx += reg.size
+            elif qubit_ids.data == 'mixedlist':
+                if not any(hasattr(c, 'data') and c.data == 'idlist' for c in qubit_ids.children):
+                    for reg_name, reg_idx in qubits_from_list(qubit_ids):
+                        outer_idx = 0
+                        for reg in self.qubit_regs:
+                            if reg.name == reg_name:
+                                location.append(outer_idx + reg_idx)
+                                break
+                            outer_idx += reg.size
+                elif qubit_ids.children[0].data == 'idlist':
+                    outer_idx = 0
+                    for reg in self.qubit_regs:
+                        if reg.name == str(qubit_ids.children[0].children[0]):
+                            location.extend([i + outer_idx for i in range(reg.size)])
+                            break
+                        outer_idx += reg.size
+                    print(qubit_ids.children[-1])
+                else:
+                    print(qubit_ids)
+                            # for reg_name, reg_idx in qubits_from_list(child):
+                            #     outer_idx = 0
+                            #     for reg in self.qubit_regs:
+                            #         if reg.name == reg_name:
+                            #             location.append(outer_idx + reg_idx)
+                            #             break
+                            #         outer_idx += reg.size
+                        
+        
+        print(location)
+            # location = []
+            
+            # location = CircuitLocation(location)
+        # for idlist in tree.children[0].children
+
+
+        # gate = BarrierPlaceholder(len(location))
+        # op = Operation(gate, location)
+        # self.op_list.append(op)
 
     def gate(self, tree: lark.Tree) -> None:
         """Apply a normal gate statement to the circuit."""
