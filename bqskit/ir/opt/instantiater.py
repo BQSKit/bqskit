@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
+from bqskit.ir.opt.multistartgens.random import RandomStartGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -53,6 +55,42 @@ class Instantiater(abc.ABC):
             many instantiate calls to the same circuit using the same
             Instantiater object may happen in parallel.
         """
+
+    def multi_start_instantiate(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> Circuit:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        Args:
+            circuit (Circuit): The circuit template to instantiate.
+
+            target (UnitaryMatrix | StateVector | StateSystem): The unitary
+                matrix to implement or state to prepare.
+
+            num_starts (int): The number of starting points to attempt
+                instantiation with.
+
+        Returns:
+            (Circuit): The paremeters for the circuit that makes the
+                circuit best implement `target`.
+
+        Notes:
+            This method should be side-effect free. This is necessary since
+            many instantiate calls to the same circuit using the same
+            Instantiater object may happen in parallel.
+        """
+        target = self.check_target(target)
+        start_gen = RandomStartGenerator()
+        starts = start_gen.gen_starting_points(num_starts, circuit, target)
+        cost_fn = HilbertSchmidtCostGenerator().gen_cost(circuit, target)
+        params_list = [self.instantiate(circuit, target, x0) for x0 in starts]
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        circuit.set_params(params)
+        return circuit
 
     @staticmethod
     @abc.abstractmethod

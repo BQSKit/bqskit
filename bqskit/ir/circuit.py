@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import warnings
 from typing import Any
 from typing import cast
 from typing import Collection
@@ -30,13 +31,11 @@ from bqskit.ir.lang import get_language
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.ir.operation import Operation
-from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.instantiaters import instantiater_order
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.opt.multistartgen import MultiStartGenerator
-from bqskit.ir.opt.multistartgens.random import RandomStartGenerator
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
@@ -2634,8 +2633,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         method: str | Instantiater | None = None,
         multistarts: int = 1,
         seed: int | None = None,
-        multistart_gen: MultiStartGenerator = RandomStartGenerator(),
-        score_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
+        multistart_gen: MultiStartGenerator | None = None,
+        score_fn_gen: CostFunctionGenerator | None = None,
         **kwargs: Any,
     ) -> Circuit:
         """
@@ -2667,16 +2666,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 to use. Note that this is not guaranteed to make this method
                 reproducible.
 
-            multistart_gen (MultiStartGenerator): The generator used to
-                generate starting points for instantiation.
-                (Default: RandomStartGenerator())
+            multistart_gen (MultiStartGenerator): (Deprecated)
 
-            score_fn_gen (CostFunctionGenerator): The generator used to produce
-                a cost function, which will be used to evaluate the best result
-                from the different starting points.
-                (Default: HilbertSchmidtCostGenerator())
-
-            parallel (bool): Ignored for now.
+            score_fn_gen (CostFunctionGenerator):  (Deprecated)
 
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method constructor. For more info, see
@@ -2696,6 +2688,23 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If `seed` is not an integer or `None`
         """
+        if multistart_gen is not None or score_fn_gen is not None:
+            warnings.warn(
+                'Multistart handling has moved from the `circuit.instantiate`'
+                ' method to the Instantiater class. See'
+                ' `Instantiater.multi_start_instantiate` for more info. If you'
+                ' would like to override how starts are generated or'
+                ' instantiation results are processed, you should subclass'
+                ' an Instantiater. An Instantiatier object can be passed to'
+                ' `circuit.instantiate` through the `method` parameter. It'
+                ' can also be passed to most BQSKit compiler passes through'
+                " the `instantiate_options={'method':...} parameter. The use"
+                ' of `multistart_gen` and `score_fn_gen` parameters in'
+                ' `circuit.instantiate` is deprecated, and this warning'
+                ' will turn into an error in the future.',
+                DeprecationWarning,
+            )
+
         # Set seed if specified
         if seed is not None:
             if not isinstance(seed, int):
@@ -2752,108 +2761,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         instantiater = cast(Instantiater, instantiater)
 
-        # Check Target
-        try:
-            if UnitaryMatrix.is_unitary(target):
-                target = UnitaryMatrix(target)
-
-            elif StateVector.is_pure_state(target):
-                target = StateVector(target)
-
-            elif StateSystem.is_state_system(target):
-                target = StateSystem(target)
-
-            else:
-                raise TypeError(
-                    'Target is neither a unitary, a state system'
-                    f', nor a state. Got {type(input)}.',
-                )
-        except Exception as e:
-            raise TypeError(
-                'Unable to determine type of input.'
-                ' Ensure that you are trying to compile a valid'
-                ' circuit, unitary, or state.',
-            ) from e
-
-        if target.dim != self.dim:
-            raise ValueError('Target dimension mismatch with circuit.')
-
-        # Generate starting points
-        starts = multistart_gen.gen_starting_points(multistarts, self, target)
-
-        if len(starts) != multistarts:
-            raise ValueError(
-                'Error generating starting points for instantiation.\n'
-                f'Expected {multistarts} starts but got {len(starts)}.',
-            )
-
-        # Generate cost function
-        if not isinstance(score_fn_gen, CostFunctionGenerator):
-            raise TypeError(
-                'Expected CostFunctionGenerator, got %s.' % type(score_fn_gen),
-            )
-
-        cost_fn = score_fn_gen.gen_cost(self, target)
-
-        # Instantiate the circuit
-        # if parallel and multistarts > 1:
-        #     client = get_client()
-
-        #     def single_start_instantiate(
-        #         instantiater: Instantiater,
-        #         circuit: Circuit,
-        #         target: UnitaryMatrix,
-        #         start: npt.NDArray[np.float64],
-        #     ) -> npt.NDArray[np.float64]:
-        #         return instantiater.instantiate(circuit, target, start)
-
-        #     def scoring_fn(
-        #         fn_gen: CostFunctionGenerator,
-        #         circuit: Circuit,
-        #         target: UnitaryMatrix,
-        #         params: npt.NDArray[np.float64],
-        #     ) -> float:
-        #         return fn_gen.gen_cost(circuit, target).get_cost(params)
-
-        #     param_futures = client.map(
-        #         single_start_instantiate,
-        #         [instantiater] * multistarts,
-        #         [self] * multistarts,
-        #         [target] * multistarts,
-        #         starts,
-        #         pure=False,
-        #     )
-
-        #     score_futures = client.map(
-        #         scoring_fn,
-        #         [score_fn_gen] * multistarts,
-        #         [self] * multistarts,
-        #         [target] * multistarts,
-        #         param_futures,
-        #         pure=False,
-        #     )
-
-        #     # We only want to secede on worker threads, so try to recover if
-        #     # Circuit.instantiate is called from the main thread
-        #     try:
-        #         secede()
-        #     except ValueError:
-        #         pass
-
-        #     scores = client.gather(score_futures)
-        #     best_index = scores.index(min(scores))
-        #     params = param_futures[best_index].result()
-
-        # else:
-        params_list = [
-            instantiater.instantiate(self, target, start)
-            for start in starts
-        ]
-        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
-
-        # Return best result
-        self.set_params(params)
-        return self
+        # Instantiate
+        return instantiater.multi_start_instantiate(self, target, multistarts)
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
         """
