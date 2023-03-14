@@ -1,8 +1,12 @@
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CXGate, U3Gate, CircuitGate
-from bqskit.ir.gates import BarrierPlaceholder
-from bqskit.passes.partitioning.quick import QuickPartitioner
+from __future__ import annotations
+
 from bqskit import compile
+from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import BarrierPlaceholder
+from bqskit.ir.gates import CircuitGate
+from bqskit.ir.gates import CXGate
+from bqskit.ir.gates import U3Gate
+from bqskit.passes.partitioning.quick import QuickPartitioner
 
 
 def test_barrier_still_there_after_partitioning() -> None:
