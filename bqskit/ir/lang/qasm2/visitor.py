@@ -251,61 +251,19 @@ class OPENQASMVisitor(Visitor):
         reg = QubitReg(reg_name, reg_size)
         _logger.debug('Qubit register %s declared with size %d.' % reg)
         self.qubit_regs.append(reg)
-    
+
     def barrier(self, tree: lark.Tree) -> None:
-        """
-        Apply a barrier to the circuit.
+        """Apply a barrier to the circuit."""
+        qlist = tree.children[-1]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+        gate = BarrierPlaceholder(len(location))
+        op = Operation(gate, location)
+        self.op_list.append(op)
 
-        TODO: Redo without using horrible code :) (when lowering to rust)
-        """
-        location = []
-        print(tree.children[0].children)
-        for qubit_ids in tree.children[0].children:
-            if qubit_ids.data == 'idlist':
-                outer_idx = 0
-                for reg in self.qubit_regs:
-                    if reg.name == str(qubit_ids.children[0]):
-                        location.extend([i + outer_idx for i in range(reg.size)])
-                        break
-                    outer_idx += reg.size
-            elif qubit_ids.data == 'mixedlist':
-                if not any(hasattr(c, 'data') and c.data == 'idlist' for c in qubit_ids.children):
-                    for reg_name, reg_idx in qubits_from_list(qubit_ids):
-                        outer_idx = 0
-                        for reg in self.qubit_regs:
-                            if reg.name == reg_name:
-                                location.append(outer_idx + reg_idx)
-                                break
-                            outer_idx += reg.size
-                elif qubit_ids.children[0].data == 'idlist':
-                    outer_idx = 0
-                    for reg in self.qubit_regs:
-                        if reg.name == str(qubit_ids.children[0].children[0]):
-                            location.extend([i + outer_idx for i in range(reg.size)])
-                            break
-                        outer_idx += reg.size
-                    print(qubit_ids.children[-1])
-                else:
-                    print(qubit_ids)
-                            # for reg_name, reg_idx in qubits_from_list(child):
-                            #     outer_idx = 0
-                            #     for reg in self.qubit_regs:
-                            #         if reg.name == reg_name:
-                            #             location.append(outer_idx + reg_idx)
-                            #             break
-                            #         outer_idx += reg.size
-                        
-        
-        print(location)
-            # location = []
-            
-            # location = CircuitLocation(location)
-        # for idlist in tree.children[0].children
-
-
-        # gate = BarrierPlaceholder(len(location))
-        # op = Operation(gate, location)
-        # self.op_list.append(op)
+    def barrierp(self, tree: lark.Tree) -> None:
+        raise LangException(
+            'BQSKit currently does not support barriers in gate declarations.',
+        )
 
     def gate(self, tree: lark.Tree) -> None:
         """Apply a normal gate statement to the circuit."""
@@ -317,15 +275,8 @@ class OPENQASMVisitor(Visitor):
             params = []
 
         # Parse location
-        location = []
-        for reg_name, reg_idx in qubits_from_list(tree.children[-1]):
-            outer_idx = 0
-            for reg in self.qubit_regs:
-                if reg.name == reg_name:
-                    location.append(outer_idx + reg_idx)
-                    break
-                outer_idx += reg.size
-        location = CircuitLocation(location)
+        qlist = tree.children[-1]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
 
         if any(q in self.measurements for q in location):
             raise LangException(
@@ -683,6 +634,68 @@ class OPENQASMVisitor(Visitor):
     def reset(self, tree: lark.Tree) -> None:
         """Reset statement node visitor."""
         raise LangException('BQSKit currently does not support resets.')
+
+    def convert_qubit_ids_to_indices(self, qlist: lark.Tree) -> list[int]:
+        if qlist.data == 'anylist':
+            # Anylist is either idlist or mixedlist
+            return self.convert_qubit_ids_to_indices(qlist.children[0])
+
+        if qlist.data == 'idlist':
+            # List of ids, e.g. q, r, but without indices
+            ids = []
+            tree_iter = qlist
+            while len(tree_iter.children) == 2:
+                ids.append(str(tree_iter.children[0]))
+                tree_iter = tree_iter.children[1]
+            ids.append(str(tree_iter.children[0]))
+
+            out_idxs = []
+            for qubit_id in ids:
+                out_idxs.extend(self.convert_qubit_id_to_indices(qubit_id))
+
+            return out_idxs
+
+        if qlist.data == 'argument':
+            # ID | ID "[" NNINTEGER "]"
+            qubit_id = qlist.children[0]
+            if len(qlist.children) == 2:
+                idx = self.convert_qubit_id_to_first_index(qubit_id)
+                return [idx + int(qlist.children[1])]
+
+            return self.convert_qubit_id_to_indices(qubit_id)
+
+        if qlist.data == 'mixedlist':
+            if isinstance(qlist.children[0], lark.Tree):
+                idxs = self.convert_qubit_ids_to_indices(qlist.children[0])
+
+                if len(qlist.children) == 2:
+                    qubit_id = qlist.children[1]
+                    return idxs + self.convert_qubit_id_to_indices(qubit_id)
+
+                idx = self.convert_qubit_id_to_first_index(qlist.children[1])
+                return idxs + [idx + int(qlist.children[2])]
+
+            else:
+                idx = self.convert_qubit_id_to_first_index(qlist.children[0])
+                return [idx + int(qlist.children[1])]
+
+        raise LangException('Incorrect qlist type.')
+
+    def convert_qubit_id_to_first_index(self, qubit_id: str) -> int:
+        outer_idx = 0
+        for reg in self.qubit_regs:
+            if reg.name == qubit_id:
+                return outer_idx
+            outer_idx += reg.size
+        raise LangException(f'Unable to find qubit register id: {qubit_id}.')
+
+    def convert_qubit_id_to_indices(self, qubit_id: str) -> list[int]:
+        outer_idx = 0
+        for reg in self.qubit_regs:
+            if reg.name == qubit_id:
+                return [i + outer_idx for i in range(reg.size)]
+            outer_idx += reg.size
+        raise LangException(f'Unable to find qubit register id: {qubit_id}.')
 
 
 eval_locals = {

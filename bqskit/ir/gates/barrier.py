@@ -1,9 +1,9 @@
 """This module implements the BarrierPlaceholder class."""
 from __future__ import annotations
+
 from typing import Sequence
 
 from bqskit.ir.gate import Gate
-from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -16,7 +16,9 @@ class BarrierPlaceholder(Gate):
         self._name = 'barrier'
         self._qasm_name = 'barrier'
         self._num_qudits = num_qudits
-        self._radixes = tuple(radixes) if len(radixes) == 0 else tuple([2] * self._num_qudits)
+        self._radixes = tuple(radixes) if len(
+            radixes,
+        ) == 0 else tuple([2] * self._num_qudits)
         self._num_params = 0
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

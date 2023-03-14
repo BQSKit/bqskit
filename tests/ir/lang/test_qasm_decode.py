@@ -405,7 +405,7 @@ def test_barrier_mixed() -> None:
     circuit = OPENQASM2Language().decode(input)
     assert circuit.num_operations == 3
     assert circuit[0, 0].gate == CNOTGate()
-    assert circuit[1, 0].gate == BarrierPlaceholder(2)
+    assert circuit[1, 0].gate == BarrierPlaceholder(3)
     assert circuit[2, 0].gate == CNOTGate()
 
 
@@ -421,5 +421,5 @@ def test_barrier_mixed_three() -> None:
     circuit = OPENQASM2Language().decode(input)
     assert circuit.num_operations == 3
     assert circuit[0, 0].gate == CNOTGate()
-    assert circuit[1, 0].gate == BarrierPlaceholder(2)
+    assert circuit[1, 0].gate == BarrierPlaceholder(4)
     assert circuit[2, 0].gate == CNOTGate()
