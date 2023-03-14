@@ -16,13 +16,11 @@ class BarrierPlaceholder(Gate):
         self._name = 'barrier'
         self._qasm_name = 'barrier'
         self._num_qudits = num_qudits
-        self._radixes = tuple(radixes) if len(
-            radixes,
-        ) == 0 else tuple([2] * self._num_qudits)
+        self._radixes = tuple(radixes) if radixes else tuple([2] * num_qudits)
         self._num_params = 0
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        return UnitaryMatrix.identity(self.num_qudits, self.radixes)
+        return UnitaryMatrix.identity(self.dim, self.radixes)
 
     def __eq__(self, other: object) -> bool:
         return (
