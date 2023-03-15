@@ -75,8 +75,9 @@ class Instantiater(abc.ABC):
                 instantiation with.
 
         Returns:
-            (Circuit): The paremeters for the circuit that makes the
-                circuit best implement `target`.
+            (Circuit): The circuit with the best parameters with respect
+                to `target`. In the default implementation, the input
+                circuit is modified in-place and also returned.
 
         Notes:
             This method should be side-effect free. This is necessary since
