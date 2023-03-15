@@ -24,6 +24,8 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :template: autosummary/gate.rst
 
     CCXGate
+    RCCXGate
+    RC3XGate
     ToffoliGate
     CHGate
     CPIGate
@@ -69,6 +71,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CRXGate
     CRYGate
     CRZGate
+    CUGate
     FSIMGate
     PauliGate
     PhasedXZGate

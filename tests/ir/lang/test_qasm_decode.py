@@ -12,6 +12,7 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u1 import U1Gate
+from bqskit.ir.gates.parameterized.u1q import U1qGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.lang.language import LangException
@@ -423,3 +424,16 @@ def test_barrier_mixed_three() -> None:
     assert circuit[0, 0].gate == CNOTGate()
     assert circuit[1, 0].gate == BarrierPlaceholder(4)
     assert circuit[2, 0].gate == CNOTGate()
+
+
+def test_U1Q_gate() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[1];
+        U1q(3.141592653589793, -0.8510194827063557) q[0];
+        u1q(3.141592653589793, -0.8510194827063557) q[0];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 2
+    assert circuit[0, 0].gate == U1qGate()
+    assert circuit[1, 0].gate == U1qGate()

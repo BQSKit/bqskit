@@ -5,6 +5,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 
 import psutil
 import pytest
@@ -22,6 +23,8 @@ def test_startup_shutdown_transparently(num_workers: int) -> None:
     compiler = Compiler(num_workers=num_workers)
     assert compiler.p is not None
     compiler.__del__()
+    if sys.platform == 'win32':
+        time.sleep(1)
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -31,6 +34,8 @@ def test_cleanup_close(num_workers: int) -> None:
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     compiler = Compiler(num_workers=num_workers)
     compiler.close()
+    if sys.platform == 'win32':
+        time.sleep(1)
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -40,6 +45,8 @@ def test_cleanup_with_clause(num_workers: int) -> None:
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     with Compiler(num_workers=num_workers) as _:
         pass
+    if sys.platform == 'win32':
+        time.sleep(1)
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -98,8 +105,8 @@ def test_interrupt_handling() -> None:
             ).children(recursive=True),
         )
         assert in_num_childs + 1 == out_num_childs
-        p.wait()
 
+    p.wait()
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -129,6 +136,8 @@ def test_errors_shutdown_system() -> None:
         compiler = Compiler(num_workers=1)
         compiler.compile(Circuit(2), [TestErrorPass()])
     except RuntimeError:
+        if sys.platform == 'win32':
+            time.sleep(1)
         num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
         assert in_num_childs == num_childs
     else:
@@ -141,6 +150,8 @@ def test_errors_shutdown_system_nested() -> None:
         compiler = Compiler(num_workers=1)
         compiler.compile(Circuit(2), [TestNestedErrorPass()])
     except RuntimeError:
+        if sys.platform == 'win32':
+            time.sleep(1)
         num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
         assert in_num_childs == num_childs
     else:
@@ -153,6 +164,8 @@ def test_worker_fail_shutdown_system() -> None:
         compiler = Compiler(num_workers=2)
         compiler.compile(Circuit(2), [TestWorkerExitPass()])
     except RuntimeError:
+        if sys.platform == 'win32':
+            time.sleep(1)
         num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
         assert in_num_childs == num_childs
     else:
