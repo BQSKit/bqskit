@@ -26,8 +26,10 @@ class CUGate(
         \\begin{pmatrix}
         1 & 0 & 0 & 0 \\\\
         0 & 1 & 0 & 0 \\\\
-        0 & 0 & \\exp{i\\gamma}cos(\\frac{\\theta}{2}) & -\\exp{i(\\gamma + \\lambda)}sin(\\frac{\\theta}{2}) \\\\
-        0 & 0 & \\exp{i(\\gamma + \\phi)}sin(\\frac{\\theta}{2}) & \\exp{i(\\gamma + \\phi + \\lambda)}cos(\\frac{\\theta}{2}) \\\\
+        0 & 0 & \\exp{i\\gamma}cos(\\frac{\\theta}{2})
+        & -\\exp{i(\\gamma + \\lambda)}sin(\\frac{\\theta}{2}) \\\\
+        0 & 0 & \\exp{i(\\gamma + \\phi)}sin(\\frac{\\theta}{2})
+        & \\exp{i(\\gamma + \\phi + \\lambda)}cos(\\frac{\\theta}{2}) \\\\
         \\end{pmatrix}
     """
 
