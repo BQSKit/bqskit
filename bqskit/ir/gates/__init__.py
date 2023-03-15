@@ -71,6 +71,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CRXGate
     CRYGate
     CRZGate
+    CUGate
     FSIMGate
     PauliGate
     PhasedXZGate
