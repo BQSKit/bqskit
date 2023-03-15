@@ -224,6 +224,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cz'] = GateDef('cz', 0, 2, CZGate())
         self.gate_defs['h'] = GateDef('h', 0, 1, HGate())
         self.gate_defs['id'] = GateDef('id', 0, 1, IdentityGate(1))
+        self.gate_defs['u0'] = GateDef('u0', 0, 1, IdentityGate(1))
         self.gate_defs['iswap'] = GateDef('iswap', 0, 2, ISwapGate())
         self.gate_defs['iccx'] = GateDef('iccx', 0, 3, IToffoliGate())
         self.gate_defs['s'] = GateDef('s', 0, 1, SGate())
@@ -232,6 +233,9 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cv'] = GateDef('cv', 0, 2, SqrtCNOTGate())
         self.gate_defs['sqisw'] = GateDef('sqisw', 0, 2, SqrtISwapGate())
         self.gate_defs['swap'] = GateDef('swap', 0, 2, SwapGate())
+        self.gate_defs['cswap'] = GateDef(
+            'cswap', 0, 3, ControlledGate(SwapGate()),
+        )
         self.gate_defs['sx'] = GateDef('sx', 0, 1, SXGate())
         self.gate_defs['v'] = GateDef('v', 0, 1, SXGate())
         self.gate_defs['syc'] = GateDef('syc', 0, 2, SycamoreGate())
@@ -244,6 +248,11 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['z'] = GateDef('z', 0, 1, ZGate())
         self.gate_defs['zz'] = GateDef('zz', 0, 2, ZZGate())
         self.gate_defs['sxdg'] = GateDef('sxdg', 0, 1, DaggerGate(SXGate()))
+        self.gate_defs['c3x'] = GateDef('c3x', 0, 4, ControlledGate(XGate(), 3))
+        self.gate_defs['c4x'] = GateDef('c4x', 0, 5, ControlledGate(XGate(), 4))
+        self.gate_defs['c3sqrtx'] = GateDef(
+            'c3sqrtx', 0, 4, ControlledGate(SXGate(), 3),
+        )
         self.gate_defs['rccx'] = GateDef('rccx', 0, 3, RCCXGate())
         self.gate_defs['rc3x'] = GateDef('rc3x', 0, 4, RC3XGate())
 
