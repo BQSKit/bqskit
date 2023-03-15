@@ -19,8 +19,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from distributed import get_client
-from distributed import secede
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -47,6 +45,7 @@ from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
@@ -57,12 +56,11 @@ from bqskit.utils.typing import is_bool
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_sequence_of_int
-from bqskit.utils.typing import is_square_matrix
 from bqskit.utils.typing import is_valid_radixes
-from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
+    from bqskit.compiler.basepass import BasePass
 
 _logger = logging.getLogger(__name__)
 
@@ -2591,15 +2589,53 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         return left.get_unitary(), np.array(full_grads)
 
+    def perform(
+        self,
+        compiler_pass: BasePass,
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Execute the provided `compiler_pass` on this circuit.
+
+        This function is necessary since BQSKit Pass objects cannot have
+        their :func:`~bqskit.compiler.basepass.run` function directly called
+        on a circuit.
+
+        Args:
+            compiler_pass (BasePass): The BQSKit pass to perform on this
+                circuit.
+
+            data (dict[str, Any] | None): Optionally provide additional
+                pass data to the compiler pass.
+
+        Note:
+            You cannot perform a pass using this method while a local
+            :class:`~bqskit.compiler.compiler.Compiler` object is live.
+            Rather, you should use the
+            :class:`~bqskit.compiler.compiler.Compiler` directly.
+        """
+        from bqskit.compiler.compiler import Compiler
+        from bqskit.compiler.passdata import PassData
+        from bqskit.compiler.task import CompilationTask
+
+        pass_data = PassData(self)
+        if data is not None:
+            pass_data.update(data)
+
+        with Compiler() as compiler:
+            task = CompilationTask(self, [compiler_pass])
+            task.data = pass_data
+            task_id = compiler.submit(task)
+            self.become(compiler.result(task_id))  # type: ignore
+
     def instantiate(
         self,
-        target: StateLike | UnitaryLike,
+        target: StateLike | UnitaryLike | StateSystem,
         method: str | Instantiater | None = None,
         multistarts: int = 1,
         seed: int | None = None,
         multistart_gen: MultiStartGenerator = RandomStartGenerator(),
         score_fn_gen: CostFunctionGenerator = HilbertSchmidtCostGenerator(),
-        parallel: bool = False,
         **kwargs: Any,
     ) -> Circuit:
         """
@@ -2610,12 +2646,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         state to the target state.
 
         Args:
-            target (StateLike | UnitaryLike): The target unitary or state.
-                If a unitary is specified, the method changes the circuit's
-                parameters in an effort to get closer to implementing the
-                target. If a state is specified, the method changes the
-                circuit's parameters in an effort to get closer to producing
-                the target state when starting from the zero state.
+            target (StateLike | UnitaryLike | StateSystem): The target unitary
+                or state. If a unitary is specified, the method changes
+                the circuit's parameters in an effort to get closer to
+                implementing the target. If a state is specified, the
+                method changes the circuit's parameters in an effort to
+                get closer to producing the target state when starting
+                from the zero state.
 
             method (str | Instantiater | None): The method with which to
                 instantiate the circuit. Currently, `"qfactor"` and
@@ -2624,8 +2661,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 directly through this.
 
             multistarts (int): The number of starting points to sample
-                instantiation with. If `parallel` is True and this is greater
-                than one, will spawn this many Dask tasks. (Default: 1)
+                instantiation with. (Default: 1)
 
             seed (int | None): The seed for any pseudo-random number generators
                 to use. Note that this is not guaranteed to make this method
@@ -2640,9 +2676,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 from the different starting points.
                 (Default: HilbertSchmidtCostGenerator())
 
-            parallel (bool): If True and `multistarts` is greater than 1,
-                this will attempt to connect to a dask cluster and submit
-                jobs to be run in parallel. (Default: False)
+            parallel (bool): Ignored for now.
 
             kwargs (dict[str, Any]): Method specific options, passed
                 directly to method constructor. For more info, see
@@ -2719,15 +2753,27 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         instantiater = cast(Instantiater, instantiater)
 
         # Check Target
-        if is_square_matrix(target):
-            target = UnitaryMatrix(target)  # type: ignore
-        elif is_vector(target):
-            target = StateVector(target)  # type: ignore
-        else:
+        try:
+            if UnitaryMatrix.is_unitary(target):
+                target = UnitaryMatrix(target)
+
+            elif StateVector.is_pure_state(target):
+                target = StateVector(target)
+
+            elif StateSystem.is_state_system(target):
+                target = StateSystem(target)
+
+            else:
+                raise TypeError(
+                    'Target is neither a unitary, a state system'
+                    f', nor a state. Got {type(input)}.',
+                )
+        except Exception as e:
             raise TypeError(
-                'Expected either StateVector or UnitaryMatrix'
-                ' for target, got %s.' % type(target),
-            )
+                'Unable to determine type of input.'
+                ' Ensure that you are trying to compile a valid'
+                ' circuit, unitary, or state.',
+            ) from e
 
         if target.dim != self.dim:
             raise ValueError('Target dimension mismatch with circuit.')
@@ -2750,60 +2796,60 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         cost_fn = score_fn_gen.gen_cost(self, target)
 
         # Instantiate the circuit
-        if parallel and multistarts > 1:
-            client = get_client()
+        # if parallel and multistarts > 1:
+        #     client = get_client()
 
-            def single_start_instantiate(
-                instantiater: Instantiater,
-                circuit: Circuit,
-                target: UnitaryMatrix,
-                start: npt.NDArray[np.float64],
-            ) -> npt.NDArray[np.float64]:
-                return instantiater.instantiate(circuit, target, start)
+        #     def single_start_instantiate(
+        #         instantiater: Instantiater,
+        #         circuit: Circuit,
+        #         target: UnitaryMatrix,
+        #         start: npt.NDArray[np.float64],
+        #     ) -> npt.NDArray[np.float64]:
+        #         return instantiater.instantiate(circuit, target, start)
 
-            def scoring_fn(
-                fn_gen: CostFunctionGenerator,
-                circuit: Circuit,
-                target: UnitaryMatrix,
-                params: npt.NDArray[np.float64],
-            ) -> float:
-                return fn_gen.gen_cost(circuit, target).get_cost(params)
+        #     def scoring_fn(
+        #         fn_gen: CostFunctionGenerator,
+        #         circuit: Circuit,
+        #         target: UnitaryMatrix,
+        #         params: npt.NDArray[np.float64],
+        #     ) -> float:
+        #         return fn_gen.gen_cost(circuit, target).get_cost(params)
 
-            param_futures = client.map(
-                single_start_instantiate,
-                [instantiater] * multistarts,
-                [self] * multistarts,
-                [target] * multistarts,
-                starts,
-                pure=False,
-            )
+        #     param_futures = client.map(
+        #         single_start_instantiate,
+        #         [instantiater] * multistarts,
+        #         [self] * multistarts,
+        #         [target] * multistarts,
+        #         starts,
+        #         pure=False,
+        #     )
 
-            score_futures = client.map(
-                scoring_fn,
-                [score_fn_gen] * multistarts,
-                [self] * multistarts,
-                [target] * multistarts,
-                param_futures,
-                pure=False,
-            )
+        #     score_futures = client.map(
+        #         scoring_fn,
+        #         [score_fn_gen] * multistarts,
+        #         [self] * multistarts,
+        #         [target] * multistarts,
+        #         param_futures,
+        #         pure=False,
+        #     )
 
-            # We only want to secede on worker threads, so try to recover if
-            # Circuit.instantiate is called from the main thread
-            try:
-                secede()
-            except ValueError:
-                pass
+        #     # We only want to secede on worker threads, so try to recover if
+        #     # Circuit.instantiate is called from the main thread
+        #     try:
+        #         secede()
+        #     except ValueError:
+        #         pass
 
-            scores = client.gather(score_futures)
-            best_index = scores.index(min(scores))
-            params = param_futures[best_index].result()
+        #     scores = client.gather(score_futures)
+        #     best_index = scores.index(min(scores))
+        #     params = param_futures[best_index].result()
 
-        else:
-            params_list = [
-                instantiater.instantiate(self, target, start)
-                for start in starts
-            ]
-            params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        # else:
+        params_list = [
+            instantiater.instantiate(self, target, start)
+            for start in starts
+        ]
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
 
         # Return best result
         self.set_params(params)

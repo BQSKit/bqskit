@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateVector
+    from bqskit.qis.state.system import StateSystem
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -22,7 +23,7 @@ class RandomStartGenerator(MultiStartGenerator):
         self,
         multistarts: int,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> list[npt.NDArray[np.float64]]:
         """
         Generate `multistarts` starting points for instantiation.

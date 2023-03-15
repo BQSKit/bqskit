@@ -85,4 +85,5 @@ repos:
         args:
             - --ignore=E741,E241,E226,F405,F403,W503,F901,E731,TYP006
             - --max-line-length=80
+            - --per-file-ignores=bqskit/runtime/worker.py:E402
         additional_dependencies: [flake8-typing-imports==1.13.0]

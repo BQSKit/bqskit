@@ -2,14 +2,10 @@
 from __future__ import annotations
 
 import logging
-import random
-from typing import Any
-
-import numpy as np
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_integer
 
 
@@ -22,8 +18,6 @@ class SetRandomSeedPass(BasePass):
 
     The SetRandomSeedPass sets the random seed.
     """
-
-    key = '_SetRandomSeedPass_random_seed'
 
     def __init__(self, seed: int = 0) -> None:
         """
@@ -38,10 +32,7 @@ class SetRandomSeedPass(BasePass):
 
         self.seed = seed
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug(f'Setting the random seed to {self.seed}.')
-        data[self.key] = self.seed
-        np.random.seed(self.seed)
-        random.seed(self.seed)
-        seed_random_sources(self.seed)
+        data.seed = self.seed

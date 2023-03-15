@@ -57,6 +57,8 @@ from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state import StateLike
 from bqskit.qis.state import StateVector
 from bqskit.qis.state import StateVectorMap
+from bqskit.qis.state.system import StateSystem
+from bqskit.qis.state.system import StateSystemLike
 from bqskit.qis.unitary import DifferentiableUnitary
 from bqskit.qis.unitary import LocallyOptimizableUnitary
 from bqskit.qis.unitary import RealVector
@@ -80,4 +82,6 @@ __all__ = [
     'RealVector',
     'CouplingGraph',
     'CouplingGraphLike',
+    'StateSystem',
+    'StateSystemLike',
 ]

@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
-from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RXGate
@@ -13,6 +12,7 @@ from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 _logger = logging.getLogger(__name__)
 
@@ -33,8 +33,8 @@ class FourParamGenerator(LayerGenerator):
 
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
-        data: dict[str, Any],
+        target: UnitaryMatrix | StateVector | StateSystem,
+        data: PassData,
     ) -> Circuit:
         """
         Generate the initial layer, see LayerGenerator for more.
@@ -43,7 +43,7 @@ class FourParamGenerator(LayerGenerator):
             ValueError: If `target` is not qubit only.
         """
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )
@@ -56,11 +56,7 @@ class FourParamGenerator(LayerGenerator):
             init_circuit.append_gate(U3Gate(), [i])
         return init_circuit
 
-    def gen_successors(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any],
-    ) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
         """
         Generate the successors of a circuit node.
 
@@ -75,7 +71,7 @@ class FourParamGenerator(LayerGenerator):
             raise ValueError('Cannot expand a single-qudit circuit.')
 
         # Get the machine model
-        coupling_graph = BasePass.get_connectivity(circuit, data)
+        coupling_graph = data.connectivity
 
         # Generate successors
         successors = []

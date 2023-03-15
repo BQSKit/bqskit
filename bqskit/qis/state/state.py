@@ -189,6 +189,15 @@ class StateVector(NDArrayOperatorsMixin):
         return True
 
     @staticmethod
+    def zero(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
+        """Prepares the zero state."""
+        if len(radixes) == 0:
+            radixes = [2] * num_qudits
+        state = np.zeros(np.prod(radixes), dtype=np.complex128)
+        state[0] = 1.0
+        return StateVector(state)
+
+    @staticmethod
     def random(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
         """
         Sample a random pure state.
@@ -230,6 +239,10 @@ class StateVector(NDArrayOperatorsMixin):
         U = unitary_group.rvs(int(np.prod(radixes)))
         return StateVector(U[:, 0], radixes)
 
+    def __hash__(self) -> int:
+        """Hash the state vector."""
+        return hash(tuple(self.numpy))
+
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""
         if isinstance(other, StateVector):
@@ -239,6 +252,24 @@ class StateVector(NDArrayOperatorsMixin):
             return np.allclose(self.numpy, other)
 
         return NotImplemented
+
+    def get_distance_from(self, other: StateLike) -> float:
+        """
+        Return the distance between `self` and `other`.
+
+        The distance is given as the infidelity between the two states.
+
+        Args:
+            other (StateLike): The state to measure distance from.
+
+        Returns:
+            float: A value between 1 and 0, where 0 means the two states
+            are equal up to global phase and 1 means the two states are
+            very unsimilar or far apart.
+        """
+        other = StateVector(other)
+        dist = 1 - np.abs(np.conj(self) @ other) ** 2
+        return dist if dist > 0.0 else 0.0
 
     def __array__(
         self,

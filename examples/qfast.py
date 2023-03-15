@@ -1,7 +1,6 @@
 """This script is contains a simple use case of the QFAST synthesis method."""
 from __future__ import annotations
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.ir import Circuit
 from bqskit.passes import ForEachBlockPass
@@ -15,16 +14,17 @@ from bqskit.qis import UnitaryMatrix
 # circuit.
 circuit = Circuit.from_unitary(UnitaryMatrix.random(3))
 
-# We will now define the CompilationTask we want to run.
-task = CompilationTask(
-    circuit, [
-        QFASTDecompositionPass(),
-        ForEachBlockPass([LEAPSynthesisPass(), ScanningGateRemovalPass()]),
-        UnfoldPass(),
-    ],
-)
+# We now define our synthesis workflow utilizing the QFAST algorithm.
+workflow = [
+    QFASTDecompositionPass(),
+    ForEachBlockPass([
+        LEAPSynthesisPass(),  # LEAP performs native gate instantiation
+        ScanningGateRemovalPass(),  # Gate removal optimizing gate counts
+    ]),
+    UnfoldPass(),
+]
 
 # Finally let's create create the compiler and execute the CompilationTask.
 with Compiler() as compiler:
-    compiled_circuit = compiler.compile(task)
+    compiled_circuit = compiler.compile(circuit, workflow)
     print(compiled_circuit.gate_counts)
