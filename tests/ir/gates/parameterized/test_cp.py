@@ -1,12 +1,12 @@
 """This module tests the U1Gate class."""
 from __future__ import annotations
 
+import numpy as np
 from hypothesis import given
 from hypothesis.strategies import floats
 
 from bqskit.ir.gates import CPGate
 from bqskit.qis.unitary import UnitaryMatrix
-import numpy as np
 
 
 @given(floats(allow_nan=False, allow_infinity=False, width=32))
@@ -17,7 +17,7 @@ def test_get_unitary(angle: float) -> None:
             [0, 1, 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, np.exp(1j * angle)],
-        ]
+        ],
     )
     cp = CPGate()
     assert cp.num_params == 1

@@ -19,6 +19,7 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
+from bqskit.ir.gates.constant.b import BGate
 from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.cs import CSGate
@@ -46,6 +47,7 @@ from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cp import CPGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
@@ -187,6 +189,7 @@ class OPENQASMVisitor(Visitor):
         # Parameterized Gates
         self.gate_defs['p'] = GateDef('p', 1, 1, RZGate())
         self.gate_defs['cp'] = GateDef('cp', 1, 2, CPGate())
+        self.gate_defs['ccp'] = GateDef('ccp', 1, 3, CCPGate())
         self.gate_defs['crx'] = GateDef('crx', 1, 2, CRXGate())
         self.gate_defs['cry'] = GateDef('cry', 1, 2, CRYGate())
         self.gate_defs['crz'] = GateDef('crz', 1, 2, CRZGate())
@@ -210,6 +213,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cu3'] = GateDef('cu3', 3, 2, ControlledGate(U3Gate()))
 
         # Constant Gates
+        self.gate_defs['b'] = GateDef('b', 0, 2, BGate())
         self.gate_defs['ccx'] = GateDef('ccx', 0, 3, CCXGate())
         self.gate_defs['ch'] = GateDef('ch', 0, 2, CHGate())
         self.gate_defs['cs'] = GateDef('cs', 0, 2, CSGate())
