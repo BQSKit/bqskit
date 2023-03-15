@@ -27,17 +27,19 @@ statement: decl
             | "opaque" ID "(" idlist ")" idlist ";"
             | qop
             | "if" "(" ID "==" NNINTEGER ")" qop
-            | "barrier" anylist ";"
+            | barrier
             | incstmt
 incstmt: "include" ESCAPED_STRING ";"
 decl: qreg | creg
 creg: "creg" ID "[" NNINTEGER "]" ";"
 qreg: "qreg" ID "[" NNINTEGER "]" ";"
+barrier: "barrier" anylist ";"
+barrierp: "barrier" anylist ";"
 gatedecl: "gate" ID idlist "{"
             | "gate" ID "(" ")" idlist "{"
             | "gate" ID "(" idlist ")" idlist "{"
 goplist: uopp
-            | "barrier" idlist ";"
+            | "barrierp" idlist ";"
             | goplist uopp
             | goplist "barrier" idlist ";"
 qop: uop
