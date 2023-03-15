@@ -30,6 +30,8 @@ from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
 from bqskit.ir.gates.constant.itoffoli import IToffoliGate
+from bqskit.ir.gates.constant.rccx import RC3XGate
+from bqskit.ir.gates.constant.rccx import RCCXGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
@@ -240,6 +242,8 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['z'] = GateDef('z', 0, 1, ZGate())
         self.gate_defs['zz'] = GateDef('zz', 0, 2, ZZGate())
         self.gate_defs['sxdg'] = GateDef('sxdg', 0, 1, DaggerGate(SXGate()))
+        self.gate_defs['rccx'] = GateDef('rccx', 0, 3, RCCXGate())
+        self.gate_defs['rc3x'] = GateDef('rc3x', 0, 4, RC3XGate())
 
     def qreg(self, tree: lark.Tree) -> None:
         """Qubit register node visitor."""

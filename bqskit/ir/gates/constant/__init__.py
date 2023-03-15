@@ -17,6 +17,9 @@ from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
 from bqskit.ir.gates.constant.itoffoli import IToffoliGate
 from bqskit.ir.gates.constant.permutation import PermutationGate
+from bqskit.ir.gates.constant.rccx import MargolusGate
+from bqskit.ir.gates.constant.rccx import RC3XGate
+from bqskit.ir.gates.constant.rccx import RCCXGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
@@ -37,6 +40,9 @@ from bqskit.ir.gates.constant.zz import ZZGate
 
 __all__ = [
     'CCXGate',
+    'RCCXGate',
+    'RC3XGate',
+    'MargolusGate',
     'ToffoliGate',
     'CHGate',
     'CPIGate',
