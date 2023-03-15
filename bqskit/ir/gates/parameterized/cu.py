@@ -55,8 +55,8 @@ class CUGate(
             [
                 [1, 0, 0, 0],
                 [0, 1, 0, 0],
-                [0, 0, eg*ct, -eg*el*st],
-                [0, 0, eg*ep*st, eg*ep*el*ct],
+                [0, 0, eg * ct, -eg * el * st],
+                [0, 0, eg * ep * st, eg * ep * el * ct],
             ],
         )
 
@@ -106,7 +106,7 @@ class CUGate(
                 [
                     [0, 0, 0, 0],
                     [0, 0, 0, 0],
-                    [0, 0, deg_  * ct, -deg_ * el * st],
+                    [0, 0, deg_ * ct, -deg_ * el * st],
                     [0, 0, deg_ * ep * st, deg_ * ep * el * ct],
                 ],
             ], dtype=np.complex128,
