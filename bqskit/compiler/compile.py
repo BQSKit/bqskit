@@ -443,7 +443,7 @@ def _opt1_workflow(
             if g.num_qudits != 1
         )
         non_native_gates = [
-            g for g in circuit.gate_set
+            g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
         ]
         non_native_tq_gates = [
@@ -454,7 +454,7 @@ def _opt1_workflow(
             non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
-        all_gates = model.gate_set.union(circuit.gate_set)
+        all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
@@ -580,7 +580,7 @@ def _opt2_workflow(
             if g.num_qudits != 1
         )
         non_native_gates = [
-            g for g in circuit.gate_set
+            g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
         ]
         non_native_tq_gates = [
@@ -591,7 +591,7 @@ def _opt2_workflow(
             non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
-        all_gates = model.gate_set.union(circuit.gate_set)
+        all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
@@ -733,7 +733,7 @@ def _opt3_workflow(
             if g.num_qudits != 1
         )
         non_native_gates = [
-            g for g in circuit.gate_set
+            g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
         ]
         non_native_tq_gates = [
@@ -745,7 +745,7 @@ def _opt3_workflow(
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
-        all_gates = model.gate_set.union(circuit.gate_set)
+        all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
