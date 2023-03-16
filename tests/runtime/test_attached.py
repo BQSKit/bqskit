@@ -55,7 +55,8 @@ def test_cleanup_with_clause(num_workers: int) -> None:
 def test_create_workers(num_workers: int) -> None:
     compiler = Compiler(num_workers=num_workers)
     assert compiler.p is not None
-    assert len(psutil.Process(compiler.p.pid).children()) == num_workers
+    expected = [num_workers, num_workers + 1]  # Some OS create a spawn server
+    assert len(psutil.Process(compiler.p.pid).children()) in expected
     compiler.close()
 
 
@@ -66,7 +67,7 @@ def test_one_thread_per_worker() -> None:
 
     compiler = Compiler(num_workers=1)
     assert compiler.p is not None
-    assert len(psutil.Process(compiler.p.pid).children()) == 1
+    assert len(psutil.Process(compiler.p.pid).children()) in [1, 2]
     assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 1
     compiler.close()
 
