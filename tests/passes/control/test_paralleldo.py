@@ -41,7 +41,7 @@ class Sleep1Pass(BasePass):
 class Sleep3Pass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         circuit.append_gate(ZGate(), 0)
-        time.sleep(3)
+        time.sleep(0.3)
         data['key'] = '3'
 
 
@@ -52,7 +52,7 @@ def pick_z(c1: Circuit, c2: Circuit) -> bool:
         return False
 
 
-def test_parallel_do(compiler: Compiler) -> None:
+def test_parallel_do_chooses_correct_result(compiler: Compiler) -> None:
     pd_pass = ParallelDo([[AddXGate()], [AddYGate()], [AddZGate()]], pick_z)
     out_circuit, data = compiler.compile(Circuit(1), pd_pass, True)
     assert ZGate() in out_circuit.gate_set
@@ -66,9 +66,7 @@ def test_parallel_do_no_passes() -> None:
 
 
 def test_parallel_do_pick_first(compiler: Compiler) -> None:
-    passes: list[list[BasePass]] = [
-        [Sleep3Pass()], [Sleep1Pass()], [Sleep3Pass()],
-    ]
+    passes: list[list[BasePass]] = [[Sleep3Pass()], [Sleep1Pass()]]
     pd_pass = ParallelDo(passes, pick_z, True)
-    out_circuit, data = compiler.compile(Circuit(1), pd_pass, True)
+    _, data = compiler.compile(Circuit(1), pd_pass, True)
     assert data['key'] == '1'

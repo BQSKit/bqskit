@@ -239,6 +239,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return set(self._gate_info.keys())
 
     @property
+    def gate_set_no_blocks(self) -> set[Gate]:
+        """The set of gates in the circuit, recurses into circuit gates."""
+        gates = set()
+        for g, _ in self._gate_info.items():
+            if isinstance(g, CircuitGate):
+                gates.update(g._circuit.gate_set)
+            else:
+                gates.add(g)
+        return gates
+
+    @property
     def gate_counts(self) -> dict[Gate, int]:
         """The count of each type of gate in the circuit."""
         return {gate: self.count(gate) for gate in self.gate_set}

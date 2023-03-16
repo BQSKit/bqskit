@@ -6,11 +6,11 @@ import signal
 import sys
 import time
 import traceback
+from collections import OrderedDict
 from dataclasses import dataclass
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
-from queue import Queue
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -21,6 +21,33 @@ from bqskit.runtime.future import RuntimeFuture
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
+
+
+class WorkerQueue():
+    """The worker's task FIFO queue."""
+
+    def __init__(self) -> None:
+        """
+        Initialize the worker queue.
+
+        An OrderedDict is used to internally store the task. This prevents the
+        same task appearing multiple times in the queue, while also ensuring
+        O(1) operations.
+        """
+        self._queue: OrderedDict[RuntimeAddress, None] = OrderedDict()
+
+    def put(self, addr: RuntimeAddress) -> None:
+        """Enqueue a task by its address."""
+        if addr not in self._queue:
+            self._queue[addr] = None
+
+    def get(self) -> RuntimeAddress:
+        """Get the next task to run."""
+        return self._queue.popitem(last=False)[0]
+
+    def empty(self) -> bool:
+        """Check if the queue is empty."""
+        return len(self._queue) == 0
 
 
 @dataclass
@@ -156,7 +183,7 @@ class Worker:
         self._delayed_tasks: list[RuntimeTask] = []
         """Store all delayed tasks in LIFO order."""
 
-        self._ready_task_ids: Queue[RuntimeAddress] = Queue()
+        self._ready_task_ids: WorkerQueue = WorkerQueue()
         """Tasks queued up for execution."""
 
         self._cancelled_task_ids: set[RuntimeAddress] = set()
@@ -257,6 +284,7 @@ class Worker:
     def _handle_result(self, result: RuntimeResult) -> None:
         """Insert result into appropriate mailbox and wake waiting task."""
         mailbox_id = result.return_address.mailbox_index
+        assert result.return_address.worker_id == self._id
         if mailbox_id not in self._mailboxes:
             # If the mailbox has been dropped due to a cancel, ignore result
             return
@@ -555,7 +583,7 @@ class Worker:
 _worker = None
 
 
-def start_worker(id: int, conn: Connection | int) -> None:
+def start_worker(id: int, port: int) -> None:
     """Start this process's worker."""
     # Ignore interrupt signals on workers, boss will handle it for us
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -567,21 +595,20 @@ def start_worker(id: int, conn: Connection | int) -> None:
         logger.handlers.clear()
     logging.Logger.manager.loggerDict = {}
 
-    if isinstance(conn, int):
-        # On windows, the workers create a socket connection themselves
-        max_retries = 5
-        wait_time = .25
-        for _ in range(max_retries):
-            try:
-                assert isinstance(conn, int)
-                conn = Client(('localhost', conn), 'AF_INET')
-            except ConnectionRefusedError:
-                time.sleep(wait_time)
-                wait_time *= 2
-            else:
-                break
+    max_retries = 7
+    wait_time = .1
+    conn: Connection | None = None
+    family = 'AF_INET' if sys.platform == 'win32' else None
+    for _ in range(max_retries):
+        try:
+            conn = Client(('localhost', port), family)
+        except (ConnectionRefusedError, TimeoutError):
+            time.sleep(wait_time)
+            wait_time *= 2
+        else:
+            break
 
-    if not isinstance(conn, Connection):
+    if conn is None:
         raise RuntimeError('Unable to establish connection with manager.')
 
     global _worker

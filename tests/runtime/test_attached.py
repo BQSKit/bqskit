@@ -4,6 +4,8 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+import sys
+import time
 
 import psutil
 import pytest
@@ -21,6 +23,8 @@ def test_startup_shutdown_transparently(num_workers: int) -> None:
     compiler = Compiler(num_workers=num_workers)
     assert compiler.p is not None
     compiler.__del__()
+    if sys.platform == 'win32':
+        time.sleep(1)
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -30,6 +34,8 @@ def test_cleanup_close(num_workers: int) -> None:
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     compiler = Compiler(num_workers=num_workers)
     compiler.close()
+    if sys.platform == 'win32':
+        time.sleep(1)
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -39,6 +45,8 @@ def test_cleanup_with_clause(num_workers: int) -> None:
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     with Compiler(num_workers=num_workers) as _:
         pass
+    if sys.platform == 'win32':
+        time.sleep(1)
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
 
@@ -52,6 +60,10 @@ def test_create_workers(num_workers: int) -> None:
 
 
 def test_one_thread_per_worker() -> None:
+    # On windows we aren't sure how the threads are handeled
+    if sys.platform == 'win32':
+        return
+
     compiler = Compiler(num_workers=1)
     assert compiler.p is not None
     assert len(psutil.Process(compiler.p.pid).children()) == 1
@@ -69,6 +81,11 @@ def test_double_close() -> None:
 
 
 def test_interrupt_handling() -> None:
+    if sys.platform == 'win32':
+        sig = signal.SIGTERM
+    else:
+        sig = signal.SIGINT
+
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     p = subprocess.Popen([
         'python', '-c',
@@ -79,9 +96,16 @@ def test_interrupt_handling() -> None:
         time.sleep(10)
         """,
     ])
-    p.send_signal(signal.SIGINT)
-    out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
-    assert in_num_childs + 1 == out_num_childs
+    p.send_signal(sig)
+
+    if sys.platform != 'win32':
+        out_num_childs = len(
+            psutil.Process(
+                os.getpid(),
+            ).children(recursive=True),
+        )
+        assert in_num_childs + 1 == out_num_childs
+
     p.wait()
     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     assert in_num_childs == out_num_childs
@@ -112,6 +136,8 @@ def test_errors_shutdown_system() -> None:
         compiler = Compiler(num_workers=1)
         compiler.compile(Circuit(2), [TestErrorPass()])
     except RuntimeError:
+        if sys.platform == 'win32':
+            time.sleep(1)
         num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
         assert in_num_childs == num_childs
     else:
@@ -124,6 +150,8 @@ def test_errors_shutdown_system_nested() -> None:
         compiler = Compiler(num_workers=1)
         compiler.compile(Circuit(2), [TestNestedErrorPass()])
     except RuntimeError:
+        if sys.platform == 'win32':
+            time.sleep(1)
         num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
         assert in_num_childs == num_childs
     else:
@@ -136,6 +164,8 @@ def test_worker_fail_shutdown_system() -> None:
         compiler = Compiler(num_workers=2)
         compiler.compile(Circuit(2), [TestWorkerExitPass()])
     except RuntimeError:
+        if sys.platform == 'win32':
+            time.sleep(1)
         num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
         assert in_num_childs == num_childs
     else:

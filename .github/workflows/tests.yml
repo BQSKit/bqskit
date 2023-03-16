@@ -8,6 +8,7 @@ on:
 jobs:
   tests:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
         os: [macOS-latest, windows-latest, ubuntu-latest]
@@ -21,7 +22,7 @@ jobs:
     - name: Upgrade python environment
       run: python -m pip install --upgrade virtualenv setuptools pip
     - name: Upgrade test dependencies
-      run: python -m pip install psutil pytest hypothesis qiskit pytket qutip cirq
+      run: python -m pip install psutil pytest 'hypothesis[zoneinfo]' qiskit pytket qutip cirq
     - name: Install BQSKit
       env:
         SYSTEM_VERSION_COMPAT: 0

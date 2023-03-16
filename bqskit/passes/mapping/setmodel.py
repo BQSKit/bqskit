@@ -33,4 +33,4 @@ class SetModelPass(BasePass):
             raise RuntimeError('Machine model is too small for circuit.')
 
         data.model = self.model  # Update Model
-        data.placement = list(range(self.model.num_qudits))  # Reset placement
+        data.placement = list(range(circuit.num_qudits))  # Reset placement

@@ -31,7 +31,7 @@ class U1qGate(QubitGate, DifferentiableUnitary, CachedClass):
 
     _num_qudits = 1
     _num_params = 2
-    _qasm_name = 'U1q'
+    _qasm_name = 'u1q'
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
