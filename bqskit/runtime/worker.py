@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import sys
 import time
@@ -588,7 +589,7 @@ _worker = None
 
 def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
     """Start this process's worker."""
-    if w_id is None:
+    if w_id is not None:
         # Ignore interrupt signals on workers, boss will handle it for us
         # If w_id is None, then we are being spawned separately.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -599,6 +600,11 @@ def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
             continue
         logger.handlers.clear()
     logging.Logger.manager.loggerDict = {}
+
+    if cpu is not None:
+        if sys.platform == 'win32':
+            raise RuntimeError('Cannot pin worker to cpu on windows.')
+        os.sched_setaffinity(0, [cpu])
 
     max_retries = 7
     wait_time = .1
