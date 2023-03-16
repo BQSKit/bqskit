@@ -277,6 +277,59 @@ class ServerBase:
         self.num_idle_workers = num_workers
         self.logger.info(f'Node has spawned {num_workers} workers.')
 
+    def connect_to_workers(
+        self,
+        num_workers: int = -1,
+        port: int = default_worker_port,
+    ) -> None:
+        """
+        Connect to worker processes.
+
+        Args:
+            num_workers (int): The number of workers to expect. If -1,
+                then expect as many workers as CPUs on the system.
+                (Default: -1).
+
+            port (int): The port this server will listen for workers on.
+                Default can be found in the
+                :obj:`~bqskit.runtime.default_worker_port` global variable.
+        """
+        if num_workers == -1:
+            oscount = os.cpu_count()
+            num_workers = oscount if oscount else 1
+
+        if self.lower_id_bound + num_workers >= self.upper_id_bound:
+            raise RuntimeError('Insufficient id range for workers.')
+
+        # Listen for the worker connections
+        family = 'AF_INET' if sys.platform == 'win32' else None
+        listener = Listener(('localhost', port), family, backlog=num_workers)
+        conns = [listener.accept() for _ in range(num_workers)]
+        listener.close()
+
+        for i, conn in enumerate(conns):
+            w_id = self.lower_id_bound + i
+            self.outgoing.put((conn, RuntimeMessage.STARTED, w_id))
+            employee = RuntimeEmployee(conn, 1)
+            self.employees.append(employee)
+            self.conn_to_employee_dict[conn] = employee
+
+        # Register employee communication
+        for i, employee in enumerate(self.employees):
+            w_id = self.lower_id_bound + i
+            assert employee.conn.recv() == (RuntimeMessage.STARTED, w_id)
+            self.sel.register(
+                employee.conn,
+                selectors.EVENT_READ,
+                MessageDirection.BELOW,
+            )
+            self.logger.info(f'Registered worker {i}.')
+
+        self.step_size = 1
+        self.total_workers = num_workers
+        self.num_idle_workers = num_workers
+        self.logger.info(f'Node has connected to {num_workers} workers.')
+
     def listen_once(self, port: int) -> Connection:
         """Listen on `port` for a connection and return on first one."""
         family = 'AF_INET' if sys.platform == 'win32' else None

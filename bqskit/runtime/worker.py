@@ -1,6 +1,7 @@
 """This module implements BQSKit Runtime's Worker."""
 from __future__ import annotations
 
+import argparse
 import logging
 import signal
 import sys
@@ -8,6 +9,7 @@ import time
 import traceback
 from collections import OrderedDict
 from dataclasses import dataclass
+from multiprocessing import Process
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
@@ -16,6 +18,7 @@ from typing import Callable
 from typing import cast
 from typing import List
 
+from bqskit.runtime import default_worker_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.future import RuntimeFuture
 from bqskit.runtime.message import RuntimeMessage
@@ -583,10 +586,12 @@ class Worker:
 _worker = None
 
 
-def start_worker(id: int, port: int) -> None:
+def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
     """Start this process's worker."""
-    # Ignore interrupt signals on workers, boss will handle it for us
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    if w_id is None:
+        # Ignore interrupt signals on workers, boss will handle it for us
+        # If w_id is None, then we are being spawned separately.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     # Purge all standard python logging configurations
     for _, logger in logging.Logger.manager.loggerDict.items():
@@ -611,8 +616,12 @@ def start_worker(id: int, port: int) -> None:
     if conn is None:
         raise RuntimeError('Unable to establish connection with manager.')
 
+    if w_id is None:
+        msg, w_id = conn.recv()
+        assert msg == RuntimeMessage.STARTED
+
     global _worker
-    _worker = Worker(id, conn)
+    _worker = Worker(w_id, conn)
     _worker._loop()
 
 
@@ -621,3 +630,59 @@ def get_worker() -> Worker:
     if _worker is None:
         raise RuntimeError('Worker has not been started.')
     return _worker
+
+
+def start_worker_rank() -> None:
+    """Entry point for spawning a rank of runtime worker processes."""
+    parser = argparse.ArgumentParser(
+        prog='BQSKit Worker',
+        description='Launch a rank of BQSKit runtime worker processes.',
+    )
+    parser.add_argument(
+        'num_workers',
+        type=int,
+        help='The number of workers to spawn.',
+    )
+    parser.add_argument(
+        '--cpus', '-c',
+        nargs='+',
+        type=int,
+        help='Either one number or a list of numbers equal in length to the'
+        ' number of workers. The workers will be pinned to specified logical'
+        ' cpus. If a single-number is given, then all cpu indices are'
+        ' enumerated starting at that number.',
+    )
+    parser.add_argument(
+        '-p', '--port',
+        type=int,
+        default=default_worker_port,
+        help='The port the workers will try to connect to a manager on.',
+    )
+    args = parser.parse_args()
+
+    if args.cpus is not None:
+        if len(args.cpus) == 1:
+            cpus = [args.cpus[0] + i for i in range(args.num_workers)]
+
+        elif len(args.cpus) == args.num_workers:
+            cpus = args.cpus
+
+        else:
+            raise RuntimeError(
+                'The specified logical cpus are invalid. Expected either'
+                ' a single number or a list of numbers equal in length to'
+                ' the number of workers.',
+            )
+
+    else:
+        cpus = [None for _ in range(args.num_workers)]
+
+    # Spawn worker process
+    procs = []
+    for cpu in cpus:
+        procs.append(Process(target=start_worker, args=(None, args.port, cpu)))
+        procs[-1].start()
+
+    # Join them
+    for proc in procs:
+        proc.join()
