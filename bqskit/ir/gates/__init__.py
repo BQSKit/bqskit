@@ -66,6 +66,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    CCPGate
     CPGate
     CRXGate
     CRYGate
