@@ -297,6 +297,8 @@ class ServerBase:
         if num_workers == -1:
             oscount = os.cpu_count()
             num_workers = oscount if oscount else 1
+        
+        self.logger.info(f'Expecting {num_workers} worker connections.')
 
         if self.lower_id_bound + num_workers >= self.upper_id_bound:
             raise RuntimeError('Insufficient id range for workers.')
