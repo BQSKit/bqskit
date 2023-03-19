@@ -15,6 +15,7 @@ from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
+from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
@@ -264,84 +265,17 @@ def compile(
         )
 
     # Build workflow
-    if isinstance(input, Circuit):
-        if input.num_qudits > max_synthesis_size:
-            if any(
-                g.num_qudits > max_synthesis_size
-                and not isinstance(g, MeasurementPlaceholder)
-                for g in input.gate_set
-            ):
-                raise ValueError(
-                    'Unable to compile circuit with gate larger than'
-                    ' max_synthesis_size.\nConsider adjusting it.',
-                )
-
-        task = _circuit_workflow(
-            input,
-            model,
-            optimization_level,
-            synthesis_epsilon,
-            max_synthesis_size,
-            error_threshold,
-            error_sim_size,
-        )
-
-    elif isinstance(input, UnitaryMatrix):
-        utry = input
-
-        if utry.num_qudits > max_synthesis_size:
-            raise ValueError(
-                'Cannot synthesize unitary larger than max_synthesis_size.\n'
-                'Consider adjusting max_synthesis_size or checking the input.',
-            )
-
-        task = _circuit_workflow(
-            Circuit.from_unitary(utry),
-            model,
-            optimization_level,
-            synthesis_epsilon,
-            max_synthesis_size,
-            error_threshold,
-            error_sim_size,
-        )
-
-    elif isinstance(input, StateVector):
-        state = input
-
-        if state.num_qudits > max_synthesis_size:
-            raise ValueError(
-                'Cannot synthesize state larger than max_synthesis_size.\n'
-                'Consider adjusting max_synthesis_size or checking the input.',
-            )
-
-        task = _stateprep_workflow(
-            state,
-            model,
-            optimization_level,
-            synthesis_epsilon,
-            max_synthesis_size,
-            error_threshold,
-            error_sim_size,
-        )
-
-    elif isinstance(input, StateSystem):
-        statemap = input
-
-        if statemap.num_qudits > max_synthesis_size:
-            raise ValueError(
-                'Cannot synthesize state larger than max_synthesis_size.\n'
-                'Consider adjusting max_synthesis_size or checking the input.',
-            )
-
-        task = _statemap_workflow(
-            statemap,
-            model,
-            optimization_level,
-            synthesis_epsilon,
-            max_synthesis_size,
-            error_threshold,
-            error_sim_size,
-        )
+    workflow = build_workflow(
+        input,
+        model,
+        optimization_level,
+        synthesis_epsilon,
+        max_synthesis_size,
+        error_threshold,
+        error_sim_size,
+    )
+    in_circuit = input if isinstance(input, Circuit) else Circuit(1)
+    task = CompilationTask(in_circuit, workflow)
 
     # Connect to or construct a Compiler
     managed_compiler = compiler is None
@@ -382,6 +316,98 @@ def compile(
     return cast(Circuit, out)
 
 
+def build_workflow(
+    input: Circuit | UnitaryMatrix | StateVector | StateSystem,
+    model: MachineModel,
+    optimization_level: int = 1,
+    synthesis_epsilon: float = 1e-10,
+    max_synthesis_size: int = 4,
+    error_threshold: float | None = None,
+    error_sim_size: int = 8,
+) -> Workflow:
+    """Build a BQSKit Off-the-Shelf workflow, see :func:`compile` for info."""
+    if isinstance(input, Circuit):
+        if input.num_qudits > max_synthesis_size:
+            if any(
+                g.num_qudits > max_synthesis_size
+                and not isinstance(g, MeasurementPlaceholder)
+                for g in input.gate_set
+            ):
+                raise ValueError(
+                    'Unable to compile circuit with gate larger than'
+                    ' max_synthesis_size.\nConsider adjusting it.',
+                )
+
+        return _circuit_workflow(
+            input,
+            model,
+            optimization_level,
+            synthesis_epsilon,
+            max_synthesis_size,
+            error_threshold,
+            error_sim_size,
+        )
+
+    elif isinstance(input, UnitaryMatrix):
+        utry = input
+
+        if utry.num_qudits > max_synthesis_size:
+            raise ValueError(
+                'Cannot synthesize unitary larger than max_synthesis_size.\n'
+                'Consider adjusting max_synthesis_size or checking the input.',
+            )
+
+        return _circuit_workflow(
+            Circuit.from_unitary(utry),
+            model,
+            optimization_level,
+            synthesis_epsilon,
+            max_synthesis_size,
+            error_threshold,
+            error_sim_size,
+        )
+
+    elif isinstance(input, StateVector):
+        state = input
+
+        if state.num_qudits > max_synthesis_size:
+            raise ValueError(
+                'Cannot synthesize state larger than max_synthesis_size.\n'
+                'Consider adjusting max_synthesis_size or checking the input.',
+            )
+
+        return _stateprep_workflow(
+            state,
+            model,
+            optimization_level,
+            synthesis_epsilon,
+            max_synthesis_size,
+            error_threshold,
+            error_sim_size,
+        )
+
+    elif isinstance(input, StateSystem):
+        statemap = input
+
+        if statemap.num_qudits > max_synthesis_size:
+            raise ValueError(
+                'Cannot synthesize state larger than max_synthesis_size.\n'
+                'Consider adjusting max_synthesis_size or checking the input.',
+            )
+
+        return _statemap_workflow(
+            statemap,
+            model,
+            optimization_level,
+            synthesis_epsilon,
+            max_synthesis_size,
+            error_threshold,
+            error_sim_size,
+        )
+
+    raise TypeError(f'Unexpected input type: {type(input)}.')
+
+
 def _circuit_workflow(
     circuit: Circuit,
     model: MachineModel,
@@ -390,7 +416,7 @@ def _circuit_workflow(
     max_synthesis_size: int = 4,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
-) -> CompilationTask:
+) -> Workflow:
     """Build standard workflow for circuit compilation."""
     workflow_builders = [
         _opt1_workflow,
@@ -409,7 +435,7 @@ def _circuit_workflow(
         error_sim_size,
     )
     workflow += [RestoreMeasurements()]
-    return CompilationTask(circuit, workflow)
+    return Workflow(workflow)
 
 
 def _opt1_workflow(
@@ -897,9 +923,8 @@ def _stateprep_workflow(
     max_synthesis_size: int = 4,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
-) -> CompilationTask:
+) -> Workflow:
     """Build a workflow for state preparation."""
-    circuit = Circuit(1)
     layer_gen = _get_layer_gen(model)
 
     if optimization_level == 1:
@@ -937,7 +962,7 @@ def _stateprep_workflow(
             'ftol': 5e-16,
             'gtol': 1e-15,
         }
-        if circuit.num_qudits > 3:
+        if state.num_qudits > 3:
             synthesis = LEAPSynthesisPass(
                 success_threshold=synthesis_epsilon,
                 layer_generator=layer_gen,
@@ -973,7 +998,7 @@ def _stateprep_workflow(
         scan,
     ]
 
-    return CompilationTask(circuit, workflow)
+    return Workflow(workflow)
 
 
 def _statemap_workflow(
@@ -984,9 +1009,8 @@ def _statemap_workflow(
     max_synthesis_size: int = 4,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
-) -> CompilationTask:
+) -> Workflow:
     """Build a workflow for state preparation."""
-    circuit = Circuit(1)
     layer_gen = _get_layer_gen(model)
 
     if optimization_level == 1:
@@ -1022,7 +1046,7 @@ def _statemap_workflow(
             'ftol': 5e-16,
             'gtol': 1e-15,
         }
-        if circuit.num_qudits > 3:
+        if state.num_qudits > 3:
             synthesis = LEAPSynthesisPass(
                 success_threshold=synthesis_epsilon,
                 layer_generator=layer_gen,
@@ -1057,7 +1081,7 @@ def _statemap_workflow(
         scan,
     ]
 
-    return CompilationTask(circuit, workflow)
+    return Workflow(workflow)
 
 
 def _get_layer_gen(model: MachineModel) -> LayerGenerator:
