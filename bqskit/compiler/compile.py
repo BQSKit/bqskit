@@ -274,7 +274,14 @@ def compile(
         error_threshold,
         error_sim_size,
     )
-    in_circuit = input if isinstance(input, Circuit) else Circuit(1)
+    if isinstance(input, Circuit):
+        in_circuit = input
+
+    elif isinstance(input, UnitaryMatrix):
+        in_circuit = Circuit.from_unitary(input)
+
+    else:
+        Circuit(1)
     task = CompilationTask(in_circuit, workflow)
 
     # Connect to or construct a Compiler
