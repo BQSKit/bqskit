@@ -91,8 +91,11 @@ class Workflow(BasePass, Sequence[BasePass]):
     # def __repr__(self) -> str:
     #     pass  # TODO:
 
-    def __add__(self, other: Workflow) -> Workflow:
-        return Workflow(self._passes + other._passes)
+    def __add__(self, other: WorkflowLike) -> Workflow:
+        return Workflow(self._passes + Workflow(other)._passes)
+
+    def __radd__(self, other: WorkflowLike) -> Workflow:
+        return Workflow(Workflow(other)._passes + self._passes)
 
     def __len__(self) -> int:
         return self._passes.__len__()
