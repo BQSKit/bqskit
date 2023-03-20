@@ -1,4 +1,4 @@
-"""This module implements the SubTopologySelectionPass pass."""
+"""This module implements the SubtopologySelectionPass pass."""
 from __future__ import annotations
 
 import copy
@@ -243,14 +243,14 @@ def filter_compatible_subgraphs(
     return to_return
 
 
-class SubTopologySelectionPass(BasePass):
+class SubtopologySelectionPass(BasePass):
     """Pass that selects necessary subtopologies from the model."""
 
     key = ForEachBlockPass.pass_down_key_prefix + 'sub_topologies'
 
     def __init__(self, block_size: int) -> None:
         """
-        Construct a SubTopologySelectionPass.
+        Construct a SubtopologySelectionPass.
 
         Args:
             block_size (int): The max block size to select subtopologies for.
