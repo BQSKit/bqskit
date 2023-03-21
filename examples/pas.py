@@ -4,7 +4,6 @@ from __future__ import annotations
 from bqskit import enable_logging
 from bqskit.compiler import Compiler
 from bqskit.ir import Circuit
-from bqskit.passes.synthesis import LEAPSynthesisPass
 from bqskit.passes.synthesis.pas import PermutationAwareSynthesisPass
 enable_logging()
 

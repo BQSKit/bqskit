@@ -6,15 +6,12 @@ import logging
 import warnings
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.passdata import PassData
-from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
@@ -32,6 +29,11 @@ from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
 from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.passes import *
+from bqskit.passes.mapping.embed import EmbedAllPermutationsPass
+from bqskit.passes.mapping.layout.pam import PAMLayoutPass
+from bqskit.passes.mapping.routing.pam import PAMRoutingPass
+from bqskit.passes.mapping.topology import SubtopologySelectionPass
+from bqskit.passes.synthesis.pas import PermutationAwareSynthesisPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.state.system import StateSystemLike
@@ -282,7 +284,6 @@ def compile(
 
     else:
         Circuit(1)
-    task = CompilationTask(in_circuit, workflow)
 
     # Connect to or construct a Compiler
     managed_compiler = compiler is None
@@ -297,17 +298,10 @@ def compile(
         )
 
     # Perform the compilation
-    if error_threshold is None:
-        t_id = compiler.submit(task)
-        out = compiler.result(t_id)
-    else:
-        task.request_data = True
-        t_id = compiler.submit(task)
-        out, data = compiler.result(t_id)  # type: ignore
+    out, data = compiler.compile(in_circuit, workflow, True)
 
     # Log error if necessary
     if error_threshold is not None:
-        data = cast(PassData, data)
         error = data.error
         nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
         if nonsq_error > error_threshold:
@@ -320,7 +314,7 @@ def compile(
     if managed_compiler:
         compiler.close()
 
-    return cast(Circuit, out)
+    return out
 
 
 def build_workflow(
@@ -328,7 +322,7 @@ def build_workflow(
     model: MachineModel,
     optimization_level: int = 1,
     synthesis_epsilon: float = 1e-10,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> Workflow:
@@ -420,7 +414,7 @@ def _circuit_workflow(
     model: MachineModel,
     optimization_level: int = 1,
     synthesis_epsilon: float = 1e-10,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> Workflow:
@@ -449,7 +443,7 @@ def _opt1_workflow(
     circuit: Circuit,
     model: MachineModel,
     synthesis_epsilon: float = 1e-10,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> list[BasePass]:
@@ -730,7 +724,7 @@ def _opt3_workflow(
     circuit: Circuit,
     model: MachineModel,
     synthesis_epsilon: float = 1e-10,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> list[BasePass]:
@@ -913,13 +907,207 @@ def _opt4_workflow(
     circuit: Circuit,
     model: MachineModel,
     synthesis_epsilon: float = 1e-10,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> list[BasePass]:
     """Build optimization Level 4 workflow for circuit compilation."""
-    # TODO
-    raise NotImplementedError('Optimization level 4 is not yet ready.')
+    if error_threshold is not None:
+        _logger.warning(
+            'Automated error upper bound calculated is not yet'
+            ' ready for opt level 4.',
+        )
+
+    if max_synthesis_size > 3:
+        _logger.warning(
+            'It is currently recommended to set max_synthesis_size to 3'
+            ' for optimization level 4. This may change in the future.',
+        )
+
+    inst_ops = {
+        'multistarts': 8,
+        'method': 'minimization',
+        'ftol': 5e-16,
+        'gtol': 1e-15,
+    }
+    layer_gen = _get_layer_gen(model)
+    scan = ScanningGateRemovalPass(success_threshold=synthesis_epsilon)
+    scan_mq = ScanningGateRemovalPass(
+        success_threshold=synthesis_epsilon,
+        collection_filter=_mq_gate_collection_filter,
+    )
+    qsearch = QSearchSynthesisPass(
+        success_threshold=synthesis_epsilon,
+        layer_generator=layer_gen,
+        instantiate_options=inst_ops,
+    )
+    leap = LEAPSynthesisPass(
+        success_threshold=synthesis_epsilon,
+        layer_generator=layer_gen,
+        instantiate_options=inst_ops,
+        min_prefix_size=7,
+    )
+    direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
+    single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
+    if circuit.num_qudits > 1:
+        smallest_entangler_size = min(
+            g.num_qudits for g in model.gate_set
+            if g.num_qudits != 1
+        )
+        non_native_gates = [
+            g for g in circuit.gate_set
+            if g not in model.gate_set
+        ]
+        non_native_tq_gates = [
+            g for g in non_native_gates
+            if g.num_qudits == 2
+        ]
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
+        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
+        native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
+
+        all_gates = model.gate_set.union(circuit.gate_set)
+        if any(g.num_qudits > 2 for g in all_gates):
+            multi_qudit_gate_rebase: BasePass = direct_synthesis
+        else:
+            if model.radixes[0] == 2:
+                sq_gate: Gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
+            multi_qudit_gate_rebase = Rebase2QuditGatePass(
+                non_native_tq_gates,
+                native_tq_gates,
+                max_depth=3,
+                max_retries=5,
+                single_qudit_gate=sq_gate,
+            )
+    else:
+        smallest_entangler_size = 1
+        multi_qudit_gate_rebase = NOOPPass()
+        native_mq_gates = []
+
+    return [
+        SetModelPass(model),
+
+        # Multi-qudit gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                LogPass('Retargeting multi-qudit gates.'),
+                QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                                scan_mq,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
+                    calculate_error_bound=(error_threshold is not None),
+                ),
+                UnfoldPass(),
+            ],
+        ),
+
+        # Mapping via PostPAM
+        LogPass('Mapping circuit.'),
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                SubtopologySelectionPass(max_synthesis_size),
+                QuickPartitioner(max_synthesis_size),
+                ForEachBlockPass(
+                    EmbedAllPermutationsPass(inner_synthesis=qsearch),
+                ),
+                GreedyPlacementPass(),
+                PAMLayoutPass(5),
+                PAMRoutingPass(),
+                UnfoldPass(),
+                ApplyPlacement(),
+            ],
+        ),
+
+        # Swap gate retargeting
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                LogPass('Retargeting swap gates.'),
+                QuickPartitioner(max_synthesis_size),
+                ExtendBlockSizePass(smallest_entangler_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(
+                        [
+                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            IfThenElsePass(
+                                NotPredicate(MultiPhysicalPredicate()),
+                                multi_qudit_gate_rebase,
+                            ),
+                        ],
+                        replace_filter=_gen_replace_filter(model),
+                    ),
+                    calculate_error_bound=(error_threshold is not None),
+                ),
+                UnfoldPass(),
+            ],
+        ),
+
+        # Optimization: Iterative Resynthesis
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                WhileLoopPass(
+                    GateCountPredicate(native_mq_gates),
+                    [
+                        LogPass('Resynthesizing blocks.'),
+                        QuickPartitioner(max_synthesis_size),
+                        ExtendBlockSizePass(smallest_entangler_size),
+                        QuickPartitioner(error_sim_size),
+                        ForEachBlockPass(
+                            ForEachBlockPass(
+                                direct_synthesis,
+                                replace_filter=_gen_replace_filter(model),
+                            ),
+                            calculate_error_bound=(error_threshold is not None),
+                        ),
+                        UnfoldPass(),
+                    ],
+                ),
+            ],
+        ),
+
+        # Single-qudit gate retargeting
+        LogPass('Retargeting single-qudit gates.'),
+        single_qudit_gate_rebase,
+
+        # Optimization: Iterative gate deletion on blocks
+        WhileLoopPass(
+            ChangePredicate(),
+            [
+                LogPass('Attempting to delete gates.'),
+                QuickPartitioner(max_synthesis_size),
+                QuickPartitioner(error_sim_size),
+                ForEachBlockPass(
+                    ForEachBlockPass(scan),
+                    calculate_error_bound=(error_threshold is not None),
+                ),
+                UnfoldPass(),
+            ],
+        ),
+
+        # Finalizing
+        LogErrorPass(),
+        ApplyPlacement(),
+    ]
 
 
 def _stateprep_workflow(
@@ -927,7 +1115,7 @@ def _stateprep_workflow(
     model: MachineModel,
     optimization_level: int = 1,
     synthesis_epsilon: float = 1e-10,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> Workflow:
@@ -940,7 +1128,7 @@ def _stateprep_workflow(
             'method': 'minimization',
             'minimizer': LBFGSMinimizer(),
         }
-        synthesis = LEAPSynthesisPass(
+        synthesis: SynthesisPass = LEAPSynthesisPass(
             success_threshold=synthesis_epsilon,
             layer_generator=layer_gen,
             instantiate_options=inst_ops,
@@ -977,7 +1165,7 @@ def _stateprep_workflow(
                 min_prefix_size=7,
             )
         else:
-            synthesis = QSearchSynthesisPass(  # type: ignore
+            synthesis = QSearchSynthesisPass(
                 success_threshold=synthesis_epsilon,
                 layer_generator=layer_gen,
                 instantiate_options=inst_ops,
@@ -990,7 +1178,20 @@ def _stateprep_workflow(
             'ftol': 5e-16,
             'gtol': 1e-15,
         }
-        raise NotImplementedError('Not yet.')
+        if state.num_qudits > 3:
+            in_synthesis = LEAPSynthesisPass(
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+                min_prefix_size=7,
+            )
+        else:
+            in_synthesis = QSearchSynthesisPass(  # type: ignore
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+            )
+        synthesis = PermutationAwareSynthesisPass(inner_synthesis=in_synthesis)
 
     scan = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
@@ -1013,7 +1214,7 @@ def _statemap_workflow(
     model: MachineModel,
     optimization_level: int = 1,
     synthesis_epsilon: float = 1e-8,
-    max_synthesis_size: int = 4,
+    max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
 ) -> Workflow:
@@ -1025,7 +1226,7 @@ def _statemap_workflow(
             'multistarts': 1,
             'method': 'minimization',
         }
-        synthesis = LEAPSynthesisPass(
+        synthesis: SynthesisPass = LEAPSynthesisPass(
             success_threshold=synthesis_epsilon,
             layer_generator=layer_gen,
             instantiate_options=inst_ops,
@@ -1061,7 +1262,7 @@ def _statemap_workflow(
                 min_prefix_size=7,
             )
         else:
-            synthesis = QSearchSynthesisPass(  # type: ignore
+            synthesis = QSearchSynthesisPass(
                 success_threshold=synthesis_epsilon,
                 layer_generator=layer_gen,
                 instantiate_options=inst_ops,
@@ -1074,7 +1275,20 @@ def _statemap_workflow(
             'ftol': 5e-16,
             'gtol': 1e-15,
         }
-        raise NotImplementedError('Not yet.')
+        if state.num_qudits > 3:
+            in_synthesis = LEAPSynthesisPass(
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+                min_prefix_size=7,
+            )
+        else:
+            in_synthesis = QSearchSynthesisPass(  # type: ignore
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+            )
+        synthesis = PermutationAwareSynthesisPass(inner_synthesis=in_synthesis)
 
     scan = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,

@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from bqskit.qis.state.system import StateSystem
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-    from bqskit.qis.state.system import StateSystem
 
 
 class BasePass(abc.ABC):

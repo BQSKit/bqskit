@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import itertools as it
+
 import pytest
 
 from bqskit import compile
@@ -16,7 +18,21 @@ from bqskit.ir.gates import ToffoliGate
 from bqskit.ir.gates import U1qGate
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import XGate
+from bqskit.qis import PermutationMatrix
 from bqskit.qis import UnitaryMatrix
+
+
+def get_distance_from_pa(U: UnitaryMatrix, V: UnitaryMatrix) -> float:
+    """Get distance between U and V up to a permutation."""
+    width = U.num_qudits
+    perms = list(it.permutations(range(width)))
+    Pis = [PermutationMatrix.from_qubit_location(width, p) for p in perms]
+    Pos = [PermutationMatrix.from_qubit_location(width, p) for p in perms]
+    dists = [
+        U.get_distance_from(Po.T @ V @ Pi, 1)
+        for Pi, Po in it.product(Pis, Pos)
+    ]
+    return min(dists)
 
 
 @pytest.mark.parametrize('sq_utry', [UnitaryMatrix.random(1) for i in range(5)])
@@ -72,7 +88,13 @@ def test_two_qudit_synthesis(
     )
     assert out_circuit.num_qudits == 2
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    assert out_circuit.get_unitary().get_distance_from(tq_utry, 1) < 1e-8
+    out_utry = out_circuit.get_unitary()
+
+    if optimization_level == 4:
+        assert get_distance_from_pa(out_utry, tq_utry) < 1e-8
+
+    else:
+        assert out_utry.get_distance_from(tq_utry, 1) < 1e-8
 
 
 @pytest.mark.parametrize(
@@ -96,8 +118,13 @@ def test_three_qudit_synthesis(
     )
     assert out_circuit.num_qudits == 3
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
-    utry = toffoli_unitary
-    assert out_circuit.get_unitary().get_distance_from(utry, 1) < 1e-8
+    out_utry = out_circuit.get_unitary()
+
+    if optimization_level == 4:
+        assert get_distance_from_pa(out_utry, toffoli_unitary) < 1e-8
+
+    else:
+        assert out_utry.get_distance_from(toffoli_unitary, 1) < 1e-8
 
 
 def test_fail_on_larger_max_synthesis_size() -> None:
