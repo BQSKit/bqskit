@@ -43,8 +43,5 @@ class SynthesisPass(BasePass):
 
     def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        if len(data) == 0:
-            data = dict()
-
         target_utry = self.get_target(circuit, data)
         circuit.become(self.synthesize(target_utry, data))
