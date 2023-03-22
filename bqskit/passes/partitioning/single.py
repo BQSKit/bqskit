@@ -1,10 +1,10 @@
 """This module implements the GroupSingleQuditGatePass."""
 from __future__ import annotations
 
-from typing import Any
-
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.region import CircuitRegion
 
 
@@ -15,7 +15,7 @@ class GroupSingleQuditGatePass(BasePass):
     This pass groups together consecutive single-qudit gates.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Go through each qudit individually
@@ -28,7 +28,11 @@ class GroupSingleQuditGatePass(BasePass):
                 if circuit.is_point_idle((c, q)):
                     continue
 
-                if circuit[c, q].num_qudits == 1:
+                op = circuit[c, q]
+                if (
+                    op.num_qudits == 1
+                    and not isinstance(op.gate, BarrierPlaceholder)
+                ):
                     if region_start is None:
                         region_start = c
                 else:

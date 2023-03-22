@@ -7,7 +7,7 @@ from bqskit.passes import GroupSingleQuditGatePass
 
 
 def test_single_qudit_grouper(r6_qudit_circuit: Circuit) -> None:
-    GroupSingleQuditGatePass().run(r6_qudit_circuit)
+    r6_qudit_circuit.perform(GroupSingleQuditGatePass())
 
     # All single-qudit gates should be in a CircuitGate
     for gate in r6_qudit_circuit.gate_set:

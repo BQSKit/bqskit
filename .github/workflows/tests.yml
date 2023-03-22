@@ -8,6 +8,7 @@ on:
 jobs:
   tests:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
         os: [macOS-latest, windows-latest, ubuntu-latest]
@@ -20,10 +21,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Upgrade python environment
       run: python -m pip install --upgrade virtualenv setuptools pip
+    - name: Upgrade test dependencies
+      run: python -m pip install psutil pytest 'hypothesis[zoneinfo]' qiskit pytket qutip cirq
     - name: Install BQSKit
       env:
         SYSTEM_VERSION_COMPAT: 0
         NUMBER_RANDOM_CIRCUITS: 100
-      run: pip install '.[ext,dev]'
+      run: pip install .
     - name: Run tests
       run: pytest

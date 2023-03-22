@@ -4,18 +4,16 @@ from __future__ import annotations
 import pytest
 pytest.importorskip('qiskit')
 
-import qiskit.quantum_info as qi
-from qiskit import QuantumCircuit
-from qiskit import transpile
-
-from bqskit.compiler.compile import compile
-from bqskit.compiler.compiler import Compiler
-from bqskit.ext import bqskit_to_qiskit
-from bqskit.ext import qiskit_to_bqskit
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import U3Gate
 from bqskit.qis import UnitaryMatrix
+from bqskit.ir.gates import U3Gate
+from bqskit.ir.gates import CNOTGate
+from bqskit.ir.circuit import Circuit
+from bqskit.ext import qiskit_to_bqskit
+from bqskit.ext import bqskit_to_qiskit
+from bqskit.compiler.compile import compile
+from qiskit import transpile
+from qiskit import QuantumCircuit
+import qiskit.quantum_info as qi
 
 
 class TestTranslate:
@@ -52,7 +50,7 @@ class TestTranslate:
         circuit.cnot(0, 1)
         circuit.cnot(0, 2)
         circuit.cnot(0, 2)
-        circuit.u3(1, 2.4, 3, 0)
+        circuit.u(1, 2.4, 3, 0)
         circuit.u(1, 2.2, 3, 1)
         circuit.u(1, 2.1, 3, 2)
         circuit.u(1, 2.1, 3, 2)
@@ -78,30 +76,20 @@ class TestTranslate:
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-7
 
-    def test_compile_bqskit(
-        self,
-        qiskit_circuit: QuantumCircuit,
-        compiler: Compiler,
-    ) -> None:
+    def test_compile_bqskit(self, qiskit_circuit: QuantumCircuit) -> None:
         qc = qiskit_circuit
         in_utry = UnitaryMatrix(qi.Operator(qc).data)
         bqskit_circuit = qiskit_to_bqskit(qc)
-        bqskit_out_circuit = compile(
-            bqskit_circuit, max_synthesis_size=2, compiler=compiler,
-        )
+        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
         out_circuit = bqskit_to_qiskit(bqskit_out_circuit)
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-5
 
-    def test_synthesis_bqskit(
-        self,
-        qiskit_circuit: QuantumCircuit,
-        compiler: Compiler,
-    ) -> None:
+    def test_synthesis_bqskit(self, qiskit_circuit: QuantumCircuit) -> None:
         qc = qiskit_circuit
         in_utry = UnitaryMatrix(qi.Operator(qc).data)
         bqskit_circuit = qiskit_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit, compiler=compiler)
+        bqskit_out_circuit = compile(bqskit_circuit)
         out_circuit = bqskit_to_qiskit(bqskit_out_circuit)
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-5

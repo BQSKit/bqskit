@@ -11,7 +11,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 class TestQuickPartitioner:
     def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
         utry = r6_qudit_circuit.get_unitary()
-        QuickPartitioner(3).run(r6_qudit_circuit, {})
+        r6_qudit_circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -58,7 +58,7 @@ class TestQuickPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -113,7 +113,7 @@ class TestQuickPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -165,7 +165,7 @@ class TestQuickPartitioner:
             ],
         )
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -218,7 +218,7 @@ class TestQuickPartitioner:
         )
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -280,7 +280,7 @@ class TestQuickPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [2])
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -340,7 +340,7 @@ class TestQuickPartitioner:
         )
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -414,7 +414,7 @@ class TestQuickPartitioner:
         )
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -469,7 +469,7 @@ class TestQuickPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [4])
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -522,7 +522,7 @@ class TestQuickPartitioner:
         )
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -577,7 +577,7 @@ class TestQuickPartitioner:
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [3])
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)
@@ -598,7 +598,7 @@ class TestQuickPartitioner:
         circuit.append_gate(CNOTGate(), (1, 2))
 
         utry = circuit.get_unitary()
-        QuickPartitioner(3).run(circuit, {})
+        circuit.perform(QuickPartitioner(3))
 
         assert all(
             isinstance(op.gate, CircuitGate)

@@ -1,19 +1,22 @@
 """This module defines a standard `compile` function using BQSKit."""
 from __future__ import annotations
 
+import functools
 import logging
 import warnings
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SqrtXGate
@@ -21,26 +24,36 @@ from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.parameterized.u8 import U8Gate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
+from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.passes import *
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
+from bqskit.qis.state.system import StateSystemLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
-_logger = logging.getLogger(__name__)
+
+
 if TYPE_CHECKING:
     from bqskit.qis.unitary import UnitaryLike
     from bqskit.qis.state import StateLike
+    from bqskit.compiler.basepass import BasePass
+
+
+_logger = logging.getLogger(__name__)
 
 
 def compile(
-    input: Circuit | UnitaryLike | StateLike,
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
     model: MachineModel | None = None,
     optimization_level: int = 1,
     max_synthesis_size: int = 3,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
     compiler: Compiler | None = None,
@@ -91,11 +104,11 @@ def compile(
             when calling `compile` multiple times. (Default: None)
 
         compiler_args (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a dask cluster can go here.
+            Arguments for connecting to a cluster can go here.
             See :class:`Compiler` for more info.
 
         compiler_kwargs (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a dask cluster can go here.
+            Arguments for connecting to a cluster can go here.
             See :class:`Compiler` for more info.
 
     Returns:
@@ -118,10 +131,13 @@ def compile(
         elif StateVector.is_pure_state(input):
             input = StateVector(input)
 
+        elif StateSystem.is_state_system(input):
+            input = StateSystem(input)
+
         else:
             raise TypeError(
-                'Input is neither a circuit, a unitary, nor a state.'
-                f' Got {type(input)}.',
+                'Input is neither a circuit, a unitary, a state system'
+                f', nor a state. Got {type(input)}.',
             )
     except Exception as e:
         raise TypeError(
@@ -130,17 +146,19 @@ def compile(
             ' circuit, unitary, or state.',
         ) from e
 
-    assert isinstance(input, (Circuit, UnitaryMatrix, StateVector))
+    assert isinstance(input, (Circuit, UnitaryMatrix, StateVector, StateSystem))
 
-    if not all(r == 2 for r in input.radixes):
+    if not all(r == input.radixes[0] for r in input.radixes):
         raise ValueError(
             'Currently, can only automatically build a workflow '
-            'for qubit-only systems.',
-        )  # TODO
+            'for same-level systems, such as qubit-only or qutrit-only'
+            'systems. Heterogenous-radix systems are not yet supported'
+            'with the standard workflows.',
+        )
 
     # Check `model`
     if model is None:
-        model = MachineModel(input.num_qudits)
+        model = MachineModel(input.num_qudits, radixes=input.radixes)
 
     if not isinstance(model, MachineModel):
         raise TypeError(f'Expected MachineModel for model, got {type(model)}.')
@@ -148,11 +166,13 @@ def compile(
     if model.num_qudits < input.num_qudits:
         raise ValueError('Machine is too small for circuit.')
 
-    if not all(r == 2 for r in model.radixes):
+    if not all(r == input.radixes[0] for r in model.radixes):
         raise ValueError(
             'Currently, can only automatically build a workflow '
-            'for qubit-only systems.',
-        )  # TODO
+            'for same-level systems, such as qubit-only or qutrit-only'
+            'systems. Heterogenous-radix systems are not yet supported'
+            'with the standard workflows.',
+        )
 
     model_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
@@ -304,6 +324,25 @@ def compile(
             error_sim_size,
         )
 
+    elif isinstance(input, StateSystem):
+        statemap = input
+
+        if statemap.num_qudits > max_synthesis_size:
+            raise ValueError(
+                'Cannot synthesize state larger than max_synthesis_size.\n'
+                'Consider adjusting max_synthesis_size or checking the input.',
+            )
+
+        task = _statemap_workflow(
+            statemap,
+            model,
+            optimization_level,
+            synthesis_epsilon,
+            max_synthesis_size,
+            error_threshold,
+            error_sim_size,
+        )
+
     # Connect to or construct a Compiler
     managed_compiler = compiler is None
 
@@ -317,11 +356,18 @@ def compile(
         )
 
     # Perform the compilation
-    out = compiler.compile(task)
+    if error_threshold is None:
+        t_id = compiler.submit(task)
+        out = compiler.result(t_id)
+    else:
+        task.request_data = True
+        t_id = compiler.submit(task)
+        out, data = compiler.result(t_id)  # type: ignore
 
     # Log error if necessary
     if error_threshold is not None:
-        error = compiler.analyze(task, 'error')
+        data = cast(PassData, data)
+        error = data.error
         nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
         if nonsq_error > error_threshold:
             warnings.warn(
@@ -333,7 +379,7 @@ def compile(
     if managed_compiler:
         compiler.close()
 
-    return out
+    return cast(Circuit, out)
 
 
 def _circuit_workflow(
@@ -397,26 +443,33 @@ def _opt1_workflow(
             if g.num_qudits != 1
         )
         non_native_gates = [
-            g for g in circuit.gate_set
+            g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
         ]
         non_native_tq_gates = [
             g for g in non_native_gates
             if g.num_qudits == 2
         ]
-        if SwapGate() not in model.gate_set:
-            non_native_tq_gates.append(SwapGate())
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
-        all_gates = model.gate_set.union(circuit.gate_set)
+        all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
+            if model.radixes[0] == 2:
+                sq_gate: Gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
                 non_native_tq_gates,
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
@@ -527,26 +580,33 @@ def _opt2_workflow(
             if g.num_qudits != 1
         )
         non_native_gates = [
-            g for g in circuit.gate_set
+            g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
         ]
         non_native_tq_gates = [
             g for g in non_native_gates
             if g.num_qudits == 2
         ]
-        if SwapGate() not in model.gate_set:
-            non_native_tq_gates.append(SwapGate())
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
 
-        all_gates = model.gate_set.union(circuit.gate_set)
+        all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
+            if model.radixes[0] == 2:
+                sq_gate: Gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
                 non_native_tq_gates,
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
@@ -673,27 +733,34 @@ def _opt3_workflow(
             if g.num_qudits != 1
         )
         non_native_gates = [
-            g for g in circuit.gate_set
+            g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
         ]
         non_native_tq_gates = [
             g for g in non_native_gates
             if g.num_qudits == 2
         ]
-        if SwapGate() not in model.gate_set:
-            non_native_tq_gates.append(SwapGate())
+        if SwapGate(model.radixes[0]) not in model.gate_set:
+            non_native_tq_gates.append(SwapGate(model.radixes[0]))
         native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
-        all_gates = model.gate_set.union(circuit.gate_set)
+        all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
+            if model.radixes[0] == 2:
+                sq_gate: Gate = U3Gate()
+            elif model.radixes[0] == 3:
+                sq_gate = U8Gate()
+            else:
+                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
                 non_native_tq_gates,
                 native_tq_gates,
                 max_depth=3,
                 max_retries=5,
+                single_qudit_gate=sq_gate,
             )
     else:
         smallest_entangler_size = 1
@@ -832,12 +899,176 @@ def _stateprep_workflow(
     error_sim_size: int = 8,
 ) -> CompilationTask:
     """Build a workflow for state preparation."""
-    # TODO
-    raise NotImplementedError('State preparation is not yet implemented.')
+    circuit = Circuit(1)
+    layer_gen = _get_layer_gen(model)
+
+    if optimization_level == 1:
+        inst_ops = {
+            'multistarts': 1,
+            'method': 'minimization',
+            'minimizer': LBFGSMinimizer(),
+        }
+        synthesis = LEAPSynthesisPass(
+            success_threshold=synthesis_epsilon,
+            layer_generator=layer_gen,
+            instantiate_options=inst_ops,
+            min_prefix_size=3,
+            cost=HilbertSchmidtCostGenerator(),
+        )
+
+    elif optimization_level == 2:
+        inst_ops = {
+            'multistarts': 4,
+            'method': 'minimization',
+            'ftol': 5e-12,
+            'gtol': 1e-14,
+        }
+        synthesis = LEAPSynthesisPass(
+            success_threshold=synthesis_epsilon,
+            layer_generator=layer_gen,
+            instantiate_options=inst_ops,
+            min_prefix_size=5,
+        )
+
+    elif optimization_level == 3:
+        inst_ops = {
+            'multistarts': 8,
+            'method': 'minimization',
+            'ftol': 5e-16,
+            'gtol': 1e-15,
+        }
+        if circuit.num_qudits > 3:
+            synthesis = LEAPSynthesisPass(
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+                min_prefix_size=7,
+            )
+        else:
+            synthesis = QSearchSynthesisPass(  # type: ignore
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+            )
+
+    elif optimization_level == 4:
+        inst_ops = {
+            'multistarts': 8,
+            'method': 'minimization',
+            'ftol': 5e-16,
+            'gtol': 1e-15,
+        }
+        raise NotImplementedError('Not yet.')
+
+    scan = ScanningGateRemovalPass(
+        success_threshold=synthesis_epsilon,
+        instantiate_options=inst_ops,
+        cost=HilbertSchmidtCostGenerator(),
+    )
+
+    workflow = [
+        SetModelPass(model),
+        SetTargetPass(state),
+        synthesis,
+        scan,
+    ]
+
+    return CompilationTask(circuit, workflow)
+
+
+def _statemap_workflow(
+    state: StateSystem,
+    model: MachineModel,
+    optimization_level: int = 1,
+    synthesis_epsilon: float = 1e-8,
+    max_synthesis_size: int = 4,
+    error_threshold: float | None = None,
+    error_sim_size: int = 8,
+) -> CompilationTask:
+    """Build a workflow for state preparation."""
+    circuit = Circuit(1)
+    layer_gen = _get_layer_gen(model)
+
+    if optimization_level == 1:
+        inst_ops = {
+            'multistarts': 1,
+            'method': 'minimization',
+        }
+        synthesis = LEAPSynthesisPass(
+            success_threshold=synthesis_epsilon,
+            layer_generator=layer_gen,
+            instantiate_options=inst_ops,
+            min_prefix_size=3,
+        )
+
+    elif optimization_level == 2:
+        inst_ops = {
+            'multistarts': 4,
+            'method': 'minimization',
+            'ftol': 5e-12,
+            'gtol': 1e-14,
+        }
+        synthesis = LEAPSynthesisPass(
+            success_threshold=synthesis_epsilon,
+            layer_generator=layer_gen,
+            instantiate_options=inst_ops,
+            min_prefix_size=5,
+        )
+
+    elif optimization_level == 3:
+        inst_ops = {
+            'multistarts': 8,
+            'method': 'minimization',
+            'ftol': 5e-16,
+            'gtol': 1e-15,
+        }
+        if circuit.num_qudits > 3:
+            synthesis = LEAPSynthesisPass(
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+                min_prefix_size=7,
+            )
+        else:
+            synthesis = QSearchSynthesisPass(  # type: ignore
+                success_threshold=synthesis_epsilon,
+                layer_generator=layer_gen,
+                instantiate_options=inst_ops,
+            )
+
+    elif optimization_level == 4:
+        inst_ops = {
+            'multistarts': 8,
+            'method': 'minimization',
+            'ftol': 5e-16,
+            'gtol': 1e-15,
+        }
+        raise NotImplementedError('Not yet.')
+
+    scan = ScanningGateRemovalPass(
+        success_threshold=synthesis_epsilon,
+        instantiate_options=inst_ops,
+    )
+
+    workflow = [
+        SetModelPass(model),
+        SetTargetPass(state),
+        synthesis,
+        scan,
+    ]
+
+    return CompilationTask(circuit, workflow)
 
 
 def _get_layer_gen(model: MachineModel) -> LayerGenerator:
     """Build a `model`-compliant layer generator."""
+    if model.radixes[0] == 2:
+        sq_gate: Gate = U3Gate()
+    elif model.radixes[0] == 3:
+        sq_gate = U8Gate()
+    else:
+        sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
+
     tq_gates = [gate for gate in model.gate_set if gate.num_qudits == 2]
     mq_gates = [gate for gate in model.gate_set if gate.num_qudits > 2]
 
@@ -845,9 +1076,9 @@ def _get_layer_gen(model: MachineModel) -> LayerGenerator:
         if CNOTGate() in tq_gates:
             return FourParamGenerator()
         else:
-            return SimpleLayerGenerator(tq_gates[0])
+            return SimpleLayerGenerator(tq_gates[0], sq_gate)
 
-    return WideLayerGenerator(tq_gates + mq_gates)
+    return WideLayerGenerator(tq_gates + mq_gates, sq_gate)
 
 
 def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
@@ -904,34 +1135,36 @@ def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
     ])
 
 
+def _replace_filter(new: Circuit, old: Operation, model: MachineModel) -> bool:
+    # return true if old doesn't satisfy model
+    if not isinstance(old.gate, CircuitGate):
+        return True
+
+    org = old.gate._circuit
+    org_mq_gates = [g for g in org.gate_set if g.num_qudits > 1]
+
+    if any(g not in model.gate_set for g in org_mq_gates):
+        return True
+
+    if any(
+        (old.location[e[0]], old.location[e[1]]) not in model.coupling_graph
+        for e in org.coupling_graph
+    ):
+        return True
+
+    # else pick shortest circuit
+    org_sq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
+    org_mq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
+    new_sq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
+    new_mq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
+    return (new_mq_n, new_sq_n) < (org_mq_n, org_sq_n)
+
+
 def _gen_replace_filter(
     model: MachineModel,
 ) -> Callable[[Circuit, Operation], bool]:
     """Generate a replace filter for use during the standard workflow."""
-    def _replace_filter(new: Circuit, old: Operation) -> bool:
-        # return true if old doesn't satisfy model
-        if not isinstance(old.gate, CircuitGate):
-            return True
-
-        org = old.gate._circuit
-        org_mq_gates = [g for g in org.gate_set if g.num_qudits > 1]
-
-        if any(g not in model.gate_set for g in org_mq_gates):
-            return True
-
-        if any(
-            (old.location[e[0]], old.location[e[1]]) not in model.coupling_graph
-            for e in org.coupling_graph
-        ):
-            return True
-
-        # else pick shortest circuit
-        org_sq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits == 1)
-        org_mq_n = sum(org.count(g) for g in org.gate_set if g.num_qudits >= 2)
-        new_sq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits == 1)
-        new_mq_n = sum(new.count(g) for g in new.gate_set if g.num_qudits >= 2)
-        return (new_mq_n, new_sq_n) < (org_mq_n, org_sq_n)
-    return _replace_filter
+    return functools.partial(_replace_filter, model=model)
 
 
 def _mq_gate_collection_filter(op: Operation) -> bool:

@@ -1,13 +1,13 @@
 """This module implements the NotPredicate class."""
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import TYPE_CHECKING
 
-from bqskit.ir.circuit import Circuit
 from bqskit.passes.control.predicate import PassPredicate
 
-_logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 
 class NotPredicate(PassPredicate):
@@ -27,10 +27,10 @@ class NotPredicate(PassPredicate):
         """
 
         if not isinstance(predicate, PassPredicate):
-            raise TypeError('Expected PassPredicate, got %s.' % type(predicate))
+            raise TypeError(f'Expected PassPredicate, got {type(predicate)}.')
 
         self.predicate = predicate
 
-    def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
+    def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
         return not self.predicate(circuit, data)

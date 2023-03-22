@@ -6,6 +6,7 @@ from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_real_number
 
@@ -65,7 +66,7 @@ class AStarHeuristic(HeuristicFunction):
     def get_value(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Return the heuristic's value, see HeuristicFunction for more info."""
         cost = 0.0
