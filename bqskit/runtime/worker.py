@@ -638,7 +638,7 @@ def get_worker() -> Worker:
     return _worker
 
 
-def _check_positive(value):
+def _check_positive(value: str) -> int:
     ivalue = int(value)
     if ivalue <= 0:
         raise argparse.ArgumentTypeError(
