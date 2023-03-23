@@ -384,7 +384,7 @@ class DetachedServer(ServerBase):
 def start_server() -> None:
     """Entry point for a detached runtime server process."""
     parser = argparse.ArgumentParser(
-        prog='BQSKit Server',
+        prog='bqskit-server',
         description='Launch a BQSKit runtime server process.',
     )
     parser.add_argument(

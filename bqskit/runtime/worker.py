@@ -641,7 +641,7 @@ def get_worker() -> Worker:
 def start_worker_rank() -> None:
     """Entry point for spawning a rank of runtime worker processes."""
     parser = argparse.ArgumentParser(
-        prog='BQSKit Worker',
+        prog='bqskit-worker',
         description='Launch a rank of BQSKit runtime worker processes.',
     )
     parser.add_argument(

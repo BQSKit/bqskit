@@ -256,7 +256,7 @@ class Manager(ServerBase):
 def start_manager() -> None:
     """Entry point for runtime manager processes."""
     parser = argparse.ArgumentParser(
-        prog='BQSKit Manager',
+        prog='bqskit-manager',
         description='Launch a BQSKit runtime manager process.',
     )
     parser.add_argument(
