@@ -637,6 +637,11 @@ def get_worker() -> Worker:
         raise RuntimeError('Worker has not been started.')
     return _worker
 
+def _check_positive(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+    return ivalue
 
 def start_worker_rank() -> None:
     """Entry point for spawning a rank of runtime worker processes."""
@@ -646,7 +651,7 @@ def start_worker_rank() -> None:
     )
     parser.add_argument(
         'num_workers',
-        type=int,
+        type=_check_positive,
         help='The number of workers to spawn.',
     )
     parser.add_argument(
