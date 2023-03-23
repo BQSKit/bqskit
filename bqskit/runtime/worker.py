@@ -637,11 +637,15 @@ def get_worker() -> Worker:
         raise RuntimeError('Worker has not been started.')
     return _worker
 
+
 def _check_positive(value):
     ivalue = int(value)
     if ivalue <= 0:
-        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+        raise argparse.ArgumentTypeError(
+            '%s is an invalid positive int value' % value,
+        )
     return ivalue
+
 
 def start_worker_rank() -> None:
     """Entry point for spawning a rank of runtime worker processes."""
