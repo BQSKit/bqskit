@@ -236,7 +236,7 @@ class ServerBase:
         if self.lower_id_bound + num_workers >= self.upper_id_bound:
             raise RuntimeError('Insufficient id range for workers.')
 
-        # Create and start all worker processed
+        # Create and start all worker processes
         procs = {}
         for i in range(num_workers):
             w_id = self.lower_id_bound + i
