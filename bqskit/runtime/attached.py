@@ -60,7 +60,7 @@ class AttachedServer(DetachedServer):
         self.mailbox_counter = 0
 
         # Start workers
-        self.spawn_workers(num_workers)
+        self.spawn_workers(num_workers, worker_port)
 
         # Connect to client
         client_conn = self.listen_once(port)
