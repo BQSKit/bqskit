@@ -144,6 +144,7 @@ class ForEachBlockPass(BasePass):
             block_data['model'] = submodel
             block_data['point'] = CircuitPoint(cycle, op.location[0])
             block_data['calculate_error_bound'] = self.calculate_error_bound
+            block_data.seed = data.seed
 
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
