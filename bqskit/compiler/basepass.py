@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from bqskit.qis.state.system import StateSystem
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+    from bqskit.qis.state.system import StateSystem
 
 
 class BasePass(abc.ABC):
@@ -27,8 +28,8 @@ class BasePass(abc.ABC):
 
     Examples:
         >>> class PrintCNOTCountPass(BasePass):
-        ...     def run(self, circ: Circuit, }one:
-        ...         print(f"Number of CNOTs: {circ.count(CNOTGate())}")
+        ...     async def run(self, circuit: Circuit, data: PassData) -> None:
+        ...         print(f"Number of CNOTs: {circuit.count(CNOTGate())}")
     """
 
     @property

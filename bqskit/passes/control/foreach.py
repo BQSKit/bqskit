@@ -33,6 +33,9 @@ class ForEachBlockPass(BasePass):
     key = 'ForEachBlockPass_data'
     """The key in data, where block data will be put."""
 
+    pass_down_key_prefix = 'ForEachBlockPass_pass_down_'
+    """If a key exists in the pass data with this prefix, pass it to blocks."""
+
     def __init__(
         self,
         loop_body: WorkflowLike,
@@ -144,6 +147,9 @@ class ForEachBlockPass(BasePass):
             block_data['model'] = submodel
             block_data['point'] = CircuitPoint(cycle, op.location[0])
             block_data['calculate_error_bound'] = self.calculate_error_bound
+            for key in data:
+                if key.startswith(self.pass_down_key_prefix):
+                    block_data[key] = data[key]
             block_data.seed = data.seed
 
             subcircuits.append(subcircuit)
