@@ -4,7 +4,6 @@ from __future__ import annotations
 import atexit
 import functools
 import logging
-import multiprocessing as mp
 import os
 import signal
 import sys
@@ -13,6 +12,7 @@ import uuid
 import warnings
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
+from subprocess import Popen
 from types import FrameType
 from typing import overload
 from typing import TYPE_CHECKING
@@ -72,7 +72,7 @@ class Compiler:
         worker_port: int = default_worker_port,
     ) -> None:
         """Construct a Compiler object."""
-        self.p: mp.Process | None = None
+        self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
 
         atexit.register(self.close)
@@ -88,14 +88,11 @@ class Compiler:
         runtime_log_level: int,
         worker_port: int,
     ) -> None:
-        from bqskit.runtime.attached import start_attached_server
-        self.p = mp.Process(
-            target=start_attached_server,
-            args=(num_workers, runtime_log_level),
-            kwargs={'worker_port': worker_port},
-        )
+        params = f'{num_workers}, {runtime_log_level}, {worker_port=}'
+        import_str = 'from bqskit.runtime.attached import start_attached_server'
+        launch_str = f'{import_str}; start_attached_server({params})'
+        self.p = Popen([sys.executable, '-c', launch_str])
         _logger.debug('Starting runtime server process.')
-        self.p.start()
 
     def _connect_to_server(self, ip: str, port: int) -> None:
         max_retries = 7
@@ -154,8 +151,8 @@ class Compiler:
                 os.kill(self.p.pid, signal.SIGINT)
                 _logger.debug('Interrupted attached runtime server.')
 
-                self.p.join(1)
-                if self.p.exitcode is None:
+                self.p.communicate(timeout=1)
+                if self.p.returncode is None:
                     if sys.platform == 'win32':
                         self.p.terminate()
                     else:
@@ -169,7 +166,7 @@ class Compiler:
             else:
                 _logger.debug('Successfully shutdown attached runtime server.')
             finally:
-                self.p.join()
+                self.p.communicate()
                 _logger.debug('Attached runtime server is down.')
                 self.p = None
 

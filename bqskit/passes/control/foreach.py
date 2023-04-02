@@ -150,6 +150,7 @@ class ForEachBlockPass(BasePass):
             for key in data:
                 if key.startswith(self.pass_down_key_prefix):
                     block_data[key] = data[key]
+            block_data.seed = data.seed
 
             subcircuits.append(subcircuit)
             block_datas.append(block_data)

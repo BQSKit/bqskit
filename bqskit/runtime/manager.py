@@ -41,6 +41,7 @@ class Manager(ServerBase):
         num_workers: int = -1,
         ipports: list[tuple[str, int]] | None = None,
         worker_port: int = default_worker_port,
+        only_connect: bool = False,
     ) -> None:
         """
         Create a manager instance in one of two ways:
@@ -74,6 +75,9 @@ class Manager(ServerBase):
             worker_port (int): The port this server will listen for workers
                 on. Default can be found in the
                 :obj:`~bqskit.runtime.default_worker_port` global variable.
+
+            only_connect (bool): If true, do not spawn workers, only connect
+                to already spawned workers.
         """
         super().__init__()
 
@@ -93,7 +97,10 @@ class Manager(ServerBase):
 
         # Case 1: spawn and manage workers
         if ipports is None:
-            self.spawn_workers(num_workers, worker_port)
+            if only_connect:
+                self.connect_to_workers(num_workers, worker_port)
+            else:
+                self.spawn_workers(num_workers, worker_port)
 
         # Case 2: Connect to managers at ipports
         else:
@@ -249,7 +256,7 @@ class Manager(ServerBase):
 def start_manager() -> None:
     """Entry point for runtime manager processes."""
     parser = argparse.ArgumentParser(
-        prog='BQSKit Manager',
+        prog='bqskit-manager',
         description='Launch a BQSKit runtime manager process.',
     )
     parser.add_argument(
@@ -277,13 +284,18 @@ def start_manager() -> None:
         help='The port this manager will listen for workers on.',
     )
     parser.add_argument(
-        '--verbose', '-v',
+        '-x', '--only-connect',
+        action='store_true',
+        help='Do not spawn workers, only connect to them.',
+    )
+    parser.add_argument(
+        '-v', '--verbose',
         action='count',
         default=0,
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     parser.add_argument(
-        '--import-tests', '-i',
+        '-i', '--import-tests',
         action='store_true',
         help='Import the bqskit tests package; used during testing.',
     )
@@ -301,8 +313,19 @@ def start_manager() -> None:
     if args.import_tests:
         import_tests_package()
 
+    if args.num_workers < -1:
+        num_workers = -1
+    else:
+        num_workers = args.num_workers
+
     # Create the manager
-    manager = Manager(args.port, args.num_workers, ipports, args.worker_port)
+    manager = Manager(
+        args.port,
+        num_workers,
+        ipports,
+        args.worker_port,
+        args.only_connect,
+    )
 
     # Start the manager
     manager.run()
