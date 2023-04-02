@@ -170,11 +170,8 @@ class LEAPSynthesisPass(SynthesisPass):
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer = await get_runtime().submit(
-            Circuit.instantiate,
-            initial_layer,
-            target=utry,
-            **instantiate_options,
+        initial_layer = Circuit.instantiate(
+            initial_layer, target=utry, **instantiate_options,
         )
         frontier.add(initial_layer, 0)
 

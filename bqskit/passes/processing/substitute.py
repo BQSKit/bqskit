@@ -13,7 +13,6 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
@@ -130,11 +129,8 @@ class SubstitutePass(BasePass):
                 _logger.debug(f'Trying location: {loc}')
                 circuit_copy = circuit.copy()
                 circuit_copy.replace_gate(point, self.gate, loc)
-                circuit_copy = await get_runtime().submit(
-                    Circuit.instantiate,
-                    circuit_copy,
-                    target=target,
-                    **instantiate_options,
+                circuit_copy = Circuit.instantiate(
+                    circuit_copy, target=target, **instantiate_options,
                 )
 
                 if self.cost(circuit_copy, target) < self.success_threshold:
