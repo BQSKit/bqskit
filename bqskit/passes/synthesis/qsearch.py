@@ -45,6 +45,7 @@ class QSearchSynthesisPass(SynthesisPass):
         store_partial_solutions: bool = False,
         partials_per_depth: int = 25,
         instantiate_options: dict[str, Any] = {},
+        store_instantiation_calls: bool = False,
     ) -> None:
         """
         Construct a search-based synthesis pass.
@@ -80,6 +81,10 @@ class QSearchSynthesisPass(SynthesisPass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
+                
+            store_instantiation_calls (bool): Whether to store the number of 
+                calls to the `Circuit.instantiate` method in the `data` dict.
+                (Default: False)
 
         Raises:
             ValueError: If `max_depth` is nonpositive.
@@ -135,6 +140,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self.instantiate_options.update(instantiate_options)
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
+        self.store_instantiation_calls = store_partial_solutions
 
     async def synthesize(
         self,
@@ -145,6 +151,10 @@ class QSearchSynthesisPass(SynthesisPass):
         instantiate_options = self.instantiate_options.copy()
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
+        if self.store_instantiation_calls:
+            instantiation_calls = 0
+            if 'instantiation_calls' not in data:
+                data['instantiation_calls'] = []
 
         frontier = Frontier(utry, self.heuristic_function)
 
@@ -157,6 +167,7 @@ class QSearchSynthesisPass(SynthesisPass):
             **instantiate_options,
         )
         frontier.add(initial_layer, 0)
+        instantiation_calls += 1
 
         # Track best circuit, initially the initial layer
         best_dist = self.cost.calc_cost(initial_layer, utry)
@@ -170,6 +181,8 @@ class QSearchSynthesisPass(SynthesisPass):
 
         # Evalute initial layer
         if best_dist < self.success_threshold:
+            if self.store_instantiation_calls:
+                data['instantiation_calls'].append(instantiation_calls)
             _logger.debug('Successful synthesis.')
             return initial_layer
 
@@ -187,6 +200,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 target=utry,
                 **instantiate_options,
             )
+            instantiation_calls += 1
 
             # Evaluate successors
             for circuit in circuits:
@@ -196,6 +210,8 @@ class QSearchSynthesisPass(SynthesisPass):
                     _logger.debug('Successful synthesis.')
                     if self.store_partial_solutions:
                         data['psols'] = psols
+                    if self.store_instantiation_calls:
+                        data['instantiation_calls'].append(instantiation_calls)
                     return circuit
 
                 if dist < best_dist:
@@ -227,5 +243,7 @@ class QSearchSynthesisPass(SynthesisPass):
         )
         if self.store_partial_solutions:
             data['psols'] = psols
+        if self.store_instantiation_calls:
+            data['instantiation_calls'].append(instantiation_calls)
 
         return best_circ
