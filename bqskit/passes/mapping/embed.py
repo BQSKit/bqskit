@@ -12,7 +12,7 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.passes import LEAPSynthesisPass
 from bqskit.passes import SynthesisPass
-from bqskit.passes.mapping.topology import SubTopologySelectionPass
+from bqskit.passes.mapping.topology import SubtopologySelectionPass
 from bqskit.qis import CouplingGraph
 from bqskit.qis import PermutationMatrix
 from bqskit.runtime import get_runtime
@@ -39,7 +39,7 @@ class EmbedAllPermutationsPass(BasePass):
         scoring_fn: Callable[[Circuit], float] = multi_qudit_op_count,
     ) -> None:
         """
-        Construct a EmbeddingPermutationAwareSynthesis.
+        Construct a EmbedAllPermutationsPass.
 
         Args:
             input_perm (bool): If true, vary the input permutation
@@ -103,20 +103,20 @@ class EmbedAllPermutationsPass(BasePass):
             targets = [utry]
 
         # Calculate all target coupling graphs
-        if self.vary_topology:
-            if SubTopologySelectionPass.key not in data:
+        if self.vary_topology and width != 1:
+            if SubtopologySelectionPass.key not in data:
                 raise RuntimeError(
                     'Cannot find subtopologies, try running a'
-                    ' SubTopologySelectionPass first.',
+                    ' SubtopologySelectionPass first.',
                 )
 
-            if width not in data[SubTopologySelectionPass.key]:
+            if width not in data[SubtopologySelectionPass.key]:
                 raise RuntimeError(
                     'Subtopology information for block size'
                     f' {width} is not available.',
                 )
 
-            graphs = data[SubTopologySelectionPass.key][width]
+            graphs = data[SubtopologySelectionPass.key][width]
 
         else:
             graphs = [CouplingGraph.all_to_all(width)]
