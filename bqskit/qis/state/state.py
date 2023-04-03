@@ -7,6 +7,7 @@ from typing import Iterator
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -17,6 +18,8 @@ from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
 from bqskit.utils.typing import is_vector
 
+from bqskit.qis import UnitaryMatrix
+from bqskit.ir import CircuitLocationLike, CircuitLocation
 
 if TYPE_CHECKING:
     from typing import TypeGuard
@@ -252,6 +255,97 @@ class StateVector(NDArrayOperatorsMixin):
             return np.allclose(self.numpy, other)
 
         return NotImplemented
+    
+    def apply(
+        self,
+        utry: UnitaryMatrix,
+        location: CircuitLocationLike,
+        inverse: bool = False,
+        check_arguments: bool = True,
+    ) -> None:
+        """
+
+        Apply the specified unitary on the right of this StateVector.
+
+        ..
+                .---.   .------.
+                |   |---|      |- 0
+                |   |---| utry |- 1
+                .   .   '------'
+                .   .
+                .   .
+                |   |------------ n-1
+                '---'
+
+        Args:
+            utry (UnitaryMatrix): The unitary to apply.
+
+            location (CircuitLocationLike): The qudits to apply the unitary on.
+
+            inverse (bool): If true, apply the inverse of the unitary.
+
+            check_arguments (bool): If true, check the inputs for type and
+                value errors.
+
+        Raises:
+            ValueError: If `utry`'s size does not match the given location.
+
+            ValueError: if `utry`'s radixes does not match the given location.
+
+        Notes:
+            - Applying the unitary on the left is equivalent to multiplying
+              the unitary on the right of the tensor. The notation comes
+              from the quantum circuit perspective.
+
+            - This operation is performed using tensor contraction.
+        """
+
+        if check_arguments:
+            if not isinstance(utry, UnitaryMatrix):
+                raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
+
+            if not CircuitLocation.is_location(location, self.num_qudits):
+                raise TypeError('Invalid location.')
+
+            location = CircuitLocation(location)
+
+            if len(location) != utry.num_qudits:
+                raise ValueError('Unitary and location size mismatch.')
+
+            for utry_radix, bldr_radix_idx in zip(utry.radixes, location):
+                if utry_radix != self.radixes[bldr_radix_idx]:
+                    raise ValueError('Unitary and location radix mismatch.')
+
+        location = cast(CircuitLocation, location)
+        qudits = list(range(self.num_qudits))
+        identity_action_perm = [
+            x
+            for x in qudits
+            if x not in location
+        ]
+        unitary_action_perm = list(location)
+
+        left_dim = int(
+            np.prod([
+                self.radixes[x]
+                for x in unitary_action_perm
+            ]),
+        )
+
+        utry = utry.dagger if inverse else utry
+
+        perm = unitary_action_perm + identity_action_perm
+        self._vec = self._vec.reshape(self.radixes)
+        self._vec = self._vec.transpose(perm)
+        self._vec = self._vec.reshape((left_dim, -1))
+        self._vec = utry @ self._vec
+
+        shape = list(self.radixes) * 2
+        shape = [shape[p] for p in perm]
+        self._vec = self._vec.reshape(shape)
+        inv_perm = list(np.argsort(perm))
+        self._vec = self._vec.transpose(inv_perm)
+        self._vec = self._vec.reshape(-1)
 
     def get_distance_from(self, other: StateLike) -> float:
         """

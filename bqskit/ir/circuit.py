@@ -2545,11 +2545,45 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 utry.apply_right(op.get_unitary(), op.location)
 
         return utry.get_unitary()
+    
+    def get_statevector(self, in_state: StateLike, params: RealVector = []) -> StateVector:
+        """
+        Return the result of applying `self` to `in_state`
 
-    def get_statevector(self, in_state: StateLike) -> StateVector:
-        """Calculate the output state given the `in_state` input state."""
-        # TODO: Can be made a lot more efficient.
-        return self.get_unitary().get_statevector(in_state)
+        Args:
+            params (RealVector): Optionally specify parameters
+                overriding the ones stored in the circuit. (Default:
+                use parameters already in circuit.)
+
+        Returns:
+            The StateVector object for the new state after the circuit
+
+        Raises:
+            ValueError: If parameters are specified and invalid.
+
+        Examples:
+            >>> circ = Circuit(1)
+            >>> op = Operation(H(), [0])
+            >>> circ.append(op)
+            >>> V = StateVector([1,0])
+            >>> circ.get_statevector(V).numpy == np.array([1,1])/np.sqrt(2)
+            True
+        """
+        if len(params) != 0:
+            self.check_parameters(params)
+            param_index = 0
+
+        new_state = StateVector(in_state)
+
+        for op in self:
+            if len(params) != 0:
+                gparams = params[param_index:param_index + op.num_params]
+                new_state.apply(op.get_unitary(gparams), op.location)
+                param_index += op.num_params
+            else:
+                new_state.apply(op.get_unitary(), op.location)
+
+        return new_state
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """Return the gradient of the circuit."""
