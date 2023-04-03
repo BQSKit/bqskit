@@ -3,23 +3,23 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import cast
 from typing import Iterator
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
-from typing import cast
 
 import numpy as np
 import numpy.typing as npt
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy.stats import unitary_group
 
+from bqskit.ir import CircuitLocation
+from bqskit.ir import CircuitLocationLike
+from bqskit.qis import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
 from bqskit.utils.typing import is_vector
-
-from bqskit.qis import UnitaryMatrix
-from bqskit.ir import CircuitLocationLike, CircuitLocation
 
 if TYPE_CHECKING:
     from typing import TypeGuard
@@ -255,7 +255,7 @@ class StateVector(NDArrayOperatorsMixin):
             return np.allclose(self.numpy, other)
 
         return NotImplemented
-    
+
     def apply(
         self,
         utry: UnitaryMatrix,
