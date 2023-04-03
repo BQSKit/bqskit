@@ -81,7 +81,7 @@ class QSearchSynthesisPass(SynthesisPass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
-            
+
             store_instantiation_calls (bool): Whether or not to add the number
                 of calls made to the instantiation function in the data dict.
                 (Default: False)
@@ -166,7 +166,7 @@ class QSearchSynthesisPass(SynthesisPass):
         frontier.add(initial_layer, 0)
         instantiation_calls += 1
         if self.store_instantiation_calls:
-            if not 'instantiation_calls' in data:
+            if 'instantiation_calls' not in data:
                 data['instantiation_calls'] = []
 
         # Track best circuit, initially the initial layer
@@ -182,7 +182,7 @@ class QSearchSynthesisPass(SynthesisPass):
         # Evalute initial layer
         if best_dist < self.success_threshold:
             _logger.debug(
-                'Successful synthesis with 1 call to instantiations'
+                'Successful synthesis with 1 call to instantiations',
             )
             if self.store_instantiation_calls:
                 data['instantiation_calls'].append(instantiation_calls)
@@ -211,7 +211,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 if dist < self.success_threshold:
                     _logger.debug(
                         f'Successful synthesis with {instantiation_calls} '
-                        f'calls to instantiation.'
+                        f'calls to instantiation.',
                     )
                     if self.store_partial_solutions:
                         data['psols'] = psols
