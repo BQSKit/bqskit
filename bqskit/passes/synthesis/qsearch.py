@@ -166,8 +166,8 @@ class QSearchSynthesisPass(SynthesisPass):
         frontier.add(initial_layer, 0)
         instantiation_calls += 1
         if self.store_instantiation_calls:
-            if not 'num_instantiation_calls' in data:
-                data['num_instantiation_calls'] = []
+            if not 'instantiation_calls' in data:
+                data['instantiation_calls'] = []
 
         # Track best circuit, initially the initial layer
         best_dist = self.cost.calc_cost(initial_layer, utry)
@@ -185,7 +185,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 'Successful synthesis with 1 call to instantiations'
             )
             if self.store_instantiation_calls:
-                data['num_instantiation_calls'].append(instantiation_calls)
+                data['instantiation_calls'].append(instantiation_calls)
             return initial_layer
 
         # Main loop
@@ -216,9 +216,7 @@ class QSearchSynthesisPass(SynthesisPass):
                     if self.store_partial_solutions:
                         data['psols'] = psols
                     if self.store_instantiation_calls:
-                        data['num_instantiation_calls'].append(
-                            instantiation_calls,
-                        )
+                        data['instantiation_calls'].append(instantiation_calls)
                     return circuit
 
                 if dist < best_dist:
@@ -250,5 +248,7 @@ class QSearchSynthesisPass(SynthesisPass):
         )
         if self.store_partial_solutions:
             data['psols'] = psols
+        if self.store_instantiation_calls:
+            data['instantiation_calls'].append(instantiation_calls)
 
         return best_circ
