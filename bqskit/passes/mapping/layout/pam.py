@@ -8,6 +8,7 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control.foreach import ForEachBlockPass
+from bqskit.passes.mapping.pam import PAMBlockTAPermData
 from bqskit.passes.mapping.pam import PermutationAwareMappingAlgorithm
 
 _logger = logging.getLogger(__name__)
@@ -73,7 +74,7 @@ class PAMLayoutPass(PermutationAwareMappingAlgorithm, BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         subgraph = data.connectivity
 
-        perm_data: dict[CircuitPoint, dict[tuple[int, ...], Circuit]] = {}
+        perm_data: dict[CircuitPoint, PAMBlockTAPermData] = {}
         block_datas = data[ForEachBlockPass.key][-1]
         for block_data in block_datas:
             perm_data[block_data['point']] = block_data['permutation_data']
