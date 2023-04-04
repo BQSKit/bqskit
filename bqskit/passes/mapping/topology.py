@@ -1,10 +1,11 @@
-"""This module implements the SubTopologySelectionPass pass."""
+"""This module implements the SubtopologySelectionPass pass."""
 from __future__ import annotations
 
 import copy
 import itertools as it
 from typing import Any
 from typing import Iterable
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -12,7 +13,6 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir import Circuit
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.qis.graph import CouplingGraph
-from bqskit.qis.graph import CouplingGraphLike
 from bqskit.utils.typing import is_integer
 
 
@@ -76,10 +76,10 @@ class GraphDAG():
     of its successor nodes.
     """
 
-    def __init__(self, graph_list: list[CouplingGraphLike]):
+    def __init__(self, graph_list: Sequence[CouplingGraph]):
         self.roots: list[GraphDAGNode] = []
         self.leafs: list[GraphDAGNode] = []
-        self.graph_list = graph_list
+        self.graph_list = list(graph_list)
         if not self.graph_list[0]._edges == set():
             self.graph_list.insert(0, CouplingGraph([]))
         self._create_DAG()
@@ -151,7 +151,7 @@ class GraphDAG():
         """Given a list of graphs, return the indices of subgraphs in the
         `self.graph_list` list that are embedded in a subgraph in `graphs`."""
         embedded_indices: set[int] = set()
-        if type(graphs) is CouplingGraph:
+        if isinstance(graphs, CouplingGraph):
             graphs = [graphs]
 
         for graph in graphs:
@@ -180,7 +180,7 @@ class GraphDAG():
 
 
 def filter_compatible_subgraphs(
-    candidate_subgraphs: list[CouplingGraphLike],
+    candidate_subgraphs: Sequence[CouplingGraph],
     machine: MachineModel,
     blocksize: int | None = None,
 ) -> list[CouplingGraph]:
@@ -212,11 +212,6 @@ def filter_compatible_subgraphs(
             invalid or unspecified.
     """
     graph = machine.coupling_graph
-    if graph is None or not graph.is_valid_coupling_graph(graph):
-        raise ValueError(
-            'The CouplingGraph specified by MachineModel `machine` '
-            'is unspecified or not fully connected.',
-        )
     if blocksize is None:
         blocksize = graph.num_qudits
 
@@ -243,14 +238,14 @@ def filter_compatible_subgraphs(
     return to_return
 
 
-class SubTopologySelectionPass(BasePass):
+class SubtopologySelectionPass(BasePass):
     """Pass that selects necessary subtopologies from the model."""
 
     key = ForEachBlockPass.pass_down_key_prefix + 'sub_topologies'
 
     def __init__(self, block_size: int) -> None:
         """
-        Construct a SubTopologySelectionPass.
+        Construct a SubtopologySelectionPass.
 
         Args:
             block_size (int): The max block size to select subtopologies for.

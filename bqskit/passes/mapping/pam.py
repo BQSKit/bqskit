@@ -72,7 +72,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
             extended_set_weight,
         )
 
-    def forward_pass(
+    def forward_pass(  # type: ignore
         self,
         circuit: Circuit,
         pi: list[int],
@@ -104,7 +104,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         decay = [1.0 for i in range(circuit.num_qudits)]
         iter_count = 0
         prev_executed_counts: dict[CircuitPoint, int] = {n: 0 for n in F}
-        leading_swaps = []
+        leading_swaps: list[tuple[int, int]] = []
         _logger.debug(f'Starting forward pam pass with pi: {pi}.')
 
         if modify_circuit:
@@ -311,7 +311,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         F: set[CircuitPoint],
         pi: list[int],
         D: list[list[int]],
-        perm: tuple[list[int], list[int]],
+        perm: tuple[Sequence[int], Sequence[int]],
         E: set[CircuitPoint],
     ) -> float:
         """Calculating the routing score after applying `perm`."""
@@ -356,7 +356,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         pi[:] = pi_bkp[:]
         return front + extend
 
-    def _apply_perm(self, perm: list[int], pi: list[int]) -> None:
+    def _apply_perm(self, perm: Sequence[int], pi: list[int]) -> None:
         """Apply the `perm` permutation to the current mapping `pi`."""
         _logger.debug('applying permutation %s' % str(perm))
         pi_c = {q: pi[perm[i]] for i, q in enumerate(sorted(perm))}
