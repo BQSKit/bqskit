@@ -84,14 +84,31 @@ class Instantiater(abc.ABC):
             Instantiater object may happen in parallel.
         """
         _circuit = circuit.copy()
+        self.multi_start_instantiate_inplace(_circuit, target, num_starts)
+        return _circuit
+
+    def multi_start_instantiate_inplace(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> None:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        See :func:`multi_start_instantiate` for more info.
+
+        Notes:
+            This method is a version of :func:`multi_start_instantiate`
+            that modifies `circuit` in place rather than returning a copy.
+        """
         target = self.check_target(target)
         start_gen = RandomStartGenerator()
-        starts = start_gen.gen_starting_points(num_starts, _circuit, target)
-        cost_fn = HilbertSchmidtCostGenerator().gen_cost(_circuit, target)
-        params_list = [self.instantiate(_circuit, target, x0) for x0 in starts]
+        starts = start_gen.gen_starting_points(num_starts, circuit, target)
+        cost_fn = HilbertSchmidtCostGenerator().gen_cost(circuit, target)
+        params_list = [self.instantiate(circuit, target, x0) for x0 in starts]
         params = sorted(params_list, key=lambda x: cost_fn(x))[0]
-        _circuit.set_params(params)
-        return _circuit
+        circuit.set_params(params)
 
     async def multi_start_instantiate_async(
         self,
