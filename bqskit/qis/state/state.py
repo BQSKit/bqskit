@@ -14,8 +14,6 @@ import numpy.typing as npt
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy.stats import unitary_group
 
-from bqskit.ir import CircuitLocation
-from bqskit.ir import CircuitLocationLike
 from bqskit.qis import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
@@ -23,7 +21,7 @@ from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from typing import TypeGuard
-
+    from bqskit.ir import CircuitLocationLike
 
 _logger = logging.getLogger(__name__)
 
@@ -299,6 +297,7 @@ class StateVector(NDArrayOperatorsMixin):
 
             - This operation is performed using tensor contraction.
         """
+        from bqskit.ir import CircuitLocation
 
         if check_arguments:
             if not isinstance(utry, UnitaryMatrix):
