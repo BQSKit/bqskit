@@ -126,10 +126,7 @@ class ScanningGateRemovalPass(BasePass):
                 cycle -= idx_shift
 
             working_copy.pop((cycle, op.location[0]))
-
-            working_copy = Circuit.instantiate(
-                working_copy, target=target, **instantiate_options,
-            )
+            working_copy.instantiate(target, **instantiate_options)
 
             if self.cost(working_copy, target) < self.success_threshold:
                 _logger.debug('Successfully removed operation.')
