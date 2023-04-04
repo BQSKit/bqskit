@@ -2546,7 +2546,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         return utry.get_unitary()
 
-    def get_statevector(self, in_state: StateLike, params: RealVector = []) -> StateVector:
+    def get_statevector(
+        self,
+        in_state: StateLike,
+        params: RealVector = [],
+    ) -> StateVector:
         """
         Return the result of applying `self` to `in_state`
 
