@@ -81,8 +81,8 @@ class QSearchSynthesisPass(SynthesisPass):
             instantiate_options (dict[str: Any]): Options passed directly
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
-                
-            store_instantiation_calls (bool): Whether to store the number of 
+
+            store_instantiation_calls (bool): Whether to store the number of
                 calls to the `Circuit.instantiate` method in the `data` dict.
                 (Default: False)
 
@@ -187,6 +187,9 @@ class QSearchSynthesisPass(SynthesisPass):
 
             # Generate successors
             successors = self.layer_gen.gen_successors(top_circuit, data)
+
+            if len(successors) == 0:
+                continue
 
             # Instantiate successors
             circuits = await get_runtime().map(
