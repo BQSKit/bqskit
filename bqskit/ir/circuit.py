@@ -2807,7 +2807,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         instantiater = cast(Instantiater, instantiater)
 
         # Instantiate
-        return instantiater.multi_start_instantiate(self, target, multistarts)
+        instantiater.multi_start_instantiate_inplace(self, target, multistarts)
+        return self
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:
         """

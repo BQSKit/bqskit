@@ -11,7 +11,6 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
@@ -127,12 +126,7 @@ class ScanningGateRemovalPass(BasePass):
                 cycle -= idx_shift
 
             working_copy.pop((cycle, op.location[0]))
-            working_copy = await get_runtime().submit(
-                Circuit.instantiate,
-                working_copy,
-                target=target,
-                **instantiate_options,
-            )
+            working_copy.instantiate(target, **instantiate_options)
 
             if self.cost(working_copy, target) < self.success_threshold:
                 _logger.debug('Successfully removed operation.')
