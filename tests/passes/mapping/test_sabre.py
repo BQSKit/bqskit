@@ -20,12 +20,12 @@ def test_simple() -> None:
     for i in range(4):
         circuit.append_gate(CNOTGate(), (4, i))
         circuit.append_gate(
-            U3Gate(), 4, U3Gate.calc_params(
+            U3Gate(), 4, U3Gate().calc_params(
                 UnitaryMatrix.random(1),
             ),
         )
         circuit.append_gate(
-            U3Gate(), i, U3Gate.calc_params(
+            U3Gate(), i, U3Gate().calc_params(
                 UnitaryMatrix.random(1),
             ),
         )

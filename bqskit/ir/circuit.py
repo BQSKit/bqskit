@@ -61,6 +61,7 @@ from bqskit.utils.typing import is_valid_radixes
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
     from bqskit.compiler.basepass import BasePass
+    from bqskit.compiler.gateset import GateSet
 
 _logger = logging.getLogger(__name__)
 
@@ -245,9 +246,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return CouplingGraph(self._graph_info.keys(), self.num_qudits)
 
     @property
-    def gate_set(self) -> set[Gate]:
+    def gate_set(self) -> GateSet:
         """The set of gates in the circuit."""
-        return set(self._gate_info.keys())
+        from bqskit.compiler.gateset import GateSet
+        return GateSet(set(self._gate_info.keys()))
 
     @property
     def gate_counts(self) -> dict[Gate, int]:

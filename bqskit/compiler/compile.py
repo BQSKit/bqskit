@@ -283,7 +283,7 @@ def compile(
         in_circuit = Circuit.from_unitary(input)
 
     else:
-        Circuit(1)
+        in_circuit = Circuit(1)
 
     # Connect to or construct a Compiler
     managed_compiler = compiler is None
@@ -448,7 +448,7 @@ def _opt1_workflow(
     error_sim_size: int = 8,
 ) -> list[BasePass]:
     """Build Optimization Level 1 workflow for circuit compilation."""
-    layer_gen = _get_layer_gen(model)
+    layer_gen = model.gate_set.build_mq_layer_generator()
     scan_mq = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
         collection_filter=_mq_gate_collection_filter,
@@ -516,7 +516,7 @@ def _opt1_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -548,7 +548,7 @@ def _opt1_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -582,7 +582,7 @@ def _opt2_workflow(
 ) -> list[BasePass]:
     """Build Optimization Level 2 workflow for circuit compilation."""
     inst_ops = {'multistarts': 4, 'ftol': 5e-12, 'gtol': 1e-14}
-    layer_gen = _get_layer_gen(model)
+    layer_gen = model.gate_set.build_mq_layer_generator()
     scan_mq = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
         collection_filter=_mq_gate_collection_filter,
@@ -653,7 +653,7 @@ def _opt2_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -685,7 +685,7 @@ def _opt2_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -735,7 +735,7 @@ def _opt3_workflow(
         'ftol': 5e-16,
         'gtol': 1e-15,
     }
-    layer_gen = _get_layer_gen(model)
+    layer_gen = model.gate_set.build_mq_layer_generator()
     scan = ScanningGateRemovalPass(success_threshold=synthesis_epsilon)
     scan_mq = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
@@ -808,7 +808,7 @@ def _opt3_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -840,7 +840,7 @@ def _opt3_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -930,7 +930,7 @@ def _opt4_workflow(
         'ftol': 5e-16,
         'gtol': 1e-15,
     }
-    layer_gen = _get_layer_gen(model)
+    layer_gen = model.gate_set.build_mq_layer_generator()
     scan = ScanningGateRemovalPass(success_threshold=synthesis_epsilon)
     scan_mq = ScanningGateRemovalPass(
         success_threshold=synthesis_epsilon,
@@ -1003,7 +1003,7 @@ def _opt4_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -1047,7 +1047,7 @@ def _opt4_workflow(
                 ForEachBlockPass(
                     ForEachBlockPass(
                         [
-                            FillSingleQuditGatesPass(synthesis_epsilon),
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
                                 NotPredicate(MultiPhysicalPredicate()),
                                 multi_qudit_gate_rebase,
@@ -1120,7 +1120,7 @@ def _stateprep_workflow(
     error_sim_size: int = 8,
 ) -> Workflow:
     """Build a workflow for state preparation."""
-    layer_gen = _get_layer_gen(model)
+    layer_gen = model.gate_set.build_mq_layer_generator()
 
     if optimization_level == 1:
         inst_ops = {
@@ -1219,7 +1219,7 @@ def _statemap_workflow(
     error_sim_size: int = 8,
 ) -> Workflow:
     """Build a workflow for state preparation."""
-    layer_gen = _get_layer_gen(model)
+    layer_gen = model.gate_set.build_mq_layer_generator()
 
     if optimization_level == 1:
         inst_ops = {
@@ -1303,27 +1303,6 @@ def _statemap_workflow(
     ]
 
     return Workflow(workflow)
-
-
-def _get_layer_gen(model: MachineModel) -> LayerGenerator:
-    """Build a `model`-compliant layer generator."""
-    if model.radixes[0] == 2:
-        sq_gate: Gate = U3Gate()
-    elif model.radixes[0] == 3:
-        sq_gate = U8Gate()
-    else:
-        sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
-
-    tq_gates = [gate for gate in model.gate_set if gate.num_qudits == 2]
-    mq_gates = [gate for gate in model.gate_set if gate.num_qudits > 2]
-
-    if len(tq_gates) == 1 and len(mq_gates) == 0:
-        if CNOTGate() in tq_gates:
-            return FourParamGenerator()
-        else:
-            return SimpleLayerGenerator(tq_gates[0], sq_gate)
-
-    return WideLayerGenerator(tq_gates + mq_gates, sq_gate)
 
 
 def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:

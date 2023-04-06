@@ -29,5 +29,5 @@ class U3Decomposition(BasePass):
 
         utry = circuit.get_unitary()
         new_circuit = Circuit(1)
-        new_circuit.append_gate(U3Gate(), 0, U3Gate.calc_params(utry))
+        new_circuit.append_gate(U3Gate(), 0, U3Gate().calc_params(utry))
         circuit.become(new_circuit)

@@ -17,7 +17,6 @@ from types import FrameType
 from typing import overload
 from typing import TYPE_CHECKING
 
-from bqskit.compiler.passdata import PassData
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.workflow import Workflow
@@ -29,6 +28,7 @@ from bqskit.runtime.message import RuntimeMessage
 if TYPE_CHECKING:
     from typing import Any
     from bqskit.ir.circuit import Circuit
+    from bqskit.compiler.passdata import PassData
 
 _logger = logging.getLogger(__name__)
 
@@ -47,35 +47,63 @@ class Compiler:
     Examples:
         1. Use in a context manager:
         >>> with Compiler() as compiler:
-        ...     circuit = compiler.compile(task)
+        ...     circuit = compiler.compile(circuit, workflow)
 
         2. Use compiler without context manager:
         >>> compiler = Compiler()
-        >>> circuit = compiler.compile(task)
+        >>> circuit = compiler.compile(circuit, workflow)
         >>> compiler.close()
 
-        3. Connect to an already running detached runtime:
-        >>> with Compiler('localhost', 8786) as compiler:
-        ...     circuit = compiler.compile(task)
+        3. Connect to an already running distributed runtime:
+        >>> with Compiler('localhost') as compiler:
+        ...     circuit = compiler.compile(circuit, workflow)
 
         4. Start and attach to a runtime with 4 worker processes:
         >>> with Compiler(num_workers=4) as compiler:
-        ...     circuit = compiler.compile(task)
+        ...     circuit = compiler.compile(circuit, workflow)
     """
 
     def __init__(
         self,
-        ip: None | str = None,
+        ip: str | None = None,
         port: int = default_server_port,
         num_workers: int = -1,
         runtime_log_level: int = logging.WARNING,
         worker_port: int = default_worker_port,
     ) -> None:
-        """Construct a Compiler object."""
+        """
+        Construct a Compiler object.
+
+        This will either spawn a parallel runtime if `ip` is None, or
+        attempt to connect to a distributed one if `ip` is provided.
+
+        Args:
+            ip (str | None): If left as None, spawn a parallel runtime,
+                otherwise attempt a connection with an already running
+                runtime at this address. Defaults to None.
+
+            port (int): The port where a runtime is expected to be
+                listening.
+
+            num_workers (int): The number of workers to spawn. Ignored
+                if `ip` is None. If negative spawn as many workers as
+                cpus on the system. (Defaults to -1)
+
+            runtime_log_level (int): The runtime's logging level. This
+                is separate from the compilation logging. If you would
+                like logs from your compilation workflow, that setting
+                is set during task creation in :func:`compiler.compile`
+                or :func:`compiler.submit`.
+
+            worker_port (int): The optional port to pass to an attached
+                runtime. See :obj:`~bqskit.runtime.attached.AttachedServer`
+                for more info.
+        """
         self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
 
         atexit.register(self.close)
+
         if ip is None:
             ip = 'localhost'
             self._start_server(num_workers, runtime_log_level, worker_port)
@@ -88,6 +116,11 @@ class Compiler:
         runtime_log_level: int,
         worker_port: int,
     ) -> None:
+        """
+        Start an attached serer with `num_workers` workers.
+
+        See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
+        """
         params = f'{num_workers}, {runtime_log_level}, {worker_port=}'
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
@@ -95,6 +128,7 @@ class Compiler:
         _logger.debug('Starting runtime server process.')
 
     def _connect_to_server(self, ip: str, port: int) -> None:
+        """Connect to a runtime server at `ip` and `port`."""
         max_retries = 7
         wait_time = .25
         for _ in range(max_retries):
@@ -248,9 +282,11 @@ class Compiler:
         """Retrieve the status of the specified task."""
         if isinstance(task_id, CompilationTask):
             warnings.warn(
-                'Request a status from a CompilationTask is deprecated.'
-                ' Instead, pass a task ID to request a status.'
-                'This warning will turn into an error in a future update.',
+                'Request a status from a CompilationTask is deprecated.\n'
+                ' Instead, pass a task ID to request a status.\n'
+                ' `compiler.submit` returns a task id, and you can get an\n'
+                ' ID from a task via `task.task_id`.\n'
+                ' This warning will turn into an error in a future update.',
                 DeprecationWarning,
             )
             task_id = task_id.task_id
@@ -269,8 +305,10 @@ class Compiler:
         if isinstance(task_id, CompilationTask):
             warnings.warn(
                 'Request a result from a CompilationTask is deprecated.'
-                ' Instead, pass a task ID to request a result.'
-                'This warning will turn into an error in a future update.',
+                ' Instead, pass a task ID to request a result.\n'
+                ' `compiler.submit` returns a task id, and you can get an\n'
+                ' ID from a task via `task.task_id`.\n'
+                ' This warning will turn into an error in a future update.',
                 DeprecationWarning,
             )
             task_id = task_id.task_id
@@ -286,8 +324,10 @@ class Compiler:
         if isinstance(task_id, CompilationTask):
             warnings.warn(
                 'Cancelling a CompilationTask is deprecated. Instead,'
-                ' cancel a task by passing its ID from `task.task_id`.'
-                'This warning will turn into an error in a future update.',
+                ' Instead, pass a task ID to cancel a task.\n'
+                ' `compiler.submit` returns a task id, and you can get an\n'
+                ' ID from a task via `task.task_id`.\n'
+                ' This warning will turn into an error in a future update.',
                 DeprecationWarning,
             )
             task_id = task_id.task_id
@@ -463,6 +503,7 @@ class Compiler:
 
 
 def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
+    """Interrupt signal handler for the compiler."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     _logger.critical('Compiler interrupted.')
     compiler.close()

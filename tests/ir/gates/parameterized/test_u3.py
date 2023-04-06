@@ -29,5 +29,5 @@ def test_get_unitary(angle1: float, angle2: float, angle3: float) -> None:
 
 @given(unitaries(1, (2,)))
 def test_calc_params(utry: UnitaryMatrix) -> None:
-    params = U3Gate.calc_params(utry)
+    params = U3Gate().calc_params(utry)
     assert U3Gate().get_unitary(params).get_distance_from(utry) < 1e-7

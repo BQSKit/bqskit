@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
@@ -60,12 +61,16 @@ class Minimization(Instantiater):
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""
         cost = self.cost_fn_gen.gen_cost(circuit, target)
+        # print(x0, circuit.num_params, circuit.gate_counts)
         return self.minimizer.minimize(cost, x0)
 
     @staticmethod
     def is_capable(circuit: Circuit) -> bool:
         """Return true if the circuit can be instantiated."""
-        return True
+        return all(
+            not isinstance(g, VariableUnitaryGate)
+            for g in circuit.gate_set
+        )
 
     @staticmethod
     def get_violation_report(circuit: Circuit) -> str:
@@ -74,7 +79,10 @@ class Minimization(Instantiater):
 
         See Instantiater for more info.
         """
-        raise ValueError('Circuit can be instantiated.')
+        raise ValueError(
+            'Cannot instantiate a circuit with VariableUnitaryGates'
+            ' via minimization.',
+        )
 
     @staticmethod
     def get_method_name() -> str:

@@ -6,7 +6,7 @@ import pytest
 
 from bqskit import compile
 from bqskit import MachineModel
-from bqskit.compiler.machine import default_qubit_gate_set
+from bqskit.compiler.gateset import GateSet
 from bqskit.ext.cirq.models import google_gate_set
 from bqskit.ext.honeywell import honeywell_gate_set
 from bqskit.ext.rigetti import rigetti_gate_set
@@ -41,7 +41,7 @@ def get_distance_from_pa(U: UnitaryMatrix, V: UnitaryMatrix) -> float:
         {U3Gate()},
         {PhasedXZGate()},
         {U1qGate(), XGate()},
-        default_qubit_gate_set,
+        GateSet.default_gate_set(),
         rigetti_gate_set,
         honeywell_gate_set,
         google_gate_set,
@@ -69,7 +69,7 @@ def test_single_qudit_synthesis(
 @pytest.mark.parametrize('tq_utry', [UnitaryMatrix.random(2) for i in range(5)])
 @pytest.mark.parametrize(
     'gate_set', [
-        default_qubit_gate_set,
+        GateSet.default_gate_set(),
         rigetti_gate_set,
         honeywell_gate_set,
         google_gate_set,
@@ -99,7 +99,7 @@ def test_two_qudit_synthesis(
 
 @pytest.mark.parametrize(
     'gate_set', [
-        default_qubit_gate_set,
+        GateSet.default_gate_set(),
         rigetti_gate_set,
         honeywell_gate_set,
         {IToffoliGate(), U3Gate()},

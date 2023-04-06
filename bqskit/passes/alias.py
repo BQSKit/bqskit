@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import abc
+from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.compiler.passdata import PassData
-from bqskit.ir.circuit import Circuit
+
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 
 class PassAlias(BasePass):

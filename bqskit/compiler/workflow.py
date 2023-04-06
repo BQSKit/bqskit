@@ -6,13 +6,16 @@ from typing import Iterable
 from typing import Iterator
 from typing import overload
 from typing import Sequence
+from typing import TYPE_CHECKING
 from typing import Union
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.compiler.passdata import PassData
-from bqskit.ir.circuit import Circuit
 from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_iterable
+
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 
 class Workflow(BasePass, Sequence[BasePass]):

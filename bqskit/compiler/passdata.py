@@ -8,6 +8,7 @@ from typing import Iterator
 from typing import MutableMapping
 from typing import Sequence
 
+from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
 from bqskit.qis import StateVector
@@ -100,6 +101,21 @@ class PassData(MutableMapping[str, Any]):
             )
 
         self._model = _val
+
+    @property
+    def gate_set(self) -> GateSet:
+        """Return the current target MachineModel's GateSet."""
+        return self._model.gate_set
+
+    @gate_set.setter
+    def gate_set(self, _val: GateSet) -> None:
+        if not isinstance(_val, GateSet):
+            raise TypeError(
+                f'Cannot set gate_set to {type(_val)}.'
+                ' Expected a GateSet.',
+            )
+
+        self._model.gate_set = _val
 
     @property
     def placement(self) -> list[int]:
