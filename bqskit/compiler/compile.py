@@ -15,7 +15,6 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
@@ -333,6 +332,7 @@ def build_workflow(
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
+    seed: int | None = None,
 ) -> Workflow:
     """Build a BQSKit Off-the-Shelf workflow, see :func:`compile` for info."""
     if isinstance(input, Circuit):

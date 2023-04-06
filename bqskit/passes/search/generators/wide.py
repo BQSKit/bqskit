@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.gateset import GateSetLike
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
@@ -27,7 +27,7 @@ class WideLayerGenerator(LayerGenerator):
 
     def __init__(
         self,
-        multi_qudit_gates: Gate | Sequence[Gate] = IToffoliGate(),
+        multi_qudit_gates: GateSetLike = IToffoliGate(),
         single_qudit_gate: Gate = U3Gate(),
     ) -> None:
         """

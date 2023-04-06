@@ -5,7 +5,6 @@ from typing import Sequence
 
 import numpy as np
 
-from bqskit.ir.gate import Gate
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
@@ -13,7 +12,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
 
-class VariableUnitaryGate(Gate, GeneralGate):
+class VariableUnitaryGate(GeneralGate):
     """A Variable n-qudit unitary operator."""
 
     def __init__(self, num_qudits: int, radixes: Sequence[int] = []) -> None:

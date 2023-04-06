@@ -95,7 +95,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
 
     def calc_params(self, utry: UnitaryMatrix) -> list[float]:
         """Return the parameters for this gate to implement `utry`"""
-        return list(-2 * pauli_expansion(unitary_log_no_i(utry)))
+        return list(-2 * pauli_expansion(unitary_log_no_i(utry.numpy)))
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, PauliGate) and self.num_qudits == o.num_qudits

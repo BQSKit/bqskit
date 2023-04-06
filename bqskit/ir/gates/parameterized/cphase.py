@@ -1,11 +1,12 @@
 """This module implements the ArbitraryCPhaseGate."""
 from __future__ import annotations
+
 from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -15,9 +16,10 @@ from bqskit.utils.typing import is_sequence
 
 
 class ArbitraryCPhaseGate(
+    Gate,
     DifferentiableUnitary,
     CachedClass,
-    LocallyOptimizableUnitary
+    LocallyOptimizableUnitary,
 ):
     """A gate representing an arbitrary qudit controlled phase rotation."""
 
@@ -26,17 +28,17 @@ class ArbitraryCPhaseGate(
     def __init__(self, radixes: Sequence[int] = []) -> None:
         if len(radixes) == 0:
             radixes = [2, 2]
-        
+
         if not is_sequence(radixes):
             raise TypeError(
-                f"Expected sequence for radixes, got {type(radixes)}."
+                f'Expected sequence for radixes, got {type(radixes)}.',
             )
-        
+
         if any(r <= 1 for r in radixes):
-            raise TypeError(f"Invalid radixes, all radixes must be >= 2.")
+            raise TypeError('Invalid radixes, all radixes must be >= 2.')
 
         self._num_qudits = len(radixes)
-        self.radixes = radixes
+        self._radixes = tuple(radixes)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -55,7 +57,7 @@ class ArbitraryCPhaseGate(
         dU = np.zeros((1, self.dim, self.dim), dtype=np.complex128)
         dU[-1, -1, -1] = 1j * np.exp(1j * params[0])
         return dU
-    
+
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.

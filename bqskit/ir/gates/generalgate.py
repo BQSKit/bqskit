@@ -1,5 +1,6 @@
 """This module implements the GeneralGate base class."""
 from __future__ import annotations
+
 import abc
 from typing import Sequence
 
@@ -7,11 +8,12 @@ import numpy as np
 import numpy.typing as npt
 import scipy as sp
 
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class GeneralGate(LocallyOptimizableUnitary):
+class GeneralGate(Gate, LocallyOptimizableUnitary):
     """An abstract base class for gates that parameterize any unitary."""
 
     @abc.abstractmethod
@@ -20,7 +22,7 @@ class GeneralGate(LocallyOptimizableUnitary):
 
     def identity_as_params(self, radixes: Sequence[int]) -> list[float]:
         """Return the parameters for the gate that implements the identity."""
-        identity = UnitaryMatrix.identity(np.prod(radixes), radixes)
+        identity = UnitaryMatrix.identity(int(np.prod(radixes)), radixes)
         return self.calc_params(identity)
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
