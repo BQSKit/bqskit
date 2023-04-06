@@ -638,15 +638,24 @@ def get_worker() -> Worker:
     return _worker
 
 
+def _check_positive(value: str) -> int:
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError(
+            '%s is an invalid positive int value' % value,
+        )
+    return ivalue
+
+
 def start_worker_rank() -> None:
     """Entry point for spawning a rank of runtime worker processes."""
     parser = argparse.ArgumentParser(
-        prog='BQSKit Worker',
+        prog='bqskit-worker',
         description='Launch a rank of BQSKit runtime worker processes.',
     )
     parser.add_argument(
         'num_workers',
-        type=int,
+        type=_check_positive,
         help='The number of workers to spawn.',
     )
     parser.add_argument(

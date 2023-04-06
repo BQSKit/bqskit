@@ -256,7 +256,7 @@ class Manager(ServerBase):
 def start_manager() -> None:
     """Entry point for runtime manager processes."""
     parser = argparse.ArgumentParser(
-        prog='BQSKit Manager',
+        prog='bqskit-manager',
         description='Launch a BQSKit runtime manager process.',
     )
     parser.add_argument(
@@ -313,10 +313,15 @@ def start_manager() -> None:
     if args.import_tests:
         import_tests_package()
 
+    if args.num_workers < -1:
+        num_workers = -1
+    else:
+        num_workers = args.num_workers
+
     # Create the manager
     manager = Manager(
         args.port,
-        args.num_workers,
+        num_workers,
         ipports,
         args.worker_port,
         args.only_connect,

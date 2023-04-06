@@ -23,6 +23,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    BGate
     CCXGate
     RCCXGate
     RC3XGate
@@ -68,6 +69,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :template: autosummary/gate.rst
 
     ArbitraryCPhaseGate
+    CCPGate
     CPGate
     CRXGate
     CRYGate

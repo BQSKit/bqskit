@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
+from bqskit.ir.opt.multistartgens.random import RandomStartGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -53,6 +55,91 @@ class Instantiater(abc.ABC):
             many instantiate calls to the same circuit using the same
             Instantiater object may happen in parallel.
         """
+
+    def multi_start_instantiate(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> Circuit:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        Args:
+            circuit (Circuit): The circuit template to instantiate.
+
+            target (UnitaryMatrix | StateVector | StateSystem): The unitary
+                matrix to implement or state to prepare.
+
+            num_starts (int): The number of starting points to attempt
+                instantiation with.
+
+        Returns:
+            (Circuit): A circuit copy with the best parameters with
+                respect to `target`.
+
+        Notes:
+            This method should be side-effect free. This is necessary since
+            many instantiate calls to the same circuit using the same
+            Instantiater object may happen in parallel.
+        """
+        _circuit = circuit.copy()
+        self.multi_start_instantiate_inplace(_circuit, target, num_starts)
+        return _circuit
+
+    def multi_start_instantiate_inplace(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> None:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        See :func:`multi_start_instantiate` for more info.
+
+        Notes:
+            This method is a version of :func:`multi_start_instantiate`
+            that modifies `circuit` in place rather than returning a copy.
+        """
+        target = self.check_target(target)
+        start_gen = RandomStartGenerator()
+        starts = start_gen.gen_starting_points(num_starts, circuit, target)
+        cost_fn = HilbertSchmidtCostGenerator().gen_cost(circuit, target)
+        params_list = [self.instantiate(circuit, target, x0) for x0 in starts]
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        circuit.set_params(params)
+
+    async def multi_start_instantiate_async(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> Circuit:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        See :func:`multi_start_instantiate` for more info.
+
+        Notes:
+            This method is an async version of :func:`multi_start_instantiate`
+            and designed to parallelize the instantiation calls in the
+            BQSKit Runtime during pass execution.
+        """
+        from bqskit.runtime import get_runtime
+        target = self.check_target(target)
+        start_gen = RandomStartGenerator()
+        starts = start_gen.gen_starting_points(num_starts, circuit, target)
+        cost_fn = HilbertSchmidtCostGenerator().gen_cost(circuit, target)
+        params_list = await get_runtime().map(
+            self.instantiate,
+            [circuit] * num_starts,
+            [target] * num_starts,
+            starts,
+        )
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        circuit.set_params(params)
+        return circuit
 
     @staticmethod
     @abc.abstractmethod
