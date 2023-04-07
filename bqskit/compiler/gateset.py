@@ -1,11 +1,11 @@
 """This module implements the GateSet class."""
 from __future__ import annotations
 
-from collections.abc import Set
 from typing import Any
 from typing import Iterable
 from typing import Iterator
 from typing import Sequence
+from typing import Set
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -116,7 +116,7 @@ class GateSet(Set[Gate]):
         """Return true if a gate is in the set."""
         return self._gates.__contains__(obj)
 
-    def union(self, *others: Any) -> GateSet:
+    def union(self, *others: Any) -> GateSet:  # type: ignore
         """Return a new GateSet with elements from this one and all others."""
         return GateSet(self._gates.union(*others))
 
