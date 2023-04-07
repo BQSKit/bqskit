@@ -79,9 +79,9 @@ class Minimization(Instantiater):
 
         See Instantiater for more info.
         """
-        raise ValueError(
+        return (
             'Cannot instantiate a circuit with VariableUnitaryGates'
-            ' via minimization.',
+            ' via minimization.'
         )
 
     @staticmethod

@@ -251,15 +251,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return GateSet(set(self._gate_info.keys()))
 
     @property
-    def gate_set_no_blocks(self) -> set[Gate]:
+    def gate_set_no_blocks(self) -> GateSet:
         """The set of gates in the circuit, recurses into circuit gates."""
+        from bqskit.compiler.gateset import GateSet
         gates: set[Gate] = set()
         for g, _ in self._gate_info.items():
             if isinstance(g, CircuitGate):
-                gates.update(g._circuit.gate_set)
+                for other_g in g._circuit.gate_set_no_blocks:
+                    gates.add(other_g)
             else:
                 gates.add(g)
-        return gates
+        return GateSet(gates)
 
     @property
     def gate_counts(self) -> dict[Gate, int]:
@@ -885,6 +887,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             if point is not None and len(self.next(point)) == 0:
                 rear_set.add(point)
         return rear_set
+
+    def last_on(self, qudit: int) -> CircuitPoint | None:
+        """Report the point for the last operation on `qudit` if it exists."""
+        return self._rear[qudit]
+
+    def first_on(self, qudit: int) -> CircuitPoint | None:
+        """Report the point for the first operation on `qudit` if it exists."""
+        return self._front[qudit]
 
     def next(self, point: CircuitPoint) -> set[CircuitPoint]:
         """Return the points of operations dependent on the one at `point`."""

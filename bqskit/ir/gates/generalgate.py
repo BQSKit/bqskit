@@ -34,4 +34,4 @@ class GeneralGate(Gate, LocallyOptimizableUnitary):
         self.check_env_matrix(env_matrix)
         U, _, Vh = sp.linalg.svd(env_matrix)
         new_U = Vh.conj().T @ U.conj().T
-        return self.calc_params(UnitaryMatrix(new_U))
+        return self.calc_params(UnitaryMatrix(new_U, self.radixes))

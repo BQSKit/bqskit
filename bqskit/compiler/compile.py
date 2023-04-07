@@ -282,6 +282,7 @@ def compile(
         max_synthesis_size,
         error_threshold,
         error_sim_size,
+        seed,
     )
     if isinstance(input, Circuit):
         in_circuit = input

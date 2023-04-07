@@ -1,10 +1,11 @@
 """This module implements the GateSet class."""
 from __future__ import annotations
 
+from collections.abc import Set
+from typing import Any
 from typing import Iterable
 from typing import Iterator
 from typing import Sequence
-from typing import Set
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -26,17 +27,18 @@ class GateSet(Set[Gate]):
     def __init__(self, gates: GateSetLike) -> None:
         """Initialize a GateSet object."""
         if isinstance(gates, GateSet):
-            self._gates: set[Gate] = gates._gates.copy()
-            self.radix_set: set[int] = gates.radix_set.copy()
+            self._gates: frozenset[Gate] = gates._gates.copy()
+            self.radix_set: frozenset[int] = gates.radix_set.copy()
             return
 
         if isinstance(gates, Gate):
             gates = [gates]
 
-        self.radix_set = set()
+        radix_set: set[int] = set()
         for g in gates:
-            self.radix_set.update(g.radixes)
-        self._gates = set(gates)
+            radix_set.update(g.radixes)
+        self.radix_set = frozenset(radix_set)
+        self._gates = frozenset(gates)
 
     def build_layer_generator(self) -> LayerGenerator:
         """Build a standard layer generator compliant with this gate set."""
@@ -104,7 +106,7 @@ class GateSet(Set[Gate]):
 
     def __iter__(self) -> Iterator[Gate]:
         """Iterator for this gate set's gates."""
-        return self._gates.__iter__()
+        return iter(self._gates)
 
     def __len__(self) -> int:
         """Number of gates in the set."""
@@ -113,6 +115,30 @@ class GateSet(Set[Gate]):
     def __contains__(self, obj: object) -> bool:
         """Return true if a gate is in the set."""
         return self._gates.__contains__(obj)
+
+    def union(self, *others: Any) -> GateSet:
+        """Return a new GateSet with elements from this one and all others."""
+        return GateSet(self._gates.union(*others))
+
+    def intersection(self, *others: Any) -> GateSet:
+        """Return a new GateSet with elements common to all sets."""
+        return GateSet(self._gates.intersection(*others))
+
+    def difference(self, *others: Any) -> GateSet:
+        """Return a new GateSet with this set's elements but not the others."""
+        return GateSet(self._gates.difference(*others))
+
+    def symmetric_difference(self, other: Iterable[Gate]) -> GateSet:
+        """Return a new GateSet with elements in either set but not both."""
+        return GateSet(self._gates.symmetric_difference(other))
+
+    def issubset(self, other: Iterable[Gate]) -> bool:
+        """Test whether every element in the gate set is in other."""
+        return self._gates.issubset(other)
+
+    def issuperset(self, other: Iterable[Gate]) -> bool:
+        """Report whether this gate set contains `other`."""
+        return self._gates.issuperset(other)
 
     def get_general_sq_gate(self) -> GeneralGate:
         """
@@ -141,7 +167,7 @@ class GateSet(Set[Gate]):
                 if g.num_qudits == 1:
                     return g
 
-        radix = self.radix_set.copy().pop()
+        radix = list(self.radix_set)[0]
 
         if radix == 2:
             return U3Gate()
