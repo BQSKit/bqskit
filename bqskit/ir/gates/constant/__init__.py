@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.ccx import ToffoliGate
-from bqskit.ir.gates.constant.clock import ClockGate
 from bqskit.ir.gates.constant.ch import CHGate
+from bqskit.ir.gates.constant.clock import ClockGate
 from bqskit.ir.gates.constant.cpi import CPIGate
 from bqskit.ir.gates.constant.cs import CSGate
 from bqskit.ir.gates.constant.csum import CSUMGate
