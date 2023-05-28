@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.ccx import ToffoliGate
+from bqskit.ir.gates.constant.clock import ClockGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.cpi import CPIGate
 from bqskit.ir.gates.constant.cs import CSGate
@@ -13,12 +14,14 @@ from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.gates.constant.cy import CYGate
 from bqskit.ir.gates.constant.cz import CZGate
 from bqskit.ir.gates.constant.h import HGate
+from bqskit.ir.gates.constant.hd import HDGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
 from bqskit.ir.gates.constant.itoffoli import IToffoliGate
 from bqskit.ir.gates.constant.permutation import PermutationGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
+from bqskit.ir.gates.constant.shift import ShiftGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
 from bqskit.ir.gates.constant.sqrtiswap import SqrtISwapGate
 from bqskit.ir.gates.constant.swap import SwapGate
@@ -39,6 +42,7 @@ __all__ = [
     'CCXGate',
     'ToffoliGate',
     'CHGate',
+    'ClockGate',
     'CPIGate',
     'CSGate',
     'CSUMGate',
@@ -48,12 +52,14 @@ __all__ = [
     'CYGate',
     'CZGate',
     'HGate',
+    'HDGate',
     'IdentityGate',
     'ISwapGate',
     'IToffoliGate',
     'PermutationGate',
     'SGate',
     'SdgGate',
+    'ShiftGate',
     'SqrtCNOTGate',
     'SwapGate',
     'SqrtXGate',
