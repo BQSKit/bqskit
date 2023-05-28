@@ -75,14 +75,14 @@ class Gate(Unitary):
 
     def get_inverse(self, params: RealVector = []) -> Gate:
         """Return the gate's inverse as a gate."""
-        if self.is_self_inverse():
-            return self
-        elif self.is_parameterized():
+        if self.is_parameterized():
             # Negate the parameters and normalize to the 0-2pi range
             inverse_params = [-param % (2 * np.pi) for param in params]
             # Create a new gate of the same type with the inverse parameters
             self.check_parameters(inverse_params)
             return self, inverse_params
+        elif self.is_self_inverse():
+            return self
         else:
             from bqskit.ir.gates.composed import DaggerGate
             return DaggerGate(self)
