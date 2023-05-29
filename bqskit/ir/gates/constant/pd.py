@@ -38,7 +38,9 @@ class PDGate(QuditGate):
     def __init__(self, num_levels, ind):
         self.num_levels = num_levels
         if ind > num_levels:
-            raise ValueError('PDGate index must be equal or less to the number of levels.')
+            raise ValueError(
+                'PDGate index must be equal or less to the number of levels.',
+            )
         self.ind = ind
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
