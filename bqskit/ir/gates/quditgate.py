@@ -20,5 +20,5 @@ class QuditGate(Gate):
         return getattr(self, '_num_levels')
 
     @num_levels.setter
-    def num_levels(self, value: int):
+    def num_levels(self, value: int) -> None:
         self._num_levels = value
