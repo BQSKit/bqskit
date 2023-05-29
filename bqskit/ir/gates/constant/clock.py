@@ -21,6 +21,10 @@ class ClockGate(QuditGate):
 
     where d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
+
+    __init__() arguments:
+        num_levels : int
+            Number of levels in each quantum object.
     """
 
     _num_qudits = 1
@@ -32,8 +36,8 @@ class ClockGate(QuditGate):
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
 
-        matrix = np.zeros(self.num_levels, dtype=complex)
+        diags = np.zeros(self.num_levels, dtype=complex)
         for i in range(self.num_levels):
-            matrix[i] = np.exp(2j * np.pi * i / self.num_levels)
-        u_mat = UnitaryMatrix(np.diag(matrix), self.radixes)
+            diags[i] = np.exp(2j * np.pi * i / self.num_levels)
+        u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
         return u_mat

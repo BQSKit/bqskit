@@ -18,6 +18,10 @@ class ShiftGate(QuditGate):
 
     where d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
+
+    __init__() arguments:
+        num_levels : int
+            Number of levels in each quantum object.
     """
 
     _num_qudits = 1
