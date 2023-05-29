@@ -8,6 +8,7 @@ from bqskit.ir.gates.constant.clock import ClockGate
 from bqskit.ir.gates.constant.cpi import CPIGate
 from bqskit.ir.gates.constant.cs import CSGate
 from bqskit.ir.gates.constant.csum import CSUMGate
+from bqskit.ir.gates.constant.csumd import CSUMDGate
 from bqskit.ir.gates.constant.ct import CTGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cx import CXGate
@@ -47,6 +48,7 @@ __all__ = [
     'CPIGate',
     'CSGate',
     'CSUMGate',
+    'CSUMDGate',
     'CTGate',
     'CNOTGate',
     'CXGate',

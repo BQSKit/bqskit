@@ -1,4 +1,4 @@
-"""This module implements the ClockGate."""
+"""This module implements the CSUMDGate."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,15 +8,15 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class ClockGate(QuditGate):
-    """
-    The one-qudit clock (Z) gate. This is a Weyl-Heisenberg gate.
+class CSUMDGate(QuditGate):
+    r"""
+    The two-qudit Conditional-SUM (CSUM_d) gate.
 
-    The clock gate is given by the following formula:
+    The CSUM_d gate is given by the following formula:
 
     .. math::
         \\begin{equation}
-            Z = \\sum_a \\exp(2\\pi ia/d) |a><a|
+            CSUM_d |i,j> = |i, i + j mod d>
         \\end{equation}
 
     where d is the number of levels (2 levels is a qubit,
@@ -27,7 +27,7 @@ class ClockGate(QuditGate):
             Number of levels in each qudit (d).
     """
 
-    _num_qudits = 1
+    _num_qudits = 2
     _num_params = 0
 
     def __init__(self, num_levels):
@@ -36,8 +36,16 @@ class ClockGate(QuditGate):
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
 
-        diags = np.zeros(self.num_levels, dtype=complex)
-        for i in range(self.num_levels):
-            diags[i] = np.exp(2j * np.pi * i / self.num_levels)
-        u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
+        ival = 0
+        jval = 0
+        matrix = np.zeros([self.num_levels**2, self.num_levels**2])
+        for i, col in enumerate(matrix.T):
+            col[self.num_levels*jval + ((ival + jval) % self.num_levels)] = 1
+            matrix[:, i] = col
+            if ival == self.num_levels-1:
+                ival = 0
+                jval += 1
+            else:
+                ival += 1
+        u_mat = UnitaryMatrix(matrix, self.radixes)
         return u_mat
