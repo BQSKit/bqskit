@@ -40,9 +40,9 @@ class CSUMDGate(QuditGate):
         jval = 0
         matrix = np.zeros([self.num_levels**2, self.num_levels**2])
         for i, col in enumerate(matrix.T):
-            col[self.num_levels*jval + ((ival + jval) % self.num_levels)] = 1
+            col[self.num_levels * jval + ((ival + jval) % self.num_levels)] = 1
             matrix[:, i] = col
-            if ival == self.num_levels-1:
+            if ival == self.num_levels - 1:
                 ival = 0
                 jval += 1
             else:

@@ -8,8 +8,8 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class CSUMGate(ConstantGate, QutritGate):
     """
-    The two-qutrit Conditional-SUM gate.
-    Note that this is equivalent to `CSUMDGate(num_levels=3).`
+    The two-qutrit Conditional-SUM gate. Note that this is equivalent to
+    `CSUMDGate(num_levels=3).`
 
     The CSUM gate is given by the following unitary:
 
@@ -23,8 +23,8 @@ class CSUMGate(ConstantGate, QutritGate):
         0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\\\
         0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\\\
         0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\\\
-        0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\\\
         0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\\\
         \\end{pmatrix}
     """
 
@@ -38,7 +38,7 @@ class CSUMGate(ConstantGate, QutritGate):
             [0, 0, 0, 1, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 1, 0, 0],
         ],
     )
