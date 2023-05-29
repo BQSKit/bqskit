@@ -13,7 +13,7 @@ class PDGate(QuditGate):
     The one-qudit P[i] gate.
 
     The clock gate is given by the following formula,
-    taken from https://pubs.aip.org/aip/jmp/article/56/3/032202/763827/Universal-quantum-computation-with-metaplectic
+    taken from https://pubs.aip.org/aip/jmp/article/56/3/032202/763827/Universal-quantum-computation-with-metaplectic #noqa
 
     .. math::
         \\begin{equation}
