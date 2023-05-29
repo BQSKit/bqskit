@@ -35,7 +35,7 @@ class PDGate(QuditGate):
     _num_qudits = 1
     _num_params = 0
 
-    def __init__(self, num_levels, ind):
+    def __init__(self, num_levels: int, ind: int):
         self.num_levels = num_levels
         if ind > num_levels:
             raise ValueError(

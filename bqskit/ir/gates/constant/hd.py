@@ -32,7 +32,7 @@ class HDGate(QuditGate):
     _num_qudits = 1
     _num_params = 0
 
-    def __init__(self, num_levels):
+    def __init__(self, num_levels: int):
         self.num_levels = num_levels
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
