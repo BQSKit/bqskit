@@ -2491,13 +2491,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Return the circuit's inverse circuit."""
         circuit = Circuit(self.num_qudits, self.radixes)
         for op in reversed(self):
-            circuit.append(
-                Operation(
-                    DaggerGate(op.gate),
-                    op.location,
-                    op.params,
-                ),
-            )
+            circuit.append(op.get_inverse())
         return circuit
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

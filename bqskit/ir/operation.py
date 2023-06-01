@@ -107,6 +107,14 @@ class Operation(DifferentiableUnitary):
 
         return self.gate.get_unitary(self.params)
 
+    def get_inverse(self) -> Operation:
+        """Return the operation's inverse operation."""
+        return Operation(
+            self.gate.get_inverse(),
+            self.location,
+            self.gate.get_inverse_params(self.params),
+        )
+
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this operation.
