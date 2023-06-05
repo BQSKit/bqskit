@@ -241,7 +241,11 @@ class TestFold:
         assert after_fold == before_fold
 
     def test_deterministic_gate_ordering(self) -> None:
-        def create_circuit(coupling_graph, regions, iterations) -> Circuit:
+        def create_circuit(
+            coupling_graph: list[tuple[int, int]],
+            regions: list[list[int]],
+            iterations: int,
+        ) -> Circuit:
             circuit = Circuit(4)
             for location in regions * iterations:
                 circuit.append_gate(CNOTGate(), location)
