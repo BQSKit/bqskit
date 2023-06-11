@@ -12,9 +12,9 @@ class SubSwapGate(QuditGate):
     r"""
     The two-qudit subspace SWAP gate.
 
-    The subspace SWAP gate swaps between "qudit-levels" 
-    on a two-qudit gate. 
-    For example, a |01> to |20> swap would be the identity 
+    The subspace SWAP gate swaps between "qudit-levels"
+    on a two-qudit gate.
+    For example, a |01> to |20> swap would be the identity
     with the |01> row and |20> rows swapped.
 
     __init__() arguments:
@@ -62,7 +62,7 @@ class SubSwapGate(QuditGate):
             col[pos] = 1
             matrix[:, i] = col
 
-            # updating ival and jval 
+            # updating ival and jval
             if ival == self.num_levels - 1:
                 ival = 0
                 jval += 1
@@ -70,7 +70,7 @@ class SubSwapGate(QuditGate):
                 ival += 1
         u_mat = UnitaryMatrix(matrix, self.radixes)
         return u_mat
-    
+
     @staticmethod
     def convert_string_to_lists(string):
         split_values = string.split(';')
@@ -85,4 +85,3 @@ class SubSwapGate(QuditGate):
                 list2.append(int(numbers[1]))
                 list2.append(int(numbers[0]))
         return list1, list2
-
