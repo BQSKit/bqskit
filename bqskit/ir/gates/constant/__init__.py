@@ -26,8 +26,8 @@ from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.shift import ShiftGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
 from bqskit.ir.gates.constant.sqrtiswap import SqrtISwapGate
-from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.constant.subswap import SubSwapGate
+from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.constant.sx import SqrtXGate
 from bqskit.ir.gates.constant.sx import SXGate
 from bqskit.ir.gates.constant.sycamore import SycamoreGate
