@@ -2380,14 +2380,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 f'Expected a circuit point iterable, got {type(points)}.',
             )
 
-        ops: set[tuple[int, Operation]] = set()
+        ops: list[tuple[int, Operation]] = list()
         for point in points:
             try:
-                ops.add((point[0], self.get_operation(point)))
+                ops.append((point[0], self.get_operation(point)))
             except IndexError:
                 continue
 
-        return [op_and_cycle[1] for op_and_cycle in ops]
+        return [op_and_cycle[1] for op_and_cycle in list(dict.fromkeys(ops))]
 
     def get_slice(self, points: Sequence[CircuitPointLike]) -> Circuit:
         """Return a copy of a slice of this circuit."""
