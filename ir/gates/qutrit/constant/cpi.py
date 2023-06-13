@@ -1,4 +1,4 @@
-"""This module implements the CPIGate."""
+"""This module implements the CPIGate.""" 
 from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate
