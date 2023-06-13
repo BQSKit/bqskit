@@ -20,6 +20,7 @@ from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
+from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.qubit.constant.b import BGate
 from bqskit.ir.gates.qubit.constant.ccx import CCXGate
 from bqskit.ir.gates.qubit.constant.ch import CHGate
@@ -49,7 +50,6 @@ from bqskit.ir.gates.qubit.constant.y import YGate
 from bqskit.ir.gates.qubit.constant.yy import YYGate
 from bqskit.ir.gates.qubit.constant.z import ZGate
 from bqskit.ir.gates.qubit.constant.zz import ZZGate
-from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.qubit.parameterized.ccp import CCPGate
 from bqskit.ir.gates.qubit.parameterized.cp import CPGate
 from bqskit.ir.gates.qubit.parameterized.crx import CRXGate

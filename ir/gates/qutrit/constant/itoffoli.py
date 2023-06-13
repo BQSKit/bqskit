@@ -1,4 +1,4 @@
-"""This module implements the IToffoliGate.""" #TODO adapt for qutrit
+"""This module implements the IToffoliGate."""  # TODO adapt for qutrit
 from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate

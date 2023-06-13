@@ -167,9 +167,9 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
 
-def kron(MatrixList):
-    m=MatrixList[0]
-    for i in range(1,len(MatrixList)):
-        m=np.kron(m,MatrixList[i])
-    return m
 
+def kron(MatrixList):
+    m = MatrixList[0]
+    for i in range(1, len(MatrixList)):
+        m = np.kron(m, MatrixList[i])
+    return m

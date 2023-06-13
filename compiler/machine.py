@@ -5,11 +5,11 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates.qutrit.constant.csum import CSUMGate
-from bqskit.ir.gates.qutrit.parameterized.u8 import U8Gate
 from bqskit.ir.gates.qubit.constant.cx import CNOTGate
 from bqskit.ir.gates.qubit.parameterized.u3 import U3Gate
 from bqskit.ir.gates.qubit.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.gates.qutrit.constant.csum import CSUMGate
+from bqskit.ir.gates.qutrit.parameterized.u8 import U8Gate
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.graph import CouplingGraphLike
