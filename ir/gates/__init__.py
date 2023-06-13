@@ -123,16 +123,18 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed import *  # noqa
 from bqskit.ir.gates.composed import __all__ as composed_all
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.ir.gates.qubit import *  # noqa
-from bqskit.ir.gates.qubit import __qubit_all_constant__, __qubit_all_parameterized__
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
-from bqskit.ir.gates.qutrit import *  # noqa
-from bqskit.ir.gates.qutrit import __qutrit_all_constant__, __qutrit_all_parameterized__
+from bqskit.ir.gates.qubit import *  # noqa
+from bqskit.ir.gates.qubit import __qubit_all_constant__
+from bqskit.ir.gates.qubit import __qubit_all_parameterized__
 from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gates.qutrit import *  # noqa
+from bqskit.ir.gates.qutrit import __qutrit_all_constant__
+from bqskit.ir.gates.qutrit import __qutrit_all_parameterized__
 from bqskit.ir.gates.qutritgate import QutritGate
 
-__all__ = composed_all + __qubit_all_constant__ + __qutrit_all_constant__ + __qubit_all_parameterized__ + __qutrit_all_parameterized__
+__all__ = composed_all + __qubit_all_constant__ + __qutrit_all_constant__ + \
+    __qubit_all_parameterized__ + __qutrit_all_parameterized__
 __all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
 __all__ += ['CircuitGate', 'MeasurementPlaceholder']
-

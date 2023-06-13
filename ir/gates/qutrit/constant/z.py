@@ -1,10 +1,12 @@
 """This module implements the ZGate."""
 from __future__ import annotations
 
+import numpy as np
+
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-import numpy as np
+
 
 class Z0Gate(ConstantGate, QutritGate):
     """
@@ -22,9 +24,13 @@ class Z0Gate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'z0'
     _utry = UnitaryMatrix(
-   [[-1,0,0],
-    [0,1,0],
-    [0,0,1]],[3])
+        [
+            [-1, 0, 0],
+            [0, 1, 0],
+               [0, 0, 1],
+        ], [3],
+    )
+
 
 class Z1Gate(ConstantGate, QutritGate):
     """
@@ -43,9 +49,13 @@ class Z1Gate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'z1'
     _utry = UnitaryMatrix(
-   [[1,0,0],
-    [0,-1,0],
-    [0,0,1]],[3])
+        [
+            [1, 0, 0],
+            [0, -1, 0],
+               [0, 0, 1],
+        ], [3],
+    )
+
 
 class Z2Gate(ConstantGate, QutritGate):
     """
@@ -64,9 +74,13 @@ class Z2Gate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'z2'
     _utry = UnitaryMatrix(
-   [[1,0,0],
-    [0,1,0],
-    [0,0,-1]],[3])
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+               [0, 0, -1],
+        ], [3],
+    )
+
 
 class ZGate(ConstantGate, QutritGate):
     """
@@ -84,8 +98,11 @@ class ZGate(ConstantGate, QutritGate):
 
     _num_qudits = 1
     _qasm_name = 'z'
-    _w=np.exp(2*np.pi*1j/3)
+    _w = np.exp(2 * np.pi * 1j / 3)
     _utry = UnitaryMatrix(
-   [[1,0,0],
-    [0,_w,0],
-    [0,0,_w**2]],[3])
+        [
+            [1, 0, 0],
+            [0, _w, 0],
+               [0, 0, _w**2],
+        ], [3],
+    )
