@@ -15,7 +15,7 @@ class CKMDGate(QutritGate, DifferentiableUnitary, CachedClass):
 
     _num_qudits = 1
     _num_params = 4
-    _qasm_name = "CKMD"
+    _qasm_name = 'CKMD'
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -30,10 +30,10 @@ class CKMDGate(QutritGate, DifferentiableUnitary, CachedClass):
 
         p1 = np.exp(-1j * params[3])
         m1 = np.exp(1j * params[3])
-        
-        u1 = np.array([[1,0,0],[0,c3,s3],[0,-s3,c3]])
-        u2 = np.array([[c1,0,s1*m1],[0,1,0],[-s1*p1,0,c1]])
-        u3 = np.array([[c2,s2,0],[-s2,c2,0],[0,0,1]])
+
+        u1 = np.array([[1, 0, 0], [0, c3, s3], [0, -s3, c3]])
+        u2 = np.array([[c1, 0, s1 * m1], [0, 1, 0], [-s1 * p1, 0, c1]])
+        u3 = np.array([[c2, s2, 0], [-s2, c2, 0], [0, 0, 1]])
 
         return UnitaryMatrix(u1 @ u2 @ u3)
 
@@ -54,30 +54,33 @@ class CKMDGate(QutritGate, DifferentiableUnitary, CachedClass):
 
         p1 = np.exp(-1j * params[3])
         m1 = np.exp(1j * params[3])
-        
-        u1 = np.array([[1,0,0],[0,c3,s3],[0,-s3,c3]])
-        u2 = np.array([[c1,0,s1*m1],[0,1,0],[-s1*p1,0,c1]])
-        u3 = np.array([[c2,s2,0],[-s2,c2,0],[0,0,1]])
-        
-        u1p = np.array([[0,0,0],[0,-s3,c3],[0,-c3,-s3]])
-        u2p1 = np.array([[-s1,0,c1*m1],[0,0,0],
-                       [-c1*m1,0,s1]])
-        u2p2 = np.array([[0,0,-1j*s1*m1],[0,0,0],
-                       [-1j*s1*p1,0,0]])
-        u3p = np.array([[s2,c2,0],[-c2,-s2,0],[0,0,0]])
+
+        u1 = np.array([[1, 0, 0], [0, c3, s3], [0, -s3, c3]])
+        u2 = np.array([[c1, 0, s1 * m1], [0, 1, 0], [-s1 * p1, 0, c1]])
+        u3 = np.array([[c2, s2, 0], [-s2, c2, 0], [0, 0, 1]])
+
+        u1p = np.array([[0, 0, 0], [0, -s3, c3], [0, -c3, -s3]])
+        u2p1 = np.array([
+            [-s1, 0, c1 * m1], [0, 0, 0],
+            [-c1 * m1, 0, s1],
+        ])
+        u2p2 = np.array([
+            [0, 0, -1j * s1 * m1], [0, 0, 0],
+            [-1j * s1 * p1, 0, 0],
+        ])
+        u3p = np.array([[s2, c2, 0], [-c2, -s2, 0], [0, 0, 0]])
 
         return np.array(
             [
-                 # wrt params[0] -> 1-3
+                # wrt params[0] -> 1-3
                 u1 @ u2p1 @ u3,
 
                 # wrt params[1] -> 1-2
                 u1 @ u2 @ u3p,
 
-               # wrt params[2] -> 2-3
-               u1p @ u2 @ u3    ,
+                # wrt params[2] -> 2-3
+                u1p @ u2 @ u3,
                 # wrt params[3] -> cp
-                u1 @ u2p2 @ u3
+                u1 @ u2p2 @ u3,
             ], dtype=np.complex128,
         )
-
