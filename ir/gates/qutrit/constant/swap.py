@@ -5,7 +5,6 @@ from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.utils.typing import is_integer
 
-
 class SwapGate(ConstantGate):
     """
     The two-qudit swap gate.

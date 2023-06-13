@@ -1,4 +1,4 @@
-"""This module implements the PermutationGate."""
+"""This module implements the PermutationGate.""" 
 from __future__ import annotations
 
 from typing import Sequence

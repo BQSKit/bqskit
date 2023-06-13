@@ -24,15 +24,13 @@ class XGate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'x'
     _utry = UnitaryMatrix(
-        [
-            [0, 1, 0],
-            [0, 0, 1],
-            [1, 0, 0],
-        ], [3],
+        [[0,1,0],
+    [0,0,1],
+    [1,0,0]],[3]
     )
 
 
-class X01Gate(ConstantGate, QutritGate):
+class X01Gate(ConstantGate, QutritGate): 
     """
     The Pauli X01 gate.
 
@@ -49,15 +47,11 @@ class X01Gate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'x01'
     _utry = UnitaryMatrix(
-        [
-            [0, 1, 0],
-            [1, 0, 0],
-               [0, 0, 1],
-        ], [3],
-    )
+   [[0,1,0],
+    [1,0,0],
+    [0,0,1]],[3])
 
-
-class X02Gate(ConstantGate, QutritGate):
+class X02Gate(ConstantGate, QutritGate): 
     """
     The Pauli X02 gate.
 
@@ -74,13 +68,9 @@ class X02Gate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'x02'
     _utry = UnitaryMatrix(
-        [
-            [0, 0, 1],
-            [0, 1, 0],
-               [1, 0, 0],
-        ], [3],
-    )
-
+   [[0,0,1],
+    [0,1,0,],
+    [1,0,0]],[3])
 
 class X12Gate(ConstantGate, QutritGate):
     """
@@ -99,9 +89,6 @@ class X12Gate(ConstantGate, QutritGate):
     _num_qudits = 1
     _qasm_name = 'x12'
     _utry = UnitaryMatrix(
-        [
-            [1, 0, 0],
-            [0, 0, 1],
-            [0, 1, 0],
-        ], [3],
-    )
+       [[1,0,0],
+        [0,0,1],
+        [0,1,0]],[3])
