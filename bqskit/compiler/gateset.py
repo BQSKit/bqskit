@@ -1,11 +1,11 @@
 """This module implements the GateSet class."""
 from __future__ import annotations
 
+from collections.abc import Set
 from typing import Any
 from typing import Iterable
 from typing import Iterator
 from typing import Sequence
-from typing import Set
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -16,6 +16,8 @@ from bqskit.ir.gates.parameterized.cphase import ArbitraryCPhaseGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_sequence_of_int
 
 if TYPE_CHECKING:
     from bqskit.passes.search.generator import LayerGenerator
@@ -35,10 +37,12 @@ class GateSet(Set[Gate]):
             gates = [gates]
 
         radix_set: set[int] = set()
+        gate_set: set[Gate] = set()
         for g in gates:
             radix_set.update(g.radixes)
+            gate_set.add(g)
         self.radix_set = frozenset(radix_set)
-        self._gates = frozenset(gates)
+        self._gates = frozenset(gate_set)
 
     def build_layer_generator(self) -> LayerGenerator:
         """Build a standard layer generator compliant with this gate set."""
@@ -84,62 +88,6 @@ class GateSet(Set[Gate]):
             self.get_general_sq_gate(),
         )
 
-    @property
-    def single_qudit_gates(self) -> set[Gate]:
-        """All gates that act on only one qudit."""
-        return {g for g in self if g.num_qudits == 1}
-
-    @property
-    def two_qudit_gates(self) -> set[Gate]:
-        """All gates that act on two qudits."""
-        return {g for g in self if g.num_qudits == 2}
-
-    @property
-    def many_qudit_gates(self) -> set[Gate]:
-        """All gates that act on more than two qudits."""
-        return {g for g in self if g.num_qudits > 2}
-
-    @property
-    def multi_qudit_gates(self) -> set[Gate]:
-        """All gates that act on more than one quditss."""
-        return {g for g in self if g.num_qudits >= 2}
-
-    def __iter__(self) -> Iterator[Gate]:
-        """Iterator for this gate set's gates."""
-        return iter(self._gates)
-
-    def __len__(self) -> int:
-        """Number of gates in the set."""
-        return len(self._gates)
-
-    def __contains__(self, obj: object) -> bool:
-        """Return true if a gate is in the set."""
-        return self._gates.__contains__(obj)
-
-    def union(self, *others: Any) -> GateSet:  # type: ignore
-        """Return a new GateSet with elements from this one and all others."""
-        return GateSet(self._gates.union(*others))
-
-    def intersection(self, *others: Any) -> GateSet:
-        """Return a new GateSet with elements common to all sets."""
-        return GateSet(self._gates.intersection(*others))
-
-    def difference(self, *others: Any) -> GateSet:
-        """Return a new GateSet with this set's elements but not the others."""
-        return GateSet(self._gates.difference(*others))
-
-    def symmetric_difference(self, other: Iterable[Gate]) -> GateSet:
-        """Return a new GateSet with elements in either set but not both."""
-        return GateSet(self._gates.symmetric_difference(other))
-
-    def issubset(self, other: Iterable[Gate]) -> bool:
-        """Test whether every element in the gate set is in other."""
-        return self._gates.issubset(other)
-
-    def issuperset(self, other: Iterable[Gate]) -> bool:
-        """Report whether this gate set contains `other`."""
-        return self._gates.issuperset(other)
-
     def get_general_sq_gate(self) -> GeneralGate:
         """
         Return the gate set's arbitrary single-qudit gate.
@@ -150,6 +98,9 @@ class GateSet(Set[Gate]):
         best arbitrary single-qudit rotation to use during these steps based on
         the gates in the set.
         """
+        if len(self.radix_set) == 0:
+            raise RuntimeError('Cannot suggest single-qudit gate for empty set')
+
         if len(self.radix_set) != 1:
             raise RuntimeError(
                 'Cannot automatically suggest general single-qudit gate for'
@@ -174,9 +125,34 @@ class GateSet(Set[Gate]):
 
         return VariableUnitaryGate(1, [radix])
 
+    @property
+    def single_qudit_gates(self) -> set[Gate]:
+        """All gates that act on only one qudit."""
+        return {g for g in self if g.num_qudits == 1}
+
+    @property
+    def two_qudit_gates(self) -> set[Gate]:
+        """All gates that act on two qudits."""
+        return {g for g in self if g.num_qudits == 2}
+
+    @property
+    def many_qudit_gates(self) -> set[Gate]:
+        """All gates that act on more than two qudits."""
+        return {g for g in self if g.num_qudits > 2}
+
+    @property
+    def multi_qudit_gates(self) -> set[Gate]:
+        """All gates that act on more than one qudits."""
+        return {g for g in self if g.num_qudits >= 2}
+
     @staticmethod
-    def default_gate_set(radixes: Sequence[int] = []) -> GateSet:
+    def default_gate_set(radixes: Sequence[int] | int = 2) -> GateSet:
         """Build a default gate set for a given `radixes`."""
+        if is_integer(radixes):
+            radixes = [radixes]
+
+        assert is_sequence_of_int(radixes)
+
         if len(radixes) == 0 or all(r == 2 for r in radixes):
             return GateSet({CNOTGate(), U3Gate()})
 
@@ -188,17 +164,54 @@ class GateSet(Set[Gate]):
 
         for r1 in unique_radixes:
             for r2 in unique_radixes:
-                gates.add(ArbitraryCPhaseGate([r1, r2]))
+                if r1 <= r2:
+                    gates.add(ArbitraryCPhaseGate([r1, r2]))
 
         return GateSet(gates)
 
+    def __iter__(self) -> Iterator[Gate]:
+        """Iterator for this gate set's gates."""
+        return self._gates.__iter__()
+
+    def __len__(self) -> int:
+        """Number of gates in the set."""
+        return len(self._gates)
+
+    def __contains__(self, obj: object) -> bool:
+        """Return true if a gate is in the set."""
+        return self._gates.__contains__(obj)
+
+    def union(self, *others: Any) -> GateSet:
+        """Return a new GateSet with elements from this one and all others."""
+        return GateSet(self._gates.union(*others))
+
+    def intersection(self, *others: Any) -> GateSet:
+        """Return a new GateSet with elements common to all sets."""
+        return GateSet(self._gates.intersection(*others))
+
+    def difference(self, *others: Any) -> GateSet:
+        """Return a new GateSet with this set's elements but not the others."""
+        return GateSet(self._gates.difference(*others))
+
+    def symmetric_difference(self, other: Iterable[Gate]) -> GateSet:
+        """Return a new GateSet with elements in either set but not both."""
+        return GateSet(self._gates.symmetric_difference(other))
+
+    def issubset(self, other: Iterable[Gate]) -> bool:
+        """Test whether every element in the gate set is in other."""
+        return self._gates.issubset(other)
+
+    def issuperset(self, other: Iterable[Gate]) -> bool:
+        """Report whether this gate set contains `other`."""
+        return self._gates.issuperset(other)
+
     def __str__(self) -> str:
         """String representation of the GateSet."""
-        return self._gates.__str__()
+        return self._gates.__str__().replace('frozenset', 'GateSet')
 
     def __repr__(self) -> str:
         """Detailed representation of the GateSet."""
-        return self._gates.__repr__()
+        return self._gates.__repr__().replace('frozenset', 'GateSet')
 
 
 GateSetLike = Union[GateSet, Iterable[Gate], Gate]
