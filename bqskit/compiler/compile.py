@@ -18,6 +18,7 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u3 import U3Gate
@@ -340,7 +341,12 @@ def build_workflow(
         if input.num_qudits > max_synthesis_size:
             if any(
                 g.num_qudits > max_synthesis_size
-                and not isinstance(g, MeasurementPlaceholder)
+                and not isinstance(
+                    g, (
+                        MeasurementPlaceholder,
+                        BarrierPlaceholder,
+                    ),
+                )
                 for g in input.gate_set
             ):
                 raise ValueError(
