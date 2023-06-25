@@ -66,3 +66,12 @@ class ArbitraryCPhaseGate(
         """
         p = env_matrix[-1, -1]
         return [-np.arctan2(p.imag, p.real)]
+
+    def __eq__(self, other: object) -> bool:
+        """Check if `self` equals `other`."""
+        if not isinstance(other, ArbitraryCPhaseGate):
+            return False
+        return self.radixes == other.radixes
+
+    def __hash__(self) -> int:
+        return hash(self.radixes)
