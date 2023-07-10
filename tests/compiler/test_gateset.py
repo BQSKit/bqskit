@@ -130,7 +130,7 @@ def test_gate_set_get_general_sq_gate():
 
     gate_set = GateSet({
         ArbitraryCPhaseGate(
-        [3, 3],
+            [3, 3],
         ), VariableUnitaryGate(1, [3]),
     })
     assert gate_set.get_general_sq_gate() == VariableUnitaryGate(1, [3])
