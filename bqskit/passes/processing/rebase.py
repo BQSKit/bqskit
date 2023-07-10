@@ -168,6 +168,9 @@ class Rebase2QuditGatePass(BasePass):
             prev_count = circuit.count(g)
 
             while g in circuit.gate_set:
+                # Change the seed every iteration to prevent stalls
+                instantiate_options['seed'] += 1
+                
                 # Check if we made progress from last loop
                 gates_left = circuit.count(g)
                 if prev_count == gates_left:
