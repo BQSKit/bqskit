@@ -16,12 +16,12 @@ class SynthesisPass(BasePass):
     """
     SynthesisPass abstract class.
 
-    The SynthesisPass is a base class that exposes an abstract
-    synthesize function. Inherit from this class and implement the
-    synthesize function to create a synthesis tool.
+    The SynthesisPass is a base class that exposes an abstract synthesize
+    function. Inherit from this class and implement the synthesize function to
+    create a synthesis tool.
 
-    A SynthesisPass will synthesize a new circuit targeting the input
-    circuit's unitary.
+    A SynthesisPass will synthesize a new circuit targeting the input circuit's
+    unitary.
     """
 
     @abstractmethod
