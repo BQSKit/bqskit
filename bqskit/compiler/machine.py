@@ -4,12 +4,8 @@ from __future__ import annotations
 from typing import Sequence
 from typing import TYPE_CHECKING
 
-from bqskit.ir.gate import Gate
-from bqskit.ir.gates.constant.csum import CSUMGate
-from bqskit.ir.gates.constant.cx import CNOTGate
-from bqskit.ir.gates.parameterized.u3 import U3Gate
-from bqskit.ir.gates.parameterized.u8 import U8Gate
-from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.compiler.gateset import GateSet
+from bqskit.compiler.gateset import GateSetLike
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.graph import CouplingGraphLike
@@ -20,16 +16,6 @@ if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 
 
-default_qubit_gate_set: set[Gate] = {
-    CNOTGate(),
-    U3Gate(),
-}
-default_qutrit_gate_set: set[Gate] = {
-    CSUMGate(),
-    U8Gate(),
-}
-
-
 class MachineModel:
     """A model of a quantum processing unit."""
 
@@ -37,7 +23,7 @@ class MachineModel:
         self,
         num_qudits: int,
         coupling_graph: CouplingGraphLike | None = None,
-        gate_set: set[Gate] | None = None,
+        gate_set: GateSetLike | None = None,
         radixes: Sequence[int] = [],
     ) -> None:
         """
@@ -52,9 +38,9 @@ class MachineModel:
                 an all-to-all coupling graph is used as a default.
                 (Default: None)
 
-            gate_set (set[Gate]): The native gate set available on the
-                machine. Defaults to CNOTs+U3s for qubits, CSUM+U8s for
-                qutrits, and variable unitary gates for arbitrary qudits.
+            gate_set (GateSetLike | None): The native gate set available
+                on the machine. If left as None, the default gate set
+                will be used. See :func:`~GateSet.default_gate_set`.
 
             radixes (Sequence[int]): A sequence with its length equal
                 to `num_qudits`. Each element specifies the base of a
@@ -96,19 +82,12 @@ class MachineModel:
             raise TypeError('Invalid coupling graph, expected list of tuples')
 
         if gate_set is None:
-            r = self.radixes[0]
-            if r == 2:
-                gate_set = default_qubit_gate_set
-            elif r == 3:
-                gate_set = default_qutrit_gate_set
-            else:
-                gate_set = {VariableUnitaryGate(2, [r, r])}
+            gate_set = GateSet.default_gate_set(radixes)
+        else:
+            gate_set = GateSet(gate_set)
 
-        if not isinstance(gate_set, set):
-            raise TypeError(f'Expected set of gates, got {type(gate_set)}.')
-
-        if not all(isinstance(g, Gate) for g in gate_set):
-            raise TypeError(f'Expected set of gates, got {type(gate_set)}.')
+        if not isinstance(gate_set, GateSet):
+            raise TypeError(f'Expected GateSet, got {type(gate_set)}.')
 
         self.gate_set = gate_set
         self.coupling_graph = CouplingGraph(coupling_graph)

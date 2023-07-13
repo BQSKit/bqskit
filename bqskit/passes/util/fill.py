@@ -6,70 +6,63 @@ import logging
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.parameterized.u3 import U3Gate
-from bqskit.ir.gates.parameterized.u8 import U8Gate
-from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.point import CircuitPoint
 
 
 _logger = logging.getLogger(__name__)
 
 
 class FillSingleQuditGatesPass(BasePass):
-    """A pass that inserts single-qudit gates around multi-qudit gates."""
+    """
+    A pass that inserts single-qudit gates around multi-qudit gates.
 
-    def __init__(self, success_threshold: float = 1e-10):
-        """
-        Construct a FillSingleQuditGatesPass.
-
-        Args:
-            success_threshold (bool): Reinstantiate the new filled circuit
-                to be within this distance from initial starting circuit.
-        """
-        self.success_threshold = success_threshold
+    This pass will preserve the multi-qudit gates in the circuit and then place
+    single-qudit unitary gates around those gates.
+    """
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        _logger.debug('Completing circuit with single-qudit gates.')
-        target = data.target
+        _logger.debug('Filling circuit with single-qudit gates.')
 
         complete_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+        sq_gate = data.gate_set.get_general_sq_gate()
+        id_params = sq_gate.identity_as_params((circuit.radixes[0],))
 
-        if target.num_qudits == 1 and circuit.radixes[0] == 2:
-            params = U3Gate.calc_params(circuit.get_unitary())
-            complete_circuit.append_gate(U3Gate(), 0, params)
-            circuit.become(complete_circuit)
-            return
+        # Add general gate as identity on every qudit to start
+        for qudit_index in range(circuit.num_qudits):
+            complete_circuit.append_gate(sq_gate, qudit_index, id_params)
 
-        for q in range(circuit.num_qudits):
-            radix = circuit.radixes[q]
-            if radix == 2:
-                complete_circuit.append_gate(U3Gate(), q)
-            elif radix == 3:
-                complete_circuit.append_gate(U8Gate(), q)
-            else:
-                complete_circuit.append_gate(VariableUnitaryGate(1), q)
+        for cycle, op in circuit.operations_with_cycles():
 
-        for op in circuit:
+            # Single-qudit gates get converted to general gates
             if op.num_qudits == 1:
-                continue
 
-            complete_circuit.append(op)
-            for q in op.location:
-                radix = circuit.radixes[q]
-                if radix == 2:
-                    complete_circuit.append_gate(U3Gate(), q)
-                elif radix == 3:
-                    complete_circuit.append_gate(U8Gate(), q)
-                else:
-                    complete_circuit.append_gate(VariableUnitaryGate(1), q)
+                # Check for already existing single-qudit gates
+                last_point = complete_circuit.last_on(op.location[0])
+                if last_point is not None:
+                    last_op = complete_circuit[last_point]
 
-        dist = 1.0
-        for i in range(10):
-            complete_circuit.instantiate(target)
-            dist = complete_circuit.get_unitary().get_distance_from(target, 1)  # type: ignore  # noqa
-            # TODO: State update
+                    if last_op.num_qudits == 1:
+                        # Merge single-qudit gates if one already exists
+                        utry = op.get_unitary() @ last_op.get_unitary()
+                        last_op.params = sq_gate.calc_params(utry)
+                        continue
 
-        if dist <= self.success_threshold:
-            circuit.become(complete_circuit)
-        else:
-            _logger.warning('Unable to instantiate completed circuit.')
+                # Otherwise just add general gate
+                params = sq_gate.calc_params(op.get_unitary())
+                complete_circuit.append_gate(sq_gate, op.location, params)
+
+            else:
+                # Multi-qudit gates get added as is
+                complete_circuit.append(op)
+
+                # Add additional sq gates where there is none between mq gates
+                qudits_needing_single_qudit_gates = set(op.location)
+                for p in circuit.next(CircuitPoint(cycle, op.location[0])):
+                    if circuit[p].num_qudits == 1:
+                        qudits_needing_single_qudit_gates.remove(p.qudit)
+
+                for qudit in qudits_needing_single_qudit_gates:
+                    complete_circuit.append_gate(sq_gate, qudit, id_params)
+
+        circuit.become(complete_circuit)

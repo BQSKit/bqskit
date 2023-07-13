@@ -6,6 +6,7 @@ logical to physical qudits.
 """
 from __future__ import annotations
 
+from bqskit.passes.mapping.layout.pam import PAMLayoutPass
 from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 
-__all__ = ['GeneralizedSabreLayoutPass']
+__all__ = ['GeneralizedSabreLayoutPass', 'PAMLayoutPass']

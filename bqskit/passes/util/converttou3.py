@@ -29,6 +29,6 @@ class ToU3Pass(BasePass):
                 and len(op.location) == 1
                 and op.radixes == (2,)
             ):
-                params = U3Gate.calc_params(op.get_unitary())
+                params = U3Gate().calc_params(op.get_unitary())
                 point = CircuitPoint(cycle, op.location[0])
                 circuit.replace_gate(point, U3Gate(), op.location, params)
