@@ -23,10 +23,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
-    BGate
     CCXGate
-    RCCXGate
-    RC3XGate
     ToffoliGate
     CHGate
     CPIGate
@@ -68,12 +65,10 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
-    CCPGate
     CPGate
     CRXGate
     CRYGate
     CRZGate
-    CUGate
     FSIMGate
     PauliGate
     PhasedXZGate
@@ -90,6 +85,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     U2Gate
     U3Gate
     U8Gate
+    RSU3Gate
     VariableUnitaryGate
 
 .. rubric:: Composed Gates
@@ -115,11 +111,9 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
 
     CircuitGate
     MeasurementPlaceholder
-    BarrierPlaceholder
 """
 from __future__ import annotations
 
-from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed import *  # noqa
 from bqskit.ir.gates.composed import __all__ as composed_all
@@ -135,4 +129,4 @@ from bqskit.ir.gates.qutritgate import QutritGate
 
 __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
-__all__ += ['CircuitGate', 'MeasurementPlaceholder', 'BarrierPlaceholder']
+__all__ += ['CircuitGate', 'MeasurementPlaceholder']

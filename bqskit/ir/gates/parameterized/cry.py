@@ -1,74 +1,32 @@
-"""This module implements the CRYGate."""
+"""This module implements the CRYGate.""" #TODO convert to qudit
 from __future__ import annotations
 
-import numpy as np
-import numpy.typing as npt
+from bqskit.ir.gates.parameterized.ry import RYGate
+from bqskit.qis.unitary import IntegerVector
+from bqskit.ir.gates.composed import ControlledGate
 
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
-from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.cachedclass import CachedClass
-
-
-class CRYGate(
-    QubitGate,
-    DifferentiableUnitary,
-    CachedClass,
-):
+class CRYGate(ControlledGate):
     """
-    A gate representing a controlled Y rotation.
+    A gate representing a controlled X rotation for qudits.
 
-    It is given by the following parameterized unitary:
+    This is equivalent to a controlled rotation by the X Pauli Gate in the subspace of 2 levels
+    
+        __init__() arguments:
+            num_levels : int
+                Number of levels in each qudit (d).
+            level_1,level_2: int
+                 The levels on which to apply the X gate (0...d-1).
+                        
+        get_unitary arguments:
+                param: float
+                The angle by which to rotate
 
-    .. math::
-
-        \\begin{pmatrix}
-        1 & 0 & 0 & 0 \\\\
-        0 & 1 & 0 & 0 \\\\
-        0 & 0 & \\cos{\\frac{\\theta}{2}} & -\\sin{\\frac{\\theta}{2}} \\\\
-        0 & 0 & \\sin{\\frac{\\theta}{2}} & \\cos{\\frac{\\theta}{2}} \\\\
-        \\end{pmatrix}
     """
 
     _num_qudits = 2
     _num_params = 1
     _qasm_name = 'cry'
-
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-
-        cos = np.cos(params[0] / 2)
-        sin = np.sin(params[0] / 2)
-
-        return UnitaryMatrix(
-            [
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, cos, -sin],
-                [0, 0, sin, cos],
-            ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-
-        dcos = -np.sin(params[0] / 2) / 2
-        dsin = -1j * np.cos(params[0] / 2) / 2
-
-        return np.array(
-            [
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, dcos, -dsin],
-                    [0, 0, dsin, dcos],
-                ],
-            ], dtype=np.complex128,
-        )
+    
+    def __init__(self, num_levels: int=2, controls: IntegerVector=[1], level_1: int=0, level_2: int=1):    
+        super(CRYGate, self).__init__(RYGate(num_levels=num_levels, level_1=level_1, level_2=level_2), 
+                                       num_levels=num_levels, controls=controls)

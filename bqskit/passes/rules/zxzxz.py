@@ -8,8 +8,8 @@ import numpy as np
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import RZGate
-from bqskit.ir.gates import SqrtXGate
+from bqskit.ir.gates.parameterized import RZGate
+from bqskit.ir.gates.constant import SqrtXGate
 
 
 class ZXZXZDecomposition(BasePass):

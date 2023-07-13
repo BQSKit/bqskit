@@ -5,8 +5,8 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates.constant import CNOTGate
+from bqskit.ir.gates.constant import SwapGate
 from bqskit.ir.operation import Operation
 
 

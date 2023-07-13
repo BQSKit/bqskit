@@ -17,10 +17,10 @@ from bqskit.compiler.passdata import PassData
 from bqskit.compiler.task import CompilationTask
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import RZGate
-from bqskit.ir.gates import SqrtXGate
-from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates.constant import CNOTGate
+from bqskit.ir.gates.parameterized import RZGate
+from bqskit.ir.gates.constant import SqrtXGate
+from bqskit.ir.gates.constant import SwapGate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u3 import U3Gate

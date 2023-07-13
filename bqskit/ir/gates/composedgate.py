@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
-
+from bqskit.utils.typing import is_integer
 
 class ComposedGate(Gate):
     """
@@ -67,3 +68,5 @@ class ComposedGate(Gate):
             return NotImplemented
 
         return self.__dict__ == other.__dict__
+    
+    

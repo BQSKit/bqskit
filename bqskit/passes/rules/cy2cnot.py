@@ -5,10 +5,10 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import CYGate
-from bqskit.ir.gates import SdgGate
-from bqskit.ir.gates import SGate
+from bqskit.ir.gates.constant import CNOTGate
+from bqskit.ir.gates.constant import CYGate
+from bqskit.ir.gates.constant import SdgGate
+from bqskit.ir.gates.constant import SGate
 from bqskit.ir.operation import Operation
 
 

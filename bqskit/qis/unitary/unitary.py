@@ -126,3 +126,4 @@ class Unitary(metaclass=UnitaryMeta):
 
 
 RealVector = Union[Sequence[float], np.ndarray]
+IntegerVector = Union[Sequence[int], np.ndarray]

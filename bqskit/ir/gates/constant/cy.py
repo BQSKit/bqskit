@@ -1,34 +1,24 @@
 """This module implements the CYGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.gates.constant.y import YGate
+from bqskit.ir.gates.composed import ControlledGate
+from bqskit.qis.unitary import IntegerVector
 
-
-class CYGate(ConstantGate, QubitGate):
+class CYGate(ControlledGate):
     """
-    The Controlled-Y gate.
-
-    The CY gate is given by the following unitary:
-
-    .. math::
-
-        \\begin{pmatrix}
-        1 & 0 & 0 & 0 \\\\
-        0 & 1 & 0 & 0 \\\\
-        0 & 0 & 0 & -i \\\\
-        0 & 0 & i & 0 \\\\
-        \\end{pmatrix}
+    The Controlled-Not or Controlled-Y gate for qudits
+    
+    num_levels: (int) = number of levels os single qudit (greater or equal to 2)
+    controls: list(int) = list of control levels
+    level_1: (int) = first level for Y gate
+    level_2: (int) = second level for Y gate 
+    
     """
 
-    _num_qudits = 2
     _qasm_name = 'cy'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, -1j],
-            [0, 0, 1j, 0],
-        ],
-    )
+    _num_params = 0
+    
+    def __init__(self, num_levels: int=2, controls: IntegerVector=[1], level_1: int=0, level_2: int=1):    
+        super(CYGate, self).__init__(YGate(num_levels=num_levels, level_1=level_1, level_2=level_2), 
+                                       num_levels=num_levels, controls=controls)

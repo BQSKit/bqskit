@@ -1,4 +1,4 @@
-"""This module implements the CCXGate/ToffoliGate."""
+"""This module implements the IToffoliGate.""" #TODO adapt for qutrit
 from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate
@@ -6,11 +6,11 @@ from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class CCXGate(ConstantGate, QubitGate):
+class IToffoliGate(ConstantGate, QubitGate):
     """
-    The toffoli gate, equal to an X gate with two controls.
+    The IToffoliGate gate, equal to an iX gate with two controls.
 
-    The Toffoli gate is given by the following unitary:
+    The iToffoli gate is given by the following unitary:
 
     .. math::
 
@@ -21,13 +21,18 @@ class CCXGate(ConstantGate, QubitGate):
         0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\\\
         0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\\\
         0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\\\
-        0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\\\
-        0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & i \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & i & 0 \\\\
         \\end{pmatrix}
+
+    References:
+        Kim, Y., Morvan, A., Nguyen, L.B. et al. High-fidelity three-qubit
+        iToffoli gate for fixed-frequency superconducting qubits. Nat. Phys.
+        (2022). https://doi.org/10.1038/s41567-022-01590-3
     """
 
     _num_qudits = 3
-    _qasm_name = 'ccx'
+    _qasm_name = 'iccx'
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0, 0, 0, 0, 0],
@@ -36,10 +41,7 @@ class CCXGate(ConstantGate, QubitGate):
             [0, 0, 0, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1],
-            [0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1j],
+            [0, 0, 0, 0, 0, 0, 1j, 0],
         ],
     )
-
-
-ToffoliGate = CCXGate

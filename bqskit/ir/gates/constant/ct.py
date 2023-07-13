@@ -1,36 +1,26 @@
 """This module implements the CTGate."""
 from __future__ import annotations
 
-import cmath
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gates.quditgate import QuditGate
+from bqskit.ir.gates.constant.t import TGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.gates.composed import ControlledGate
+from bqskit.qis.unitary import IntegerVector
 
-
-class CTGate(ConstantGate, QubitGate):
+class CTGate(ControlledGate):
     """
-    The Controlled-T gate.
+    The Controlled-T gate for qudits
 
-    The CT gate is given by the following unitary:
+    num_levels: (int) = number of levels os single qudit (greater or equal to 2)
+    controls: list(int) = list of control levels
 
-    .. math::
-
-        \\begin{pmatrix}
-        1 & 0 & 0 & 0 \\\\
-        0 & 1 & 0 & 0 \\\\
-        0 & 0 & 1 & 0 \\\\
-        0 & 0 & 0 & \\exp({i\\frac{\\pi}{4}}) \\\\
-        \\end{pmatrix}
     """
 
     _num_qudits = 2
     _qasm_name = 'ct'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, cmath.exp(1j * cmath.pi / 4)],
-        ],
-    )
+    
+    
+    def __init__(self, num_levels: int=2, controls: IntegerVector=[1]):    
+        super(CTGate, self).__init__(TGate(num_levels=num_levels, level_1=level_1, level_2=level_2), 
+                                       num_levels=num_levels, controls=controls)
