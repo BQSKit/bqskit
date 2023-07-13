@@ -382,7 +382,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         if isinstance(U, UnitaryMatrix):
             return True
-        
+
         from bqskit.qis.state import StateSystem
         if isinstance(U, StateSystem):
             return False

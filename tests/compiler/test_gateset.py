@@ -6,9 +6,8 @@ from hypothesis import given
 from hypothesis.strategies import builds
 from hypothesis.strategies import sets
 
-from bqskit import MachineModel
-from bqskit.compiler.compile import compile
 from bqskit.compiler.gateset import GateSet
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.ccx import ToffoliGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cz import CZGate
@@ -24,11 +23,10 @@ from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.passes.search.generators.fourparam import FourParamGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.passes.search.generators.wide import WideLayerGenerator
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.test.strategies import gates
 
 
-def test_gate_set_init():
+def test_gate_set_init() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert len(gate_set) == 2
     assert CNOTGate() in gate_set
@@ -37,7 +35,7 @@ def test_gate_set_init():
     assert YGate() not in gate_set
 
 
-def test_gate_set_empty():
+def test_gate_set_empty() -> None:
     gate_set = GateSet({})
     assert len(gate_set) == 0
     assert gate_set.radix_set == set()
@@ -51,7 +49,7 @@ def test_gate_set_empty():
         gate_set.get_general_sq_gate()
 
 
-def test_gate_set_build_layer_generator_simple():
+def test_gate_set_build_layer_generator_simple() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     layergen = gate_set.build_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
@@ -61,7 +59,7 @@ def test_gate_set_build_layer_generator_simple():
     assert layergen.single_qudit_gate_2 == U3Gate()
 
 
-def test_gate_set_build_layer_generator_2q_basic():
+def test_gate_set_build_layer_generator_2q_basic() -> None:
     gate_set = GateSet({CZGate(), PauliGate(1), XGate()})
     layergen = gate_set.build_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
@@ -71,7 +69,7 @@ def test_gate_set_build_layer_generator_2q_basic():
     assert layergen.single_qudit_gate_2 == PauliGate(1)
 
 
-def test_gate_set_build_layer_generator_3q_basic():
+def test_gate_set_build_layer_generator_3q_basic() -> None:
     gate_set = GateSet({ToffoliGate(), CZGate(), U3Gate()})
     layergen = gate_set.build_layer_generator()
     assert isinstance(layergen, WideLayerGenerator)
@@ -80,7 +78,7 @@ def test_gate_set_build_layer_generator_3q_basic():
     assert layergen.single_qudit_gate == U3Gate()
 
 
-def test_gate_set_build_layer_generator_qutrit():
+def test_gate_set_build_layer_generator_qutrit() -> None:
     gate_set = GateSet.default_gate_set(3)
     layergen = gate_set.build_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
@@ -92,13 +90,13 @@ def test_gate_set_build_layer_generator_qutrit():
 # TODO: Add tests for build_layer_generator with hybrid qudits
 
 
-def test_gate_set_build_mq_layer_generator_simple():
+def test_gate_set_build_mq_layer_generator_simple() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     layergen = gate_set.build_mq_layer_generator()
     assert isinstance(layergen, FourParamGenerator)
 
 
-def test_gate_set_build_mq_layer_generator_2q_basic():
+def test_gate_set_build_mq_layer_generator_2q_basic() -> None:
     gate_set = GateSet({CZGate(), RZGate(), SXGate()})
     layergen = gate_set.build_mq_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
@@ -108,7 +106,7 @@ def test_gate_set_build_mq_layer_generator_2q_basic():
     assert layergen.single_qudit_gate_2 == U3Gate()
 
 
-def test_gate_set_build_mq_layer_generator_qutrit():
+def test_gate_set_build_mq_layer_generator_qutrit() -> None:
     gate_set = GateSet.default_gate_set(3)
     layergen = gate_set.build_mq_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
@@ -118,7 +116,7 @@ def test_gate_set_build_mq_layer_generator_qutrit():
     assert layergen.single_qudit_gate_2 == VariableUnitaryGate(1, [3])
 
 
-def test_gate_set_get_general_sq_gate():
+def test_gate_set_get_general_sq_gate() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set.get_general_sq_gate() == U3Gate()
 
@@ -136,21 +134,21 @@ def test_gate_set_get_general_sq_gate():
     assert gate_set.get_general_sq_gate() == VariableUnitaryGate(1, [3])
 
 
-def test_gate_set_default_gate_set():
+def test_gate_set_default_gate_set() -> None:
     gate_set = GateSet.default_gate_set()
     assert len(gate_set) == 2
     assert CNOTGate() in gate_set
     assert U3Gate() in gate_set
 
 
-def test_gate_set_default_gate_set_qutrits():
+def test_gate_set_default_gate_set_qutrits() -> None:
     gate_set = GateSet.default_gate_set(3)
     assert len(gate_set) == 2
     assert VariableUnitaryGate(1, [3]) in gate_set
     assert ArbitraryCPhaseGate([3, 3]) in gate_set
 
 
-def test_gate_set_default_gate_set_hybrid():
+def test_gate_set_default_gate_set_hybrid() -> None:
     gate_set = GateSet.default_gate_set([2, 3])
     assert len(gate_set) == 5
     assert VariableUnitaryGate(1, [2]) in gate_set
@@ -160,21 +158,21 @@ def test_gate_set_default_gate_set_hybrid():
     assert ArbitraryCPhaseGate([3, 3]) in gate_set
 
 
-def test_gate_set_single_qudit_gates():
+def test_gate_set_single_qudit_gates() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert len(gate_set.single_qudit_gates) == 1
     assert U3Gate() in gate_set.single_qudit_gates
     assert CNOTGate() not in gate_set.single_qudit_gates
 
 
-def test_gate_set_two_qudit_gates():
+def test_gate_set_two_qudit_gates() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert len(gate_set.two_qudit_gates) == 1
     assert CNOTGate() in gate_set.two_qudit_gates
     assert U3Gate() not in gate_set.two_qudit_gates
 
 
-def test_gate_set_many_qudit_gates():
+def test_gate_set_many_qudit_gates() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate(), ToffoliGate()})
     assert len(gate_set.many_qudit_gates) == 1
     assert CNOTGate() not in gate_set.many_qudit_gates
@@ -182,7 +180,7 @@ def test_gate_set_many_qudit_gates():
     assert ToffoliGate() in gate_set.many_qudit_gates
 
 
-def test_gate_set_multi_qudit_gates():
+def test_gate_set_multi_qudit_gates() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate(), ToffoliGate()})
     assert len(gate_set.many_qudit_gates) == 1
     assert CNOTGate() not in gate_set.many_qudit_gates
@@ -191,14 +189,14 @@ def test_gate_set_multi_qudit_gates():
 
 
 @given(builds(GateSet, sets(gates())))
-def test_gate_set_properties(gate_set: GateSet):
+def test_gate_set_properties(gate_set: GateSet) -> None:
     assert all(g.num_qudits == 1 for g in gate_set.single_qudit_gates)
     assert all(g.num_qudits == 2 for g in gate_set.two_qudit_gates)
     assert all(g.num_qudits > 2 for g in gate_set.many_qudit_gates)
     assert all(g.num_qudits >= 2 for g in gate_set.multi_qudit_gates)
 
 
-def test_gate_set_union():
+def test_gate_set_union() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set.union({CNOTGate()}) == {CNOTGate(), U3Gate()}
     assert gate_set.union({U3Gate()}) == {CNOTGate(), U3Gate()}
@@ -207,7 +205,7 @@ def test_gate_set_union():
     assert len(GateSet({CNOTGate()}).union(gate_set)) == 2
 
 
-def test_gate_set_intesection():
+def test_gate_set_intesection() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set.intersection({CNOTGate()}) == {CNOTGate()}
     assert gate_set.intersection({U3Gate()}) == {U3Gate()}
@@ -217,7 +215,7 @@ def test_gate_set_intesection():
     assert len(GateSet({U3Gate()}).intersection(gate_set)) == 1
 
 
-def test_gate_set_difference():
+def test_gate_set_difference() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set.difference({CNOTGate()}) == {U3Gate()}
     assert gate_set.difference({U3Gate()}) == {CNOTGate()}
@@ -225,7 +223,7 @@ def test_gate_set_difference():
     assert len(GateSet({U3Gate()}).difference(gate_set)) == 0
 
 
-def test_gate_set_symmetric_difference():
+def test_gate_set_symmetric_difference() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set.symmetric_difference({CNOTGate()}) == {U3Gate()}
     assert gate_set.symmetric_difference({U3Gate()}) == {CNOTGate()}
@@ -238,7 +236,7 @@ def test_gate_set_symmetric_difference():
     ) == {CNOTGate(), U3Gate(), XGate(), YGate()}
 
 
-def test_gate_set_issubset():
+def test_gate_set_issubset() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set.issubset({CNOTGate()})
     assert not gate_set.issubset({U3Gate()})
@@ -247,7 +245,7 @@ def test_gate_set_issubset():
     assert GateSet({CNOTGate()}).issubset(gate_set)
 
 
-def test_gate_set_issuperset():
+def test_gate_set_issuperset() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set.issuperset({CNOTGate()})
     assert gate_set.issuperset({U3Gate()})
@@ -257,7 +255,7 @@ def test_gate_set_issuperset():
     assert not GateSet({CNOTGate()}).issuperset(gate_set)
 
 
-def test_gate_set_isdisjoint():
+def test_gate_set_isdisjoint() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set.isdisjoint({CNOTGate()})
     assert not gate_set.isdisjoint({U3Gate()})
@@ -265,7 +263,7 @@ def test_gate_set_isdisjoint():
     assert gate_set.isdisjoint({ToffoliGate()})
 
 
-def test_gate_set_iter():
+def test_gate_set_iter() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert len(list(gate_set)) == 2
     assert CNOTGate() in gate_set
@@ -274,19 +272,19 @@ def test_gate_set_iter():
         assert gate in gate_set
 
 
-def test_gate_set_len():
+def test_gate_set_len() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert len(gate_set) == 2
 
 
-def test_gate_set_contains():
+def test_gate_set_contains() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert CNOTGate() in gate_set
     assert U3Gate() in gate_set
     assert ToffoliGate() not in gate_set
 
 
-def test_gate_set_eq_other_gate_set():
+def test_gate_set_eq_other_gate_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set == gate_set
     assert gate_set == GateSet({CNOTGate(), U3Gate()})
@@ -296,7 +294,7 @@ def test_gate_set_eq_other_gate_set():
     assert gate_set != GateSet({ToffoliGate()})
 
 
-def test_gate_set_eq_other_set():
+def test_gate_set_eq_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set == {CNOTGate(), U3Gate()}
     assert gate_set != {CNOTGate()}
@@ -305,7 +303,7 @@ def test_gate_set_eq_other_set():
     assert gate_set != {ToffoliGate()}
 
 
-def test_gate_set_ne():
+def test_gate_set_ne() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set != gate_set
     assert not gate_set != GateSet({CNOTGate(), U3Gate()})
@@ -315,7 +313,7 @@ def test_gate_set_ne():
     assert gate_set != GateSet({ToffoliGate()})
 
 
-def test_gate_set_ne_other_set():
+def test_gate_set_ne_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set != {CNOTGate(), U3Gate()}
     assert gate_set != {CNOTGate()}
@@ -324,7 +322,7 @@ def test_gate_set_ne_other_set():
     assert gate_set != {ToffoliGate()}
 
 
-def test_gate_set_le():
+def test_gate_set_le() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set <= gate_set
     assert gate_set <= GateSet({CNOTGate(), U3Gate()})
@@ -334,7 +332,7 @@ def test_gate_set_le():
     assert not gate_set <= GateSet({ToffoliGate()})
 
 
-def test_gate_set_le_other_set():
+def test_gate_set_le_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set <= {CNOTGate(), U3Gate()}
     assert gate_set <= {CNOTGate(), U3Gate(), ToffoliGate()}
@@ -343,7 +341,7 @@ def test_gate_set_le_other_set():
     assert not gate_set <= {ToffoliGate()}
 
 
-def test_gate_set_ge():
+def test_gate_set_ge() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set >= gate_set
     assert gate_set >= GateSet({CNOTGate(), U3Gate()})
@@ -353,7 +351,7 @@ def test_gate_set_ge():
     assert not gate_set >= GateSet({ToffoliGate()})
 
 
-def test_gate_set_ge_other_set():
+def test_gate_set_ge_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set >= {CNOTGate(), U3Gate()}
     assert gate_set >= {CNOTGate()}
@@ -362,7 +360,7 @@ def test_gate_set_ge_other_set():
     assert not gate_set >= {ToffoliGate()}
 
 
-def test_gate_set_lt():
+def test_gate_set_lt() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set < gate_set
     assert not gate_set < GateSet({CNOTGate(), U3Gate()})
@@ -372,7 +370,7 @@ def test_gate_set_lt():
     assert not gate_set < GateSet({ToffoliGate()})
 
 
-def test_gate_set_lt_other_set():
+def test_gate_set_lt_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set < {CNOTGate(), U3Gate()}
     assert gate_set < {CNOTGate(), U3Gate(), ToffoliGate()}
@@ -381,7 +379,7 @@ def test_gate_set_lt_other_set():
     assert not gate_set < {ToffoliGate()}
 
 
-def test_gate_set_gt():
+def test_gate_set_gt() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set > gate_set
     assert not gate_set > GateSet({CNOTGate(), U3Gate()})
@@ -391,7 +389,7 @@ def test_gate_set_gt():
     assert not gate_set > GateSet({ToffoliGate()})
 
 
-def test_gate_set_gt_other_set():
+def test_gate_set_gt_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert not gate_set > {CNOTGate(), U3Gate()}
     assert gate_set > {CNOTGate()}
@@ -400,7 +398,7 @@ def test_gate_set_gt_other_set():
     assert not gate_set > {ToffoliGate()}
 
 
-def test_gate_set_and():
+def test_gate_set_and() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set & gate_set == gate_set
     assert gate_set & GateSet({CNOTGate(), U3Gate()}) == gate_set
@@ -411,7 +409,7 @@ def test_gate_set_and():
     assert gate_set & GateSet({}) == GateSet({})
 
 
-def test_gate_set_and_other_set():
+def test_gate_set_and_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set & {CNOTGate(), U3Gate()} == gate_set
     assert gate_set & {CNOTGate()} == GateSet({CNOTGate()})
@@ -421,7 +419,7 @@ def test_gate_set_and_other_set():
     assert gate_set & set() == GateSet({})
 
 
-def test_gate_set_or():
+def test_gate_set_or() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set | gate_set == gate_set
     assert gate_set | GateSet({CNOTGate(), U3Gate()}) == gate_set
@@ -436,7 +434,7 @@ def test_gate_set_or():
     assert gate_set | GateSet({}) == gate_set
 
 
-def test_gate_set_or_other_set():
+def test_gate_set_or_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set | {CNOTGate(), U3Gate()} == gate_set
     assert gate_set | {CNOTGate()} == gate_set
@@ -450,7 +448,7 @@ def test_gate_set_or_other_set():
     assert gate_set | set() == gate_set
 
 
-def test_gate_set_xor():
+def test_gate_set_xor() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set ^ gate_set == GateSet({})
     assert gate_set ^ GateSet({CNOTGate(), U3Gate()}) == GateSet({})
@@ -465,7 +463,7 @@ def test_gate_set_xor():
     assert gate_set ^ GateSet({}) == gate_set
 
 
-def test_gate_set_xor_other_set():
+def test_gate_set_xor_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set ^ {CNOTGate(), U3Gate()} == GateSet({})
     assert gate_set ^ {CNOTGate()} == GateSet({U3Gate()})
@@ -479,7 +477,7 @@ def test_gate_set_xor_other_set():
     assert gate_set ^ set() == gate_set
 
 
-def test_gate_set_sub():
+def test_gate_set_sub() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set - gate_set == GateSet({})
     assert gate_set - GateSet({CNOTGate(), U3Gate()}) == GateSet({})
@@ -491,7 +489,7 @@ def test_gate_set_sub():
     assert gate_set - GateSet({}) == gate_set
 
 
-def test_gate_set_sub_other_set():
+def test_gate_set_sub_other_set() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert gate_set - {CNOTGate(), U3Gate()} == GateSet({})
     assert gate_set - {CNOTGate()} == GateSet({U3Gate()})
@@ -501,27 +499,25 @@ def test_gate_set_sub_other_set():
     assert gate_set - set() == gate_set
 
 
-def test_gate_set_set_update():
+def test_gate_set_set_update() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
-    x = set()
+    x: set[Gate] = set()
     x.update(gate_set)
     assert x == {CNOTGate(), U3Gate()}
     assert x == gate_set
 
 
-def test_gate_set_str():
+def test_gate_set_str() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert (
         str(gate_set) == 'GateSet({CNOTGate, U3Gate})'
-        or
-        str(gate_set) == 'GateSet({U3Gate, CNOTGate})'
+        or str(gate_set) == 'GateSet({U3Gate, CNOTGate})'
     )
 
 
-def test_gate_set_repr():
+def test_gate_set_repr() -> None:
     gate_set = GateSet({CNOTGate(), U3Gate()})
     assert (
         repr(gate_set) == 'GateSet({CNOTGate, U3Gate})'
-        or
-        repr(gate_set) == 'GateSet({U3Gate, CNOTGate})'
+        or repr(gate_set) == 'GateSet({U3Gate, CNOTGate})'
     )
