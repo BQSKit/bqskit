@@ -17,7 +17,7 @@ from bqskit.utils.typing import is_integer
 
 
 def powerset(iterable: Iterable[Any]) -> Iterable[Any]:
-    """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
+    """Powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"""
     s = list(iterable)
     all_combos = (it.combinations(s, r) for r in range(len(s) + 1))
     return it.chain.from_iterable(all_combos)
