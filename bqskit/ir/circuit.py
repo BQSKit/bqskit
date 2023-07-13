@@ -60,6 +60,7 @@ from bqskit.utils.typing import is_valid_radixes
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost.function import CostFunction
     from bqskit.compiler.basepass import BasePass
+    from bqskit.compiler.gateset import GateSet
 
 _logger = logging.getLogger(__name__)
 
@@ -204,6 +205,17 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return int(max(qudit_depths))
 
     @property
+    def multi_qudit_depth(self) -> int:
+        """The length of the critical path excluding single-qudit gates."""
+        qudit_depths = np.zeros(self.num_qudits, dtype=int)
+        for op in self:
+            if op.num_qudits == 1:
+                continue
+            new_depth = max(qudit_depths[list(op.location)]) + 1
+            qudit_depths[list(op.location)] = new_depth
+        return int(max(qudit_depths))
+
+    @property
     def parallelism(self) -> float:
         """The amount of parallelism in the circuit."""
         depth = self.depth
@@ -233,20 +245,23 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         return CouplingGraph(self._graph_info.keys(), self.num_qudits)
 
     @property
-    def gate_set(self) -> set[Gate]:
+    def gate_set(self) -> GateSet:
         """The set of gates in the circuit."""
-        return set(self._gate_info.keys())
+        from bqskit.compiler.gateset import GateSet
+        return GateSet(set(self._gate_info.keys()))
 
     @property
-    def gate_set_no_blocks(self) -> set[Gate]:
+    def gate_set_no_blocks(self) -> GateSet:
         """The set of gates in the circuit, recurses into circuit gates."""
-        gates = set()
+        from bqskit.compiler.gateset import GateSet
+        gates: set[Gate] = set()
         for g, _ in self._gate_info.items():
             if isinstance(g, CircuitGate):
-                gates.update(g._circuit.gate_set)
+                for other_g in g._circuit.gate_set_no_blocks:
+                    gates.add(other_g)
             else:
                 gates.add(g)
-        return gates
+        return GateSet(gates)
 
     @property
     def gate_counts(self) -> dict[Gate, int]:
@@ -872,6 +887,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             if point is not None and len(self.next(point)) == 0:
                 rear_set.add(point)
         return rear_set
+
+    def last_on(self, qudit: int) -> CircuitPoint | None:
+        """Report the point for the last operation on `qudit` if it exists."""
+        return self._rear[qudit]
+
+    def first_on(self, qudit: int) -> CircuitPoint | None:
+        """Report the point for the first operation on `qudit` if it exists."""
+        return self._front[qudit]
 
     def next(self, point: CircuitPoint) -> set[CircuitPoint]:
         """Return the points of operations dependent on the one at `point`."""

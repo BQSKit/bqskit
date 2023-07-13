@@ -9,12 +9,12 @@ from typing import Callable
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
-from bqskit.ir import Circuit
-from bqskit.passes import LEAPSynthesisPass
-from bqskit.passes import SynthesisPass
+from bqskit.ir.circuit import Circuit
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
-from bqskit.qis import CouplingGraph
-from bqskit.qis import PermutationMatrix
+from bqskit.passes.synthesis.leap import LEAPSynthesisPass
+from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.permutation import PermutationMatrix
 from bqskit.runtime import get_runtime
 
 

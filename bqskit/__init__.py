@@ -4,6 +4,8 @@ from __future__ import annotations
 import logging
 from sys import stdout as _stdout
 
+from .version import __version__  # noqa: F401
+from .version import __version_info__  # noqa: F401
 from bqskit.compiler.compile import compile
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
@@ -37,6 +39,11 @@ def enable_logging(verbose: bool = False) -> None:
 
     level = logging.DEBUG if verbose else logging.INFO
     logging.getLogger('bqskit').setLevel(level)
+
+
+def disable_logging() -> None:
+    """Disable logging for BQSKit."""
+    logging.getLogger('bqskit').setLevel(logging.CRITICAL)
 
 
 def enable_dashboard() -> None:
@@ -86,6 +93,7 @@ __all__ = [
     'MachineModel',
     'Circuit',
     'enable_logging',
+    'disable_logging',
 ]
 
 # Register supported languages

@@ -47,8 +47,6 @@ class BasePass(abc.ABC):
             data (PassData): Associated data for the pass.
                 Can be used to get auxillary information from previous
                 passes and to store information for future passes.
-                This function should never error based on what is in
-                this dictionary.
 
         Note:
             - This function should be self-contained and have no side effects.

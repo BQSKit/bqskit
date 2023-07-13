@@ -1,18 +1,15 @@
 """This module implements the CompilationTask class."""
 from __future__ import annotations
 
-import logging
 import uuid
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
-from bqskit.compiler.workflow import WorkflowLike
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
-
-_logger = logging.getLogger(__name__)
+    from bqskit.compiler.workflow import WorkflowLike
 
 
 class CompilationTask():

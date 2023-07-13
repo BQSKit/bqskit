@@ -52,3 +52,32 @@ def test_fringe_cnot_count_4q_circuit() -> None:
         circuit.append_gate(RYGate(), 2)
         circuit.append_gate(RXGate(), 2)
         assert gen.count_outer_cnots(circuit, (1, 2)) == i
+
+
+def test_fringe_cnot_count_3q_hidden() -> None:
+    gen = FourParamGenerator()
+    circuit = Circuit(3)
+    for i in range(3):
+        circuit.append_gate(U3Gate(), i)
+
+    circuit.append_gate(CNOTGate(), (0, 1))
+    circuit.append_gate(RYGate(), 0)
+    circuit.append_gate(RZGate(), 0)
+    circuit.append_gate(RYGate(), 1)
+    circuit.append_gate(RXGate(), 1)
+    circuit.append_gate(CNOTGate(), (0, 1))
+    circuit.append_gate(RYGate(), 0)
+    circuit.append_gate(RZGate(), 0)
+    circuit.append_gate(RYGate(), 1)
+    circuit.append_gate(RXGate(), 1)
+    circuit.append_gate(CNOTGate(), (0, 1))
+    circuit.append_gate(RYGate(), 0)
+    circuit.append_gate(RZGate(), 0)
+    circuit.append_gate(RYGate(), 1)
+    circuit.append_gate(RXGate(), 1)
+    circuit.append_gate(CNOTGate(), (1, 2))
+    circuit.append_gate(RYGate(), 1)
+    circuit.append_gate(RZGate(), 1)
+    circuit.append_gate(RYGate(), 2)
+    circuit.append_gate(RXGate(), 2)
+    assert gen.count_outer_cnots(circuit, (0, 1)) == 0

@@ -7,10 +7,10 @@ import numpy as np
 import numpy.typing as npt
 import scipy as sp
 
+from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
-from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
@@ -20,7 +20,7 @@ from bqskit.utils.math import pauli_expansion
 from bqskit.utils.math import unitary_log_no_i
 
 
-class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
+class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
     """
     A gate representing an arbitrary rotation.
 
@@ -93,16 +93,9 @@ class PauliGate(QubitGate, DifferentiableUnitary, LocallyOptimizableUnitary):
         U, dU = dexpmv(H, self.sigmav)
         return UnitaryMatrix(U, check_arguments=False), dU
 
-    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
-        """
-        Return the optimal parameters with respect to an environment matrix.
-
-        See :class:`LocallyOptimizableUnitary` for more info.
-        """
-        self.check_env_matrix(env_matrix)
-        U, _, Vh = sp.linalg.svd(env_matrix)
-        utry = Vh.conj().T @ U.conj().T
-        return list(-2 * pauli_expansion(unitary_log_no_i(utry)))
+    def calc_params(self, utry: UnitaryMatrix) -> list[float]:
+        """Return the parameters for this gate to implement `utry`"""
+        return list(-2 * pauli_expansion(unitary_log_no_i(utry.numpy)))
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, PauliGate) and self.num_qudits == o.num_qudits

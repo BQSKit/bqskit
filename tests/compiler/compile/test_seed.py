@@ -26,7 +26,7 @@ def test_same_seed_same_result(compiler: Compiler) -> None:
     circuit.append_gate(U3Gate(), 0, [random() for _ in range(3)])
     circuit.append_gate(U3Gate(), 1, [random() for _ in range(3)])
 
-    for _ in range(5):
-        out_circuit1 = compile(circuit.copy(), seed=0)
-        out_circuit2 = compile(circuit.copy(), seed=0)
+    for i in range(5):
+        out_circuit1 = compile(circuit.copy(), seed=i, compiler=compiler)
+        out_circuit2 = compile(circuit.copy(), seed=i, compiler=compiler)
         assert out_circuit1 == out_circuit2

@@ -101,6 +101,9 @@ class FourParamGenerator(LayerGenerator):
         rear_point = circuit._rear[edge[0]]
         num_cx_seen = 0
 
+        if rear_point is None or rear_point.cycle != circuit.num_cycles - 1:
+            return num_cx_seen
+
         while rear_point is not None:
             rear_points = circuit.prev(rear_point)
 

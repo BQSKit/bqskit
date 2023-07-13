@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bqskit.ir.gates.parameterized.cp import CPGate
+from bqskit.ir.gates.parameterized.cphase import ArbitraryCPhaseGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
