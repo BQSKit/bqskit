@@ -110,6 +110,10 @@ are involved the qubit mapping process.
     GeneralizedSabreRoutingPass
     SetModelPass
     ApplyPlacement
+    SubtopologySelectionPass
+    PAMLayoutPass
+    PAMRoutingPass
+    EmbedAllPermutationsPass
 
 .. rubric:: Utility Passes
 
@@ -191,11 +195,15 @@ from bqskit.passes.io.checkpoint import SaveCheckpointPass
 from bqskit.passes.io.intermediate import RestoreIntermediatePass
 from bqskit.passes.io.intermediate import SaveIntermediatePass
 from bqskit.passes.mapping.apply import ApplyPlacement
+from bqskit.passes.mapping.embed import EmbedAllPermutationsPass
+from bqskit.passes.mapping.layout.pam import PAMLayoutPass
 from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
+from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
 from bqskit.passes.mapping.setmodel import SetModelPass
+from bqskit.passes.mapping.topology import SubtopologySelectionPass
 from bqskit.passes.measure import ExtractMeasurements
 from bqskit.passes.measure import RestoreMeasurements
 from bqskit.passes.noop import NOOPPass
@@ -328,4 +336,8 @@ __all__ = [
     'CNOTToCYPass',
     'CYToCNOTPass',
     'SetTargetPass',
+    'PAMLayoutPass',
+    'PAMRoutingPass',
+    'EmbedAllPermutationsPass',
+    'SubtopologySelectionPass',
 ]
