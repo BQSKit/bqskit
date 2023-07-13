@@ -1,7 +1,6 @@
 """This module implements the CHGate."""  # TODO adapt for qutrit
 from __future__ import annotations
 
-
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qutrit import cgate
 from bqskit.ir.gates.qutrit.constant.h import HGate

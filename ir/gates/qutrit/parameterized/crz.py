@@ -51,7 +51,7 @@ class CRZ0Gate():
         return np.array(
             [
                 np.zeros((9, 9)),
-                   np.array(jax.jacfwd(_temp)(params[1])),
+                np.array(jax.jacfwd(_temp)(params[1])),
             ], dtype=np.complex128,
         )
 
@@ -88,7 +88,7 @@ class CRZ1Gate():
         return np.array(
             [
                 np.zeros((9, 9)),
-                   np.array(jax.jacfwd(_temp)(params[1])),
+                np.array(jax.jacfwd(_temp)(params[1])),
             ], dtype=np.complex128,
         )
 
@@ -125,6 +125,6 @@ class CRZ2Gate():
         return np.array(
             [
                 np.zeros((9, 9)),
-                   np.array(jax.jacfwd(_temp)(params[1])),
+                np.array(jax.jacfwd(_temp)(params[1])),
             ], dtype=np.complex128,
         )

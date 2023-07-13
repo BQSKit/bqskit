@@ -7,6 +7,7 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.utils.typing import is_integer
 
+
 class ComposedGate(Gate):
     """
     A gate composed of other gates.
@@ -68,5 +69,3 @@ class ComposedGate(Gate):
             return NotImplemented
 
         return self.__dict__ == other.__dict__
-    
-    

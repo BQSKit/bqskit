@@ -33,7 +33,7 @@ class ClockGate(QuditGate):
     _num_params = 0
 
     def __init__(self, num_levels: int):
-        if num_levels <2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'Clock Gate num_levels must be a postive integer greater than or equal to 2.',
             )
@@ -47,6 +47,6 @@ class ClockGate(QuditGate):
             diags[i] = np.exp(2j * np.pi * i / self.num_levels)
         u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
         return u_mat
-    
+
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])

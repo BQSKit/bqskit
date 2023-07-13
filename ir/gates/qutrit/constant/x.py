@@ -52,7 +52,7 @@ class X01Gate(ConstantGate, QutritGate):
         [
             [0, 1, 0],
             [1, 0, 0],
-               [0, 0, 1],
+            [0, 0, 1],
         ], [3],
     )
 
@@ -77,7 +77,7 @@ class X02Gate(ConstantGate, QutritGate):
         [
             [0, 0, 1],
             [0, 1, 0],
-               [1, 0, 0],
+            [1, 0, 0],
         ], [3],
     )
 

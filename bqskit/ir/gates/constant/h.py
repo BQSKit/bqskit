@@ -9,6 +9,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
+
 class HGate(QuditGate):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
@@ -35,7 +36,7 @@ class HGate(QuditGate):
     _qasm_name = 'h'
 
     def __init__(self, num_levels: int):
-        if num_levels <2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'HGate num_levels must be a postive integer greater than or equal to 2.',
             )
@@ -54,6 +55,6 @@ class HGate(QuditGate):
             matrix * 1 / np.sqrt(self.num_levels), self.radixes,
         )
         return u_mat
-    
+
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])

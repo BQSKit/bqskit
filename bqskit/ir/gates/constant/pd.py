@@ -10,7 +10,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
-
 class PDGate(QuditGate):
     """
     The one-qudit P[i] gate.
@@ -39,7 +38,7 @@ class PDGate(QuditGate):
     _num_params = 0
 
     def __init__(self, num_levels: int, ind: int):
-        if num_levels <2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'PDGate num_levels must be a postive integer greater than or equal to 2.',
             )
@@ -62,6 +61,6 @@ class PDGate(QuditGate):
                 diags[i] = 1
         u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
         return u_mat
-    
+
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])

@@ -1,7 +1,6 @@
 """This module implements the XXGate."""
 from __future__ import annotations
 
-
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qutrit.constant.x import X01Gate
 from bqskit.ir.gates.qutrit.constant.x import X02Gate

@@ -20,6 +20,6 @@ class TdgGate(ConstantGate, QutritGate):
         [
             [1, 0, 0],
             [0, _w**(-0.25), 0],
-               [0, 0, _w**(-0.5)],
+            [0, 0, _w**(-0.5)],
         ], [3],
     )

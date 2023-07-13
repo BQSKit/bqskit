@@ -27,7 +27,7 @@ class Z0Gate(ConstantGate, QutritGate):
         [
             [-1, 0, 0],
             [0, 1, 0],
-               [0, 0, 1],
+            [0, 0, 1],
         ], [3],
     )
 
@@ -52,7 +52,7 @@ class Z1Gate(ConstantGate, QutritGate):
         [
             [1, 0, 0],
             [0, -1, 0],
-               [0, 0, 1],
+            [0, 0, 1],
         ], [3],
     )
 
@@ -77,7 +77,7 @@ class Z2Gate(ConstantGate, QutritGate):
         [
             [1, 0, 0],
             [0, 1, 0],
-               [0, 0, -1],
+            [0, 0, -1],
         ], [3],
     )
 
@@ -103,6 +103,6 @@ class ZGate(ConstantGate, QutritGate):
         [
             [1, 0, 0],
             [0, _w, 0],
-               [0, 0, _w**2],
+            [0, 0, _w**2],
         ], [3],
     )

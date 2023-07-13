@@ -167,41 +167,42 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
 
-def kron(MatrixList): # Kronecker product of list of matrices
-    m=MatrixList[0]
-    for i in range(1,len(MatrixList)):
-        m=np.kron(m,MatrixList[i])
+
+def kron(MatrixList):  # Kronecker product of list of matrices
+    m = MatrixList[0]
+    for i in range(1, len(MatrixList)):
+        m = np.kron(m, MatrixList[i])
     return m
 
 
 # Generators of SU(N)
 
 def SuGenZPad(g):
-    llen = len(g);
-    nllen = llen + 1;
-    result = np.zeros((nllen,nllen),dtype=np.complex128)
-    result[:llen,:llen]+=g
+    llen = len(g)
+    nllen = llen + 1
+    result = np.zeros((nllen, nllen), dtype=np.complex128)
+    result[:llen, :llen] += g
     return result
-     
+
 
 def SUGen(n):
-    if n==2:
+    if n == 2:
         return [np.array([[0, 1], [1, 0]]), np.array([[0, -1j], [1j, 0]]), np.array([[1, 0], [0, -1]])]
     else:
-        pgens = SUGen(n - 1);
-        gens = [SuGenZPad(pgens[i]) for i in range(len(pgens))];
-        for i in range(n-1):
-            t = np.zeros((n,n),dtype=np.complex128)
-            t[i,n-1] = 1.0;
-            t[n-1,i] = 1.0;
-            gens.append(t);
-            t2 = np.zeros((n,n),dtype=np.complex128)
-            t2[i,n-1] = -1j;
-            t2[n-1,i] = 1j;
-            gens.append(t2);
-            
+        pgens = SUGen(n - 1)
+        gens = [SuGenZPad(pgens[i]) for i in range(len(pgens))]
+        for i in range(n - 1):
+            t = np.zeros((n, n), dtype=np.complex128)
+            t[i, n - 1] = 1.0
+            t[n - 1, i] = 1.0
+            gens.append(t)
+            t2 = np.zeros((n, n), dtype=np.complex128)
+            t2[i, n - 1] = -1j
+            t2[n - 1, i] = 1j
+            gens.append(t2)
+
         t3 = np.eye(n)
-        t3[n-1,n-1] = -n + 1;
-        t3*= np.sqrt(2/(n * (n - 1)));
-        gens.append(t3);
+        t3[n - 1, n - 1] = -n + 1
+        t3 *= np.sqrt(2 / (n * (n - 1)))
+        gens.append(t3)
         return gens

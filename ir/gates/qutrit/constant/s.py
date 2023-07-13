@@ -27,6 +27,6 @@ class SGate(ConstantGate, QutritGate):
         [
             [1, 0, 0],
             [0, 1, 0],
-               [0, 0, _w],
+            [0, 0, _w],
         ], [3],
     )

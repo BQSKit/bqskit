@@ -1,7 +1,6 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-
 import numpy as np
 
 from bqskit.ir.gates.constantgate import ConstantGate

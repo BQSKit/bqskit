@@ -54,7 +54,7 @@ class CRX01Gate(
         return np.array(
             [
                 np.zeros((9, 9)),
-                   np.array(jax.jacfwd(_temp)(params[1])),
+                np.array(jax.jacfwd(_temp)(params[1])),
             ], dtype=np.complex128,
         )
 
@@ -94,7 +94,7 @@ class CRX02Gate(
         return np.array(
             [
                 np.zeros((9, 9)),
-                   np.array(jax.jacfwd(_temp)(params[1])),
+                np.array(jax.jacfwd(_temp)(params[1])),
             ], dtype=np.complex128,
         )
 
@@ -134,6 +134,6 @@ class CRX12Gate(
         return np.array(
             [
                 np.zeros((9, 9)),
-                   np.array(jax.jacfwd(_temp)(params[1])),
+                np.array(jax.jacfwd(_temp)(params[1])),
             ], dtype=np.complex128,
         )

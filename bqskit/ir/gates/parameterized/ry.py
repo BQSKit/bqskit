@@ -11,39 +11,39 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
+
 class RYGate(
     QuditGate,
     DifferentiableUnitary,
     CachedClass,
 ):
     """
-    A gate representing an arbitrary rotation around the Y axis.
-    This is equivalent to rotation by the Y Pauli Gate in the subspace of 2 levels
-    
-        __init__() arguments:
-            num_levels : int
-                Number of levels in each qudit (d).
-            level_1,level_2: int
-                 The levels on which to apply the Y gate (0...d-1).
-                        
-        get_unitary arguments:
-                param: float
-                The angle by which to rotate
+    A gate representing an arbitrary rotation around the Y axis. This is
+    equivalent to rotation by the Y Pauli Gate in the subspace of 2 levels.
 
+    __init__() arguments:
+        num_levels : int
+            Number of levels in each qudit (d).
+        level_1,level_2: int
+             The levels on which to apply the Y gate (0...d-1).
+
+    get_unitary arguments:
+            param: float
+            The angle by which to rotate
     """
 
     _num_qudits = 1
     _num_params = 1
     _qasm_name = 'ry'
-    
-    def __init__(self, num_levels: int=2, level_1: int=0, level_2: int=1):
+
+    def __init__(self, num_levels: int = 2, level_1: int = 0, level_2: int = 1):
         """
             Raises:
             ValueError: If `num_levels` is less than 2 or not a positive integer
                         If level >= num_levels
                         IF Gate.radixes != num_levels
         """
-        if num_levels <2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'RYGate num_levels must be a postive integer greater than or equal to 2.',
             )
@@ -57,20 +57,19 @@ class RYGate(
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-        
+
         self.check_parameters(params)
-    
+
         cos = np.cos(params[0] / 2)
         sin = np.sin(params[0] / 2)
 
         matrix = np.eye(self.num_levels, dtype=np.complex128)
-        matrix[self.level_1,self.level_1] = cos
-        matrix[self.level_2,self.level_2] = cos
-        matrix[self.level_1,self.level_2] = -sin
-        matrix[self.level_2,self.level_1] = sin
-        
+        matrix[self.level_1, self.level_1] = cos
+        matrix[self.level_2, self.level_2] = cos
+        matrix[self.level_1, self.level_2] = -sin
+        matrix[self.level_2, self.level_1] = sin
+
         return UnitaryMatrix(matrix, self.radixes)
-    
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
@@ -82,15 +81,17 @@ class RYGate(
 
         dcos = -np.sin(params[0] / 2) / 2
         dsin = np.cos(params[0] / 2) / 2
-        
-        
-        matrix = np.zeros((self.num_levels,self.num_levels), dtype=np.complex128)
-        matrix[self.level_1,self.level_1] = dcos
-        matrix[self.level_2,self.level_2] = dcos
-        matrix[self.level_1,self.level_2] = -dsin
-        matrix[self.level_2,self.level_1] = dsin
 
-        return np.array([matrix],dtype=np.complex128)
+        matrix = np.zeros(
+            (self.num_levels, self.num_levels),
+            dtype=np.complex128,
+        )
+        matrix[self.level_1, self.level_1] = dcos
+        matrix[self.level_2, self.level_2] = dcos
+        matrix[self.level_1, self.level_2] = -dsin
+        matrix[self.level_2, self.level_1] = dsin
+
+        return np.array([matrix], dtype=np.complex128)
 
 #     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
 #         """

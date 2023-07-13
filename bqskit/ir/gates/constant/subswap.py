@@ -8,6 +8,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
+
 class SubSwapGate(QuditGate):
     r"""
     The two-qudit subspace SWAP gate.
@@ -29,7 +30,7 @@ class SubSwapGate(QuditGate):
     _num_params = 0
 
     def __init__(self, num_levels: int, qudit_levels: str):
-        if num_levels <2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'SubSwapGate num_levels must be a postive integer greater than or equal to 2.',
             )

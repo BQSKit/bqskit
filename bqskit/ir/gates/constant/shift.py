@@ -1,5 +1,6 @@
 """This module implements the ShiftGate."""
 from __future__ import annotations
+
 import numpy as np
 import numpy.typing as npt
 
@@ -7,6 +8,7 @@ from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
+
 
 class ShiftGate(QuditGate):
     r"""
@@ -28,7 +30,7 @@ class ShiftGate(QuditGate):
     _num_params = 0
 
     def __init__(self, num_levels: int):
-        if num_levels <2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'ShiftGate num_levels must be a postive integer greater than or equal to 2.',
             )
@@ -46,6 +48,6 @@ class ShiftGate(QuditGate):
             matrix[:, i] = col
         u_mat = UnitaryMatrix(matrix, self.radixes)
         return u_mat
-    
+
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])

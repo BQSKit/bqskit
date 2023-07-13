@@ -20,11 +20,10 @@ from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
-#from bqskit.ir.gates.constant.b import BGate
-from bqskit.ir.gates.constant.cx import CCXGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.cs import CSGate
 from bqskit.ir.gates.constant.ct import CTGate
+from bqskit.ir.gates.constant.cx import CCXGate
 from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.gates.constant.cy import CYGate
 from bqskit.ir.gates.constant.cz import CZGate
@@ -32,8 +31,6 @@ from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
 from bqskit.ir.gates.constant.itoffoli import IToffoliGate
-#from bqskit.ir.gates.constant.rccx import RC3XGate
-#from bqskit.ir.gates.constant.rccx import RCCXGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
@@ -50,12 +47,10 @@ from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
-#from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cp import CPGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
-#from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
 from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
 from bqskit.ir.gates.parameterized.rx import RXGate
@@ -72,6 +67,11 @@ from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
+# from bqskit.ir.gates.constant.b import BGate
+# from bqskit.ir.gates.constant.rccx import RC3XGate
+# from bqskit.ir.gates.constant.rccx import RCCXGate
+# from bqskit.ir.gates.parameterized.ccp import CCPGate
+# from bqskit.ir.gates.parameterized.cu import CUGate
 
 
 _logger = logging.getLogger(__name__)

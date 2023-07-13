@@ -26,7 +26,8 @@ Lambda = {
 
 
 class RGGVGate(QutritGate, DifferentiableUnitary, CachedClass):
-    """The G rotation double qutrit gate with the same generator on each qutrit (Gate = exp(-i sum_j param_j dot G_j x G_j) )."""
+    """The G rotation double qutrit gate with the same generator on each qutrit
+    (Gate = exp(-i sum_j param_j dot G_j x G_j) )."""
 
     _num_qudits = 2
     _num_params = 8
@@ -35,7 +36,10 @@ class RGGVGate(QutritGate, DifferentiableUnitary, CachedClass):
     def _unitary(self, params: RealVector = []):
         tot = jax.numpy.sum(
             jax.numpy.array(
-            [params[i] * jax.numpy.kron(Lambda[i + 1], Lambda[i + 1]) for i in range(8)],
+                [
+                    params[i] * jax.numpy.kron(Lambda[i + 1], Lambda[i + 1])
+                    for i in range(8)
+                ],
             ), axis=0,
         )
         return jax.scipy.linalg.expm(-1j * tot)
@@ -71,7 +75,10 @@ class RGGGate(QutritGate, DifferentiableUnitary, CachedClass):
     def _unitary(self, params: RealVector = []):
         tot = jax.numpy.sum(
             jax.numpy.array(
-            [jax.numpy.kron(Lambda[i + 1], Lambda[i + 1]) for i in range(8)],
+                [
+                    jax.numpy.kron(Lambda[i + 1], Lambda[i + 1])
+                    for i in range(8)
+                ],
             ), axis=0,
         )
         return jax.scipy.linalg.expm(-1j * params[0] * tot)

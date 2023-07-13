@@ -283,7 +283,7 @@ class RGVGate(QutritGate, DifferentiableUnitary, CachedClass):
     def _unitary(self, params: RealVector = []):
         tot = jax.numpy.sum(
             jax.numpy.array(
-            [params[i] * Lambda[i + 1] for i in range(8)],
+                [params[i] * Lambda[i + 1] for i in range(8)],
             ), axis=0,
         )
         return jax.scipy.linalg.expm(-1j * tot)

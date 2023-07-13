@@ -1,7 +1,8 @@
-"""This module implements the PGate.""" #Done
+"""This module implements the PGate."""  # Done
 from __future__ import annotations
 
 import numpy as np
+
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -9,10 +10,11 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
+
 class PGate(QuditGate, DifferentiableUnitary, CachedClass):
     """
-    A gate representing the phase gate for qudits 
-    
+    A gate representing the phase gate for qudits.
+
     __init__() arguments:
         num_levels : int
             Number of levels in each qudit (d).
@@ -21,15 +23,13 @@ class PGate(QuditGate, DifferentiableUnitary, CachedClass):
     get_unitary arguments:
             param: float
             The angle by which to rotate
-
-    """ 
+    """
 
     _num_qudits = 1
     _num_params = 1
-    
 
-    def __init__(self, num_levels: int=2, level: int=1):
-        if num_levels <2 or not is_integer(num_levels):
+    def __init__(self, num_levels: int = 2, level: int = 1):
+        if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'PGate num_levels must be a postive integer greater than or equal to 2.',
             )
@@ -39,17 +39,15 @@ class PGate(QuditGate, DifferentiableUnitary, CachedClass):
                 'PGate index must be equal or less to the number of levels.',
             )
         self.level = level
-    
-    
+
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
-        
+
         matrix = np.eye(self.num_levels, dtype=complex)
-        matrix[self.level,self.level]=np.exp(params[0]*1j)
+        matrix[self.level, self.level] = np.exp(params[0] * 1j)
         return UnitaryMatrix(matrix, self.radixes)
-            
-       
+
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
@@ -59,8 +57,8 @@ class PGate(QuditGate, DifferentiableUnitary, CachedClass):
         self.check_parameters(params)
 
         matrix = np.eye(self.num_levels, dtype=complex)
-        matrix[self.level,self.level]=np.exp(params[0]*1j)*1j
-        
+        matrix[self.level, self.level] = np.exp(params[0] * 1j) * 1j
+
         return np.array(
             [
                 matrix,

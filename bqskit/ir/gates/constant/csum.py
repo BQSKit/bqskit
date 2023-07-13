@@ -31,7 +31,7 @@ class CSUMGate(QuditGate):
     _num_qudits = 2
     _num_params = 0
 
-    def __init__(self, num_levels: int=3):
+    def __init__(self, num_levels: int = 3):
         self.num_levels = num_levels
 
     def get_unitary(self) -> UnitaryMatrix:
@@ -50,6 +50,6 @@ class CSUMGate(QuditGate):
                 ival += 1
         u_mat = UnitaryMatrix(matrix, self.radixes)
         return u_mat
-    
+
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])

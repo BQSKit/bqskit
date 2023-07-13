@@ -28,6 +28,6 @@ class SdgGate(ConstantGate, QutritGate):
         [
             [1, 0, 0],
             [0, 1, 0],
-               [0, 0, _w**2],
+            [0, 0, _w**2],
         ], [3],
     )
