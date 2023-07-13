@@ -39,6 +39,11 @@ def enable_logging(verbose: bool = False) -> None:
     logging.getLogger('bqskit').setLevel(level)
 
 
+def disable_logging() -> None:
+    """Disable logging for BQSKit."""
+    logging.getLogger('bqskit').setLevel(logging.CRITICAL)
+
+
 def enable_dashboard() -> None:
     import warnings
     warnings.warn(
@@ -86,6 +91,7 @@ __all__ = [
     'MachineModel',
     'Circuit',
     'enable_logging',
+    'disable_logging',
 ]
 
 # Register supported languages
