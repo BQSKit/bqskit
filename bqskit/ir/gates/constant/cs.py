@@ -1,7 +1,6 @@
 """This module implements the CHGate."""
 from __future__ import annotations
 
-
 from bqskit.ir.gates.composed import ControlledGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.quditgate import QuditGate

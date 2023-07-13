@@ -1,7 +1,6 @@
 """This module implements the ZZGate."""
 from __future__ import annotations
 
-
 import numpy.typing as npt
 
 from bqskit.ir.gates.constant.z import ZGate

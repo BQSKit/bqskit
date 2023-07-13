@@ -1,7 +1,6 @@
 """This module implements the XXGate."""
 from __future__ import annotations
 
-
 import numpy.typing as npt
 
 from bqskit.ir.gates.constant.x import XGate
@@ -47,8 +46,14 @@ class XXGate(QuditGate):
 
         return UnitaryMatrix(
             kron([
-                XGate(self._num_levels, self.level_1, self.level_2).get_unitary(),
-                XGate(self._num_levels, self.level_3, self.level_4).get_unitary(),
+                XGate(
+                    self._num_levels, self.level_1,
+                    self.level_2,
+                ).get_unitary(),
+                XGate(
+                    self._num_levels, self.level_3,
+                    self.level_4,
+                ).get_unitary(),
             ]).tolist(), self.radixes,
         )
 
