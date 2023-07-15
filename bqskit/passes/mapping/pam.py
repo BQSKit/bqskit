@@ -10,7 +10,7 @@ from typing import Tuple
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.mapping.sabre import GeneralizedSabreAlgorithm
 from bqskit.qis.graph import CouplingGraph

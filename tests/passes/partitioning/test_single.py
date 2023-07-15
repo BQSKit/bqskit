@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from bqskit.ir import Circuit
 from bqskit.ir import Operation
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.passes import GroupSingleQuditGatePass
 

@@ -9,7 +9,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.qis.graph import CouplingGraph

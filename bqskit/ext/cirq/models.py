@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import CZGate
-from bqskit.ir.gates import PhasedXZGate
-from bqskit.ir.gates import RZGate
-from bqskit.ir.gates import SqrtISwapGate
-from bqskit.ir.gates import SycamoreGate
+from bqskit.ir.gates.constant.cz import CZGate
+from bqskit.ir.gates.constant.sqrtiswap import SqrtISwapGate
+from bqskit.ir.gates.constant.sycamore import SycamoreGate
+from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
+from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.qis.graph import CouplingGraph
 
 google_gate_set: set[Gate] = {

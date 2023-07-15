@@ -15,12 +15,12 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import RZGate
-from bqskit.ir.gates import SqrtXGate
-from bqskit.ir.gates import SwapGate
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.swap import SwapGate
+from bqskit.ir.gates.constant.sx import SqrtXGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate

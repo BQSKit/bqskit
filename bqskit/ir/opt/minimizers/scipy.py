@@ -10,7 +10,7 @@ from bqskit.ir.opt.minimizer import Minimizer
 
 if TYPE_CHECKING:
     from bqskit.ir.opt.cost import CostFunction
-    from bqskit.qis import RealVector
+    from bqskit.qis.unitary.unitary import RealVector
     import numpy.typing as npt
 
 

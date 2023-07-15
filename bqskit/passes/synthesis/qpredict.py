@@ -9,7 +9,7 @@ import numpy as np
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import VariableUnitaryGate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator

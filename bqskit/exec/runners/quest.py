@@ -9,13 +9,13 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import dual_annealing
 
-from bqskit.compiler import Compiler
-from bqskit.compiler import MachineModel
+from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.machine import MachineModel
 from bqskit.exec.results import RunnerResults
 from bqskit.exec.runner import CircuitRunner
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control import ForEachBlockPass

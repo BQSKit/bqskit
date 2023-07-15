@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bqskit.compiler import Compiler
 from bqskit.compiler import MachineModel
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.passes import ApplyPlacement
 from bqskit.passes import GreedyPlacementPass
 from bqskit.passes import SetModelPass

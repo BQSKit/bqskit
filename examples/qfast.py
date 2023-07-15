@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from bqskit.compiler import Compiler
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.passes import ForEachBlockPass
 from bqskit.passes import LEAPSynthesisPass
 from bqskit.passes import QFASTDecompositionPass

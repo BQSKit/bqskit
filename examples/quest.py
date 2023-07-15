@@ -6,7 +6,7 @@ import logging
 from bqskit.compiler import Compiler
 from bqskit.exec.runners.quest import QuestRunner
 from bqskit.exec.runners.sim import SimulationRunner
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.passes import ForEachBlockPass
 from bqskit.passes import LEAPSynthesisPass
 from bqskit.passes import QFASTDecompositionPass

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate

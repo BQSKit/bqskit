@@ -8,8 +8,8 @@ from bqskit.compiler.gateset import GateSetLike
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import IToffoliGate
-from bqskit.ir.gates import U3Gate
+from bqskit.ir.gates.constant.itoffoli import IToffoliGate
+from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem

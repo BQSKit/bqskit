@@ -1,7 +1,7 @@
 """This module tests the CircuitStructure class."""
 from __future__ import annotations
 
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.structure import CircuitStructure

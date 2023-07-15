@@ -6,10 +6,10 @@ import numpy as np
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CHGate
-from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import RYGate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.ch import CHGate
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.parameterized.ry import RYGate
 from bqskit.ir.operation import Operation
 
 

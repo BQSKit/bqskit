@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from qiskit.providers import BackendV1
 
-from bqskit.compiler import MachineModel
+from bqskit.compiler.machine import MachineModel
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cz import CZGate
