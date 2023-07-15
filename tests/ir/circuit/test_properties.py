@@ -1,12 +1,12 @@
 """
 This test module verifies all circuit properties.
 
-The Circuit class defines multiple properties, but also inherits many
-from the Unitary base class.
+The Circuit class defines multiple properties, but also inherits many from the
+Unitary base class.
 
-This test is broken down into multiple parts. First, a few simple known
-circuits have their properties tested. Then, each property is tested
-in depth individually.
+This test is broken down into multiple parts. First, a few simple known circuits
+have their properties tested. Then, each property is tested in depth
+individually.
 """
 from __future__ import annotations
 
