@@ -198,7 +198,7 @@ class QSearchSynthesisPass(SynthesisPass):
 
                 if dist < best_dist:
                     _logger.debug(
-                        'New best circuit found with %d layer%s and cost: %e.'
+                        'New best circuit found with %d layer%s and cost: %.12e.'
                         % (layer + 1, '' if layer == 0 else 's', dist),
                     )
                     best_dist = dist

@@ -221,7 +221,7 @@ class LEAPSynthesisPass(SynthesisPass):
 
                 if self.check_new_best(layer + 1, dist, best_layer, best_dist):
                     _logger.debug(
-                        'New best circuit found with %d layer%s and cost: %e.'
+                        'New best circuit found with %d layer%s and cost: %.12e.'
                         % (layer + 1, '' if layer == 0 else 's', dist),
                     )
                     best_dist = dist
