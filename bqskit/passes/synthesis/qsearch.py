@@ -197,9 +197,10 @@ class QSearchSynthesisPass(SynthesisPass):
                     return circuit
 
                 if dist < best_dist:
+                    plural = '' if layer == 0 else 's'
                     _logger.debug(
-                        'New best circuit found with %d layer%s and cost: %.12e.'
-                        % (layer + 1, '' if layer == 0 else 's', dist),
+                        f'New best circuit found with {layer + 1} layer{plural}'
+                        f' and cost: {dist:.12e}.',
                     )
                     best_dist = dist
                     best_circ = circuit
