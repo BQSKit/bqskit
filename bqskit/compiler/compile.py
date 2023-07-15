@@ -1226,7 +1226,7 @@ def _stateprep_workflow(
         SetModelPass(model),
         SetTargetPass(state),
         synthesis,
-        scan,
+        scan if optimization_level >= 2 else NOOPPass(),
     ]
 
     return Workflow(workflow)
@@ -1324,7 +1324,7 @@ def _statemap_workflow(
         SetModelPass(model),
         SetTargetPass(state),
         synthesis,
-        scan,
+        scan if optimization_level >= 2 else NOOPPass(),
     ]
 
     return Workflow(workflow)
