@@ -17,11 +17,10 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.gates.constant import CNOTGate
-from bqskit.ir.gates.constant import SqrtXGate
-from bqskit.ir.gates.constant import SwapGate
+from bqskit.ir.gates.constant.swap import SwapGate
+from bqskit.ir.gates.constant.sx import SqrtXGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
-from bqskit.ir.gates.parameterized import RZGate
+from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
@@ -29,12 +28,47 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
 from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
-from bqskit.passes import *
+from bqskit.passes.control.foreach import ForEachBlockPass
+from bqskit.passes.control.ifthenelse import IfThenElsePass
+from bqskit.passes.control.predicates.change import ChangePredicate
+from bqskit.passes.control.predicates.count import GateCountPredicate
+from bqskit.passes.control.predicates.multi import MultiPhysicalPredicate
+from bqskit.passes.control.predicates.notpredicate import NotPredicate
+from bqskit.passes.control.predicates.single import SinglePhysicalPredicate
+from bqskit.passes.control.predicates.width import WidthPredicate
+from bqskit.passes.control.whileloop import WhileLoopPass
+from bqskit.passes.group import PassGroup
+from bqskit.passes.mapping.apply import ApplyPlacement
 from bqskit.passes.mapping.embed import EmbedAllPermutationsPass
 from bqskit.passes.mapping.layout.pam import PAMLayoutPass
+from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
+from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
+from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
+from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
+from bqskit.passes.measure import ExtractMeasurements
+from bqskit.passes.measure import RestoreMeasurements
+from bqskit.passes.noop import NOOPPass
+from bqskit.passes.partitioning.quick import QuickPartitioner
+from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
+from bqskit.passes.processing.rebase import Rebase2QuditGatePass
+from bqskit.passes.processing.scan import ScanningGateRemovalPass
+from bqskit.passes.rules.u3 import U3Decomposition
+from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
+from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
+from bqskit.passes.search.heuristics.dijkstra import DijkstraHeuristic
+from bqskit.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.passes.synthesis.pas import PermutationAwareSynthesisPass
+from bqskit.passes.synthesis.qsearch import QSearchSynthesisPass
+from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.passes.synthesis.target import SetTargetPass
+from bqskit.passes.util.extend import ExtendBlockSizePass
+from bqskit.passes.util.fill import FillSingleQuditGatesPass
+from bqskit.passes.util.log import LogErrorPass
+from bqskit.passes.util.log import LogPass
+from bqskit.passes.util.random import SetRandomSeedPass
+from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.state.system import StateSystemLike
@@ -1227,7 +1261,7 @@ def _stateprep_workflow(
         SetModelPass(model),
         SetTargetPass(state),
         synthesis,
-        scan,
+        scan if optimization_level >= 2 else NOOPPass(),
     ]
 
     return Workflow(workflow)
@@ -1325,7 +1359,7 @@ def _statemap_workflow(
         SetModelPass(model),
         SetTargetPass(state),
         synthesis,
-        scan,
+        scan if optimization_level >= 2 else NOOPPass(),
     ]
 
     return Workflow(workflow)

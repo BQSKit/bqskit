@@ -11,10 +11,10 @@ from typing import Sequence
 from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.circuit import Circuit
-from bqskit.qis import StateVector
-from bqskit.qis import UnitaryMatrix
 from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence

@@ -6,13 +6,13 @@ import logging
 from typing import Callable
 
 from bqskit.compiler.passdata import PassData
-from bqskit.ir import Circuit
-from bqskit.passes import LEAPSynthesisPass
-from bqskit.passes import SynthesisPass
-from bqskit.qis import PermutationMatrix
-from bqskit.qis import UnitaryMatrix
+from bqskit.ir.circuit import Circuit
+from bqskit.passes.synthesis.leap import LEAPSynthesisPass
+from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
 
 

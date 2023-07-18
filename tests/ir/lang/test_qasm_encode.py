@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.lang.qasm2 import OPENQASM2Language

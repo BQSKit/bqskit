@@ -6,7 +6,6 @@ import numpy as np
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_integer
 
 
 class SubSwapGate(QuditGate):
@@ -30,10 +29,6 @@ class SubSwapGate(QuditGate):
     _num_params = 0
 
     def __init__(self, num_levels: int, qudit_levels: str):
-        if num_levels < 2 or not is_integer(num_levels):
-            raise ValueError(
-                'SubSwapGate num_levels must be a postive integer greater than or equal to 2.',
-            )
         self.num_levels = num_levels
         level1, level2 = self.convert_string_to_lists(qudit_levels)
         self.qudit_level1 = level1

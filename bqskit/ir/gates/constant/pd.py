@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_integer
 
 
 class PDGate(QuditGate):
@@ -38,10 +36,6 @@ class PDGate(QuditGate):
     _num_params = 0
 
     def __init__(self, num_levels: int, ind: int):
-        if num_levels < 2 or not is_integer(num_levels):
-            raise ValueError(
-                'PDGate num_levels must be a postive integer greater than or equal to 2.',
-            )
         self.num_levels = num_levels
         if ind > num_levels:
             raise ValueError(
@@ -49,7 +43,7 @@ class PDGate(QuditGate):
             )
         self.ind = ind
 
-    def get_unitary(self) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
 
         diags = np.zeros(self.num_levels, dtype=complex)
@@ -61,6 +55,3 @@ class PDGate(QuditGate):
                 diags[i] = 1
         u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
         return u_mat
-
-    def get_grad(self) -> npt.NDArray[np.complex128]:
-        return np.array([])

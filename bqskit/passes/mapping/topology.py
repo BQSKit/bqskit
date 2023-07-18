@@ -10,7 +10,7 @@ from typing import Sequence
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.qis.graph import CouplingGraph
 from bqskit.utils.typing import is_integer

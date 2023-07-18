@@ -8,7 +8,7 @@ import pytest
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
 from bqskit.compiler.passdata import PassData
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.runtime import get_runtime
 
 

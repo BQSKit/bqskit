@@ -4,7 +4,7 @@ from __future__ import annotations
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
 from bqskit.compiler.passdata import PassData
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import XGate
 from bqskit.runtime import get_runtime

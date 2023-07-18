@@ -5,11 +5,11 @@ import logging
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.constant import CNOTGate
-from bqskit.ir.gates.parameterized import RXGate
-from bqskit.ir.gates.parameterized import RYGate
-from bqskit.ir.gates.parameterized import RZGate
-from bqskit.ir.gates.parameterized import U3Gate
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.parameterized.rx import RXGate
+from bqskit.ir.gates.parameterized.ry import RYGate
+from bqskit.ir.gates.parameterized.rz import RZGate
+from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem

@@ -14,7 +14,6 @@ repos:
         args: [--django]
     -   id: check-case-conflict
     -   id: check-merge-conflict
-    -   id: check-symlinks
     -   id: mixed-line-ending
     -   id: check-added-large-files
         args: ['--maxkb=8192']
@@ -62,10 +61,6 @@ repos:
     -   id: add-trailing-comma
         args:
             - --py36-plus
--   repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.4.0
-    hooks:
-    -   id: setup-cfg-fmt
 - repo: https://github.com/PyCQA/autoflake
   rev: v2.2.0
   hooks:
@@ -83,7 +78,7 @@ repos:
     hooks:
     -   id: flake8
         args:
-            - --ignore=E741,E241,E226,F405,F403,W503,F901,E731,TYP006,TYP001,TYP002
+            - --ignore=E741,W503,F901,E731,TYP006,TYP001,TYP002
             - --max-line-length=80
             - --per-file-ignores=bqskit/runtime/worker.py:E402
         additional_dependencies: [flake8-typing-imports==1.13.0]

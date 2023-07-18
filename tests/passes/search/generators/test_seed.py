@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from hypothesis import given
 
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import HGate
 from bqskit.passes.search.generators import SeedLayerGenerator
 from bqskit.utils.test.strategies import circuits

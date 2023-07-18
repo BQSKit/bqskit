@@ -10,7 +10,7 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.vlg import VariableLocationGate
-from bqskit.ir.gates.parameterized import PauliGate
+from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost import CostFunctionGenerator

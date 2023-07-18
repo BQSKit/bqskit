@@ -1,4 +1,4 @@
-"""This module implements the ClockGate."""
+"""This module implements the HDGate."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,23 +8,25 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class ClockGate(QuditGate):
+class HDGate(QuditGate):
     """
-    The one-qudit clock (Z) gate. This is a Weyl-Heisenberg gate.
+    The one-qudit Hadamard gate. This is a Clifford gate.
 
     The clock gate is given by the following formula:
 
     .. math::
         \\begin{equation}
-            Z = \\sum_a \\exp(2\\pi ia/d) |a><a|
+            H_d = 1/\\sqrt(d) \\sum_{ij} \\omega_d^{ij} |i >< j|
         \\end{equation}
 
-    where d is the number of levels (2 levels is a qubit,
+    where
+    .. math:: \\omega = \\exp(2\\pi*i/d)
+    and d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
 
     __init__() arguments:
         num_levels : int
-            Number of levels in each qudit (d).
+            Number of levels in each quantum object.
     """
 
     _num_qudits = 1
@@ -36,8 +38,13 @@ class ClockGate(QuditGate):
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
 
-        diags = np.zeros(self.num_levels, dtype=complex)
+        matrix = np.zeros([self.num_levels, self.num_levels], dtype=complex)
+        omega = np.exp(2j * np.pi / self.num_levels)
         for i in range(self.num_levels):
-            diags[i] = np.exp(2j * np.pi * i / self.num_levels)
-        u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
+            for j in range(i, self.num_levels):
+                matrix[i, j] = omega**(i * j)
+                matrix[j, i] = omega**(i * j)
+        u_mat = UnitaryMatrix(
+            matrix * 1 / np.sqrt(self.num_levels), self.radixes,
+        )
         return u_mat

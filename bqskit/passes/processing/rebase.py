@@ -7,9 +7,9 @@ from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
-from bqskit.ir import Gate
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.parameterized import U3Gate
+from bqskit.ir.gate import Gate
+from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.point import CircuitPoint as Point

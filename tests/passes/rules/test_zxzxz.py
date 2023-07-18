@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from bqskit.compiler.compiler import Compiler
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.passes import ZXZXZDecomposition
 from bqskit.qis import UnitaryMatrix
 

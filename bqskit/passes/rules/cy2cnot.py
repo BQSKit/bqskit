@@ -4,11 +4,11 @@ from __future__ import annotations
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates.constant import CNOTGate
-from bqskit.ir.gates.constant import CYGate
-from bqskit.ir.gates.constant import SdgGate
-from bqskit.ir.gates.constant import SGate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.constant.cy import CYGate
+from bqskit.ir.gates.constant.s import SGate
+from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.operation import Operation
 
 
