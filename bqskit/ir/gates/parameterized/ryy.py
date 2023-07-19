@@ -57,40 +57,21 @@ class RYYGate(
         nsin = -1j * np.sin(params[0] / 2)
         psin = 1j * np.sin(params[0] / 2)
 
-        matrix = np.eye(self.num_levels, dtype=np.complex128)
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = cos
-        matrix[
-            self.level_1 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_4,
-        ] = cos
-        matrix[
-            self.level_2 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_3,
-        ] = cos
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = cos
+        idx1 = self.level_1 * self.num_levels + self.level_3
+        idx2 = self.level_1 * self.num_levels + self.level_4 
+        idx3 = self.level_2 * self.num_levels + self.level_3
+        idx4 = self.level_2 * self.num_levels + self.level_4
 
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = psin
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = nsin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = nsin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = psin
+        matrix = np.eye(self.num_levels, dtype=np.complex128)
+        matrix[idx1,idx1] = cos
+        matrix[idx2,idx2] = cos
+        matrix[idx3,idx3] = cos
+        matrix[idx4,idx4] = cos
+
+        matrix[idx1,idx4] = psin
+        matrix[idx1,idx4] = nsin
+        matrix[idx4,idx1] = nsin
+        matrix[idx4,idx1] = psin
 
         return UnitaryMatrix(matrix, self.radixes)
 
@@ -106,42 +87,23 @@ class RYYGate(
         dnsin = -1j * np.cos(params[0] / 2) / 2
         dpsin = 1j * np.cos(params[0] / 2) / 2
 
+        idx1 = self.level_1 * self.num_levels + self.level_3
+        idx2 = self.level_1 * self.num_levels + self.level_4 
+        idx3 = self.level_2 * self.num_levels + self.level_3
+        idx4 = self.level_2 * self.num_levels + self.level_4 
+
         matrix = np.zeros(
             (self.num_levels, self.num_levels),
             dtype=np.complex128,
         )
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = dcos
-        matrix[
-            self.level_1 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_4,
-        ] = dcos
-        matrix[
-            self.level_2 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_3,
-        ] = dcos
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = dcos
+        matrix[idx1,idx1] = dcos
+        matrix[idx2,idx2] = dcos
+        matrix[idx3,idx3] = dcos
+        matrix[idx4,idx4] = dcos
 
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = dpsin
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = dnsin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = dnsin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = dpsin
+        matrix[idx1,idx4] = dpsin
+        matrix[idx1,idx4] = dnsin
+        matrix[idx4,idx1] = dnsin
+        matrix[idx4,idx1] = dpsin
 
         return np.array([matrix], dtype=np.complex128)

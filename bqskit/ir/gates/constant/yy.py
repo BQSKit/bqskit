@@ -1,13 +1,9 @@
 """This module implements the YYGate."""  # TODO adapt for qudits
 from __future__ import annotations
 
-import numpy.typing as npt
-
 from bqskit.ir.gates.constant.y import YGate
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.math import kron
 from bqskit.utils.typing import is_integer
 
 
@@ -43,19 +39,6 @@ class YYGate(QuditGate):
 
     def get_unitary(self) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-
-        return UnitaryMatrix(
-            kron([
-                YGate(
-                    self._num_levels, self.level_1,
-                    self.level_2,
-                ).get_unitary(),
-                YGate(
-                    self._num_levels, self.level_3,
-                    self.level_4,
-                ).get_unitary(),
-            ]).tolist(), self.radixes,
-        )
-
-    def get_grad(self) -> npt.NDArray[np.complex128]:
-        return np.array([])
+        y1 = YGate(self._num_levels, self.level_1,self.level_2).get_unitary()
+        y2 = YGate(self._num_levels, self.level_3,self.level_4).get_unitary()
+        return y1.otimes(y2)

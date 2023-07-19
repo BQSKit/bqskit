@@ -1,13 +1,9 @@
 """This module implements the ZZGate."""
 from __future__ import annotations
 
-import numpy.typing as npt
-
 from bqskit.ir.gates.constant.z import ZGate
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.math import kron
 from bqskit.utils.typing import is_integer
 
 
@@ -32,13 +28,6 @@ class ZZGate(QuditGate):
 
     def get_unitary(self) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-
-        return UnitaryMatrix(
-            kron([
-                ZGate(self._num_levels, self.level_1).get_unitary(),
-                XGate(self._num_levels, self.level_2).get_unitary(),
-            ]).tolist(), self.radixes,
-        )
-
-    def get_grad(self) -> npt.NDArray[np.complex128]:
-        return np.array([])
+        z1 = ZGate(self._num_levels, self.level_1).get_unitary()
+        z2 = ZGate(self._num_levels, self.level_2).get_unitary()
+        return z1.otimes(z2)

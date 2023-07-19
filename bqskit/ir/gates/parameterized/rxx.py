@@ -29,7 +29,6 @@ class RXXGate(
             param: float
             The angle by which to rotate
     """
-
     _num_qudits = 2
     _num_params = 1
     _qasm_name = 'rxx'
@@ -57,39 +56,21 @@ class RXXGate(
         sin = -1j * np.sin(params[0] / 2)
 
         matrix = np.eye(self.num_levels, dtype=np.complex128)
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = cos
-        matrix[
-            self.level_1 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_4,
-        ] = cos
-        matrix[
-            self.level_2 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_3,
-        ] = cos
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = cos
+        
+        idx1 = self.level_1 * self.num_levels + self.level_3
+        idx2 = self.level_1 * self.num_levels + self.level_4 
+        idx3 = self.level_2 * self.num_levels + self.level_3
+        idx4 = self.level_2 * self.num_levels + self.level_4 
 
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = sin
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = sin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = sin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = sin
+        matrix[idx1,idx1] = cos
+        matrix[idx2,idx2] = cos
+        matrix[idx3,idx3] = cos
+        matrix[idx4,idx4] = cos
+
+        matrix[idx1,idx4] = sin
+        matrix[idx1,idx4] = sin
+        matrix[idx4,idx1] = sin
+        matrix[idx4,idx1] = sin
 
         return UnitaryMatrix(matrix, self.radixes)
 
@@ -104,42 +85,23 @@ class RXXGate(
         dcos = -np.sin(params[0] / 2) / 2
         dsin = -1j * np.cos(params[0] / 2) / 2
 
+        idx1 = self.level_1 * self.num_levels + self.level_3
+        idx2 = self.level_1 * self.num_levels + self.level_4 
+        idx3 = self.level_2 * self.num_levels + self.level_3
+        idx4 = self.level_2 * self.num_levels + self.level_4
+
         matrix = np.zeros(
             (self.num_levels, self.num_levels),
             dtype=np.complex128,
         )
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = dcos
-        matrix[
-            self.level_1 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_4,
-        ] = dcos
-        matrix[
-            self.level_2 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_3,
-        ] = dcos
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = dcos
+        matrix[idx1,idx1] = dcos
+        matrix[idx2,idx2] = dcos
+        matrix[idx3,idx3] = dcos
+        matrix[idx4,idx4] = dcos
 
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = dsin
-        matrix[
-            self.level_1 * self.num_levels + self.level_3,
-            self.level_2 * self.num_levels + self.level_4,
-        ] = dsin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = dsin
-        matrix[
-            self.level_2 * self.num_levels + self.level_4,
-            self.level_1 * self.num_levels + self.level_3,
-        ] = dsin
+        matrix[idx1,idx4] = dsin
+        matrix[idx1,idx4] = dsin
+        matrix[idx4,idx1] = dsin
+        matrix[idx4,idx1] = dsin
 
         return np.array([matrix], dtype=np.complex128)
