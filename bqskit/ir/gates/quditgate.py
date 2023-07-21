@@ -18,7 +18,3 @@ class QuditGate(Gate):
     def num_levels(self) -> int:
         """The number of levels in each qudit."""
         return getattr(self, '_num_levels')
-
-    @num_levels.setter
-    def num_levels(self, value: int) -> None:
-        self._num_levels = value
