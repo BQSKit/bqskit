@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from bqskit.ir.gates.constant.cclock import CClockGate
+from bqskit.ir.gates.constant.b import BGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.clock import ClockGate
 from bqskit.ir.gates.constant.cpi import CPIGate
@@ -46,6 +47,7 @@ from bqskit.ir.gates.constant.zz import ZZGate
 
 __all__ = [
     'CCXGate',
+    'BGate',
     'RCCXGate',
     'RC3XGate',
     'MargolusGate',

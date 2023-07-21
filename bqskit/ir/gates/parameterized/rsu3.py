@@ -9,12 +9,21 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
-from bqskit.utils.math import SUGen
 from bqskit.utils.typing import is_integer
 
 
 class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
-    """Rotation by SU3 generator for a single qutrit gate."""
+    """Rotation by SU3 generator for a single qutrit gate.
+    
+        .. math::
+        \\exp(i * params[0] * \lambda_j)
+
+        where lambda_j is the j-th generator of the SU(3) Lie algebra.
+        We use the physics notation, so each generator is Hermitian (not unitary).
+        There are N^2-1 = 3^2-1 =8 generators, and N-1-=3-1=2 generators that coomutate.
+
+        Reference: "Lie algebras in particle physics : from isospin to unified theories", Howard Georgi 
+    """
 
     _num_qudits = 1
     _num_params = 1
@@ -135,38 +144,3 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
                 np.exp(-1j * params[0] / np.sqrt(3))
             matrix[2, 2] = 2j / np.sqrt(3) * np.exp(2j * params[0] / np.sqrt(3))
         return np.array([matrix], dtype=np.complex128)
-
-
-# class RGVGate(QutritGate, DifferentiableUnitary, CachedClass):
-#     """The Rvec rotation single qutrit gate."""
-
-#     _num_qudits = 1
-#     _num_params = 8
-#     _qasm_name = 'RGVGate'
-
-
-#     def _unitary(self, params: RealVector = []):
-#         tot = jax.numpy.sum(jax.numpy.array([params[i]*Lambda[i+1] for i in range(8)]),axis=0)
-#         return jax.scipy.linalg.expm(-1j*tot)
-
-#     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-#         """Return the unitary for this gate, see :class:`Unitary` for more."""
-#         self.check_parameters(params)
-
-
-#         return UnitaryMatrix(np.array(self._unitary(params)))
-
-#     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-#         """
-#         Return the gradient for this gate.
-
-#         See :class:`DifferentiableUnitary` for more info.
-#         """
-#         self.check_parameters(params)
-
-
-#         return np.array(
-#             [
-#                 np.array(jax.jacfwd(self._unitary)(params)),
-#             ], dtype=np.complex128,
-#         )
