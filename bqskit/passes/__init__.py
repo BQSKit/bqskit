@@ -249,7 +249,7 @@ from bqskit.passes.synthesis.target import SetTargetPass
 from bqskit.passes.util.compress import CompressPass
 from bqskit.passes.util.conversion import BlockConversionPass
 from bqskit.passes.util.converttou3 import ToU3Pass
-from bqskit.passes.util.convertu3tovar import ToVariablePass
+from bqskit.passes.util.converttovar import ToVariablePass
 from bqskit.passes.util.extend import ExtendBlockSizePass
 from bqskit.passes.util.fill import FillSingleQuditGatesPass
 from bqskit.passes.util.log import LogErrorPass
