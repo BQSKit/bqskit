@@ -58,7 +58,7 @@ def test_skiping_non_general_gate(
         assert isinstance(circuit[0][0].gate, type(single_qubit_gate))
 
 
-def test_single_qubit_gate_conversion(
+def test_all_single_qubit_gate_conversion(
         compiler: Compiler,
         single_qubit_gate: Gate,
 ) -> None:
