@@ -78,3 +78,28 @@ def test_all_single_qubit_gate_conversion(
     
     assert dist <= 1e-7  # Is this good enough??
     assert isinstance(circuit[0][0].gate, U3Gate)
+
+
+def test_all_gates_conversion(
+        compiler: Compiler,
+        gate: Gate,
+) -> None:
+
+    circuit = Circuit(gate.num_qudits, gate.radixes)
+    params = np.random.random(gate.num_params)
+
+    circuit.append_gate(gate, range(gate.num_qudits), params)
+
+    circuit = compiler.compile(
+        circuit, [ToU3Pass(convert_all_single_qubit_gates=True)],
+    )
+
+    dist = circuit.get_unitary().get_distance_from(
+        gate.get_unitary(params),
+    )
+
+    assert dist <= 1e-7  # Is this good enough??
+    if gate.num_qudits == 1 and not gate.is_qutrit_only():
+        assert isinstance(circuit[0][0].gate, U3Gate)
+    else:
+        assert isinstance(circuit[0][0].gate, type(gate))
