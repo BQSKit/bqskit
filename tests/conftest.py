@@ -298,11 +298,14 @@ SINGLE_QUBIT_GATES = [
     g for g in BQSKIT_GATES
     if g.is_qubit_only() and g.num_qudits == 1
 ]
-SINGLE_QUBIT_GENERAL_GATES = [U3Gate(), VariableUnitaryGate(1), PauliGate(1)]
+SINGLE_QUBIT_GENERAL_GATES = [
+    U3Gate(), VariableUnitaryGate(1, [2]), PauliGate(1),
+]
 SINGLE_QUTRIT_GATES = [
     g for g in BQSKIT_GATES
     if g.is_qutrit_only() and g.num_qudits == 1
 ]
+SINGLE_QUTRIT_GENERAL_GATES = [U8Gate(), VariableUnitaryGate(1, [3])]
 TWO_QUBIT_GATES = [
     g for g in BQSKIT_GATES
     if g.is_qubit_only() and g.num_qudits == 2
@@ -366,6 +369,12 @@ def single_qubit_general_gate(request: Any) -> Gate:
 @pytest.fixture(params=SINGLE_QUTRIT_GATES, ids=lambda gate: repr(gate))
 def single_qutrit_gate(request: Any) -> Gate:
     """Provides all of SINGLE_QUTRIT_GATES as a gate fixture."""
+    return request.param
+
+
+@pytest.fixture(params=SINGLE_QUTRIT_GENERAL_GATES, ids=lambda gate: repr(gate))
+def single_qutrit_general_gate(request: Any) -> Gate:
+    """Provides all of SINGLE_QUTRIT_GENERAL_GATES as a gate fixture."""
     return request.param
 
 
