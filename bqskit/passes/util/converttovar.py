@@ -1,4 +1,4 @@
-"""This module implements the ToU3Pass."""
+"""This module implements the ToVariablePass."""
 from __future__ import annotations
 
 import logging

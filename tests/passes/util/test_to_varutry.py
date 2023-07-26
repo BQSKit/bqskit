@@ -31,7 +31,7 @@ def test_single_qubit_general_gate_conversion(
 
     circuit = compiler.compile(circuit, [ToVariablePass()])
     dist = circuit.get_unitary().get_distance_from(gate_utry)
-    assert dist <= 1e-7  # Is this good enough??
+    assert dist <= 1e-7
     assert isinstance(circuit[0][0].gate, VariableUnitaryGate)
 
 
@@ -51,7 +51,7 @@ def test_skiping_non_general_gate(
         single_qubit_gate.get_unitary(params),
     )
 
-    assert dist <= 1e-7  # Is this good enough??
+    assert dist <= 1e-7
     if isinstance(single_qubit_gate, GeneralGate):
         assert isinstance(circuit[0][0].gate, VariableUnitaryGate)
     else:
@@ -76,7 +76,7 @@ def test_all_single_qubit_gate_conversion(
         single_qubit_gate.get_unitary(params),
     )
 
-    assert dist <= 1e-7  # Is this good enough??
+    assert dist <= 1e-7
     assert isinstance(circuit[0][0].gate, VariableUnitaryGate)
 
 
@@ -96,7 +96,7 @@ def test_single_qutrit_general_gate_conversion(
 
     circuit = compiler.compile(circuit, [ToVariablePass()])
     dist = circuit.get_unitary().get_distance_from(gate_utry)
-    assert dist <= 1e-7  # Is this good enough??
+    assert dist <= 1e-7
     assert isinstance(circuit[0][0].gate, VariableUnitaryGate)
 
 
@@ -118,7 +118,7 @@ def test_all_single_qutrit_gate_conversion(
         single_qutrit_gate.get_unitary(params),
     )
 
-    assert dist <= 1e-7  # Is this good enough??
+    assert dist <= 1e-7
     assert isinstance(circuit[0][0].gate, VariableUnitaryGate)
 
 
@@ -140,7 +140,7 @@ def test_all_gates_conversion(
         gate.get_unitary(params),
     )
 
-    assert dist <= 1e-7  # Is this good enough??
+    assert dist <= 1e-7
     if gate.num_qudits == 1:
         assert isinstance(circuit[0][0].gate, VariableUnitaryGate)
     else:
