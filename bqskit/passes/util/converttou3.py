@@ -17,6 +17,14 @@ class ToU3Pass(BasePass):
     """Converts single-qubit general unitary gates to U3 Gates."""
 
     def __init__(self, convert_all_single_qubit_gates: bool = False) -> None:
+        """
+        Construct a ToU3Pass.
+
+        Args:
+            convert_all_single_qubit_gates (bool): Indicates wheter to convert
+            only the general gates, or every single qubit gate.
+        """
+
         self.convert_all_single_qubit_gates = convert_all_single_qubit_gates
 
     async def run(self, circuit: Circuit, data: PassData) -> None:

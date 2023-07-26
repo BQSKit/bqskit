@@ -17,6 +17,13 @@ class ToVariablePass(BasePass):
     """Converts single-qudit general unitary gates to Variable Unitary Gates."""
 
     def __init__(self, convert_all_single_qudit_gates: bool = False) -> None:
+        """
+        Construct a ToVariablePass.
+
+        Args:
+            convert_all_single_qudit_gates (bool): Indicates wheter to convert
+            only the general gates, or every single qudit gate.
+        """
         self.convert_all_single_qudit_gates = convert_all_single_qudit_gates
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
