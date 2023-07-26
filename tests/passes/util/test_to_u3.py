@@ -50,7 +50,7 @@ def test_skiping_non_general_gate(
     dist = circuit.get_unitary().get_distance_from(
         single_qubit_gate.get_unitary(params),
     )
-    
+
     assert dist <= 1e-7  # Is this good enough??
     if isinstance(single_qubit_gate, GeneralGate):
         assert isinstance(circuit[0][0].gate, U3Gate)
@@ -75,7 +75,7 @@ def test_all_single_qubit_gate_conversion(
     dist = circuit.get_unitary().get_distance_from(
         single_qubit_gate.get_unitary(params),
     )
-    
+
     assert dist <= 1e-7  # Is this good enough??
     assert isinstance(circuit[0][0].gate, U3Gate)
 
