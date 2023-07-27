@@ -6,6 +6,7 @@ import pytest
 
 from bqskit import compile
 from bqskit import MachineModel
+from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.gateset import GateSet
 from bqskit.ext.cirq.models import google_gate_set
 from bqskit.ext.honeywell import honeywell_gate_set
@@ -53,11 +54,13 @@ def test_single_qudit_synthesis(
     sq_utry: UnitaryMatrix,
     optimization_level: int,
     gate_set: set[Gate],
+    compiler: Compiler,
 ) -> None:
     out_circuit = compile(
         sq_utry,
         model=MachineModel(1, gate_set=gate_set),
         optimization_level=optimization_level,
+        compiler=compiler,
     )
     if U3Gate() in gate_set:
         assert out_circuit.num_operations == 1
@@ -80,11 +83,13 @@ def test_two_qudit_synthesis(
     tq_utry: UnitaryMatrix,
     optimization_level: int,
     gate_set: set[Gate],
+    compiler: Compiler,
 ) -> None:
     out_circuit = compile(
         tq_utry,
         model=MachineModel(2, gate_set=gate_set),
         optimization_level=optimization_level,
+        compiler=compiler,
     )
     assert out_circuit.num_qudits == 2
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
@@ -110,11 +115,13 @@ def test_three_qudit_synthesis(
     toffoli_unitary: UnitaryMatrix,
     optimization_level: int,
     gate_set: set[Gate],
+    compiler: Compiler,
 ) -> None:
     out_circuit = compile(
         toffoli_unitary,
         model=MachineModel(3, gate_set=gate_set),
         optimization_level=optimization_level,
+        compiler=compiler,
     )
     assert out_circuit.num_qudits == 3
     assert len(out_circuit.gate_set.difference(gate_set)) == 0
@@ -127,20 +134,22 @@ def test_three_qudit_synthesis(
         assert out_utry.get_distance_from(toffoli_unitary, 1) < 1e-8
 
 
-def test_fail_on_larger_max_synthesis_size() -> None:
+def test_fail_on_larger_max_synthesis_size(compiler: Compiler) -> None:
     utry = UnitaryMatrix.random(4)
     with pytest.raises(ValueError):
-        compile(utry, max_synthesis_size=3)
+        compile(utry, max_synthesis_size=3, compiler=compiler)
 
 
 @pytest.mark.parametrize('dim', [2, 4, 8])
 def test_identity_synthesis(
     optimization_level: int,
     dim: int,
+    compiler: Compiler,
 ) -> None:
     out_circuit = compile(
         UnitaryMatrix.identity(dim),
         optimization_level=optimization_level,
+        compiler=compiler,
     )
     assert out_circuit.get_unitary().get_distance_from(
         UnitaryMatrix.identity(dim), 1,
