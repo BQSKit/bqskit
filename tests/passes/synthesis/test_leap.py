@@ -10,15 +10,8 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestLeap:
-    def test_small_qubit(self) -> None:
-        utry = UnitaryMatrix.random(2)
-        circuit = Circuit.from_unitary(utry)
-        leap = LEAPSynthesisPass()
-        circuit.perform(leap)
-        dist = circuit.get_unitary().get_distance_from(utry)
-        assert dist <= 1e-5
 
-    def test_small_qubit_with_compiler(self, compiler: Compiler) -> None:
+    def test_small_qubit(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         leap = LEAPSynthesisPass()
