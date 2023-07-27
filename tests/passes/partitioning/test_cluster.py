@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 
 
 class TestClusteringPartitioner:
-    def test_run_r6(self, r6_qudit_circuit: Circuit) -> None:
+    def test_run_r6(
+        self, r6_qudit_circuit: Circuit,
+        compiler: Compiler,
+    ) -> None:
         utry = r6_qudit_circuit.get_unitary()
-        r6_qudit_circuit.perform(ClusteringPartitioner(3, 2))
+        r6_qudit_circuit = compiler.compile(
+            r6_qudit_circuit, [ClusteringPartitioner(3, 2)],
+        )
 
         assert any(
             isinstance(op.gate, CircuitGate)

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+from bqskit.compiler.compiler import Compiler
 from bqskit.ir import Operation
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
 from bqskit.passes import GroupSingleQuditGatePass
 
 
-def test_single_qudit_grouper(r6_qudit_circuit: Circuit) -> None:
-    r6_qudit_circuit.perform(GroupSingleQuditGatePass())
+def test_single_qudit_grouper(
+    r6_qudit_circuit: Circuit,
+    compiler: Compiler,
+) -> None:
+    r6_qudit_circuit = compiler.compile(
+        r6_qudit_circuit, [GroupSingleQuditGatePass()],
+    )
 
     # All single-qudit gates should be in a CircuitGate
     for gate in r6_qudit_circuit.gate_set:
