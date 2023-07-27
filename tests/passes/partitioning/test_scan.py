@@ -321,22 +321,49 @@ class TestScanPartitioner:
         for cycle_index in range(circuit.num_cycles):
             assert not circuit._is_cycle_idle(cycle_index)
 
-    def test_bigger_block(self, compiler: Compiler) -> None:
-        circuit = Circuit(6)
+    def test_bigger_block(self) -> None:
+        # In this test we need to create its own compiler as its state is
+        # unstable at the end of the test
+        with Compiler() as compiler:
+            circuit = Circuit(6)
 
-        circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [0])
-        circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
-        circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [2])
-        circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [3])
-        circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [4])
-        circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [5])
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(1),
+                ), [0],
+            )
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(1),
+                ), [1],
+            )
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(1),
+                ), [2],
+            )
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(1),
+                ), [3],
+            )
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(1),
+                ), [4],
+            )
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(1),
+                ), [5],
+            )
 
-        circuit.append_gate(
-            ConstantUnitaryGate(
-                UnitaryMatrix.random(4),
-            ), [
-                1, 2, 3, 4,
-            ],
-        )
-        with pytest.raises(RuntimeError):
-            circuit = compiler.compile(circuit, [ScanPartitioner(3)])
+            circuit.append_gate(
+                ConstantUnitaryGate(
+                    UnitaryMatrix.random(4),
+                ), [
+                    1, 2, 3, 4,
+                ],
+            )
+            with pytest.raises(RuntimeError):
+                circuit = compiler.compile(circuit, [ScanPartitioner(3)])
