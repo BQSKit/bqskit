@@ -39,7 +39,7 @@ def test_barrier_stop_partitioning_across_some_circuit(
     assert circuit.num_operations == 4
 
 
-def test_barrier_end_to_end_single_qubit_syn() -> None:
+def test_barrier_end_to_end_single_qubit_syn(compiler: Compiler) -> None:
     circuit = Circuit(1)
     circuit.append_gate(U3Gate(), 0)
     circuit.append_gate(BarrierPlaceholder(1), 0)
@@ -48,5 +48,5 @@ def test_barrier_end_to_end_single_qubit_syn() -> None:
     circuit.append_gate(U3Gate(), 0)
     circuit.append_gate(BarrierPlaceholder(1), 0)
     circuit.append_gate(U3Gate(), 0)
-    out = compile(circuit)
+    out = compile(circuit, compiler=compiler)
     assert out.num_operations == 7

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bqskit import compile
+from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CXGate
 from bqskit.ir.gates import U3Gate
@@ -11,9 +12,9 @@ from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
 
 
-def test_state_prep() -> None:
+def test_state_prep(compiler: Compiler) -> None:
     state = StateVector.random(3)
-    out_circuit = compile(state)
+    out_circuit = compile(state, compiler=compiler)
     out_state = out_circuit.get_statevector(StateVector.zero(3))
     assert out_state.get_distance_from(state) < 1e-8
 
@@ -86,7 +87,7 @@ def test_state_inst_3() -> None:
     assert out_state.get_distance_from(state) < 1e-8
 
 
-def test_state_map() -> None:
+def test_state_map(compiler: Compiler) -> None:
     num_qudits = 3
     utry = UnitaryMatrix.random(num_qudits)
     state_map = {}
@@ -95,7 +96,7 @@ def test_state_map() -> None:
         out_state = utry.get_statevector(in_state)
         state_map[in_state] = out_state
     system = StateSystem(state_map)
-    out_circuit = compile(system)
+    out_circuit = compile(system, compiler=compiler)
     print(out_circuit.gate_counts)
 
     for in_state, out_state in state_map.items():
