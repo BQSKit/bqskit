@@ -15,7 +15,7 @@ class SqrtCNOTGate(ControlledGate):
 
     _num_qudits = 2
 
-    def __init__(self, num_levels: int, controls: IntegerVector):
+    def __init__(self, num_levels: int, controls: Sequence[int]):
         super().__init__(
             SqrtXGate(num_levels=num_levels),
             num_levels=num_levels, controls=controls,

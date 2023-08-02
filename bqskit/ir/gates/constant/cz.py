@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bqskit.ir.gates.composed import ControlledGate
 from bqskit.ir.gates.constant.z import ZGate
-from bqskit.qis.unitary import IntegerVector
+from typing import Sequence
 
 
 class CZGate(ControlledGate):
@@ -23,7 +23,7 @@ class CZGate(ControlledGate):
         op = cgate(param, ZGate._utry).tolist()
         return UnitaryMatrix(op)
 
-    def __init__(self, controls: IntegerVector = [1], num_levels: int = 2, level: int = 1):
+    def __init__(self, controls: Sequence[int] = [1], num_levels: int = 2, level: int = 1):
         super().__init__(
             ZGate(num_levels=num_levels, level=level),
             num_levels=num_levels, controls=controls,

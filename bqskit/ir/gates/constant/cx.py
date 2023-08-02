@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bqskit.ir.gates.composed import ControlledGate
 from bqskit.ir.gates.constant.x import XGate
-from bqskit.qis.unitary import IntegerVector
+from typing import Sequence
 
 
 class CNOTGate(ControlledGate):
@@ -19,7 +19,7 @@ class CNOTGate(ControlledGate):
     _qasm_name = 'cx'
     _num_params = 0
 
-    def __init__(self, num_levels: int = 2, controls: IntegerVector = [1], level_1: int = 0, level_2: int = 1):
+    def __init__(self, num_levels: int = 2, controls: Sequence[int] = [1], level_1: int = 0, level_2: int = 1):
         super().__init__(
             XGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
             num_levels=num_levels, controls=controls,
@@ -41,7 +41,7 @@ class CCXGate(ControlledGate):
 
     _qasm_name = 'ccx'
 
-    def __init__(self, num_levels: int = 2, controls: IntegerVector = [1, 1], level_1: int = 0, level_2: int = 1):
+    def __init__(self, num_levels: int = 2, controls: Sequence[int] = [1, 1], level_1: int = 0, level_2: int = 1):
         super().__init__(
             XGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
             num_levels=num_levels, controls=controls,

@@ -167,28 +167,30 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
 
-def kron(MatrixList):
-    """
-        MatrixList: list of matrices
-
-        Return np.ndarray which is the Kronecker product of the matrices          
-        
-    """  
-    m = MatrixList[0]
-    for i in range(1, len(MatrixList)):
-        m = np.kron(m, MatrixList[i])
-    return m
-
 # Generators of SU(N)
 
 def SUGenerator(n: int) -> npt.NDArray[np.complex128]:
     """
-        n: positive integer, dimension of SU(N) algebra, aka n=N
-        returns : a list of the SU(N) generators, note that they are Hermitian, but not neccesarily unitary
+    Computes the Lie algebra generators for SU(n).
 
-        reference: https://walterpfeifer.ch/liealgebra/LieAlg_wieBuch4.pdf
+    Args: 
+        n (int): dimension of SU(n) algebra
+        
+    Returns: 
+        npt.NDArray[np.complex128]: list of the SU(N) generators,
+        note that they are Hermitian, but not neccesarily unitary.
+    
+    Raises:
+        ValueError: if n<=0
+
+    References: 
+        https://walterpfeifer.ch/liealgebra/LieAlg_wieBuch4.pdf
     """
-    if n == 1:
+    #TODO HermitianMatrix objects
+
+    if n<=0:
+        raise ValueError("n can not be a non-positive integer")
+    elif n == 1:
         return np.array([1],dtype=np.complex128)
     elif n == 2:
         return np.array([np.array([[0, 1], [1, 0]],dtype=np.complex128), np.array([[0, -1j], [1j, 0]],dtype=np.complex128), np.array([[1, 0], [0, -1]],dtype=np.complex128)])

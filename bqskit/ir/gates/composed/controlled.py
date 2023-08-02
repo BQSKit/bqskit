@@ -10,7 +10,7 @@ import numpy.typing as npt
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary import IntegerVector
+from typing import Sequence
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -25,7 +25,7 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
     Given any qudit gate, ControlledGate can add control a control qudit.
     """
 
-    def __init__(self, gate: Gate, num_levels: int = 2, controls: IntegerVector = [1]):
+    def __init__(self, gate: Gate, num_levels: int = 2, controls: Sequence[int] = [1]):
         """
         Construct a ControlledGate.
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from bqskit.ir.gates.composed import ControlledGate
 from bqskit.ir.gates.parameterized.ry import RYGate
-from bqskit.qis.unitary import IntegerVector
+from typing import Sequence
 
 
 class CRYGate(ControlledGate):
@@ -27,7 +27,7 @@ class CRYGate(ControlledGate):
     _num_params = 1
     _qasm_name = 'cry'
 
-    def __init__(self, num_levels: int = 2, controls: IntegerVector = [1], level_1: int = 0, level_2: int = 1):
+    def __init__(self, num_levels: int = 2, controls: Sequence[int] = [1], level_1: int = 0, level_2: int = 1):
         super().__init__(
             RYGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
             num_levels=num_levels, controls=controls,
