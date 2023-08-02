@@ -93,7 +93,6 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         self.level_of_each_control = level_of_each_control
         self._num_qudits = gate._num_qudits + self._num_controls
         # self.radixes = tuple([self.num_levels] * self._num_qudits)
-        self.control_space = self._get_control_levels()
         self._name = 'Controlled(%s)' % self.gate.name
         self._num_params = self.gate._num_params
         self.It = np.identity(self.gate.dim, dtype=np.complex128)
