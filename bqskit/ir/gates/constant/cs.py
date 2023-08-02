@@ -10,10 +10,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class CSGate(QuditGate):
     """
-    The controlled-Hadamard gate for qudits
-    num_levels: (int) = number of levels os single qudit (greater or equal to 2)
-    controls: list(int) = list of control levels
-
+    The controlled-S gate for qudits
     """
 
     _num_qudits = 2

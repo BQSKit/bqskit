@@ -9,11 +9,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class CPDGate(ControlledGate):
     """
-    The Controlled-S gate for qudits.
-
-    num_levels: (int) = number of levels os single qudit (greater or equal to 2)
-    controls: list(int) = list of control levels
-    ind: int = The level on which to apply rotation (see above equation).
+    The Controlled-PD gate for qudits.
     """
 
     _num_qudits = 2
