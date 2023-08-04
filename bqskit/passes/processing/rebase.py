@@ -29,7 +29,6 @@ class Rebase2QuditGatePass(BasePass):
 
     def __init__(
         self,
-        gate_in_circuit: Gate | Sequence[Gate],
         new_gate: Gate | Sequence[Gate],
         max_depth: int = 3,
         max_retries: int = -1,
@@ -42,9 +41,6 @@ class Rebase2QuditGatePass(BasePass):
         Construct a Rebase2QuditGatePass.
 
         Args:
-            gate_in_circuit (Gate | Sequence[Gate]): The two-qudit gate
-                or gates in the circuit that you want to replace.
-
             new_gate (Gate | Sequence[Gate]): The two-qudit new gate or
                 gates you want to put in the circuit.
 
@@ -77,20 +73,6 @@ class Rebase2QuditGatePass(BasePass):
 
             ValueError: if `max_depth` is nonnegative.
         """
-
-        if is_sequence(gate_in_circuit):
-            if any(not isinstance(g, Gate) for g in gate_in_circuit):
-                raise TypeError('Expected Gate or Gate list.')
-
-        elif not isinstance(gate_in_circuit, Gate):
-            raise TypeError(f'Expected Gate, got {type(gate_in_circuit)}.')
-
-        else:
-            gate_in_circuit = [gate_in_circuit]
-
-        if any(g.num_qudits != 2 for g in gate_in_circuit):
-            raise ValueError('Expected 2-qudit gate.')
-
         if is_sequence(new_gate):
             if any(not isinstance(g, Gate) for g in new_gate):
                 raise TypeError('Expected Gate or Gate list.')
@@ -138,8 +120,6 @@ class Rebase2QuditGatePass(BasePass):
             raise ValueError(
                 f'Expected single-qudit gate, got {single_qudit_gate}.',
             )
-
-        self.gates = gate_in_circuit
         self.ngates = new_gate
         self.max_depth = max_depth
         self.max_retries = max_retries
@@ -155,6 +135,7 @@ class Rebase2QuditGatePass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        self.gates = [x for x in circuit.gate_counts if x.num_qudits == 2]
         instantiate_options = self.instantiate_options.copy()
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
