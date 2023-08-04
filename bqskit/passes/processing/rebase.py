@@ -9,6 +9,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.constant import SwapGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -29,7 +30,6 @@ class Rebase2QuditGatePass(BasePass):
 
     def __init__(
         self,
-        new_gate: Gate | Sequence[Gate],
         max_depth: int = 3,
         max_retries: int = -1,
         success_threshold: float = 1e-10,
@@ -41,9 +41,6 @@ class Rebase2QuditGatePass(BasePass):
         Construct a Rebase2QuditGatePass.
 
         Args:
-            new_gate (Gate | Sequence[Gate]): The two-qudit new gate or
-                gates you want to put in the circuit.
-
             max_depth (int): The maximum number of new gates to replace
                 an old gate with. (Default: 3)
 
@@ -120,7 +117,6 @@ class Rebase2QuditGatePass(BasePass):
             raise ValueError(
                 f'Expected single-qudit gate, got {single_qudit_gate}.',
             )
-        self.ngates = new_gate
         self.max_depth = max_depth
         self.max_retries = max_retries
         self.success_threshold = success_threshold
@@ -131,11 +127,22 @@ class Rebase2QuditGatePass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
         self.sq = single_qudit_gate
-        self.generate_new_gate_templates()
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        self.gates = [x for x in circuit.gate_counts if x.num_qudits == 2]
+        self.ngates = [g for g in data.model.gate_set if g.num_qudits == 2]
+        non_native_gates = [
+            g for g in circuit.gate_set_no_blocks
+            if g not in self.ngates
+        ]
+        self.gates = [
+            g for g in non_native_gates
+            if g.num_qudits == 2
+        ]
+        if SwapGate() not in data.model.gate_set:
+            self.gates.append(SwapGate())
+
+        self.generate_new_gate_templates()
         instantiate_options = self.instantiate_options.copy()
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
