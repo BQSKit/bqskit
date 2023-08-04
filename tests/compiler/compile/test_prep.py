@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from bqskit import compile
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CXGate
@@ -88,7 +86,6 @@ def test_state_inst_3() -> None:
     assert out_state.get_distance_from(state) < 1e-8
 
 
-@pytest.mark.skip(reason='Test takes 4 hours and is sometimes fails')
 def test_state_map() -> None:
     num_qudits = 3
     utry = UnitaryMatrix.random(num_qudits)
