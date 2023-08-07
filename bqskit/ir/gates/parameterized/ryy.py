@@ -18,31 +18,42 @@ class RYYGate(
     CachedClass,
 ):
     """
-    A gate representing an arbitrary rotation around the YY axis for qudits.
-
-    __init__() arguments:
-            num_levels : int
-                Number of levels in each qudit (d).
-            level_1,level_2, level_3, level_4: int
-                The levels on which to apply the Y gates (0...d-1).
-    get_unitary arguments:
-            param: float
-            The angle by which to rotate
+    A qudit gate representing an arbitrary rotation around the YY axis for qudits.
     """
 
     _num_qudits = 2
     _num_params = 1
     _qasm_name = 'ryy'
 
-    def __init__(self, num_levels: int = 2, level_1: int = 0, level_2: int = 1, level_3: int = 0, level_4: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1: int = 0, 
+        level_2: int = 1, 
+        level_3: int = 0, 
+        level_4: int = 1
+    ) ->None:
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level_1 (int): the first level for the first Y qudit gate (<num_levels)
+            level_2 (int): the second level for the first Y qudit gate (<num_levels)
+            level_3 (int): the first level for the second Y qudit gate (<num_levels)
+            level_4 (int): the second level for the second Y qudit gate (<num_levels) 
+            
+            Raises:
+            ValueError: if num_levels < 2
+            ValueError: if any of levels >= num_levels
+        """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
-                'YGate num_levels must be a postive integer greater than or equal to 2.',
+                'RYYGate num_levels must be a postive integer greater than or equal to 2.',
             )
         self.num_levels = num_levels
         if level_1 > num_levels or level_2 > num_levels or level_3 > num_levels or level_4 > num_levels:
             raise ValueError(
-                'YGate indices must be equal or less to the number of levels.',
+                'RYYGate indices must be equal or less to the number of levels.',
             )
         self.level_1 = level_1
         self.level_2 = level_2

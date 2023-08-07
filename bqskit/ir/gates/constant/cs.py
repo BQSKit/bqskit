@@ -3,12 +3,10 @@ from __future__ import annotations
 
 from bqskit.ir.gates.composed import ControlledGate
 from bqskit.ir.gates.constant.s import SGate
-from bqskit.ir.gates.quditgate import QuditGate
 from typing import Sequence
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class CSGate(QuditGate):
+class CSGate(ControlledGate):
     """
     The controlled-S gate for qudits
     """
@@ -16,8 +14,18 @@ class CSGate(QuditGate):
     _num_qudits = 2
     _qasm_name = 'cs'
 
-    def __init__(self, num_levels: int = 2, controls: Sequence[int] = [1]):
+    def __init__(
+        self, 
+        num_controls: int=1, 
+        num_levels: Sequence[int] | int = 2, 
+        level_1: int=0,
+        level_2: int=1,
+        level_of_each_control: Sequence[Sequence[int]] | None = None
+    ) -> None:
+        """Builds the CSGate, see :class:`ControlledGate` for more information."""
         super().__init__(
             SGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
-            num_levels=num_levels, controls=controls,
+            num_controls=num_controls,
+            num_levels=num_levels,
+            level_of_each_control = level_of_each_control
         )

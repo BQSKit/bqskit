@@ -28,7 +28,21 @@ class PGate(QuditGate, DifferentiableUnitary, CachedClass):
     _num_qudits = 1
     _num_params = 1
 
-    def __init__(self, num_levels: int = 2, level: int = 1):
+    def __init__(
+        self,
+        num_levels: int = 2, 
+        level: int = 1
+    ) -> None:
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level (int): the level for the  phase qudit gate (<num_levels)
+            
+            Raises:
+            ValueError: if num_levels < 2
+            ValueError: if level >= num_levels
+        """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'PGate num_levels must be a postive integer greater than or equal to 2.',
@@ -40,7 +54,10 @@ class PGate(QuditGate, DifferentiableUnitary, CachedClass):
             )
         self.level = level
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+    def get_unitary(
+        self, 
+        params: RealVector = []
+    ) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
@@ -48,7 +65,10 @@ class PGate(QuditGate, DifferentiableUnitary, CachedClass):
         matrix[self.level, self.level] = np.exp(params[0] * 1j)
         return UnitaryMatrix(matrix, self.radixes)
 
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
+    def get_grad(
+        self, 
+        params: RealVector = []
+    ) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 

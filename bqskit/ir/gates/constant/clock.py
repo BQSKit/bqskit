@@ -28,7 +28,7 @@ class ClockGate(QuditGate): #TODO fix docstring and init
 
     def __init__(
         self, 
-        num_levels: int
+        num_levels: int=3
     ) -> None:
         self.num_levels = num_levels
 

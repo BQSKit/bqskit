@@ -27,8 +27,18 @@ class CRXGate(ControlledGate):
     _num_params = 1
     _qasm_name = 'crx'
 
-    def __init__(self, num_levels: int = 2, controls: Sequence[int] = [1], level_1: int = 0, level_2: int = 1):
+    def __init__(
+        self, 
+        num_controls: int=1, 
+        num_levels: Sequence[int] | int = 2, 
+        level_1: int=0,
+        level_2: int=1,
+        level_of_each_control: Sequence[Sequence[int]] | None = None
+    ) -> None:
+        """Builds the CRXGate, see :class:`ControlledGate` for more information."""     
         super().__init__(
             RXGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
-            num_levels=num_levels, controls=controls,
+            num_controls=num_controls,
+            num_levels=num_levels,
+            level_of_each_control = level_of_each_control
         )

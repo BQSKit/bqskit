@@ -23,7 +23,7 @@ class CZGate(ControlledGate):
         """Builds the CZGate, see :class:`ControlledGate` for more information."""
         super().__init__(
             ZGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
-            num_controls=1,
+            num_controls=num_controls,
             num_levels=num_levels,
-            level_of_each_control = None
+            level_of_each_control = level_of_each_control
         )

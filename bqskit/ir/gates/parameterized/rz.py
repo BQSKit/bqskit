@@ -11,36 +11,46 @@ from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class RZGate(QuditGate, DifferentiableUnitary, CachedClass):
+class RZGate(
+    QuditGate, 
+    DifferentiableUnitary, 
+    CachedClass):
     """
     A gate representing an arbitrary rotation by the Z qudit gate This is
     equivalent to rotation by the Z Pauli Gate in the subspace of 2 levels.
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
-        level: int
-             The level on which to apply the Z gate (0...d-1).
-    get_unitary arguments:
-            param: float
-            The angle by which to rotate
     """
 
     _num_qudits = 1
     _num_params = 1
     _qasm_name = 'rz'
 
-    def __init__(self, num_levels: int = 2, level: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1: int=0,
+        level_2: int = 1):
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level_1 (int): the first level for the X qudit gate (<num_levels)
+            level_2 (int): the second level for the X qudit gate (<num_levels)
+            
+            Raises:
+            ValueError: if num_levels < 2
+            ValueError: if any of levels >= num_levels
+        """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
-                'RZGate num_levels must be a postive integer greater than or equal to 2.',
+                'RXGate num_levels must be a postive integer greater than or equal to 2.',
             )
         self.num_levels = num_levels
-        if level > num_levels:
+        if level_1 > num_levels or level_2 > num_levels:
             raise ValueError(
-                'RZGate index must be equal or less to the number of levels.',
+                'RXGate indices must be equal or less to the number of levels.',
             )
-        self.level = level
+        self.level_1 = level_1
+        self.level_2 = level_2
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -48,7 +58,7 @@ class RZGate(QuditGate, DifferentiableUnitary, CachedClass):
 
         matrix = np.eye(self.num_levels, dtype=complex) * \
             np.exp(-params[0] / 2 * 1j)
-        matrix[level, level] = np.exp(params[0] / 2 * 1j)
+        matrix[level_2, level_2] = np.exp(params[0] / 2 * 1j)
         return UnitaryMatrix(matrix, self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
@@ -61,7 +71,7 @@ class RZGate(QuditGate, DifferentiableUnitary, CachedClass):
 
         matrix = np.eye(self.num_levels, dtype=complex) * \
             np.exp(-params[0] / 2 * 1j) * (-0.5 * 1j)
-        matrix[level, level] = np.exp(params[0] / 2 * 1j) * (0.5 * 1j)
+        matrix[level_2, level_2] = np.exp(params[0] / 2 * 1j) * (0.5 * 1j)
 
         return np.array(
             [

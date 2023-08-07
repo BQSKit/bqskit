@@ -11,7 +11,14 @@ from bqskit.utils.cachedclass import CachedClass
 
 
 class CKMDGate(QutritGate, DifferentiableUnitary, CachedClass):
-    """The Cabibbo–Kobayashi–Maskawa dagger single qutrit gate."""
+    """
+    The Cabibbo–Kobayashi–Maskawa dagger single qutrit gate.
+
+    For more information consult the Particle Data Group review: https://pdg.lbl.gov/2023/reviews/rpp2022-rev-ckm-matrix.pdf
+
+    Due to the current experimental searches for the exact values of the mixing parameters,
+    and to allow for beyond standard model physics, we provide the user with the flexibility of setting each parameter.
+    """
 
     _num_qudits = 1
     _num_params = 4

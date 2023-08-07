@@ -19,29 +19,29 @@ class RYGate(
 ):
     """
     A gate representing an arbitrary rotation around the Y axis. This is
-    equivalent to rotation by the Y Pauli Gate in the subspace of 2 levels.
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
-        level_1,level_2: int
-             The levels on which to apply the Y gate (0...d-1).
-
-    get_unitary arguments:
-            param: float
-            The angle by which to rotate
+    equivalent to rotation by the Y Pauli Gate in the subspace of 2 levels. 
     """
 
     _num_qudits = 1
     _num_params = 1
     _qasm_name = 'ry'
 
-    def __init__(self, num_levels: int = 2, level_1: int = 0, level_2: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1: int = 0, 
+        level_2: int = 1
+    ) -> None:
         """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level_1 (int): the first level for the X qudit gate (<num_levels)
+            level_2 (int): the second level for the X qudit gate (<num_levels)
+            
             Raises:
-            ValueError: If `num_levels` is less than 2 or not a positive integer
-                        If level >= num_levels
-                        IF Gate.radixes != num_levels
+            ValueError: if num_levels < 2
+            ValueError: if any of levels >= num_levels
         """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
@@ -50,7 +50,7 @@ class RYGate(
         self.num_levels = num_levels
         if level_1 > num_levels or level_2 > num_levels:
             raise ValueError(
-                'YGate indices must be equal or less to the number of levels.',
+                'RYGate indices must be equal or less to the number of levels.',
             )
         self.level_1 = level_1
         self.level_2 = level_2

@@ -13,11 +13,11 @@ class HGate(QuditGate):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 
-    The clock gate is given by the following formula:
+    The HGate is given by the following formula:
 
     .. math::
         \\begin{equation}
-            H_d = 1/\\sqrt(d) \\sum_{ij} \\omega_d^{ij} |i >< j|
+            H = 1/\\sqrt(d) \\sum_{ij} \\omega_d^{ij} |i >< j|
         \\end{equation}
 
     where
@@ -32,7 +32,7 @@ class HGate(QuditGate):
 
     def __init__(
         self,
-        num_levels: int
+        num_levels: int =2
     ) -> None:
         """
             Args:
