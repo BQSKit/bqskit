@@ -8,10 +8,9 @@ from bqskit.passes import GreedyPlacementPass
 from bqskit.passes import SetModelPass
 
 
-def test_apply_placement(r3_qubit_circuit: Circuit) -> None:
+def test_apply_placement(r3_qubit_circuit: Circuit, compiler: Compiler) -> None:
     model = MachineModel(6, [(0, 1), (1, 2), (2, 3), (2, 4), (2, 5), (3, 5)])
     workflow = [SetModelPass(model), GreedyPlacementPass(), ApplyPlacement()]
-    with Compiler() as compiler:
-        out_circuit = compiler.compile(r3_qubit_circuit, workflow)
-        assert out_circuit.num_qudits == 6
-        assert out_circuit.active_qudits == [2, 3, 5]
+    out_circuit = compiler.compile(r3_qubit_circuit, workflow)
+    assert out_circuit.num_qudits == 6
+    assert out_circuit.active_qudits == [2, 3, 5]
