@@ -6,27 +6,26 @@ from bqskit.ir.gates.constant.x import XGate
 from typing import Sequence
 
 
-class CNOTGate(ControlledGate):
+class CCXGate(ControlledGate):
     """
-    The Controlled-Not or Controlled-X gate for qudits.
+    The CCX or Toffoli gate for qudits.
     """
 
-    _qasm_name = 'cx'
+    _qasm_name = 'ccx'
     _num_params = 0
 
     def __init__(
         self, 
-        num_controls: int=1, 
+        num_controls: int=2, 
         num_levels: Sequence[int] | int = 2, 
         level_of_each_control: Sequence[Sequence[int]] | None = None
     ) -> None:
-        """Builds the CNOTGate, see :class:`ControlledGate` for more information."""
+        """Builds the CCXGate, see :class:`ControlledGate` for more information."""
         super().__init__(
             XGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
-            num_controls=1,
+            num_controls=2,
             num_levels=num_levels,
             level_of_each_control = None
         )
 
-
-CXGate = CNOTGate
+ToffoliGate = CCXGate

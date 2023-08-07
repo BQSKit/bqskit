@@ -11,36 +11,48 @@ from bqskit.utils.typing import is_integer
 
 class ZGate(QuditGate):
     """
-    The one-qudit Z[i] gate. This gate is equivalent to a Pauli Z gate on the
-    level i.
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
-        level: int
-            The level on which to apply the z gate (0...d-1).
+    The one-qudit Z[i,j] gate. This gate is equivalent to a Pauli Z gate on the subspace of levels i,j.
     """
     _num_qudits = 1
     _num_params = 0
     _qasm_name = 'z'
 
-    def __init__(self, num_levels: int = 2, level: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1: int = 0, 
+        level_2: int = 1
+    ) -> None:
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level_1 (int): the first level for the Z qudit gate (<num_levels)
+            level_2 (int): the second level for the Z qudit gate (<num_levels)
+            
+            Raises:
+            ValueError: if num_levels < 2
+            ValueError: if any of levels >= num_levels
+        """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'ZGate num_levels must be a postive integer greater than or equal to 2.',
             )
         self.num_levels = num_levels
-        if level > num_levels:
+        if level_1 > num_levels or level_2 > num_levels:
             raise ValueError(
-                'ZGate index must be equal or less to the number of levels.',
+                'ZGate indices must be equal or less to the number of levels.',
             )
-        self.level = level
+        self.level_1 = level_1
+        self.level_2 = level_2
+
 
     def get_unitary(self) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
 
         matrix = np.eye(self.num_levels, dtype=complex)
-        matrix[self.level, self.level] = -1.0
+        matrix[self.level_2, self.level_2] = 1.0 
+        matrix[self.level_2, self.level_2] = -1.0
         return UnitaryMatrix(matrix, self.radixes)
 
     def get_grad(self) -> npt.NDArray[np.complex128]:

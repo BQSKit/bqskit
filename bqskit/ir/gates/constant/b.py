@@ -26,8 +26,18 @@ class BGate(QuditGate):
     _num_params = 0
 
 
-    def __init__(self, num_levels: int = 2, level_1_1: int = 0, level_1_2: int = 1, level_2_1: int = 0, level_2_2: int = 1,\
-                 level_3_1: int = 0, level_3_2: int = 1, level_4_1: int = 0, level_4_2: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1_1: int = 0, 
+        level_1_2: int = 1, 
+        level_2_1: int = 0, 
+        level_2_2: int = 1,
+        level_3_1: int = 0, 
+        level_3_2: int = 1, 
+        level_4_1: int = 0, 
+        level_4_2: int = 1
+    ) -> None:
         
         """
             Args:
@@ -40,7 +50,6 @@ class BGate(QuditGate):
             
             Raises:
             ValueError: if num_levels < 2
-
             ValueError: if any of levels >= num_levels
         """
         if num_levels < 2 or not is_integer(num_levels):

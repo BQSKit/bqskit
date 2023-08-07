@@ -11,21 +11,30 @@ from bqskit.utils.typing import is_integer
 
 class XGate(QuditGate):
     """
-    The one-qudit X[i,j] gate. This gate is equivalent to a Pauli X gate on the
-    subspace of levels i,j.
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
-        level_1,level_2: int
-            The levels on which to apply the X gate (0...d-1).
+    The one-qudit X[i,j] gate. This gate is equivalent to a Pauli X gate on the subspace of levels i,j.
     """
 
     _num_qudits = 1
     _num_params = 0
     _qasm_name = 'x'
 
-    def __init__(self, num_levels: int = 2, level_1: int = 0, level_2: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1: int = 0, 
+        level_2: int = 1
+    ) -> None:
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level_1 (int): the first level for the X qudit gate (<num_levels)
+            level_2 (int): the second level for the X qudit gate (<num_levels)
+            
+            Raises:
+            ValueError: if num_levels < 2
+            ValueError: if any of levels >= num_levels
+        """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'XGate num_levels must be a postive integer greater than or equal to 2.',

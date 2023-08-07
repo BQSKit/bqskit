@@ -5,7 +5,6 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
@@ -25,17 +24,23 @@ class HGate(QuditGate):
     .. math:: \\omega = \\exp(2\\pi*i/d)
     and d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each quantum object.
     """
 
     _num_qudits = 1
     _num_params = 0
     _qasm_name = 'h'
 
-    def __init__(self, num_levels: int):
+    def __init__(
+        self,
+        num_levels: int
+    ) -> None:
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            Raises:
+            ValueError: if num_levels < 2
+        """
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'HGate num_levels must be a postive integer greater than or equal to 2.',

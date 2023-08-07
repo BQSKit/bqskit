@@ -8,7 +8,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class PDGate(QuditGate):
+class PDGate(QuditGate): #TODO fix the docs
     """
     The one-qudit P[i] gate.
 

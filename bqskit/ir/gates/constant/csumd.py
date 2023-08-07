@@ -8,7 +8,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class CSUMDGate(QuditGate):
+class CSUMDGate(QuditGate): #TODO fix doc, cache unitary, default num_levels=3 and compare to CSUM and combine
     r"""
     The two-qudit Conditional-SUM (CSUM_d) gate.
 

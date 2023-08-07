@@ -10,19 +10,34 @@ from bqskit.utils.typing import is_integer
 class YYGate(QuditGate):
     """
     The Ising YY coupling gate for qudits.
-
-    __init__() arguments:
-            num_levels : int
-                Number of levels in each qudit (d).
-            level_1,level_2, level_3, lelvel_4: int
-                The levels on which to apply the Y gate (0...d-1).
     """
 
     _num_qudits = 2
     _qasm_name = 'yy'
     _num_params = 0
 
-    def __init__(self, num_levels: int = 2, level_1: int = 0, level_2: int = 1, level_3: int = 0, level_4: int = 1):
+    def __init__(
+        self, 
+        num_levels: int = 2, 
+        level_1: int = 0, 
+        level_2: int = 1, 
+        level_3: int = 0, 
+        level_4: int = 1
+    ) -> None:
+        """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+
+            level_1 (int): the first level for the first Y qudit gate (<num_levels)
+            level_2 (int): the second level for the first Y qudit gate (<num_levels)
+            level_3 (int): the first level for the second Y qudit gate (<num_levels)
+            level_4 (int): the second level for the second Y qudit gate (<num_levels) 
+            
+            Raises:
+            ValueError: if num_levels < 2
+            ValueError: if any of levels >= num_levels
+        """
+        
         if num_levels < 2 or not is_integer(num_levels):
             raise ValueError(
                 'YYGate num_levels must be a postive integer greater than or equal to 2.',

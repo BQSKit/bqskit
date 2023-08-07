@@ -8,7 +8,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class HDGate(QuditGate):
+class HDGate(QuditGate): #TODO fix doc, cache unitary, default num_levels=3 and compare to HGate and combine
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 

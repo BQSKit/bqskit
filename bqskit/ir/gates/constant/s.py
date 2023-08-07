@@ -9,7 +9,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
-class SGate(QuditGate):
+class SGate(QuditGate): #TODO fix the docs
     """
     The single-qudit S gate.
 

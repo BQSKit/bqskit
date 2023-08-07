@@ -8,7 +8,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class ClockGate(QuditGate):
+class ClockGate(QuditGate): #TODO fix docstring and init
     """
     The one-qudit clock (Z) gate. This is a Weyl-Heisenberg gate.
 
@@ -20,17 +20,16 @@ class ClockGate(QuditGate):
         \\end{equation}
 
     where d is the number of levels (2 levels is a qubit,
-    3 levels is a qutrit, etc.)
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
+    3 levels is a qutrit, etc.) 
     """
 
     _num_qudits = 1
     _num_params = 0
 
-    def __init__(self, num_levels: int):
+    def __init__(
+        self, 
+        num_levels: int
+    ) -> None:
         self.num_levels = num_levels
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
