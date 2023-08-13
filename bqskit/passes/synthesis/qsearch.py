@@ -132,8 +132,141 @@ class QSearchSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
+    def transform_circuit_from_squander_to_qsearch(
+    qubitnum,
+    Params):
+        circuit=Circuit(qubitnum)
+        for idx in range(len(gates)-1, -1, -1):
+
+            gate = gates[idx]
+
+            if gate.get("type") == "CNOT":
+                # adding CNOT gate to the quantum circuit
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(CNOTGate(), (control_qbit, target_qbit))
+                
+
+            if gate.get("type") == "CRY":
+                # adding CRY gate to the quantum circuit
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                print("CRY gate needs to be implemented")
+
+            elif gate.get("type") == "CZ":
+                # adding CZ gate to the quantum circuit
+            
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(CZGate(), (control_qbit, target_qbit))
+               
+
+            elif gate.get("type") == "CH":
+                # adding CZ gate to the quantum circuit
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(CZGate(), (control_qbit, target_qbit))
+               
+
+            elif gate.get("type") == "SYC":
+                # Sycamore gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(SycamoreGate(), (control_qbit, target_qbit))
+               
+            elif gate.get("type") == "U3":
+                print("Unsupported gate in the Cirq export: U3 gate")
+                return None;
+
+            elif gate.get("type") == "RX":
+                # RX gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                Theta=gate.get("Theta")
+                
+                circuit.append_gate(RXGate(), (target_qbit, target_qbit),[2*Theta]) # 2 times the Theta becouse squander calculate with 0.5*Theta
+              
+
+            elif gate.get("type") == "RY":
+                # RY gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                Theta=gate.get("Theta")
+                
+                circuit.append_gate(RYGate(), target_qubit, [2*Theta])
+                
+
+            elif gate.get("type") == "RZ":
+                # RZ gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                Phi=gate.get("Phi")
+                
+                circuit.append_gate(RZGate(), (target_qbit, target_qbit),[Phi])
+               
+
+            elif gate.get("type") == "X":
+                # X gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(XGate(), [target_qbit])
+               
+
+            elif gate.get("type") == "Y":
+                # Y gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(YGate(), [target_qbit])
+             
+
+            elif gate.get("type") == "Z":
+                # Z gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(ZGate(), [target_qbit])
+
+            elif gate.get("type") == "SX":
+                # RZ gate
+                control_qbit=gate.get("control_qbit")
+                
+                target_qbit=gate.get("target_qbit")
+                
+                circuit.append_gate(RZGate(), [target_qbit])
+                
+            return(circuit)
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        Umtx=utry.numpy
+        
+        from squander import N_Qubit_Decomposition_adaptive
+        
+        cDecompose=N_Qubit_Decomposition_adaptive(Umtx.conj().T, level_limit_max=5,level_limit_min=0)
+        cDecompose.Start_Decomposition()
+        
+        self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
+        
         frontier = Frontier(utry, self.heuristic_function)
 
         # Seed the search with an initial layer
