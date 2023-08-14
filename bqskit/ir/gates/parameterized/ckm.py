@@ -1,3 +1,4 @@
+"""This module implments the CKMGate."""
 from __future__ import annotations
 
 import numpy as np

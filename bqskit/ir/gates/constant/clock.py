@@ -6,9 +6,10 @@ import numpy as np
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_integer
 
 
-class ClockGate(QuditGate): #TODO fix docstring and init
+class ClockGate(QuditGate):
     """
     The one-qudit clock (Z) gate. This is a Weyl-Heisenberg gate.
 
@@ -30,6 +31,24 @@ class ClockGate(QuditGate): #TODO fix docstring and init
         self, 
         num_levels: int=3
     ) -> None:
+        """
+        Construct a ClockGate.
+        
+        Args:
+            num_levels (int): The number of qudit levels (>=2).
+        
+        Raises:
+            ValueError: if num_levels < 2
+        """
+        if not is_integer(num_levels):
+           raise TypeError(
+                'ClockGate num_levels must be an integer.',
+            )
+        if num_levels < 2:
+            raise ValueError(
+                'ClockGate num_levels must be a postive integer greater than or equal to 2.',
+            )
+         
         self.num_levels = num_levels
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

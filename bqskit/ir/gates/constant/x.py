@@ -25,13 +25,14 @@ class XGate(QuditGate):
         level_2: int = 1
     ) -> None:
         """
-            Args:
+        Construct a XGate.
+        
+        Args:
             num_levels (int): The number of qudit levels (>=2).
-
             level_1 (int): the first level for the X qudit gate (<num_levels)
             level_2 (int): the second level for the X qudit gate (<num_levels)
-            
-            Raises:
+        
+        Raises:
             ValueError: if num_levels < 2
             ValueError: if any of levels >= num_levels
         """

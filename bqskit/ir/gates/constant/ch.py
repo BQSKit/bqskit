@@ -21,7 +21,8 @@ class CHGate(ControlledGate):
         0 & 0 & \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2} \\\\
         \\end{pmatrix}
     
-    When parameters are changed, see ~ControlledGate for more info
+    See :class:`ControlledGate` for more information on parameters,
+    and generalizing to qudits.
     """
 
     _num_qudits = 2

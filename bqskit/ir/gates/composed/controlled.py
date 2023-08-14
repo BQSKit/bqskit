@@ -61,7 +61,10 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
                 ```
                 > cnot_gate = ControlledGate(XGate())
                 > cnot_gate.get_unitary()
-                #put here the output
+                > [[1, 0, 0, 0],
+                  [0, 1, 0, 0],
+                  [0, 0, 0, 1],
+                  [0, 0, 1, 0]]
                 ```  
     
             Toffoli for qubits:

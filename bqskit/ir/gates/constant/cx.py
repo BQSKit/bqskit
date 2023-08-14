@@ -8,7 +8,7 @@ from typing import Sequence
 
 class CNOTGate(ControlledGate):
     """
-    The Controlled-Not or Controlled-X gate for qudits.
+    The Controlled-Not or Controlled-X gate.
     """
 
     _qasm_name = 'cx'

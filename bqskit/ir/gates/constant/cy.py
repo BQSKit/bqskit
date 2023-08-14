@@ -18,6 +18,8 @@ class CYGate(ControlledGate):
         self, 
         num_controls: int=1, 
         num_levels: Sequence[int] | int = 2, 
+        level_1: int=0,
+        level_2: int=1,
         level_of_each_control: Sequence[Sequence[int]] | None = None
     ) -> None:
         """Builds the CYGate, see :class:`ControlledGate` for more information."""

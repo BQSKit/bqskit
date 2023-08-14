@@ -57,7 +57,7 @@ class CSUMGate(QuditGate):
             ValueError: if num_levels < 2
            
         """
-        if num_levels < 2 or not is_integer(num_levels):
+        if num_levels < 2 or not is_integer(num_levels): #TODO separate typerror from value error
             raise ValueError(
                 'CSUMGate num_levels must be a postive integer greater than or equal to 2.',
             )
