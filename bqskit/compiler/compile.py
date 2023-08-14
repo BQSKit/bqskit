@@ -4,7 +4,7 @@ from __future__ import annotations
 import functools
 import logging
 import warnings
-from typing import Any
+from typing import Any, overload
 from typing import Callable
 from typing import TYPE_CHECKING
 
@@ -85,6 +85,40 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None,
+    optimization_level: int,
+    max_synthesis_size: int,
+    synthesis_epsilon: float,
+    error_threshold: float | None,
+    error_sim_size: int,
+    compiler: Compiler | None,
+    seed: int | None,
+    with_placement: None,
+    *compiler_args: Any,
+    **compiler_kwargs: Any,
+) -> Circuit:
+    ...
+
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None,
+    optimization_level: int,
+    max_synthesis_size: int,
+    synthesis_epsilon: float,
+    error_threshold: float | None,
+    error_sim_size: int,
+    compiler: Compiler | None,
+    seed: int | None,
+    with_placement: bool,
+    *compiler_args: Any,
+    **compiler_kwargs: Any,
+) -> tuple[Circuit, ]:
+    ...
+
 
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
@@ -96,6 +130,7 @@ def compile(
     error_sim_size: int = 8,
     compiler: Compiler | None = None,
     seed: int | None = None,
+    with_placement: bool | None = None,  # TODO: Finish adding support
     *compiler_args: Any,
     **compiler_kwargs: Any,
 ) -> Circuit:
