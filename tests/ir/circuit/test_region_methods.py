@@ -240,6 +240,33 @@ class TestFold:
 
         assert after_fold == before_fold
 
+    def test_deterministic_gate_ordering(self) -> None:
+        def create_circuit(
+            coupling_graph: list[tuple[int, int]],
+            regions: list[list[int]],
+            iterations: int,
+        ) -> Circuit:
+            circuit = Circuit(4)
+            for location in regions * iterations:
+                circuit.append_gate(CNOTGate(), location)
+                circuit.append_gate(U3Gate(), [location[0]])
+                circuit.append_gate(U3Gate(), [location[1]])
+            return circuit
+
+        coupling_graph = [(0, 1), (1, 2), (2, 3)]
+        circuits = [
+            create_circuit(
+                coupling_graph, [[0, 1], [2, 3]], 4,
+            ) for x in range(10)
+        ]
+
+        for (a, b) in coupling_graph:
+            region = {a: (0, circuits[0].depth), b: (0, circuits[0].depth)}
+
+            operations = circuits[0][region]
+            for circuit in circuits[1:]:
+                assert circuit[region] == operations
+
 
 class TestSurround:
     """This tests circuit.surround."""

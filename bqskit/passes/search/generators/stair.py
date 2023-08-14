@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -31,8 +32,8 @@ class StairLayerGenerator(LayerGenerator):
 
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
-        data: dict[str, Any],
+        target: UnitaryMatrix | StateVector | StateSystem,
+        data: PassData,
     ) -> Circuit:
         """
         Generate the initial layer, see LayerGenerator for more.
@@ -42,7 +43,7 @@ class StairLayerGenerator(LayerGenerator):
                 `self.seed`.
         """
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )
@@ -56,11 +57,7 @@ class StairLayerGenerator(LayerGenerator):
 
         return init_circuit
 
-    def gen_successors(
-        self,
-        circuit: Circuit,
-        data: dict[str, Any],
-    ) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
         """
         Generate the successors of a circuit node.
 

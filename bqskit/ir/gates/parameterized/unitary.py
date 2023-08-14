@@ -4,21 +4,15 @@ from __future__ import annotations
 from typing import Sequence
 
 import numpy as np
-import numpy.typing as npt
-import scipy as sp
 
-from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
+from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_valid_radixes
 
 
-class VariableUnitaryGate(
-    Gate,
-    LocallyOptimizableUnitary,
-):
+class VariableUnitaryGate(GeneralGate):
     """A Variable n-qudit unitary operator."""
 
     def __init__(self, num_qudits: int, radixes: Sequence[int] = []) -> None:
@@ -65,15 +59,11 @@ class VariableUnitaryGate(
         x = real + imag
         return UnitaryMatrix.closest_to(np.reshape(x, self.shape), self.radixes)
 
-    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
-        """
-        Return the optimal parameters with respect to an environment matrix.
-
-        See :class:`LocallyOptimizableUnitary` for more info.
-        """
-        self.check_env_matrix(env_matrix)
-        U, _, Vh = sp.linalg.svd(env_matrix)
-        x = np.reshape(Vh.conj().T @ U.conj().T, (self.num_params // 2,))
+    def calc_params(self, utry: UnitaryLike) -> list[float]:
+        """Return the parameters for this gate to implement `utry`"""
+        if 2 * len(utry) ** 2 != self.num_params:
+            raise ValueError('Mismatch in unitary and gate dimension.')
+        x = np.reshape(utry, (self.num_params // 2,))
         return list(np.real(x)) + list(np.imag(x))
 
     @staticmethod

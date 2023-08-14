@@ -5,6 +5,7 @@ import abc
 
 from bqskit.ir.circuit import Circuit
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -19,14 +20,14 @@ class HeuristicFunction(abc.ABC):
     def get_value(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Return the heuristic's value given `circuit` and `target`."""
 
     def __call__(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Return the heuristic's value given `circuit` and `target`."""
 
@@ -35,7 +36,7 @@ class HeuristicFunction(abc.ABC):
                 'Expected circuit, got %s.' % type(circuit),
             )
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
             )

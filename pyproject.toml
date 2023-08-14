@@ -4,3 +4,51 @@ requires = [
     "setuptools>=40.1.0",
     "oldest-supported-numpy",
 ]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+minversion = 3.3.0
+envlist = pre-commit,py38,py39,py310,py311
+skip_missing_interpreters = true
+
+[testenv]
+passenv =
+    TERM
+deps =
+    numpy>=1.22
+    pytest>=2.8
+    hypothesis[numpy,zoneinfo]>=6.14.5
+    qiskit>=0.37.1
+    pytket>=1.5.0
+    cirq>=1.0.0
+    qutip>=4.7.0
+    pytket-qiskit
+    tzdata
+commands =
+    pytest {posargs}
+
+[testenv:pre-commit]
+skip_install = true
+deps = pre-commit
+commands = pre-commit run --all-files --show-diff-on-failure
+basepython=py311
+"""
+
+[tool.pytest.ini_options]
+minversion = "2.8"
+testpaths = ["tests/"]
+python_files = "test*.py"
+norecursedirs = ".env"
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+allow_redefinition = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+pretty = true
+plugins = "numpy.typing.mypy_plugin"

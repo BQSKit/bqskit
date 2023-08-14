@@ -4,11 +4,13 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateVector
+    from bqskit.qis.state.system import StateSystem
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -18,7 +20,7 @@ class MultiStartGenerator(abc.ABC):
         self,
         multistarts: int,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> list[npt.NDArray[np.float64]]:
         """
         Generate `multistarts` starting points for instantiation.
@@ -28,7 +30,7 @@ class MultiStartGenerator(abc.ABC):
 
             circuit (Circuit): The circuit to generate the points for.
 
-            target (UnitaryMatrix | StateVector): The target.
+            target (UnitaryMatrix | StateVector | StateSystem): The target.
 
         Return:
             (list[npt.NDArray[np.float64]]): List of starting inputs for

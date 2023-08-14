@@ -1,26 +1,27 @@
 from __future__ import annotations
 
-from bqskit.ir import Circuit
+from bqskit.compiler.compiler import Compiler
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import CZGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes import CNOTToCZPass
 
 
-def test_cnot2cz_only_cnots() -> None:
+def test_cnot2cz_only_cnots(compiler: Compiler) -> None:
     circuit = Circuit(3)
     for i in range(100):
         circuit.append_gate(CNOTGate(), (0, 1))
         circuit.append_gate(CNOTGate(), (1, 2))
 
     utry = circuit.get_unitary()
-    CNOTToCZPass().run(circuit)
+    circuit = compiler.compile(circuit, [CNOTToCZPass()])
     assert CNOTGate() not in circuit.gate_set
     assert CZGate() in circuit.gate_set
     assert circuit.get_unitary().get_distance_from(utry) < 5e-8
 
 
-def test_cnot2cz_with_single_qubit() -> None:
+def test_cnot2cz_with_single_qubit(compiler: Compiler) -> None:
     circuit = Circuit(3)
     for i in range(100):
         circuit.append_gate(U3Gate(), 0)
@@ -35,7 +36,7 @@ def test_cnot2cz_with_single_qubit() -> None:
         circuit.append_gate(U3Gate(), 2)
 
     utry = circuit.get_unitary()
-    CNOTToCZPass().run(circuit)
+    circuit = compiler.compile(circuit, [CNOTToCZPass()])
     assert CNOTGate() not in circuit.gate_set
     assert CZGate() in circuit.gate_set
     assert circuit.get_unitary().get_distance_from(utry) < 5e-8

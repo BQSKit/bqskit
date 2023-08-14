@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 
@@ -16,16 +16,16 @@ class PassPredicate(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
+    def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate and retrieve the truth value result."""
 
-    def __call__(self, circuit: Circuit, data: dict[str, Any]) -> bool:
+    def __call__(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate and retrieve the truth value result."""
 
         if not isinstance(circuit, Circuit):
-            raise TypeError('Expected Circuit, got %s.' % type(circuit))
+            raise TypeError(f'Expected Circuit, got {type(circuit)}.')
 
-        if not isinstance(data, dict):
-            raise TypeError('Expected dictionary, got %s.' % type(data))
+        if not isinstance(data, PassData):
+            raise TypeError(f'Expected PassData, got {type(data)}.')
 
         return self.get_truth_value(circuit, data)

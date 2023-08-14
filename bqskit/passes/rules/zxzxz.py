@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import cmath
-from typing import Any
 
 import numpy as np
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import RZGate
-from bqskit.ir.gates import SqrtXGate
+from bqskit.ir.gates.constant.sx import SqrtXGate
+from bqskit.ir.gates.parameterized.rz import RZGate
 
 
 class ZXZXZDecomposition(BasePass):
@@ -19,7 +19,7 @@ class ZXZXZDecomposition(BasePass):
     Convert a single-qubit circuit to ZXZXZ sequence.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         if circuit.num_qudits != 1:

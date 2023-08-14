@@ -4,6 +4,7 @@ from __future__ import annotations
 from bqskit.ir.circuit import Circuit
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -20,7 +21,7 @@ class DijkstraHeuristic(HeuristicFunction):
     def get_value(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Return the heuristic's value, see HeuristicFunction for more info."""
         cost = 0.0

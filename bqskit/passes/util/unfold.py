@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 
 
@@ -18,7 +18,7 @@ class UnfoldPass(BasePass):
     The UnfoldPass unfolds all CircuitGate blocks into the circuit.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Unfolding the circuit.')
         circuit.unfold_all()

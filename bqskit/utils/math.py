@@ -38,7 +38,8 @@ def dexpmv(
         (2008): 17-24.
     """
 
-    e = np.log2(np.linalg.norm(M, np.inf))
+    norm = np.linalg.norm(M, np.inf)
+    e = np.log2(norm) if norm != 0 else -np.inf
     r = int(max(0, e + 1))
     M = M / (2 ** r)
     dM = dM / (2 ** r)

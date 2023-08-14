@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
-from typing import Sequence
+from typing import TYPE_CHECKING
 
-from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.passes.control.predicate import PassPredicate
 from bqskit.utils.typing import is_sequence
+
+if TYPE_CHECKING:
+    from typing import Sequence
+
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
+
 
 _logger = logging.getLogger(__name__)
 
@@ -17,8 +22,8 @@ class GateCountPredicate(PassPredicate):
     """
     The GateCountPredicate class.
 
-    The GateCountPredicate returns true if the number of one type of gate has
-    changed in the circuit.
+    The GateCountPredicate returns true if the number of one of more types of
+    gate has changed in the circuit.
     """
 
     key = 'GateCountPredicate_circuit_count'
@@ -34,7 +39,7 @@ class GateCountPredicate(PassPredicate):
 
         self.gate = gate
 
-    def get_truth_value(self, circuit: Circuit, data: dict[str, Any]) -> bool:
+    def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
         gate_count = sum(circuit.count(g) for g in self.gate)
 
