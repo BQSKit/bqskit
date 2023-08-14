@@ -6,6 +6,7 @@ from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from bqskit.ir.gates.composed.tagged import TaggedGate
 from bqskit.ir.gates.composed.vlg import VariableLocationGate
+from bqskit.ir.gates.composed.embedded import EmbeddedGate
 
 __all__ = [
     'ControlledGate',
@@ -13,4 +14,5 @@ __all__ = [
     'FrozenParameterGate',
     'VariableLocationGate',
     'TaggedGate',
+    'EmbeddedGate'
 ]
