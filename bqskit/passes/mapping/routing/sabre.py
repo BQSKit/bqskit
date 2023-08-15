@@ -32,5 +32,6 @@ class GeneralizedSabreRoutingPass(BasePass, GeneralizedSabreAlgorithm):
             pi = [i for i in range(circuit.num_qudits)]
 
         self.forward_pass(circuit, pi, subgraph, modify_circuit=True)
+        # TODO: if final_mapping is already in data, apply it first
         data['final_mapping'] = pi
         _logger.info(f'Finished routing with layout: {str(pi)}')
