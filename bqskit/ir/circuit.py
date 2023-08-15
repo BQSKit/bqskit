@@ -451,7 +451,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for cycle_index, cycle in enumerate(self._circuit):
             if cycle[qudit_index] is not None:
                 points.append((cycle_index, qudit_index))
-        self.batch_pop(points)
+
+        if len(points) > 0:
+            self.batch_pop(points)
 
         # Update circuit properties
         self._num_qudits -= 1
