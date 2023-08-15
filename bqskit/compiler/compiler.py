@@ -351,9 +351,9 @@ class Compiler:
         self,
         task_or_circuit: Circuit,
         workflow: WorkflowLike,
-        request_data: None = None,
-        logging_level: int | None = None,
-        max_logging_depth: int = -1,
+        request_data: None = ...,
+        logging_level: int | None = ...,
+        max_logging_depth: int = ...,
     ) -> Circuit:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
@@ -363,9 +363,9 @@ class Compiler:
         self,
         task_or_circuit: Circuit,
         workflow: WorkflowLike,
-        request_data: bool,
-        logging_level: int | None = None,
-        max_logging_depth: int = -1,
+        request_data: bool,  # TODO: Redo sentinel value with literals
+        logging_level: int | None = ...,
+        max_logging_depth: int = ...,
     ) -> tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         ...

@@ -4,8 +4,10 @@ from __future__ import annotations
 import functools
 import logging
 import warnings
-from typing import Any, overload
+from typing import Any
 from typing import Callable
+from typing import Literal
+from typing import overload
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -85,22 +87,24 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+
 @overload
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
-    model: MachineModel | None,
-    optimization_level: int,
-    max_synthesis_size: int,
-    synthesis_epsilon: float,
-    error_threshold: float | None,
-    error_sim_size: int,
-    compiler: Compiler | None,
-    seed: int | None,
-    with_placement: None,
+    model: MachineModel | None = ...,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    with_mapping: Literal[False] = ...,
     *compiler_args: Any,
     **compiler_kwargs: Any,
 ) -> Circuit:
     ...
+
 
 @overload
 def compile(
@@ -113,10 +117,28 @@ def compile(
     error_sim_size: int,
     compiler: Compiler | None,
     seed: int | None,
-    with_placement: bool,
+    with_mapping: Literal[True],
     *compiler_args: Any,
     **compiler_kwargs: Any,
-) -> tuple[Circuit, ]:
+) -> tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
+    ...
+
+
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None,
+    optimization_level: int,
+    max_synthesis_size: int,
+    synthesis_epsilon: float,
+    error_threshold: float | None,
+    error_sim_size: int,
+    compiler: Compiler | None,
+    seed: int | None,
+    with_mapping: bool,
+    *compiler_args: Any,
+    **compiler_kwargs: Any,
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     ...
 
 
@@ -130,10 +152,10 @@ def compile(
     error_sim_size: int = 8,
     compiler: Compiler | None = None,
     seed: int | None = None,
-    with_placement: bool | None = None,  # TODO: Finish adding support
+    with_mapping: bool = False,
     *compiler_args: Any,
     **compiler_kwargs: Any,
-) -> Circuit:
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     """
     Compile a circuit, unitary, or state with a standard workflow.
 
@@ -179,6 +201,16 @@ def compile(
 
         seed (int | None): Set a seed for the compile function for
             better reproducibility. If left as None, will not set seed.
+
+        with_mapping (bool): If True, three values will be returned
+            instead of just the compiled circuit. The first value is the
+            compiled circuit, the second value is the initial mapping,
+            and the third value is the final mapping. The initial mapping
+            is a tuple where `initial_mapping[i] = j` implies that logical
+            qudit `i` in the input system starts on the physical qudit
+            `q` in the final circuit. Likewise, the final mapping describes
+            where the logical qudits are in the physical circuit at the end
+            of execution. (Default: False)
 
         compiler_args (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a cluster can go here.
@@ -392,6 +424,12 @@ def compile(
     # Close managed compiler
     if managed_compiler:
         compiler.close()
+
+    # Gather mapping data if necessary
+    if with_mapping:
+        pi = data.get('initial_mapping', list(range(input.num_qudits)))
+        pf = data.get('final_mapping', list(range(input.num_qudits)))
+        return out, pi, pf
 
     return out
 
