@@ -92,6 +92,8 @@ _logger = logging.getLogger(__name__)
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
     model: MachineModel | None = ...,
+    *,
+    with_mapping: Literal[False] = ...,
     optimization_level: int = ...,
     max_synthesis_size: int = ...,
     synthesis_epsilon: float = ...,
@@ -99,8 +101,6 @@ def compile(
     error_sim_size: int = ...,
     compiler: Compiler | None = ...,
     seed: int | None = ...,
-    with_mapping: Literal[False] = ...,
-    *compiler_args: Any,
     **compiler_kwargs: Any,
 ) -> Circuit:
     ...
