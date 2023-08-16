@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 from bqskit.compiler.compile import compile
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
-from bqskit.qis.graph import CouplingGraph
-from bqskit.qis.permutation import PermutationMatrix
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import U3Gate
+from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.permutation import PermutationMatrix
 
-def test_compile_with_mapping(compiler: Compiler, optimization_level: int) -> None:
+
+def test_compile_with_mapping(
+        compiler: Compiler,
+        optimization_level: int,
+) -> None:
     circuit = Circuit(3)
     circuit.append_gate(U3Gate(), [0], [0, 1, 2])
     circuit.append_gate(U3Gate(), [1], [0, 1, 2])
@@ -26,7 +32,7 @@ def test_compile_with_mapping(compiler: Compiler, optimization_level: int) -> No
     circuit.append_gate(U3Gate(), [2], [0, 1, 2])
     correct_utry = circuit.get_unitary()
 
-    coupling_graph = CouplingGraph([(i, i+1) for i in range (5)] + [(3, 5)])
+    coupling_graph = CouplingGraph([(i, i + 1) for i in range(5)] + [(3, 5)])
     model = MachineModel(6, coupling_graph)
 
     circuit, initial_mapping, final_mapping = compile(
@@ -34,7 +40,7 @@ def test_compile_with_mapping(compiler: Compiler, optimization_level: int) -> No
         model,
         compiler=compiler,
         with_mapping=True,
-        optimization_level=optimization_level
+        optimization_level=optimization_level,
     )
 
     # This simple circuit shouldn't have moving pieces in the mapping
