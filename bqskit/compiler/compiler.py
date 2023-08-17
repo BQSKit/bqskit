@@ -14,6 +14,7 @@ from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from subprocess import Popen
 from types import FrameType
+from typing import Literal
 from typing import overload
 from typing import TYPE_CHECKING
 
@@ -343,7 +344,6 @@ class Compiler:
         self,
         task_or_circuit: CompilationTask,
     ) -> Circuit | tuple[Circuit, PassData]:
-        """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     @overload
@@ -351,11 +351,10 @@ class Compiler:
         self,
         task_or_circuit: Circuit,
         workflow: WorkflowLike,
-        request_data: None = ...,
+        request_data: Literal[False] = ...,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
     ) -> Circuit:
-        """Submit a task, wait for its results; see :func:`submit` for more."""
         ...
 
     @overload
@@ -363,18 +362,28 @@ class Compiler:
         self,
         task_or_circuit: Circuit,
         workflow: WorkflowLike,
-        request_data: bool,  # TODO: Redo sentinel value with literals
+        request_data: Literal[True],
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
     ) -> tuple[Circuit, PassData]:
-        """Submit a task, wait for its results; see :func:`submit` for more."""
+        ...
+
+    @overload
+    def compile(
+        self,
+        task_or_circuit: Circuit,
+        workflow: WorkflowLike,
+        request_data: bool,
+        logging_level: int | None = ...,
+        max_logging_depth: int = ...,
+    ) -> Circuit | tuple[Circuit, PassData]:
         ...
 
     def compile(
         self,
         task_or_circuit: CompilationTask | Circuit,
         workflow: WorkflowLike | None = None,
-        request_data: bool | None = None,
+        request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
     ) -> Circuit | tuple[Circuit, PassData]:
@@ -391,7 +400,7 @@ class Compiler:
         task_id = self.submit(
             task_or_circuit,
             workflow,
-            request_data if request_data else False,
+            request_data,
             logging_level,
             max_logging_depth,
         )
