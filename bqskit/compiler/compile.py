@@ -6,6 +6,8 @@ import logging
 import warnings
 from typing import Any
 from typing import Callable
+from typing import Literal
+from typing import overload
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -86,6 +88,60 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None = ...,
+    *,
+    with_mapping: Literal[False] = ...,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    **compiler_kwargs: Any,
+) -> Circuit:
+    ...
+
+
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None = ...,
+    *,
+    with_mapping: Literal[True],
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    **compiler_kwargs: Any,
+) -> tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
+    ...
+
+
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None = ...,
+    *,
+    with_mapping: bool,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    **compiler_kwargs: Any,
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
+    ...
+
+
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
     model: MachineModel | None = None,
@@ -96,9 +152,9 @@ def compile(
     error_sim_size: int = 8,
     compiler: Compiler | None = None,
     seed: int | None = None,
-    *compiler_args: Any,
+    with_mapping: bool = False,
     **compiler_kwargs: Any,
-) -> Circuit:
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     """
     Compile a circuit, unitary, or state with a standard workflow.
 
@@ -145,9 +201,15 @@ def compile(
         seed (int | None): Set a seed for the compile function for
             better reproducibility. If left as None, will not set seed.
 
-        compiler_args (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a cluster can go here.
-            See :class:`Compiler` for more info.
+        with_mapping (bool): If True, three values will be returned
+            instead of just the compiled circuit. The first value is the
+            compiled circuit, the second value is the initial mapping,
+            and the third value is the final mapping. The initial mapping
+            is a tuple where `initial_mapping[i] = j` implies that logical
+            qudit `i` in the input system starts on the physical qudit
+            `q` in the final circuit. Likewise, the final mapping describes
+            where the logical qudits are in the physical circuit at the end
+            of execution. (Default: False)
 
         compiler_kwargs (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a cluster can go here.
@@ -333,7 +395,7 @@ def compile(
     managed_compiler = compiler is None
 
     if managed_compiler:
-        compiler = Compiler(*compiler_args, **compiler_kwargs)
+        compiler = Compiler(**compiler_kwargs)
 
     elif not isinstance(compiler, Compiler):
         raise TypeError(
@@ -357,6 +419,12 @@ def compile(
     # Close managed compiler
     if managed_compiler:
         compiler.close()
+
+    # Gather mapping data if necessary
+    if with_mapping:
+        pi = data.get('initial_mapping', list(range(input.num_qudits)))
+        pf = data.get('final_mapping', list(range(input.num_qudits)))
+        return out, pi, pf
 
     return out
 
@@ -521,10 +589,6 @@ def _opt1_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
@@ -541,7 +605,6 @@ def _opt1_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
 
     return [
@@ -553,7 +616,7 @@ def _opt1_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -585,7 +648,7 @@ def _opt1_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -644,10 +707,6 @@ def _opt2_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
@@ -664,7 +723,6 @@ def _opt2_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
 
     return [
@@ -676,7 +734,7 @@ def _opt2_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -708,7 +766,7 @@ def _opt2_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -734,7 +792,6 @@ def _opt2_workflow(
         # Optimization: Scanning gate deletion on blocks
         LogPass('Attempting to delete gates.'),
         QuickPartitioner(max_synthesis_size),
-        ExtendBlockSizePass(smallest_entangler_size),
         QuickPartitioner(error_sim_size),
         ForEachBlockPass(
             ForEachBlockPass(scan),
@@ -783,10 +840,6 @@ def _opt3_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
         all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
@@ -805,7 +858,6 @@ def _opt3_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
         native_mq_gates = []
 
@@ -818,7 +870,7 @@ def _opt3_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -850,7 +902,7 @@ def _opt3_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -878,7 +930,7 @@ def _opt3_workflow(
                     [
                         LogPass('Resynthesizing blocks.'),
                         QuickPartitioner(max_synthesis_size),
-                        ExtendBlockSizePass(smallest_entangler_size),
+                        ExtendBlockSizePass(),
                         QuickPartitioner(error_sim_size),
                         ForEachBlockPass(
                             ForEachBlockPass(
@@ -965,10 +1017,6 @@ def _opt4_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
         all_gates = model.gate_set.union(circuit.gate_set)
@@ -987,7 +1035,6 @@ def _opt4_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
         native_mq_gates = []
 
@@ -1000,7 +1047,7 @@ def _opt4_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -1044,7 +1091,7 @@ def _opt4_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -1072,7 +1119,7 @@ def _opt4_workflow(
                     [
                         LogPass('Resynthesizing blocks.'),
                         QuickPartitioner(max_synthesis_size),
-                        ExtendBlockSizePass(smallest_entangler_size),
+                        ExtendBlockSizePass(),
                         QuickPartitioner(error_sim_size),
                         ForEachBlockPass(
                             ForEachBlockPass(

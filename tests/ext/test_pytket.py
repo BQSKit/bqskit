@@ -13,7 +13,7 @@ from bqskit.ext import pytket_to_bqskit
 from bqskit.ext import bqskit_to_pytket
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.compile import compile
-from pytket.extensions.qiskit import AerUnitaryBackend
+# from pytket.extensions.qiskit import AerUnitaryBackend
 from pytket.circuit import Circuit as QubitCircuit
 from pytket import OpType
 import numpy as np
@@ -81,18 +81,24 @@ class TestTranslate:
         out_utry = UnitaryMatrix(self.get_unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-7
 
-    def test_compile_bqskit(self, pytket_circuit: QubitCircuit) -> None:
+    def test_compile_bqskit(
+        self, pytket_circuit: QubitCircuit,
+        compiler:Compiler,
+    ) -> None:
         in_utry = UnitaryMatrix(self.get_unitary(pytket_circuit))
         bqskit_circuit = pytket_to_bqskit(pytket_circuit)
-        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
+        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2, compiler=compiler)
         out_circuit = bqskit_to_pytket(bqskit_out_circuit)
         out_utry = UnitaryMatrix(self.get_unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-5
 
-    def test_synthesis_bqskit(self, pytket_circuit: QubitCircuit) -> None:
+    def test_synthesis_bqskit(
+        self, pytket_circuit: QubitCircuit,
+        compiler:Compiler,
+    ) -> None:
         in_utry = UnitaryMatrix(self.get_unitary(pytket_circuit))
         bqskit_circuit = pytket_to_bqskit(pytket_circuit)
-        bqskit_out_circuit = compile(bqskit_circuit)
+        bqskit_out_circuit = compile(bqskit_circuit, compiler=compiler)
         out_circuit = bqskit_to_pytket(bqskit_out_circuit)
         out_utry = UnitaryMatrix(self.get_unitary(out_circuit))
         assert in_utry.get_distance_from(out_utry) < 1e-5

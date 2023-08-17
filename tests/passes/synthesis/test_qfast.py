@@ -10,39 +10,21 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestQFAST:
-    def test_small_qubit(self) -> None:
+    def test_small_qubit(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         qfast = QFASTDecompositionPass()
-        circuit.perform(qfast)
+        circuit = compiler.compile(circuit, [qfast])
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
 
-    def test_small_qubit_with_compiler(self) -> None:
-        with Compiler() as compiler:
-            utry = UnitaryMatrix.random(2)
-            circuit = Circuit.from_unitary(utry)
-            qfast = QFASTDecompositionPass()
-            circuit = compiler.compile(circuit, [qfast])
-            dist = circuit.get_unitary().get_distance_from(utry)
-            assert dist <= 1e-5
-
-    def test_3_qubit(self) -> None:
+    def test_3_qubit(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(3)
         circuit = Circuit.from_unitary(utry)
         qfast = QFASTDecompositionPass()
-        circuit.perform(qfast)
+        circuit = compiler.compile(circuit, [qfast])
         dist = circuit.get_unitary().get_distance_from(utry)
         assert dist <= 1e-5
-
-    def test_3_qubit_with_compiler(self) -> None:
-        with Compiler() as compiler:
-            utry = UnitaryMatrix.random(3)
-            circuit = Circuit.from_unitary(utry)
-            qfast = QFASTDecompositionPass()
-            circuit = compiler.compile(circuit, [qfast])
-            dist = circuit.get_unitary().get_distance_from(utry)
-            assert dist <= 1e-5
 
     def test_3_qubit_with_cnot_block(self) -> None:
         circuit = Circuit(2)

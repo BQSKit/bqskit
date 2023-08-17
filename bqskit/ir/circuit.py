@@ -271,10 +271,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     @property
     def active_qudits(self) -> list[int]:
         """The qudits involved in at least one operation."""
-        active_qudits = set()  # TODO: add test case for single-qudit gates
-        for edge in self._graph_info.keys():
-            active_qudits.add(edge[0])
-            active_qudits.add(edge[1])
+        active_qudits = set()
         for qudit, point in self._front.items():
             if point is not None:
                 active_qudits.add(qudit)
@@ -451,7 +448,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         for cycle_index, cycle in enumerate(self._circuit):
             if cycle[qudit_index] is not None:
                 points.append((cycle_index, qudit_index))
-        self.batch_pop(points)
+
+        if len(points) > 0:
+            self.batch_pop(points)
 
         # Update circuit properties
         self._num_qudits -= 1

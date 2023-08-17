@@ -1,5 +1,6 @@
 # flake8: noqa
 from __future__ import annotations
+from bqskit.compiler.compiler import Compiler
 
 import pytest
 pytest.importorskip('qiskit')
@@ -76,20 +77,29 @@ class TestTranslate:
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-7
 
-    def test_compile_bqskit(self, qiskit_circuit: QuantumCircuit) -> None:
+    def test_compile_bqskit(
+        self, qiskit_circuit: QuantumCircuit,
+        compiler:Compiler,
+    ) -> None:
         qc = qiskit_circuit
         in_utry = UnitaryMatrix(qi.Operator(qc).data)
         bqskit_circuit = qiskit_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit, max_synthesis_size=2)
+        bqskit_out_circuit = compile(
+            bqskit_circuit, max_synthesis_size=2,
+            compiler=compiler,
+        )
         out_circuit = bqskit_to_qiskit(bqskit_out_circuit)
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-5
 
-    def test_synthesis_bqskit(self, qiskit_circuit: QuantumCircuit) -> None:
+    def test_synthesis_bqskit(
+        self, qiskit_circuit: QuantumCircuit,
+        compiler:Compiler,
+    ) -> None:
         qc = qiskit_circuit
         in_utry = UnitaryMatrix(qi.Operator(qc).data)
         bqskit_circuit = qiskit_to_bqskit(qc)
-        bqskit_out_circuit = compile(bqskit_circuit)
+        bqskit_out_circuit = compile(bqskit_circuit, compiler=compiler)
         out_circuit = bqskit_to_qiskit(bqskit_out_circuit)
         out_utry = UnitaryMatrix(qi.Operator(out_circuit).data)
         assert in_utry.get_distance_from(out_utry) < 1e-5

@@ -23,4 +23,7 @@ class ApplyPlacement(BasePass):
         if 'final_mapping' in data:
             pi = data['final_mapping']
             data['final_mapping'] = [placement[p] for p in pi]
+        if 'initial_mapping' in data:
+            pi = data['initial_mapping']
+            data['initial_mapping'] = [placement[p] for p in pi]
         data.placement = list(i for i in range(model.num_qudits))
