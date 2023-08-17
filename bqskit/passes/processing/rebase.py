@@ -9,6 +9,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.constant import SwapGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -29,8 +30,6 @@ class Rebase2QuditGatePass(BasePass):
 
     def __init__(
         self,
-        gate_in_circuit: Gate | Sequence[Gate],
-        new_gate: Gate | Sequence[Gate],
         max_depth: int = 3,
         max_retries: int = -1,
         success_threshold: float = 1e-10,
@@ -42,12 +41,6 @@ class Rebase2QuditGatePass(BasePass):
         Construct a Rebase2QuditGatePass.
 
         Args:
-            gate_in_circuit (Gate | Sequence[Gate]): The two-qudit gate
-                or gates in the circuit that you want to replace.
-
-            new_gate (Gate | Sequence[Gate]): The two-qudit new gate or
-                gates you want to put in the circuit.
-
             max_depth (int): The maximum number of new gates to replace
                 an old gate with. (Default: 3)
 
@@ -77,20 +70,6 @@ class Rebase2QuditGatePass(BasePass):
 
             ValueError: if `max_depth` is nonnegative.
         """
-
-        if is_sequence(gate_in_circuit):
-            if any(not isinstance(g, Gate) for g in gate_in_circuit):
-                raise TypeError('Expected Gate or Gate list.')
-
-        elif not isinstance(gate_in_circuit, Gate):
-            raise TypeError(f'Expected Gate, got {type(gate_in_circuit)}.')
-
-        else:
-            gate_in_circuit = [gate_in_circuit]
-
-        if any(g.num_qudits != 2 for g in gate_in_circuit):
-            raise ValueError('Expected 2-qudit gate.')
-
         if is_sequence(new_gate):
             if any(not isinstance(g, Gate) for g in new_gate):
                 raise TypeError('Expected Gate or Gate list.')
@@ -138,9 +117,6 @@ class Rebase2QuditGatePass(BasePass):
             raise ValueError(
                 f'Expected single-qudit gate, got {single_qudit_gate}.',
             )
-
-        self.gates = gate_in_circuit
-        self.ngates = new_gate
         self.max_depth = max_depth
         self.max_retries = max_retries
         self.success_threshold = success_threshold
@@ -151,10 +127,22 @@ class Rebase2QuditGatePass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
         self.sq = single_qudit_gate
-        self.generate_new_gate_templates()
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        self.ngates = [g for g in data.model.gate_set if g.num_qudits == 2]
+        non_native_gates = [
+            g for g in circuit.gate_set_no_blocks
+            if g not in self.ngates
+        ]
+        self.gates = [
+            g for g in non_native_gates
+            if g.num_qudits == 2
+        ]
+        if SwapGate() not in data.model.gate_set:
+            self.gates.append(SwapGate())
+
+        self.generate_new_gate_templates()
         instantiate_options = self.instantiate_options.copy()
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed

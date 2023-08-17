@@ -589,18 +589,6 @@ def _opt1_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        non_native_gates = [
-            g for g in circuit.gate_set_no_blocks
-            if g not in model.gate_set
-        ]
-        non_native_tq_gates = [
-            g for g in non_native_gates
-            if g.num_qudits == 2
-        ]
-        if SwapGate(model.radixes[0]) not in model.gate_set:
-            non_native_tq_gates.append(SwapGate(model.radixes[0]))
-        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
-
         all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
@@ -612,8 +600,6 @@ def _opt1_workflow(
             else:
                 sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                non_native_tq_gates,
-                native_tq_gates,
                 max_depth=3,
                 max_retries=5,
                 single_qudit_gate=sq_gate,
@@ -721,18 +707,6 @@ def _opt2_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        non_native_gates = [
-            g for g in circuit.gate_set_no_blocks
-            if g not in model.gate_set
-        ]
-        non_native_tq_gates = [
-            g for g in non_native_gates
-            if g.num_qudits == 2
-        ]
-        if SwapGate(model.radixes[0]) not in model.gate_set:
-            non_native_tq_gates.append(SwapGate(model.radixes[0]))
-        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
-
         all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
@@ -744,8 +718,6 @@ def _opt2_workflow(
             else:
                 sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                non_native_tq_gates,
-                native_tq_gates,
                 max_depth=3,
                 max_retries=5,
                 single_qudit_gate=sq_gate,
@@ -868,17 +840,6 @@ def _opt3_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        non_native_gates = [
-            g for g in circuit.gate_set_no_blocks
-            if g not in model.gate_set
-        ]
-        non_native_tq_gates = [
-            g for g in non_native_gates
-            if g.num_qudits == 2
-        ]
-        if SwapGate(model.radixes[0]) not in model.gate_set:
-            non_native_tq_gates.append(SwapGate(model.radixes[0]))
-        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
         all_gates = model.gate_set.union(circuit.gate_set_no_blocks)
@@ -892,8 +853,6 @@ def _opt3_workflow(
             else:
                 sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                non_native_tq_gates,
-                native_tq_gates,
                 max_depth=3,
                 max_retries=5,
                 single_qudit_gate=sq_gate,
@@ -1058,17 +1017,6 @@ def _opt4_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        non_native_gates = [
-            g for g in circuit.gate_set
-            if g not in model.gate_set
-        ]
-        non_native_tq_gates = [
-            g for g in non_native_gates
-            if g.num_qudits == 2
-        ]
-        if SwapGate(model.radixes[0]) not in model.gate_set:
-            non_native_tq_gates.append(SwapGate(model.radixes[0]))
-        native_tq_gates = [g for g in model.gate_set if g.num_qudits == 2]
         native_mq_gates = [g for g in model.gate_set if g.num_qudits >= 2]
 
         all_gates = model.gate_set.union(circuit.gate_set)
@@ -1082,8 +1030,6 @@ def _opt4_workflow(
             else:
                 sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
             multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                non_native_tq_gates,
-                native_tq_gates,
                 max_depth=3,
                 max_retries=5,
                 single_qudit_gate=sq_gate,
