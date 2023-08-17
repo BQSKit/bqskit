@@ -594,10 +594,6 @@ def _opt1_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         non_native_gates = [
             g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
@@ -628,7 +624,6 @@ def _opt1_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
 
     return [
@@ -640,7 +635,7 @@ def _opt1_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -672,7 +667,7 @@ def _opt1_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -731,10 +726,6 @@ def _opt2_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(3), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         non_native_gates = [
             g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
@@ -765,7 +756,6 @@ def _opt2_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
 
     return [
@@ -777,7 +767,7 @@ def _opt2_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -809,7 +799,7 @@ def _opt2_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -835,7 +825,6 @@ def _opt2_workflow(
         # Optimization: Scanning gate deletion on blocks
         LogPass('Attempting to delete gates.'),
         QuickPartitioner(max_synthesis_size),
-        ExtendBlockSizePass(smallest_entangler_size),
         QuickPartitioner(error_sim_size),
         ForEachBlockPass(
             ForEachBlockPass(scan),
@@ -884,10 +873,6 @@ def _opt3_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         non_native_gates = [
             g for g in circuit.gate_set_no_blocks
             if g not in model.gate_set
@@ -919,7 +904,6 @@ def _opt3_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
         native_mq_gates = []
 
@@ -932,7 +916,7 @@ def _opt3_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -964,7 +948,7 @@ def _opt3_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -992,7 +976,7 @@ def _opt3_workflow(
                     [
                         LogPass('Resynthesizing blocks.'),
                         QuickPartitioner(max_synthesis_size),
-                        ExtendBlockSizePass(smallest_entangler_size),
+                        ExtendBlockSizePass(),
                         QuickPartitioner(error_sim_size),
                         ForEachBlockPass(
                             ForEachBlockPass(
@@ -1079,10 +1063,6 @@ def _opt4_workflow(
     direct_synthesis = IfThenElsePass(WidthPredicate(4), qsearch, leap)
     single_qudit_gate_rebase = _get_single_qudit_gate_rebase_pass(model)
     if circuit.num_qudits > 1:
-        smallest_entangler_size = min(
-            g.num_qudits for g in model.gate_set
-            if g.num_qudits != 1
-        )
         non_native_gates = [
             g for g in circuit.gate_set
             if g not in model.gate_set
@@ -1114,7 +1094,6 @@ def _opt4_workflow(
                 single_qudit_gate=sq_gate,
             )
     else:
-        smallest_entangler_size = 1
         multi_qudit_gate_rebase = NOOPPass()
         native_mq_gates = []
 
@@ -1127,7 +1106,7 @@ def _opt4_workflow(
             [
                 LogPass('Retargeting multi-qudit gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -1171,7 +1150,7 @@ def _opt4_workflow(
             [
                 LogPass('Retargeting swap gates.'),
                 QuickPartitioner(max_synthesis_size),
-                ExtendBlockSizePass(smallest_entangler_size),
+                ExtendBlockSizePass(),
                 QuickPartitioner(error_sim_size),
                 ForEachBlockPass(
                     ForEachBlockPass(
@@ -1199,7 +1178,7 @@ def _opt4_workflow(
                     [
                         LogPass('Resynthesizing blocks.'),
                         QuickPartitioner(max_synthesis_size),
-                        ExtendBlockSizePass(smallest_entangler_size),
+                        ExtendBlockSizePass(),
                         QuickPartitioner(error_sim_size),
                         ForEachBlockPass(
                             ForEachBlockPass(
