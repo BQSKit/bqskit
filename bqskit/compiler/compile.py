@@ -92,6 +92,8 @@ _logger = logging.getLogger(__name__)
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
     model: MachineModel | None = ...,
+    *,
+    with_mapping: Literal[False] = ...,
     optimization_level: int = ...,
     max_synthesis_size: int = ...,
     synthesis_epsilon: float = ...,
@@ -99,8 +101,6 @@ def compile(
     error_sim_size: int = ...,
     compiler: Compiler | None = ...,
     seed: int | None = ...,
-    with_mapping: Literal[False] = ...,
-    *compiler_args: Any,
     **compiler_kwargs: Any,
 ) -> Circuit:
     ...
@@ -109,16 +109,16 @@ def compile(
 @overload
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
-    model: MachineModel | None,
-    optimization_level: int,
-    max_synthesis_size: int,
-    synthesis_epsilon: float,
-    error_threshold: float | None,
-    error_sim_size: int,
-    compiler: Compiler | None,
-    seed: int | None,
+    model: MachineModel | None = ...,
+    *,
     with_mapping: Literal[True],
-    *compiler_args: Any,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
     **compiler_kwargs: Any,
 ) -> tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     ...
@@ -127,16 +127,16 @@ def compile(
 @overload
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
-    model: MachineModel | None,
-    optimization_level: int,
-    max_synthesis_size: int,
-    synthesis_epsilon: float,
-    error_threshold: float | None,
-    error_sim_size: int,
-    compiler: Compiler | None,
-    seed: int | None,
+    model: MachineModel | None = ...,
+    *,
     with_mapping: bool,
-    *compiler_args: Any,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
     **compiler_kwargs: Any,
 ) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     ...
@@ -153,7 +153,6 @@ def compile(
     compiler: Compiler | None = None,
     seed: int | None = None,
     with_mapping: bool = False,
-    *compiler_args: Any,
     **compiler_kwargs: Any,
 ) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     """
@@ -211,10 +210,6 @@ def compile(
             `q` in the final circuit. Likewise, the final mapping describes
             where the logical qudits are in the physical circuit at the end
             of execution. (Default: False)
-
-        compiler_args (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a cluster can go here.
-            See :class:`Compiler` for more info.
 
         compiler_kwargs (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a cluster can go here.
@@ -400,7 +395,7 @@ def compile(
     managed_compiler = compiler is None
 
     if managed_compiler:
-        compiler = Compiler(*compiler_args, **compiler_kwargs)
+        compiler = Compiler(**compiler_kwargs)
 
     elif not isinstance(compiler, Compiler):
         raise TypeError(
