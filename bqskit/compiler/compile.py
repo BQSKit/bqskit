@@ -1240,7 +1240,6 @@ def _opt2_workflow(
 
         build_sabre_mapping_workflow(),
 
-
         build_multi_qudit_retarget_workflow(
             2,
             synthesis_epsilon,
@@ -1292,7 +1291,6 @@ def _opt3_workflow(
         ),
 
         build_sabre_mapping_workflow(),
-
 
         build_multi_qudit_retarget_workflow(
             3,
