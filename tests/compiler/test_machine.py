@@ -1,9 +1,12 @@
-# TODO: is_compatabile
 from __future__ import annotations
 
 import pytest
 
 from bqskit.compiler.machine import MachineModel
+from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.constant.h import HGate
+from bqskit.ir.gates.constant.t import TGate
 
 
 class TestMachineConstructor:
@@ -58,3 +61,47 @@ class TestMachineConstructor:
             MachineModel(2, 0)  # type: ignore
         with pytest.raises(TypeError):
             MachineModel(2, 'a')  # type: ignore
+
+
+def test_is_compatible() -> None:
+    # Create a model with 3 qudits linearly connected
+    model = MachineModel(
+        num_qudits=3,
+        coupling_graph=[(0, 1), (1, 2)],
+        gate_set={HGate(), CNOTGate()},
+        radixes=[2, 2, 2],
+    )
+
+    # Create a 2 qudit circuit with a gate set that is a subset
+    circuit1 = Circuit(num_qudits=2, radixes=[2, 2])
+    circuit1.append_gate(HGate(), 0)
+    circuit1.append_gate(CNOTGate(), (0, 1))
+
+    # Create a 3 qudit circuit with a gate set that is not a subset
+    circuit2 = Circuit(num_qudits=3, radixes=[2, 2, 2])
+    circuit2.append_gate(HGate(), 0)
+    circuit2.append_gate(TGate(), 1)
+    circuit2.append_gate(CNOTGate(), (1, 2))
+
+    # Create a 3 qudit circuit with a different radix
+    circuit3 = Circuit(num_qudits=3, radixes=[2, 2, 3])
+    circuit3.append_gate(HGate(), 0)
+    circuit3.append_gate(CNOTGate(), (0, 1))
+
+    # Create a 3 qudit circuit with a different coupling graph
+    circuit4 = Circuit(num_qudits=3, radixes=[2, 2, 2])
+    circuit4.append_gate(HGate(), 0)
+    circuit4.append_gate(CNOTGate(), (0, 2))
+
+    # Create a 3 qudit circuit with a valid placement
+    circuit5 = Circuit(num_qudits=3, radixes=[2, 2, 2])
+    circuit5.append_gate(HGate(), 0)
+    circuit5.append_gate(CNOTGate(), (0, 2))
+    placement = [0, 2, 1]
+
+    # Check compatibility of each circuit with the model
+    assert model.is_compatible(circuit1)
+    assert not model.is_compatible(circuit2)
+    assert not model.is_compatible(circuit3)
+    assert not model.is_compatible(circuit4)
+    assert model.is_compatible(circuit5, placement)
