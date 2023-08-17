@@ -97,7 +97,6 @@ class MachineModel:
         """Return all `block_size` connected blocks of qudit indicies."""
         return self.coupling_graph.get_subgraphs_of_size(block_size)
 
-    # TODO: add placement support
     def is_compatible(
         self,
         circuit: Circuit,
@@ -110,10 +109,19 @@ class MachineModel:
         if any(g not in self.gate_set for g in circuit.gate_set):
             return False
 
-        if any(e not in self.coupling_graph for e in circuit.coupling_graph):
+        if placement is None:
+            placement = list(range(circuit.num_qudits))
+
+        if any(
+            (placement[e[0]], placement[e[1]]) not in self.coupling_graph
+            for e in circuit.coupling_graph
+        ):
             return False
 
-        if any(r != self.radixes[i] for i, r in enumerate(circuit.radixes)):
+        if any(
+            r != self.radixes[placement[i]]
+            for i, r in enumerate(circuit.radixes)
+        ):
             return False
 
         return True
