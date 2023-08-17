@@ -1009,6 +1009,45 @@ class TestGetGateSet:
         assert CSUMGate() in circuit.gate_set
 
 
+def test_active_qudits() -> None:
+    # Create a circuit with 3 qudits and 3 gates
+    circuit1 = Circuit(3)
+    circuit1.append_gate(HGate(), 0)
+    circuit1.append_gate(CNOTGate(), [0, 1])
+    circuit1.append_gate(CNOTGate(), [1, 2])
+
+    # Check that the active qudits are correct
+    assert circuit1.active_qudits == [0, 1, 2]
+
+    # Create a circuit with 2 qudits and 2 gates
+    circuit2 = Circuit(2)
+    circuit2.append_gate(HGate(), 0)
+    circuit2.append_gate(CNOTGate(), [0, 1])
+
+    # Check that the active qudits are correct
+    assert circuit2.active_qudits == [0, 1]
+
+    # Create a circuit with 1 qudit and 1 gate
+    circuit3 = Circuit(1)
+    circuit3.append_gate(HGate(), 0)
+
+    # Check that the active qudits are correct
+    assert circuit3.active_qudits == [0]
+
+    # Create a circuit with 3 qudits and no gates
+    circuit4 = Circuit(3)
+
+    # Check that the active qudits are correct
+    assert circuit4.active_qudits == []
+
+    # Create a circuit with 3 qudits and a single-qudit gate
+    circuit5 = Circuit(3)
+    circuit5.append_gate(HGate(), 0)
+
+    # Check that the active qudits are correct
+    assert circuit5.active_qudits == [0]
+
+
 class TestIsDifferentiable:
     """This tests `circuit.is_differentiable`."""
 
