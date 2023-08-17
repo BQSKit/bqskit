@@ -16,16 +16,12 @@ from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gate import Gate
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.constant.sx import SqrtXGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
-from bqskit.ir.gates.parameterized.u8 import U8Gate
-from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
@@ -54,8 +50,8 @@ from bqskit.passes.measure import RestoreMeasurements
 from bqskit.passes.noop import NOOPPass
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
-from bqskit.passes.processing.rebase import Rebase2QuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
+from bqskit.passes.retarget.auto import AutoRebase2QuditGatePass
 from bqskit.passes.rules.u3 import U3Decomposition
 from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 from bqskit.passes.search.generators.single import SingleQuditLayerGenerator
@@ -593,17 +589,7 @@ def _opt1_workflow(
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
-            if model.radixes[0] == 2:
-                sq_gate: Gate = U3Gate()
-            elif model.radixes[0] == 3:
-                sq_gate = U8Gate()
-            else:
-                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
-            multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                max_depth=3,
-                max_retries=5,
-                single_qudit_gate=sq_gate,
-            )
+            multi_qudit_gate_rebase = AutoRebase2QuditGatePass(3, 5)
     else:
         multi_qudit_gate_rebase = NOOPPass()
 
@@ -711,17 +697,7 @@ def _opt2_workflow(
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
-            if model.radixes[0] == 2:
-                sq_gate: Gate = U3Gate()
-            elif model.radixes[0] == 3:
-                sq_gate = U8Gate()
-            else:
-                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
-            multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                max_depth=3,
-                max_retries=5,
-                single_qudit_gate=sq_gate,
-            )
+            multi_qudit_gate_rebase = AutoRebase2QuditGatePass(3, 5)
     else:
         multi_qudit_gate_rebase = NOOPPass()
 
@@ -846,17 +822,7 @@ def _opt3_workflow(
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
-            if model.radixes[0] == 2:
-                sq_gate: Gate = U3Gate()
-            elif model.radixes[0] == 3:
-                sq_gate = U8Gate()
-            else:
-                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
-            multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                max_depth=3,
-                max_retries=5,
-                single_qudit_gate=sq_gate,
-            )
+            multi_qudit_gate_rebase = AutoRebase2QuditGatePass(3, 5)
     else:
         multi_qudit_gate_rebase = NOOPPass()
         native_mq_gates = []
@@ -1023,17 +989,7 @@ def _opt4_workflow(
         if any(g.num_qudits > 2 for g in all_gates):
             multi_qudit_gate_rebase: BasePass = direct_synthesis
         else:
-            if model.radixes[0] == 2:
-                sq_gate: Gate = U3Gate()
-            elif model.radixes[0] == 3:
-                sq_gate = U8Gate()
-            else:
-                sq_gate = VariableUnitaryGate(1, [model.radixes[0]])
-            multi_qudit_gate_rebase = Rebase2QuditGatePass(
-                max_depth=3,
-                max_retries=5,
-                single_qudit_gate=sq_gate,
-            )
+            multi_qudit_gate_rebase = AutoRebase2QuditGatePass(3, 5)
     else:
         multi_qudit_gate_rebase = NOOPPass()
         native_mq_gates = []
