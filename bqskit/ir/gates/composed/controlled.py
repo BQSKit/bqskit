@@ -130,7 +130,7 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
 
         self.gate = gate
         self._num_controls = num_controls
-        self.num_levels = num_levels
+        self._num_levels = num_levels
         self.level_of_each_control = level_of_each_control
         self._num_qudits = gate._num_qudits + self._num_controls
         self._name = 'Controlled(%s)' % self.gate.name
