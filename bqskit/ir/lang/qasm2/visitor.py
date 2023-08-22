@@ -67,11 +67,11 @@ from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
-# from bqskit.ir.gates.constant.b import BGate
-# from bqskit.ir.gates.constant.rccx import RC3XGate
-# from bqskit.ir.gates.constant.rccx import RCCXGate
-# from bqskit.ir.gates.parameterized.ccp import CCPGate
-# from bqskit.ir.gates.parameterized.cu import CUGate
+from bqskit.ir.gates.constant.b import BGate
+from bqskit.ir.gates.constant.rccx import RC3XGate
+from bqskit.ir.gates.constant.rccx import RCCXGate
+from bqskit.ir.gates.parameterized.ccp import CCPGate
+from bqskit.ir.gates.parameterized.cu import CUGate
 
 
 _logger = logging.getLogger(__name__)
