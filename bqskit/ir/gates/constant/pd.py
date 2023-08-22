@@ -49,11 +49,11 @@ class PDGate(QuditGate):
             ValueError: if index >= num_levels
         """
         if not is_integer(num_levels):
-           raise TypeError(
+            raise TypeError(
                 'PDGate num_levels must be an integer.',
             )
         if not is_integer(index):
-           raise TypeError(
+            raise TypeError(
                 'PDGate index must be an integer.',
             )
 
