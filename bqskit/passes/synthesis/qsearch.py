@@ -264,7 +264,7 @@ class QSearchSynthesisPass(SynthesisPass):
         
         cDecompose=N_Qubit_Decomposition_adaptive(Umtx.conj().T, level_limit_max=5,level_limit_min=0)
         cDecompose.Start_Decomposition()
-        
+        print("nnnnn")
         self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
         
         frontier = Frontier(utry, self.heuristic_function)
