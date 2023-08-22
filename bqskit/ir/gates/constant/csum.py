@@ -47,7 +47,7 @@ class CSUMGate(QuditGate):
 
     def __init__(
         self,
-        num_levels: int = 3
+        num_levels: int = 3,
     ) -> None:
         """
             Args:
@@ -68,7 +68,7 @@ class CSUMGate(QuditGate):
                 'CSUMGate num_levels must be a postive integer greater than or equal to 2.',
             )
 
-        self.num_levels = num_levels
+        self._num_levels = num_levels
 
     def get_unitary(self) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

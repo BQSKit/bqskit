@@ -197,8 +197,10 @@ def SUGenerator(n: int) -> npt.NDArray[np.complex128]:
         return np.array([np.array([[0, 1], [1, 0]], dtype=np.complex128), np.array([[0, -1j], [1j, 0]], dtype=np.complex128), np.array([[1, 0], [0, -1]], dtype=np.complex128)])
     else:
         PreviousGenerators = SUGenerator(n - 1)
-        generators = [np.pad(PreviousGenerators[i], (0, 1))
-                      for i in range(len(PreviousGenerators))]
+        generators = [
+            np.pad(PreviousGenerators[i], (0, 1))
+            for i in range(len(PreviousGenerators))
+        ]
         for i in range(n - 1):
             t = np.zeros((n, n), dtype=np.complex128)
             t[i, n - 1] = 1.0

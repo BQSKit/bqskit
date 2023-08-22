@@ -29,7 +29,7 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         gate: Gate,
         num_controls: int = 1,
         num_levels: Sequence[int] | int = 2,
-        level_of_each_control: Sequence[Sequence[int]] | None = None
+        level_of_each_control: Sequence[Sequence[int]] | None = None,
     ):
         """
         Construct a ControlledGate.
@@ -153,8 +153,12 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         result matrix is the kronecker product of the indvidual matrices.
         """
 
-        Matrix_list = [np.zeros((self.num_levels[i], self.num_levels[i]),
-                                dtype=np.complex128) for i in range(self._num_controls)]
+        Matrix_list = [
+            np.zeros(
+                (self.num_levels[i], self.num_levels[i]),
+                dtype=np.complex128,
+            ) for i in range(self._num_controls)
+        ]
         for i in range(self._num_controls):
             for j in self.level_of_each_control[i]:
                 Matrix_list[i][j, j] = 1.0

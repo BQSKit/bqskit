@@ -6,7 +6,7 @@ import numpy as np
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
+from bqskit.utils.typing import is_integer
 
 class ShiftGate(QuditGate):
     r"""
@@ -25,7 +25,7 @@ class ShiftGate(QuditGate):
 
     def __init__(
         self,
-        num_levels: int = 2
+        num_levels: int = 2,
     ) -> None:
         """
         Construct a ShiftGate.
@@ -47,7 +47,7 @@ class ShiftGate(QuditGate):
                 'shiftGate num_levels must be a postive integer greater than or equal to 2.',
             )
 
-        self.num_levels = num_levels
+        self._num_levels = num_levels
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

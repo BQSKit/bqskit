@@ -33,7 +33,7 @@ class PDGate(QuditGate):
     def __init__(
         self,
         num_levels: int,
-        index: int
+        index: int,
     ) -> None:
         """
             Args:
@@ -57,7 +57,7 @@ class PDGate(QuditGate):
                 'PDGate index must be an integer.',
             )
 
-        self.num_levels = num_levels
+        self._num_levels = num_levels
         if index > num_levels:
             raise ValueError(
                 'PDGate index must be equal or less to the number of levels.',

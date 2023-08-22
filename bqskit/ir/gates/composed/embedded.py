@@ -29,7 +29,7 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
         self,
         gate: Gate,
         target_radixes: int | Sequence[int],
-        level_map: Sequence[int] | Sequence[Sequence[int]]
+        level_map: Sequence[int] | Sequence[Sequence[int]],
     ):
         """
 
@@ -60,39 +60,51 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
 
         if not is_integer(target_radixes) and type(target_radixes) != Sequence[int]:
             raise TypeError(
-                'Expected target radixes to be integer or a sequence of integers, got %s.' % type(target_radixes))
+                'Expected target radixes to be integer or a sequence of integers, got %s.' % type(target_radixes),
+            )
 
         if type(level_map) != Sequence[int] and type(level_map) != Sequence[Sequence[int]]:
             raise TypeError(
-                'Expected level map to a sequence of integers or a sequence of sequences of integers, got %s.' % type(level_map))
+                'Expected level map to a sequence of integers or a sequence of sequences of integers, got %s.' % type(level_map),
+            )
 
         if is_integer(target_radixes):
             target_radixes = [target_radixes for i in range(len(gate.radixes))]
 
         if not is_valid_radixes(target_radixes, gate.radixes):
             raise ValueError(
-                'Target radixes must have the same length as gate.radixes.')
+                'Target radixes must have the same length as gate.radixes.',
+            )
 
         for i in range(len(target_radixes)):
             if target_radixes[i] < gate.radixes[i]:
                 raise ValueError(
-                    'Target radix at index %s should be greater than or equal to gate radix at same index.' % (i))
+                    'Target radix at index %s should be greater than or equal to gate radix at same index.' % (i),
+                )
 
         if len(gate.radixes) == 1:
             if len(level_map) != 1 and len(level_map) != gate.radixes[0]:
                 raise ValueError(
-                    f'Level map must be a sequnce of {gate.radixes[0]} integers, or a sequence with one sequence element of {gate.radixes[0]} integers.')
+                    f'Level map must be a sequnce of {gate.radixes[0]} integers, or a sequence with one sequence element of {gate.radixes[0]} integers.',
+                )
         elif len(level_map) != len(gate.radixes):
             raise ValueError(
-                'Level map must have the same length as gate.radixes.')
+                'Level map must have the same length as gate.radixes.',
+            )
 
         for i in range(len(level_map)):
             if len(level_map[i] != gate.radixes[i]):
-                raise ValueError('Level map at index {} must have {} integers to match respective radix of gate'.format(
-                    gate.radixes[i], gate.radixes[i]))
+                raise ValueError(
+                    'Level map at index {} must have {} integers to match respective radix of gate'.format(
+                    gate.radixes[i], gate.radixes[i],
+                    ),
+                )
             if np.any(level_map[i] >= gate.radixes[i]):
-                raise ValueError('One or more elements of level map at index %s is greater than gate radix at the same index with value %s.'(
-                    i, gate.radixes[i]))
+                raise ValueError(
+                    'One or more elements of level map at index %s is greater than gate radix at the same index with value %s.'(
+                    i, gate.radixes[i],
+                    ),
+                )
 
         self.gate = gate
         self._level_map = level_map
@@ -105,7 +117,7 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
         if self.num_params == 0 and not building_docs():
             M = np.eye(np.prod(self.radixes), dtype=np.complex128)
             M = self._map_gate_to_target_radixes(M, self.gate.get_unitary())
-            self.utry = UnitaryMatrix(U, self.radixes)
+            self.utry = UnitaryMatrix(M, self.radixes)
 
     def _map_gate_to_target_radixes(self, Matrix: npt.NDArray[np.complex128], Unitary: npt.NDArray[np.complex128]) -> npt.NDArray[np.complex128]:
         """
@@ -128,8 +140,10 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
                 for j1 in range(self.gate.radixes[1]):
                     for i2 in range(self.gate.radixes[0]):
                         for j2 in range(self.gate.radixes[1]):
-                            Matrix[level_map[0][i1] * self.radixes[1] + level_map[1][j1],
-                                   level_map[0][i2] * self.radixes[1] + level_map[1][j2]] = Unitary[i1 * self.gate.radixes[1] + j1, i2 * self.gate.radixes[1] + j2]
+                            Matrix[
+                                level_map[0][i1] * self.radixes[1] + level_map[1][j1],
+                                level_map[0][i2] * self.radixes[1] + level_map[1][j2],
+                            ] = Unitary[i1 * self.gate.radixes[1] + j1, i2 * self.gate.radixes[1] + j2]
         elif len(self.gate.radixes) == 3:
             for i1 in range(self.gate.radixes[0]):
                 for j1 in range(self.gate.radixes[1]):
@@ -137,13 +151,18 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
                         for i2 in range(self.gate.radixes[0]):
                             for j2 in range(self.gate.radixes[1]):
                                 for k2 in range(self.gate.radixes[2]):
-                                    Matrix[level_map[0][i1] * self.radixes[1] * self.radixes[2] + level_map[1][j1] * self.radixes[2] + level_map[2][k1],
-                                           level_map[0][i2] * self.radixes[1] * self.radixes[2] + level_map[1][j2] * self.radixes[2] + level_map[2][k2]] =\
-                                        Unitary[i1 * self.gate.radixes[1] * self.gate.radixes[2] + j1 * self.gate.radixes[2] + k1,
-                                                i2 * self.gate.radixes[1] * self.gate.radixes[2] + j2 * self.gate.radixes[2] + k2]
+                                    Matrix[
+                                        level_map[0][i1] * self.radixes[1] * self.radixes[2] + level_map[1][j1] * self.radixes[2] + level_map[2][k1],
+                                        level_map[0][i2] * self.radixes[1] * self.radixes[2] + level_map[1][j2] * self.radixes[2] + level_map[2][k2],
+                                    ] =\
+                                        Unitary[
+                                            i1 * self.gate.radixes[1] * self.gate.radixes[2] + j1 * self.gate.radixes[2] + k1,
+                                            i2 * self.gate.radixes[1] * self.gate.radixes[2] + j2 * self.gate.radixes[2] + k2,
+                                        ]
         else:
             raise NotImplementedError(
-                'Currently we support up to 3 qudit gate embedding')
+                'Currently we support up to 3 qudit gate embedding',
+            )
         return Matrix
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
@@ -165,8 +184,13 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
             return np.array([])
 
         grads = self.gate.get_grad(params)  # type: ignore
-        M = np.zeros((np.prod(self.radixes), np.prod(
-            self.radixes)), dtype=np.complex128)
+        M = np.zeros(
+            (
+                np.prod(self.radixes), np.prod(
+                self.radixes,
+                ),
+            ), dtype=np.complex128,
+        )
         result = []
         for i in range(len(grads)):
             result.append(self._map_gate_to_target_radixes(M, grads[i]))
