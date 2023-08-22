@@ -4,60 +4,38 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.ir.gates.quditgate import QuditGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
-from bqskit.utils.typing import is_integer
 
 
 class RXXGate(
-    QuditGate,
+    QubitGate,
     DifferentiableUnitary,
+    LocallyOptimizableUnitary,
     CachedClass,
 ):
     """
-    A qudit gate representing an arbitrary rotation around the XX axis.
+    A gate representing an arbitrary rotation around the XX axis.
+
+    It is given by the following parameterized unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\cos{\\frac{\\theta}{2}} & 0 & 0 & -\\sin{\\frac{\\theta}{2}}i \\\\
+        0 & \\cos{\\frac{\\theta}{2}} & -\\sin{\\frac{\\theta}{2}}i & 0 \\\\
+        0 & -\\sin{\\frac{\\theta}{2}}i & \\cos{\\frac{\\theta}{2}} & 0 \\\\
+        -\\sin{\\frac{\\theta}{2}}i & 0 & 0 & \\cos{\\frac{\\theta}{2}} \\\\
+        \\end{pmatrix}
     """
+
     _num_qudits = 2
     _num_params = 1
     _qasm_name = 'rxx'
-
-    def __init__(
-        self, 
-        num_levels: int = 2, 
-        level_1: int = 0, 
-        level_2: int = 1, 
-        level_3: int = 0, 
-        level_4: int = 1
-    ) ->None:
-        """
-            Args:
-            num_levels (int): The number of qudit levels (>=2).
-
-            level_1 (int): the first level for the first X qudit gate (<num_levels)
-            level_2 (int): the second level for the first X qudit gate (<num_levels)
-            level_3 (int): the first level for the second X qudit gate (<num_levels)
-            level_4 (int): the second level for the second X qudit gate (<num_levels) 
-            
-            Raises:
-            ValueError: if num_levels < 2
-            ValueError: if any of levels >= num_levels
-        """
-        if num_levels < 2 or not is_integer(num_levels):
-            raise ValueError(
-                'RXXGate num_levels must be a postive integer greater than or equal to 2.',
-            )
-        self.num_levels = num_levels
-        if level_1 > num_levels or level_2 > num_levels or level_3 > num_levels or level_4 > num_levels:
-            raise ValueError(
-                'RXXGate indices must be equal or less to the number of levels.',
-            )
-        self.level_1 = level_1
-        self.level_2 = level_2
-        self.level_3 = level_3
-        self.level_4 = level_4
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -66,24 +44,14 @@ class RXXGate(
         cos = np.cos(params[0] / 2)
         sin = -1j * np.sin(params[0] / 2)
 
-        matrix = np.eye(self.num_levels, dtype=np.complex128)
-        
-        idx1 = self.level_1 * self.num_levels + self.level_3
-        idx2 = self.level_1 * self.num_levels + self.level_4 
-        idx3 = self.level_2 * self.num_levels + self.level_3
-        idx4 = self.level_2 * self.num_levels + self.level_4 
-
-        matrix[idx1,idx1] = cos
-        matrix[idx2,idx2] = cos
-        matrix[idx3,idx3] = cos
-        matrix[idx4,idx4] = cos
-
-        matrix[idx1,idx4] = sin
-        matrix[idx1,idx4] = sin
-        matrix[idx4,idx1] = sin
-        matrix[idx4,idx1] = sin
-
-        return UnitaryMatrix(matrix, self.radixes)
+        return UnitaryMatrix(
+            [
+                [cos, 0, 0, sin],
+                [0, cos, sin, 0],
+                [0, sin, cos, 0],
+                [sin, 0, 0, cos],
+            ],
+        )
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
@@ -96,23 +64,32 @@ class RXXGate(
         dcos = -np.sin(params[0] / 2) / 2
         dsin = -1j * np.cos(params[0] / 2) / 2
 
-        idx1 = self.level_1 * self.num_levels + self.level_3
-        idx2 = self.level_1 * self.num_levels + self.level_4 
-        idx3 = self.level_2 * self.num_levels + self.level_3
-        idx4 = self.level_2 * self.num_levels + self.level_4
-
-        matrix = np.zeros(
-            (self.num_levels, self.num_levels),
-            dtype=np.complex128,
+        return np.array(
+            [
+                [
+                    [dcos, 0, 0, dsin],
+                    [0, dcos, dsin, 0],
+                    [0, dsin, dcos, 0],
+                    [dsin, 0, 0, dcos],
+                ],
+            ], dtype=np.complex128,
         )
-        matrix[idx1,idx1] = dcos
-        matrix[idx2,idx2] = dcos
-        matrix[idx3,idx3] = dcos
-        matrix[idx4,idx4] = dcos
 
-        matrix[idx1,idx4] = dsin
-        matrix[idx1,idx4] = dsin
-        matrix[idx4,idx1] = dsin
-        matrix[idx4,idx1] = dsin
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
+        """
+        Return the optimal parameters with respect to an environment matrix.
 
-        return np.array([matrix], dtype=np.complex128)
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
+        self.check_env_matrix(env_matrix)
+        a = np.real(
+            env_matrix[0, 0] + env_matrix[1, 1]
+            + env_matrix[2, 2] + env_matrix[3, 3],
+        )
+        b = np.imag(
+            env_matrix[0, 3] + env_matrix[1, 2]
+            + env_matrix[2, 1] + env_matrix[3, 0],
+        )
+        theta = np.arccos(a / np.sqrt(a ** 2 + b ** 2))
+        theta *= -2 if b < 0 else 2
+        return [theta]

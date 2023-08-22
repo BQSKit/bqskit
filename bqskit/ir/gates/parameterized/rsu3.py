@@ -32,9 +32,15 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
     def __init__(self, index: int):
         """
             Raises:
-            ValueError: If index is less than 0 or greater than 7 and not an integer
+            TypeError: If index is not an integer
+            
+            ValueError: If index is less than 0 or greater than 7
         """
-        if index < 0 or index > 7 or not is_integer(index):
+        if not is_integer(index):
+           raise TypeError(
+                'RSU3Gate generator index must be an integer.',
+            )
+        if index < 0 or index > 7:
             raise ValueError(
                 'RSU3Gate generator index must be a non negative integer between 0 and 7.',
             )

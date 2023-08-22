@@ -54,13 +54,20 @@ class CSUMGate(QuditGate):
             num_levels (int): The number of qudit levels (>=2).
 
             Raises:
+            Typerror: if num_levels is not an integer
+
             ValueError: if num_levels < 2
            
         """
-        if num_levels < 2 or not is_integer(num_levels): #TODO separate typerror from value error
+        if not is_integer(num_levels):
+           raise TypeError(
+                'CSUMGate num_levels must be an integer.',
+            )
+        if num_levels < 2:
             raise ValueError(
                 'CSUMGate num_levels must be a postive integer greater than or equal to 2.',
             )
+         
         self.num_levels = num_levels
 
     def get_unitary(self) -> UnitaryMatrix:

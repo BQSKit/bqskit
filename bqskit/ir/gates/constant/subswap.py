@@ -9,21 +9,14 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
-class SubSwapGate(QuditGate): #TODO fix docs
-    r"""
+class SubSwapGate(QuditGate):
+    """
     The two-qudit subspace SWAP gate.
 
     The subspace SWAP gate swaps between "qudit-levels"
     on a two-qudit gate.
     For example, a |01> to |20> swap would be the identity
-    with the |01> row and |20> rows swapped.
-
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
-        qudit_levels : str
-            The qudit levels that should be swapped, separated by a comma.
-            Example: "0,1;2,0" to swap |01> to |20>
+    with the |01> row and |20> rows swapped. 
     """
 
     _num_qudits = 2
@@ -35,8 +28,12 @@ class SubSwapGate(QuditGate): #TODO fix docs
         qudit_levels: str
     ):
         """
+            Args:
+            num_levels (int): The number of qudit levels (>=2).
+            qudit_levels (str): The qudit levels that should be swapped, separated by a comma.
+            Example: "0,1;2,0" to swap |01> to |20>
 
-        Raises:
+            Raises:
             TypeError: If num_levels is not of type int
             TypeError: If qudit_levels is not of type str
             

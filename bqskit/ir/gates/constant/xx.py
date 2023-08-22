@@ -1,58 +1,36 @@
 """This module implements the XXGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constant.x import XGate
-from bqskit.ir.gates.quditgate import QuditGate
+import math
+
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.typing import is_integer
 
 
-class XXGate(QuditGate):
+class XXGate(ConstantGate, QubitGate):
     """
-    The Ising XX coupling gate for qudits. 
+    The Ising XX coupling gate.
+
+    The XX gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\frac{\\sqrt{2}}{2} & 0 & 0 & -\\frac{\\sqrt{2}}{2}i \\\\
+        0 & \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2}i & 0 \\\\
+        0 & -\\frac{\\sqrt{2}}{2}i & \\frac{\\sqrt{2}}{2} & 0 \\\\
+        -\\frac{\\sqrt{2}}{2}i & 0 & 0 & \\frac{\\sqrt{2}}{2} \\\\
+        \\end{pmatrix}
     """
 
     _num_qudits = 2
-    _qasm_name = 'xx'
-    _num_params = 0
-
-    def __init__(
-        self, 
-        num_levels: int = 2, 
-        level_1: int = 0, 
-        level_2: int = 1, 
-        level_3: int = 0, 
-        level_4: int = 1
-    ) -> None:
-        """
-            Args:
-            num_levels (int): The number of qudit levels (>=2).
-
-            level_1 (int): the first level for the first X qudit gate (<num_levels)
-            level_2 (int): the second level for the first X qudit gate (<num_levels)
-            level_3 (int): the first level for the second X qudit gate (<num_levels)
-            level_4 (int): the second level for the second X qudit gate (<num_levels) 
-            
-            Raises:
-            ValueError: if num_levels < 2
-            ValueError: if any of levels >= num_levels
-        """
-        if num_levels < 2 or not is_integer(num_levels):
-            raise ValueError(
-                'XXGate num_levels must be a postive integer greater than or equal to 2.',
-            )
-        self.num_levels = num_levels
-        if level_1 > num_levels or level_2 > num_levels or level_3 > num_levels or level_4 > num_levels:
-            raise ValueError(
-                'XXGate indices must be equal or less to the number of levels.',
-            )
-        self.level_1 = level_1
-        self.level_2 = level_2
-        self.level_3 = level_3
-        self.level_4 = level_4
-
-    def get_unitary(self) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        x1 = XGate(self._num_levels, self.level_1,self.level_2).get_unitary()
-        x2 = XGate(self._num_levels, self.level_3,self.level_4).get_unitary()
-        return x1.otimes(x2)
+    _qasm_name = 'rxx(pi/2)'
+    _utry = UnitaryMatrix(
+        [
+            [math.sqrt(2) / 2, 0, 0, -1j * math.sqrt(2) / 2],
+            [0, math.sqrt(2) / 2, -1j * math.sqrt(2) / 2, 0],
+            [0, -1j * math.sqrt(2) / 2, math.sqrt(2) / 2, 0],
+            [-1j * math.sqrt(2) / 2, 0, 0, math.sqrt(2) / 2],
+        ],
+    )

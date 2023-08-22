@@ -1,4 +1,4 @@
-"""This module implements the CPGate."""
+"""This module implements the CCPGate."""
 from __future__ import annotations
 
 import numpy as np
@@ -11,29 +11,33 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class CPGate(
+class CCPGate(
     QubitGate,
     DifferentiableUnitary,
     CachedClass,
 ):
     """
-    A gate representing a controlled phase rotation.
+    A gate representing a controlled controlled phase rotation.
 
     It is given by the following parameterized unitary:
 
     .. math::
 
         \\begin{pmatrix}
-        1 & 0 & 0 & 0 \\\\
-        0 & 1 & 0 & 0 \\\\
-        0 & 0 & 1 & 0 \\\\
-        0 & 0 & 0 & \\exp({i\\theta}) \\\\
+        1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\\\
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & \\exp({i\\theta}) \\\\
         \\end{pmatrix}
     """
 
-    _num_qudits = 2
+    _num_qudits = 3
     _num_params = 1
-    _qasm_name = 'cp'
+    _qasm_name = 'ccp'
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -43,10 +47,14 @@ class CPGate(
 
         return UnitaryMatrix(
             [
-                [1, 0, 0, 0],
-                [0, 1, 0, 0],
-                [0, 0, 1, 0],
-                [0, 0, 0, exp],
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, exp],
             ],
         )
 
@@ -63,10 +71,14 @@ class CPGate(
         return np.array(
             [
                 [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, 0, dexp],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, dexp],
                 ],
             ], dtype=np.complex128,
         )

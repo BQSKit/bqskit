@@ -1,29 +1,34 @@
 """This module implements the SqrtCNOTGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.composed import ControlledGate
-from bqskit.ir.gates.constant.sx import SqrtXGate
-from typing import Sequence
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class SqrtCNOTGate(ControlledGate):
+class SqrtCNOTGate(ConstantGate, QubitGate):
     """
-    The Square root Controlled-X gate for qudits.
+    The Square root Controlled-X gate.
 
+    The SqrtCNOT gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & \\frac{1}{2} + \\frac{1}{2}i & \\frac{1}{2} - \\frac{1}{2}i \\\\
+        0 & 0 & \\frac{1}{2} - \\frac{1}{2}i & \\frac{1}{2} + \\frac{1}{2}i \\\\
+        \\end{pmatrix}
     """
 
     _num_qudits = 2
-
-    def __init__(
-        self, 
-        num_controls: int=1, 
-        num_levels: Sequence[int] | int = 2, 
-        level_of_each_control: Sequence[Sequence[int]] | None = None
-    ) -> None:
-        """Builds the SqrtCNOTGate, see :class:`ControlledGate` for more information."""
-        super().__init__(
-            SqrtXGate(num_levels=num_levels),
-            num_controls=1,
-            num_levels=num_levels,
-            level_of_each_control = None
-        )
+    _qasm_name = 'csx'
+    _utry = UnitaryMatrix(
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0.5 + 0.5j, 0.5 - 0.5j],
+            [0, 0, 0.5 - 0.5j, 0.5 + 0.5j],
+        ],
+    )

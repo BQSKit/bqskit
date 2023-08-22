@@ -24,6 +24,14 @@ class HGate(QuditGate):
     .. math:: \\omega = \\exp(2\\pi*i/d)
     and d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
+
+    for qubits the gate is,
+    .. math::
+
+        \\begin{pmatrix}
+        \\frac{\\sqrt{2}}{2} & \\frac{\\sqrt{2}}{2} \\\\
+        \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2} \\\\
+        \\end{pmatrix}
     """
 
     _num_qudits = 1
@@ -39,12 +47,19 @@ class HGate(QuditGate):
             num_levels (int): The number of qudit levels (>=2).
 
             Raises:
+            TypeError: If num_levels is not an integer
+
             ValueError: if num_levels < 2
         """
-        if num_levels < 2 or not is_integer(num_levels):
-            raise ValueError(
-                'HGate num_levels must be a postive integer greater than or equal to 2.',
+        if not is_integer(num_levels):
+           raise TypeError(
+                'ClockGate num_levels must be an integer.',
             )
+        if num_levels < 2:
+            raise ValueError(
+                'ClockGate num_levels must be a postive integer greater than or equal to 2.',
+            )
+         
         self.num_levels = num_levels
 
     def get_unitary(self) -> UnitaryMatrix:

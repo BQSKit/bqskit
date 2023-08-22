@@ -1,31 +1,34 @@
-"""This module implements the CHGate."""
+"""This module implements the CSGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.composed import ControlledGate
-from bqskit.ir.gates.constant.s import SGate
-from typing import Sequence
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class CSGate(ControlledGate):
+class CSGate(ConstantGate, QubitGate):
     """
-    The controlled-S gate for qudits
+    The Controlled-S gate.
+
+    The CS gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & 1 & 0 \\\\
+        0 & 0 & 0 & i \\\\
+        \\end{pmatrix}
     """
 
     _num_qudits = 2
     _qasm_name = 'cs'
-
-    def __init__(
-        self, 
-        num_controls: int=1, 
-        num_levels: Sequence[int] | int = 2, 
-        level_1: int=0,
-        level_2: int=1,
-        level_of_each_control: Sequence[Sequence[int]] | None = None
-    ) -> None:
-        """Builds the CSGate, see :class:`ControlledGate` for more information."""
-        super().__init__(
-            SGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
-            num_controls=num_controls,
-            num_levels=num_levels,
-            level_of_each_control = level_of_each_control
-        )
+    _utry = UnitaryMatrix(
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1j],
+        ],
+    )

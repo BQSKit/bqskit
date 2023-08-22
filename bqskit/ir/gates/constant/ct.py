@@ -1,36 +1,36 @@
-"""This module implements the CHGate."""
+"""This module implements the CTGate."""
 from __future__ import annotations
 
-import math
+import cmath
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class CHGate(ConstantGate, QubitGate):
+class CTGate(ConstantGate, QubitGate):
     """
-    The controlled-Hadamard gate.
+    The Controlled-T gate.
 
-    The Controlled-H gate is given by the following unitary:
+    The CT gate is given by the following unitary:
 
     .. math::
 
         \\begin{pmatrix}
         1 & 0 & 0 & 0 \\\\
         0 & 1 & 0 & 0 \\\\
-        0 & 0 & \\frac{\\sqrt{2}}{2} & \\frac{\\sqrt{2}}{2} \\\\
-        0 & 0 & \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2} \\\\
+        0 & 0 & 1 & 0 \\\\
+        0 & 0 & 0 & \\exp({i\\frac{\\pi}{4}}) \\\\
         \\end{pmatrix}
     """
 
     _num_qudits = 2
-    _qasm_name = 'ch'
+    _qasm_name = 'ct'
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
             [0, 1, 0, 0],
-            [0, 0, math.sqrt(2) / 2, math.sqrt(2) / 2],
-            [0, 0, math.sqrt(2) / 2, -math.sqrt(2) / 2],
+            [0, 0, 1, 0],
+            [0, 0, 0, cmath.exp(1j * cmath.pi / 4)],
         ],
     )

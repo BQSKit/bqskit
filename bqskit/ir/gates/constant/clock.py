@@ -38,6 +38,8 @@ class ClockGate(QuditGate):
             num_levels (int): The number of qudit levels (>=2).
         
         Raises:
+            TypeError: if num_levels is not an integer
+            
             ValueError: if num_levels < 2
         """
         if not is_integer(num_levels):

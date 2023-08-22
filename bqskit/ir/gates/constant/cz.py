@@ -1,29 +1,34 @@
 """This module implements the CZGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.composed import ControlledGate
-from bqskit.ir.gates.constant.z import ZGate
-from typing import Sequence
+from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
-class CZGate(ControlledGate):
+class CZGate(ConstantGate, QubitGate):
     """
-    The Controlled-Z gate for qudits. 
+    The Controlled-Z gate.
+
+    The CZ gate is given by the following unitary:
+
+    .. math::
+
+        \\begin{pmatrix}
+        1 & 0 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\
+        0 & 0 & 1 & 0 \\\\
+        0 & 0 & 0 & -1 \\\\
+        \\end{pmatrix}
     """
 
+    _num_qudits = 2
     _qasm_name = 'cz'
-    _num_params = 0
-
-    def __init__(
-        self, 
-        num_controls: int=1, 
-        num_levels: Sequence[int] | int = 2, 
-        level_of_each_control: Sequence[Sequence[int]] | None = None
-    ) -> None:
-        """Builds the CZGate, see :class:`ControlledGate` for more information."""
-        super().__init__(
-            ZGate(num_levels=num_levels, level_1=level_1, level_2=level_2),
-            num_controls=num_controls,
-            num_levels=num_levels,
-            level_of_each_control = level_of_each_control
-        )
+    _utry = UnitaryMatrix(
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, -1],
+        ],
+    )
