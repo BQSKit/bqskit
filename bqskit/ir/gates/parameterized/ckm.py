@@ -14,7 +14,7 @@ from bqskit.utils.cachedclass import CachedClass
 class CKMGate(QutritGate, DifferentiableUnitary, CachedClass):
     """
     The Cabibbo–Kobayashi–Maskawa single qutrit gate.
-    
+
     For more information consult the Particle Data Group review: https://pdg.lbl.gov/2023/reviews/rpp2022-rev-ckm-matrix.pdf
 
     Due to the current experimental searches for the exact values of the mixing parameters,

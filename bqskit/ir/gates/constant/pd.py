@@ -32,7 +32,7 @@ class PDGate(QuditGate):
 
     def __init__(
         self,
-        num_levels: int, 
+        num_levels: int,
         index: int
     ) -> None:
         """
@@ -40,7 +40,7 @@ class PDGate(QuditGate):
             num_levels (int): The number of qudit levels (>=2).
 
             index (int): the level for the  phase qudit gate (<num_levels)
-            
+
             Raises:
             TypeError: if num_levels is not an integer
             TypeError: if index is not an integer
@@ -52,11 +52,11 @@ class PDGate(QuditGate):
            raise TypeError(
                 'PDGate num_levels must be an integer.',
             )
-       if not is_integer(index):
+        if not is_integer(index):
            raise TypeError(
                 'PDGate index must be an integer.',
-            ) 
-        
+            )
+
         self.num_levels = num_levels
         if index > num_levels:
             raise ValueError(

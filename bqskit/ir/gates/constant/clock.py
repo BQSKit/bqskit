@@ -21,36 +21,36 @@ class ClockGate(QuditGate):
         \\end{equation}
 
     where d is the number of levels (2 levels is a qubit,
-    3 levels is a qutrit, etc.) 
+    3 levels is a qutrit, etc.)
     """
 
     _num_qudits = 1
     _num_params = 0
 
     def __init__(
-        self, 
-        num_levels: int=3
+        self,
+        num_levels: int = 3
     ) -> None:
         """
         Construct a ClockGate.
-        
+
         Args:
             num_levels (int): The number of qudit levels (>=2).
-        
+
         Raises:
             TypeError: if num_levels is not an integer
-            
+
             ValueError: if num_levels < 2
         """
         if not is_integer(num_levels):
-           raise TypeError(
+            raise TypeError(
                 'ClockGate num_levels must be an integer.',
             )
         if num_levels < 2:
             raise ValueError(
                 'ClockGate num_levels must be a postive integer greater than or equal to 2.',
             )
-         
+
         self.num_levels = num_levels
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

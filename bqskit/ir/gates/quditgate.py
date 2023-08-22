@@ -1,8 +1,8 @@
 """This module implements the QuditGate base class."""
 from __future__ import annotations
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 from bqskit.ir.gate import Gate
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class QuditGate(Gate):
@@ -18,4 +18,4 @@ class QuditGate(Gate):
     @property
     def num_levels(self) -> int:
         """The number of levels in each qudit."""
-        return getattr(self, '_num_levels') 
+        return getattr(self, '_num_levels')

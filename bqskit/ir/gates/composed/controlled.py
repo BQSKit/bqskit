@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from functools import reduce
+from typing import Sequence
+
 import numpy as np
 import numpy.typing as npt
-from typing import Sequence
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
@@ -19,13 +20,15 @@ from bqskit.utils.typing import is_integer
 class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
     """
     An arbitrary controlled gate.
+
     Given any qudit gate, ControlledGate can add control qudits.
     """
+
     def __init__(
-        self, 
-        gate: Gate, 
-        num_controls: int=1, 
-        num_levels: Sequence[int] | int = 2, 
+        self,
+        gate: Gate,
+        num_controls: int = 1,
+        num_levels: Sequence[int] | int = 2,
         level_of_each_control: Sequence[Sequence[int]] | None = None
     ):
         """
@@ -36,14 +39,14 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         Args:
             gate (Gate): The gate to control.
 
-            num_controls (int): the number of controls 
-            
-            num_levels (Sequence[int]): the number of levels for each control qudit. 
+            num_controls (int): the number of controls
+
+            num_levels (Sequence[int]): the number of levels for each control qudit.
             If one number is provided, all qudits have the same number of levels
 
             level_of_each_control  (Sequence[Sequence[int]]): Sequence of control levels for each control qudit.
             If more than one level is selected, the subspace spanned by the levels acts as a control subspace.
-            If all levels are selected for a given qudit, the operation is equivalent to the original gate without controls.  
+            If all levels are selected for a given qudit, the operation is equivalent to the original gate without controls.
 
 
         Raises:
@@ -52,11 +55,11 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
             ValueError: If `num_controls` is less than 1 or not a positive integer
                         If `num_levels` is less than 2 or not a positive integer
                         If len(num_levels) != num_controls
-                        If len(level_of_each_control) != num_controls 
+                        If len(level_of_each_control) != num_controls
                         If np.any(level_of_each_control[i] >= num_levels[i])
 
         Examples:
-            CNOT for qubits: 
+            CNOT for qubits:
                 If we didn't have the CNOTGate we can do it from this gate:
                 ```
                 > cnot_gate = ControlledGate(XGate())
@@ -65,14 +68,14 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
                   [0, 1, 0, 0],
                   [0, 0, 0, 1],
                   [0, 0, 1, 0]]
-                ```  
-    
+                ```
+
             Toffoli for qubits:
                 ```
                 >toffoli_gate = ControlledGate(XGate())
                 >toffoli_gate.get_unitary()
                 ```
-        
+
             CNOT for qutrits:
                 ```
                 >cnot_gate = ControlledGate(XGate(num_levels=3),num_levels=3)
@@ -84,15 +87,14 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
                 >cnot_gate = ControlledGate(XGate(num_levels=3))
                 >cnot_gate.get_unitary()
                 ```
-        
-            Multiple controls with mixed qudits: first control is qutrit with [0,1] control levels, 
-            second qudit is a 4 level qubit with [0] control, 
+
+            Multiple controls with mixed qudits: first control is qutrit with [0,1] control levels,
+            second qudit is a 4 level qubit with [0] control,
             and RY Gate for qubit operation:
                ```
                 >cgate = ControlledGate(RYGate(),num_controls=2,num_levels=[3,4],level_of_each_control=[[0,1],[0]])
                 >cgate.get_unitary(params=[0.3])
-                ``` 
-
+                ```
         """
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s.' % type(gate))
@@ -106,31 +108,31 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
                 'num_levels must be a postive integer >= 2 or sequence of such integers.',
             )
         if type(num_levels) == Sequence[int]:
-            if len(num_levels)!=num_controls:
+            if len(num_levels) != num_controls:
                 raise ValueError(
                     'Sequence of number of levels must have the same length as the number of controls.',
                 )
-        if type(num_levels)==int:
-            num_levels = [num_levels for i in range(len(self._num_controls))]   
+        if type(num_levels) == int:
+            num_levels = [num_levels for i in range(len(self._num_controls))]
         if level_of_each_control is None:
             level_of_each_control = []
             for i in range(num_controls):
-                 level_of_each_control.append([num_levels[i]-1])     
-        if len(level_of_each_control)!= num_controls:
+                level_of_each_control.append([num_levels[i] - 1])
+        if len(level_of_each_control) != num_controls:
             raise ValueError(
                 'Sequence of levels of each control must have the same length as the number of controls.',
             )
         for i in range(len(level_of_each_control)):
-            if np.any(level_of_each_control[i]>=num_levels[i]):
+            if np.any(level_of_each_control[i] >= num_levels[i]):
                 raise ValueError(
                     'Levels of control qubit must be less than the number of levels.',
                 )
-        
+
         self.gate = gate
         self._num_controls = num_controls
-        self.num_levels = num_levels            
+        self.num_levels = num_levels
         self.level_of_each_control = level_of_each_control
-        self._num_qudits = gate._num_qudits + self._num_controls 
+        self._num_qudits = gate._num_qudits + self._num_controls
         self._name = 'Controlled(%s)' % self.gate.name
         self._num_params = self.gate._num_params
         self.It = np.identity(self.gate.dim, dtype=np.complex128)
@@ -144,40 +146,45 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         """
         Construct the control matrix from the level of the control qudits.
 
-        At first, for each control qudit, it creates a square matrix of zeros of dimensionality equal to the number of levels. 
-        Then for each control level, the corresponding diagonal element is set to 1.
-        This is equivalent to adding the respective state projection matrix.
-        The final result matrix is the kronecker product of the indvidual matrices.
+        At first, for each control qudit, it creates a square matrix of zeros of
+        dimensionality equal to the number of levels. Then for each control
+        level, the corresponding diagonal element is set to 1. This is
+        equivalent to adding the respective state projection matrix. The final
+        result matrix is the kronecker product of the indvidual matrices.
         """
 
-        Matrix_list = [np.zeros((self.num_levels[i],self.num_levels[i]),dtype=np.complex128) for i in range(self._num_controls)]
+        Matrix_list = [np.zeros((self.num_levels[i], self.num_levels[i]),
+                                dtype=np.complex128) for i in range(self._num_controls)]
         for i in range(self._num_controls):
             for j in self.level_of_each_control[i]:
-                Matrix_list[i][j,j]=1.0
-        result = reduce(np.kron,Matrix_list)
+                Matrix_list[i][j, j] = 1.0
+        result = reduce(np.kron, Matrix_list)
         return result
 
     def _unitary(self, U):
-        """ 
-        Returns the unitary for the cotrol operation based on gate with unitary matrix U.
+        """
+        Returns the unitary for the cotrol operation based on gate with unitary
+        matrix U.
 
-        The control matrix is obtained from self._get_control_matrix(), 
-        and the complentary matrix is obtained from subtrating this matrix from the Idenity.
-        Then, each matrix is Kronecker multiplied with U and Idenity on active qudits respectively.
-        The operation is equal to the sum of these two operators.
+        The control matrix is obtained from self._get_control_matrix(), and the
+        complentary matrix is obtained from subtrating this matrix from the
+        Idenity. Then, each matrix is Kronecker multiplied with U and Idenity on
+        active qudits respectively. The operation is equal to the sum of these
+        two operators.
         """
         dim = int(np.prod(self.num_levels))
         M_other = np.eye(dim, dtype=np.complex128)
         M_control = self._get_control_matrix()
         M_other -= M_control
-        return np.kron(M_control, U) + np.kron(M_other,self.It)
-        
+        return np.kron(M_control, U) + np.kron(M_other, self.It)
+
     def _grad(self, grads):
         """
-        Returns the gradient of the controlled unitary based on the gradient of the original gate.
-        
-        The control matrix is obtained from self._get_control_matrix(), 
-        and Kronecker multiplied with each gradient element. 
+        Returns the gradient of the controlled unitary based on the gradient of
+        the original gate.
+
+        The control matrix is obtained from self._get_control_matrix(), and
+        Kronecker multiplied with each gradient element.
         """
 
         M_control = self._get_control_matrix()

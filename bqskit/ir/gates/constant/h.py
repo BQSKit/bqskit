@@ -40,7 +40,7 @@ class HGate(QuditGate):
 
     def __init__(
         self,
-        num_levels: int =2
+        num_levels: int = 2
     ) -> None:
         """
             Args:
@@ -52,14 +52,14 @@ class HGate(QuditGate):
             ValueError: if num_levels < 2
         """
         if not is_integer(num_levels):
-           raise TypeError(
+            raise TypeError(
                 'ClockGate num_levels must be an integer.',
             )
         if num_levels < 2:
             raise ValueError(
                 'ClockGate num_levels must be a postive integer greater than or equal to 2.',
             )
-         
+
         self.num_levels = num_levels
 
     def get_unitary(self) -> UnitaryMatrix:

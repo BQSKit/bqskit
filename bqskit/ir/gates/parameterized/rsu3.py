@@ -13,16 +13,17 @@ from bqskit.utils.typing import is_integer
 
 
 class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
-    """Rotation by SU3 generator for a single qutrit gate.
-    
-        .. math::
-        \\exp(i * params[0] * \lambda_j)
+    """
+    Rotation by SU3 generator for a single qutrit gate.
 
-        where lambda_j is the j-th generator of the SU(3) Lie algebra.
-        We use the physics notation, so each generator is Hermitian (not unitary).
-        There are N^2-1 = 3^2-1 =8 generators, and N-1-=3-1=2 generators that coomutate.
+    .. math::
+    \\exp(i * params[0] * \\lambda_j)
 
-        Reference: "Lie algebras in particle physics : from isospin to unified theories", Howard Georgi 
+    where lambda_j is the j-th generator of the SU(3) Lie algebra.
+    We use the physics notation, so each generator is Hermitian (not unitary).
+    There are N^2-1 = 3^2-1 =8 generators, and N-1-=3-1=2 generators that coomutate.
+
+    Reference: "Lie algebras in particle physics : from isospin to unified theories", Howard Georgi
     """
 
     _num_qudits = 1
@@ -33,11 +34,11 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
         """
             Raises:
             TypeError: If index is not an integer
-            
+
             ValueError: If index is less than 0 or greater than 7
         """
         if not is_integer(index):
-           raise TypeError(
+            raise TypeError(
                 'RSU3Gate generator index must be an integer.',
             )
         if index < 0 or index > 7:

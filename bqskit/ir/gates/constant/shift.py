@@ -24,29 +24,29 @@ class ShiftGate(QuditGate):
     _num_params = 0
 
     def __init__(
-        self, 
-        num_levels: int =2
+        self,
+        num_levels: int = 2
     ) -> None:
         """
-       Construct a ShiftGate.
-        
+        Construct a ShiftGate.
+
         Args:
             num_levels (int): The number of qudit levels (>=2).
-        
+
         Raises:
             TypeError: if num_levels is not an integer
-            
+
             ValueError: if num_levels < 2
         """
         if not is_integer(num_levels):
-           raise TypeError(
+            raise TypeError(
                 'ShiftGate num_levels must be an integer.',
             )
         if num_levels < 2:
             raise ValueError(
                 'shiftGate num_levels must be a postive integer greater than or equal to 2.',
             )
-         
+
         self.num_levels = num_levels
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

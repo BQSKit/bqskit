@@ -169,34 +169,36 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
 
 # Generators of SU(N)
 
+
 def SUGenerator(n: int) -> npt.NDArray[np.complex128]:
     """
     Computes the Lie algebra generators for SU(n).
 
-    Args: 
+    Args:
         n (int): dimension of SU(n) algebra
-        
-    Returns: 
+
+    Returns:
         npt.NDArray[np.complex128]: list of the SU(N) generators,
         note that they are Hermitian, but not neccesarily unitary.
-    
+
     Raises:
         ValueError: if n<=0
 
-    References: 
+    References:
         https://walterpfeifer.ch/liealgebra/LieAlg_wieBuch4.pdf
     """
-    #TODO HermitianMatrix objects
+    # TODO HermitianMatrix objects
 
-    if n<=0:
-        raise ValueError("n can not be a non-positive integer")
+    if n <= 0:
+        raise ValueError('n can not be a non-positive integer')
     elif n == 1:
-        return np.array([1],dtype=np.complex128)
+        return np.array([1], dtype=np.complex128)
     elif n == 2:
-        return np.array([np.array([[0, 1], [1, 0]],dtype=np.complex128), np.array([[0, -1j], [1j, 0]],dtype=np.complex128), np.array([[1, 0], [0, -1]],dtype=np.complex128)])
+        return np.array([np.array([[0, 1], [1, 0]], dtype=np.complex128), np.array([[0, -1j], [1j, 0]], dtype=np.complex128), np.array([[1, 0], [0, -1]], dtype=np.complex128)])
     else:
         PreviousGenerators = SUGenerator(n - 1)
-        generators = [np.pad(PreviousGenerators[i],(0,1)) for i in range(len(PreviousGenerators))]
+        generators = [np.pad(PreviousGenerators[i], (0, 1))
+                      for i in range(len(PreviousGenerators))]
         for i in range(n - 1):
             t = np.zeros((n, n), dtype=np.complex128)
             t[i, n - 1] = 1.0
@@ -211,4 +213,4 @@ def SUGenerator(n: int) -> npt.NDArray[np.complex128]:
         t3[n - 1, n - 1] = -n + 1
         t3 *= np.sqrt(2 / (n * (n - 1)))
         generators.append(t3)
-        return np.array(generators,dtype=np.complex128)
+        return np.array(generators, dtype=np.complex128)

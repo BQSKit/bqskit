@@ -46,8 +46,8 @@ class CSUMGate(QuditGate):
     _num_params = 0
 
     def __init__(
-        self, 
-        num_levels: int=3
+        self,
+        num_levels: int = 3
     ) -> None:
         """
             Args:
@@ -57,17 +57,17 @@ class CSUMGate(QuditGate):
             Typerror: if num_levels is not an integer
 
             ValueError: if num_levels < 2
-           
+
         """
         if not is_integer(num_levels):
-           raise TypeError(
+            raise TypeError(
                 'CSUMGate num_levels must be an integer.',
             )
         if num_levels < 2:
             raise ValueError(
                 'CSUMGate num_levels must be a postive integer greater than or equal to 2.',
             )
-         
+
         self.num_levels = num_levels
 
     def get_unitary(self) -> UnitaryMatrix:
@@ -86,7 +86,6 @@ class CSUMGate(QuditGate):
                 ival += 1
         u_mat = UnitaryMatrix(matrix, self.radixes)
         return u_mat
-    
+
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])
-
