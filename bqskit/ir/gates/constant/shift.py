@@ -8,6 +8,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
+
 class ShiftGate(QuditGate):
     r"""
     The one-qudit shift (X) gate. This is a Weyl-Heisenberg gate.

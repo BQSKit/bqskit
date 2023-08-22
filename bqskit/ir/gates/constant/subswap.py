@@ -40,12 +40,16 @@ class SubSwapGate(QuditGate):
         """
         if not is_integer(num_levels):
             raise TypeError(
-                'Expected num_levels object to be integer, got %s.' % type(num_levels),
+                'Expected num_levels object to be integer, got %s.' % type(
+                    num_levels,
+                ),
             )
 
         if type(qudit_levels) != str:
             raise TypeError(
-                'Expected qudit_levels object to be string, got %s.' % type(qudit_levels),
+                'Expected qudit_levels object to be string, got %s.' % type(
+                    qudit_levels,
+                ),
             )
 
         self._num_levels = num_levels
