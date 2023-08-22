@@ -95,7 +95,7 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
             M = self._map_gate_to_target_radixes(M,self.gate.get_unitary())
             self.utry = UnitaryMatrix(U, self.radixes)
 
-    def _map_gate_to_target_radixes(self,Matrix,Unitary):
+    def _map_gate_to_target_radixes(self,Matrix:  npt.NDArray[np.complex128], Unitary:  npt.NDArray[np.complex128]) ->  npt.NDArray[np.complex128]:
         """
         Construct the matrix for the target radixes from the original gate input.
 
