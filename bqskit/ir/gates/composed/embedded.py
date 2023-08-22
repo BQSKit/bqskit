@@ -14,7 +14,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_valid_radixes
+#from bqskit.utils.typing import is_valid_radixes
 
 
 class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
@@ -73,15 +73,17 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
             )
 
         if is_integer(target_radixes):
-            target_radixes = [target_radixes for i in range(len(gate.radixes))]
+            _target_radixes = [target_radixes for i in range(len(gate.radixes))]
+        else
+            _target_radixes = target_radixes
 
-        if not is_valid_radixes(target_radixes, gate.radixes):
+        if len(_target_radixes)!=len(gate.radixes):
             raise ValueError(
                 'Target radixes must have the same length as gate.radixes.',
             )
 
-        for i in range(len(target_radixes)):
-            if target_radixes[i] < gate.radixes[i]:
+        for i in range(len(_target_radixes)):
+            if _target_radixes[i] < gate.radixes[i]:
                 raise ValueError(
                     'Target radix at index %s should be greater than or equal to gate radix at same index.' % (
                         i

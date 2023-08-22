@@ -1,10 +1,10 @@
 """This package contains parameterized gates."""
 from __future__ import annotations
 
+from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.ckm import CKMGate
 from bqskit.ir.gates.parameterized.ckmd import CKMDGate
 from bqskit.ir.gates.parameterized.cp import CPGate
-from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cphase import ArbitraryCPhaseGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
