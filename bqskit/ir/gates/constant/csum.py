@@ -7,6 +7,7 @@ import numpy.typing as npt
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.typing import is_integer
 
 
@@ -70,7 +71,7 @@ class CSUMGate(QuditGate):
 
         self._num_levels = num_levels
 
-    def get_unitary(self) -> UnitaryMatrix:
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
 
         ival = 0

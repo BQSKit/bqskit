@@ -117,12 +117,14 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
         self._num_qudits = gate._num_qudits
         self._name = 'Embedded(%s)' % self.gate.name
         self._num_params = self.gate._num_params
-        self.radixes = tuple(target_radixes)
+        self._radixes = tuple(target_radixes)
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0 and not building_docs():
             M = np.eye(np.prod(self.radixes), dtype=np.complex128)
-            M = self._map_gate_to_target_radixes(M, self.gate.get_unitary().numpy())
+            M = self._map_gate_to_target_radixes(
+                M, self.gate.get_unitary().numpy(),
+            )
             self.utry = UnitaryMatrix(M, self.radixes)
 
     def _map_gate_to_target_radixes(self, Matrix: npt.NDArray[np.complex128], Unitary: npt.NDArray[np.complex128]) -> npt.NDArray[np.complex128]:
