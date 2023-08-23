@@ -39,6 +39,7 @@ from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SdgGate
+from bqskit.ir.gates import SGate
 from bqskit.ir.gates import SqrtCNOTGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
@@ -55,7 +56,6 @@ from bqskit.ir.gates import XGate
 from bqskit.ir.gates import XXGate
 from bqskit.ir.gates import YGate
 from bqskit.ir.gates import ZGate
-from bqskit.ir.gates.constant import SGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
 # from bqskit.ir.gates import CircuitGate
