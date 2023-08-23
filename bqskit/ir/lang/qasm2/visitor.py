@@ -21,10 +21,10 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.b import BGate
+from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.cs import CSGate
 from bqskit.ir.gates.constant.ct import CTGate
-from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.gates.constant.cy import CYGate
 from bqskit.ir.gates.constant.cz import CZGate

@@ -114,8 +114,10 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CircuitGate
     MeasurementPlaceholder
 """
+
 from __future__ import annotations
 
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed import *  # noqa
 from bqskit.ir.gates.composed import __all__ as composed_all
