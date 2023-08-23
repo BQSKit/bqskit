@@ -33,12 +33,12 @@ __all__ = [
     'CKMGate',
     'CKMDGate',
     'CPGate',
-    'CCPGate'
+    'CCPGate',
     'ArbitraryCPhaseGate',
     'CRXGate',
     'CRYGate',
     'CRZGate',
-    'CUGate'
+    'CUGate',
     'FSIMGate',
     'PauliGate',
     'RSU3Gate',
