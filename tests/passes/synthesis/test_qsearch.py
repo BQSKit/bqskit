@@ -13,22 +13,14 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestQSearch:
-    def test_small_qubit(self) -> None:
+
+    def test_small_qubit(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
         qsearch = QSearchSynthesisPass()
-        circuit.perform(qsearch)
-        dist = circuit.get_unitary().get_distance_from(utry)
+        circuit = compiler.compile(circuit, [qsearch])
+        dist = circuit.get_unitary().get_distance_from(utry, 1)
         assert dist <= 1e-5
-
-    def test_small_qubit_with_compiler(self) -> None:
-        with Compiler() as compiler:
-            utry = UnitaryMatrix.random(2)
-            circuit = Circuit.from_unitary(utry)
-            qsearch = QSearchSynthesisPass()
-            circuit = compiler.compile(circuit, [qsearch])
-            dist = circuit.get_unitary().get_distance_from(utry, 1)
-            assert dist <= 1e-5
 
     def test_small_qutrit(self) -> None:
         utry = UnitaryMatrix.random(2, [3, 3])

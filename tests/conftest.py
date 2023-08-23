@@ -34,11 +34,11 @@ from bqskit.ir.gates import FrozenParameterGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import IdentityGate
 from bqskit.ir.gates import ISwapGate
+from bqskit.ir.gates import PauliGate
 from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SdgGate
-from bqskit.ir.gates import SGate
 from bqskit.ir.gates import SqrtCNOTGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
@@ -50,17 +50,17 @@ from bqskit.ir.gates import U1Gate
 from bqskit.ir.gates import U2Gate
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import U8Gate
+from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.gates import XGate
 from bqskit.ir.gates import XXGate
 from bqskit.ir.gates import YGate
 from bqskit.ir.gates import ZGate
+from bqskit.ir.gates.constant import SGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
 # from bqskit.ir.gates import CircuitGate
 # from bqskit.ir.gates import ControlledGate
-# from bqskit.ir.gates import PauliGate
 # from bqskit.ir.gates import PermutationGate
-# from bqskit.ir.gates import VariableUnitaryGate
 
 # region Hypothesis Settings
 
@@ -298,10 +298,14 @@ SINGLE_QUBIT_GATES = [
     g for g in BQSKIT_GATES
     if g.is_qubit_only() and g.num_qudits == 1
 ]
+SINGLE_QUBIT_GENERAL_GATES = [
+    U3Gate(), VariableUnitaryGate(1, [2]), PauliGate(1),
+]
 SINGLE_QUTRIT_GATES = [
     g for g in BQSKIT_GATES
     if g.is_qutrit_only() and g.num_qudits == 1
 ]
+SINGLE_QUTRIT_GENERAL_GATES = [U8Gate(), VariableUnitaryGate(1, [3])]
 TWO_QUBIT_GATES = [
     g for g in BQSKIT_GATES
     if g.is_qubit_only() and g.num_qudits == 2
@@ -356,9 +360,21 @@ def single_qubit_gate(request: Any) -> Gate:
     return request.param
 
 
+@pytest.fixture(params=SINGLE_QUBIT_GENERAL_GATES, ids=lambda gate: repr(gate))
+def single_qubit_general_gate(request: Any) -> Gate:
+    """Provides all of SINGLE_QUBIT_GENERAL_GATES as a gate fixture."""
+    return request.param
+
+
 @pytest.fixture(params=SINGLE_QUTRIT_GATES, ids=lambda gate: repr(gate))
 def single_qutrit_gate(request: Any) -> Gate:
     """Provides all of SINGLE_QUTRIT_GATES as a gate fixture."""
+    return request.param
+
+
+@pytest.fixture(params=SINGLE_QUTRIT_GENERAL_GATES, ids=lambda gate: repr(gate))
+def single_qutrit_general_gate(request: Any) -> Gate:
+    """Provides all of SINGLE_QUTRIT_GENERAL_GATES as a gate fixture."""
     return request.param
 
 

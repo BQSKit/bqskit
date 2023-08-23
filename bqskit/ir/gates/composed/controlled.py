@@ -34,14 +34,15 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         """
         Construct a ControlledGate.
 
-        A controlled gate adds arbitrarily controls, and can be generalized for mixed qudit representation.
+        A controlled gate adds arbitrarily controls,
+        and can be generalized for mixed qudit representation.
 
         Args:
             gate (Gate): The gate to control.
 
-            num_controls (int): the number of controls
+            num_controls (int): number of controls
 
-            num_control_levels (Sequence[int]): the number of levels for each control qudit.
+            num_control_levels (Sequence[int]): number of levels for each control qudit.
             If one number is provided, all qudits have the same number of levels
 
             level_of_each_control  (Sequence[Sequence[int]]): Sequence of control levels for each control qudit.
