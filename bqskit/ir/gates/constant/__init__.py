@@ -68,7 +68,7 @@ __all__ = [
     'PermutationGate',
     'MargolusGate',
     'RC3XGate',
-    'RCCXGate'
+    'RCCXGate',
     'SGate',
     'SdgGate',
     'ShiftGate',
