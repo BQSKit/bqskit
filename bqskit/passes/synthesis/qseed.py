@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Sequence
+from typing import Any
+from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -52,7 +53,7 @@ class QSeedSynthesisPass(SynthesisPass):
         Construct a search-based synthesis pass.
 
         Args:
-            seeds (Circuit | Sequence[Circuit]): Circuit or Circuits from which 
+            seeds (Circuit | Sequence[Circuit]): Circuit or Circuits from which
                 to start looking for solutions.
 
             heuristic_function (HeuristicFunction): The heuristic to guide
@@ -87,50 +88,63 @@ class QSeedSynthesisPass(SynthesisPass):
                 templates. (Default: {})
 
         Raises:
-            ValueError: If `max_depth` is nonpositive.
+            TypeError: If `heuristic_function` is not a `HeuristicFunction`.
+
+            TypeError: If `forward_generator` is not a `LayerGenerator`.
+
+            TypeError: If `success_threshold` is not a real number.
+
+            TypeError: If `cost` is not a `CostFunctionGenerator`.
+
+            TypeError: If `max_layer` is not an integer.
+
+            ValueError: If `max_layer` is nonpositive.
+
+            TypeError: If `instantiate_options` is not a dict.
         """
         if not isinstance(heuristic_function, HeuristicFunction):
             raise TypeError(
-                f'Expected HeursiticFunction, got {type(heuristic_function)}'
+                f'Expected HeursiticFunction, got {type(heuristic_function)}',
             )
 
         if not isinstance(forward_generator, LayerGenerator):
             raise TypeError(
-                f'Expected LayerGenerator, got {type(forward_generator)}'
+                f'Expected LayerGenerator, got {type(forward_generator)}',
             )
 
         if not is_real_number(success_threshold):
             raise TypeError(
                 f'Expected real number for success_threshold'
-                f', got {type(success_threshold)}'
+                f', got {type(success_threshold)}',
             )
 
         if not isinstance(cost, CostFunctionGenerator):
             raise TypeError(
-                f'Expected cost to be a CostFunctionGenerator, got {type(cost)}'
+                'Expected cost to be a CostFunctionGenerator, '
+                f'got {type(cost)}',
             )
 
         if max_layer is not None and not is_integer(max_layer):
             raise TypeError(
-                f'Expected max_layer to be an integer, got {type(max_layer)}'
+                f'Expected max_layer to be an integer, got {type(max_layer)}',
             )
 
         if max_layer is not None and max_layer <= 0:
             raise ValueError(
-                f'Expected max_layer to be positive, got {int(max_layer)}'
+                f'Expected max_layer to be positive, got {int(max_layer)}',
             )
 
         if not isinstance(instantiate_options, dict):
             raise TypeError(
                 'Expected dictionary for instantiate_options, got '
-                f'{type(instantiate_options)}'
+                f'{type(instantiate_options)}',
             )
 
         self.seeds = [seeds] if not isinstance(seeds, Sequence) else list(seeds)
-        
+
         if not all([isinstance(c, Circuit) for c in self.seeds]):
             raise TypeError(
-                'Expected Circuit or Sequence of Circuits for `seed`.'
+                'Expected Circuit or Sequence of Circuits for `seed`.',
             )
 
         self.seed_dim = self.seeds[0].dim
@@ -152,14 +166,20 @@ class QSeedSynthesisPass(SynthesisPass):
         self.partials_per_depth = partials_per_depth
 
         # For scenarios where blocks with width different from seeds
-        self.mismatch_layer_generator = SimpleLayerGenerator()
+        self.mismatch_layer_generator: LayerGenerator = SimpleLayerGenerator()
 
     async def synthesize(
         self,
         utry: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit:
-        """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        """
+        Synthesize `utry`, see :class:`SynthesisPass` for more.
+
+        Raises:
+            TypeError: If `seed_circuits` are provided in `data` but are
+                not of type `Sequence[Circuit]`.
+        """
 
         frontier = Frontier(utry, self.heuristic_function)
         # PRNG seed
@@ -175,24 +195,23 @@ class QSeedSynthesisPass(SynthesisPass):
             if not all([isinstance(s, Circuit) for s in seeds]):
                 raise TypeError(
                     'Seeds passed through the `data` dict must be '
-                    'provided as a list of Circuits.'
+                    'provided as a list of Circuits.',
                 )
 
         if not self._check_same_dims(utry.dim, seeds):
             _logger.debug(
                 'Seed and unitary dimensions do not match '
                 f'({self.seed_dim} != {utry.dim}). '
-                'Using mis-match layer generator.'
+                'Using mis-match layer generator.',
             )
             layer_gen = self.mismatch_layer_generator
+            initial_layer = layer_gen.gen_initial_layer(utry, data)
+            initial_layers = [initial_layer]
         else:
-            layer_gen = SeedLayerGenerator(seeds, self.forward_generator)
-
-        initial_layers: list[Circuit]|Circuit = layer_gen.gen_initial_layer(
-            utry, data
-        )
-        if not isinstance(initial_layers, list):
-            initial_layers = [initial_layers]
+            layer_gen = SeedLayerGenerator(
+                seeds, self.forward_generator,
+            )
+            initial_layers = layer_gen.gen_initial_layer(utry, data)
 
         # Evaluate seeds
         initial_layers = await get_runtime().map(
@@ -205,8 +224,8 @@ class QSeedSynthesisPass(SynthesisPass):
             frontier.add(initial_layer, 0)
 
         # Track best circuit
-        best_dist: float = 1.1 # Higher than highest possible distance
-        best_circ: Circuit|None = None
+        best_dist: float = 1.1  # Higher than highest possible distance
+        best_circ: Circuit = initial_layers[0]
         for initial_layer in initial_layers:
             dist = self.cost.calc_cost(initial_layer, utry)
             if dist < best_dist:
@@ -222,7 +241,7 @@ class QSeedSynthesisPass(SynthesisPass):
         # Evalute initial layers
         if best_dist < self.success_threshold:
             _logger.debug('Successful synthesis.')
-            return best_circ 
+            return best_circ
 
         # Main loop
         while not frontier.empty():
@@ -280,12 +299,12 @@ class QSeedSynthesisPass(SynthesisPass):
             data['psols'] = psols
 
         return best_circ
-    
+
     def _check_same_dims(
-            self, 
-            target_dim: int, 
-            circuit_list: Sequence[Circuit],
-        ) -> bool:
+        self,
+        target_dim: int,
+        circuit_list: Sequence[Circuit],
+    ) -> bool:
         """
         Whether or not all circuits in the list have the same `dim` as
         `target_dim`.
