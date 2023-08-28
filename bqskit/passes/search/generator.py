@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import abc
+from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -23,7 +24,7 @@ class LayerGenerator(abc.ABC):
         self,
         target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
-    ) -> Circuit:
+    ) -> Circuit | Sequence[Circuit]:
         """Generate the initial layer for search."""
 
     @abc.abstractmethod
