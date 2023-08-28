@@ -1,8 +1,11 @@
-"""This module implements the LayerGenerator base class."""
+"""
+This module implements the LayerGenerator base class. And defines the
+SearchLayer type.
+"""
 from __future__ import annotations
 
 import abc
-from typing import Sequence
+from typing import Sequence, Union
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -10,6 +13,8 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
+
+SearchLayer = Union[Circuit, Sequence[Circuit]]
 
 class LayerGenerator(abc.ABC):
     """
@@ -24,9 +29,9 @@ class LayerGenerator(abc.ABC):
         self,
         target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
-    ) -> Circuit | Sequence[Circuit]:
+    ) -> SearchLayer:
         """Generate the initial layer for search."""
 
     @abc.abstractmethod
-    def gen_successors(self, circuit: Circuit, data: PassData) -> list[Circuit]:
+    def gen_successors(self, circuit: Circuit, data: PassData) -> SearchLayer:
         """Generate the successors of a circuit node."""

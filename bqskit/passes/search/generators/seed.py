@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
@@ -23,7 +22,7 @@ class SeedLayerGenerator(LayerGenerator):
         self,
         seeds: Circuit | Sequence[Circuit],
         forward_generator: LayerGenerator = SimpleLayerGenerator(),
-        back_step_size : int = 1,
+        back_step_size: int = 1,
     ) -> None:
         """
         Construct a SeedLayerGenerator.
@@ -74,12 +73,13 @@ class SeedLayerGenerator(LayerGenerator):
 
         if not is_integer(back_step_size):
             raise TypeError(
-                f'Expected integer for back_step_size, got {type(back_step_size)}.',
+                'Expected integer for back_step_size, '
+                f'got {type(back_step_size)}.',
             )
         if back_step_size < 0:
             raise ValueError(
                 'Expected non-negative value for back_step_size, '
-                f'got {back_step_size}.'
+                f'got {back_step_size}.',
             )
 
         self.seeds = [seeds] if not isinstance(seeds, Sequence) else list(seeds)
@@ -90,7 +90,7 @@ class SeedLayerGenerator(LayerGenerator):
         self,
         target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
-    ) -> Circuit | list[Circuit]:
+    ) -> list[Circuit]:
         """
         Generate the initial layer, see LayerGenerator for more.
 
@@ -152,7 +152,7 @@ class SeedLayerGenerator(LayerGenerator):
                 hashes = [sum(hashes)]
         return sum(hashes)
 
-    def remove_atomic_units(self, circuit : Circuit) -> list[Circuit]:
+    def remove_atomic_units(self, circuit: Circuit) -> list[Circuit]:
         """
         Search for the last `back_step_size` number of atmoic units:
 
@@ -172,17 +172,16 @@ class SeedLayerGenerator(LayerGenerator):
                 break
             if op.num_qudits == 1:
                 continue
-            
+
             for place in op.location:
-                point = (cycle+1, place)
+                point = (cycle + 1, place)
                 if not circuit_copy.is_point_idle(point):
                     circuit_copy.pop(point)
 
             circuit_copy.pop((cycle, op.location[0]))
 
-            
             ancestor_circuits.append(circuit_copy)
             circuit_copy = circuit_copy.copy()
             num_removed += 1
-        
+
         return ancestor_circuits
