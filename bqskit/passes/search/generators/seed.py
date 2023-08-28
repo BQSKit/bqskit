@@ -10,6 +10,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 _logger = logging.getLogger(__name__)
@@ -36,6 +37,19 @@ class SeedLayerGenerator(LayerGenerator):
 
             back_step_size (int): The number of atomic gate units removed from
                 the circuit in each backwards branch.
+
+        Raises:
+            TypeError: If `seeds` are not a Sequence of Circuits or a
+                single Circuit.
+
+            ValueError: If Circuits in `seeds` do not all have the same
+                dimension.
+
+            TypeError: If `forward_generator` is not a LayerGenerator.
+
+            TypeError: If `back_step_size` is not an integer.
+
+            ValueError: If 'back_step_size' is negative.
         """
         if not isinstance(seeds, Circuit) and not isinstance(seeds, Sequence):
             raise TypeError(
@@ -48,7 +62,7 @@ class SeedLayerGenerator(LayerGenerator):
                 raise TypeError('Expected seed to be Sequence of Circuits.')
             self.seed_dim = seeds[0].dim
             if not all([s.dim == self.seed_dim for s in seeds]):
-                raise TypeError('Each seed must be the same dimension.')
+                raise ValueError('Each seed must be the same dimension.')
         else:
             self.seed_dim = seeds.dim
 
@@ -62,6 +76,11 @@ class SeedLayerGenerator(LayerGenerator):
             raise TypeError(
                 f'Expected integer for back_step_size, got {type(back_step_size)}.',
             )
+        if back_step_size < 0:
+            raise ValueError(
+                'Expected non-negative value for back_step_size, '
+                f'got {back_step_size}.'
+            )
 
         self.seeds = [seeds] if not isinstance(seeds, Sequence) else list(seeds)
         self.forward_generator = forward_generator
@@ -69,7 +88,7 @@ class SeedLayerGenerator(LayerGenerator):
 
     def gen_initial_layer(
         self,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
     ) -> Circuit | list[Circuit]:
         """
@@ -94,7 +113,7 @@ class SeedLayerGenerator(LayerGenerator):
     def gen_successors(
         self,
         circuit: Circuit,
-        data: dict[str, Any],
+        data: PassData,
     ) -> list[Circuit]:
         """
         Generate the successors of a circuit node.
@@ -133,7 +152,7 @@ class SeedLayerGenerator(LayerGenerator):
                 hashes = [sum(hashes)]
         return sum(hashes)
 
-    def remove_atomic_units(self, circuit : Circuit) -> Circuit:
+    def remove_atomic_units(self, circuit : Circuit) -> list[Circuit]:
         """
         Search for the last `back_step_size` number of atmoic units:
 
