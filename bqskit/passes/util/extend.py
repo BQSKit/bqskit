@@ -35,6 +35,10 @@ class ExtendBlockSizePass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        if circuit.num_qudits == 1:
+            _logger.debug('Skipping extend pass for single-qudit circuit.')
+            return
+
         minimum_size = self.minimum_size
         if minimum_size is None:
             minimum_size = min(
@@ -42,10 +46,14 @@ class ExtendBlockSizePass(BasePass):
                 if g.num_qudits != 1
             )
 
+        if minimum_size is None:
+            _logger.warning('No multi-qudit gates in gate set.')
+            return
+
         if circuit.num_qudits < minimum_size:
             raise RuntimeError('Cannot extend block larger than circuit.')
 
-        cg = self.get_connectivity(circuit, data)
+        cg = data.connectivity
 
         # Find all small blocks
         small_blocks: list[tuple[int, int]] = []
