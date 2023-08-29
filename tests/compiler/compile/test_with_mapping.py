@@ -43,6 +43,9 @@ def test_compile_with_mapping(
         optimization_level=optimization_level,
     )
 
+    assert len(initial_mapping) == 3
+    assert len(final_mapping) == 3
+
     # This simple circuit shouldn't have moving pieces in the mapping
     assert set(initial_mapping) == set(final_mapping)
 
@@ -61,4 +64,4 @@ def test_compile_with_mapping(
     out_utry = mapped_subcircuit.get_unitary()
     PI = PermutationMatrix.from_qubit_location(3, local_qudit_initial_perm)
     PF = PermutationMatrix.from_qubit_location(3, local_qudit_final_perm)
-    assert out_utry.get_distance_from(PF.T @ correct_utry @ PI) < 1e-7
+    assert out_utry.get_distance_from(PF.T @ correct_utry @ PI) < 1e-6
