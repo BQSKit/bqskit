@@ -5,6 +5,7 @@ import abc
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.workflow import Workflow
 
 if TYPE_CHECKING:
     from bqskit.compiler.passdata import PassData
@@ -20,5 +21,4 @@ class PassAlias(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        for bqskit_pass in self.get_passes():
-            await bqskit_pass.run(circuit, data)
+        await Workflow(self.get_passes()).run(circuit, data)
