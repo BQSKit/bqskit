@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from typing import Iterable
 from typing import Iterator
 from typing import overload
@@ -18,12 +19,19 @@ if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 
 
+_logger = logging.getLogger(__name__)
+
 class Workflow(BasePass, Sequence[BasePass]):
     """A BQSKit workflow captures a quantum circuit compilation process."""
 
-    def __init__(self, passes: WorkflowLike) -> None:
+    def __init__(self, passes: WorkflowLike, name: str = '') -> None:
         """
         Initialize a workflow object from a sequence of passes.
+
+        Args:
+            passes (WorkflowLike): The passes to run in the workflow.
+
+            name (str): The optional name of the workflow.
 
         Raises:
             ValueError: If passes is empty.
@@ -45,6 +53,10 @@ class Workflow(BasePass, Sequence[BasePass]):
             msg = f'Expected Pass or sequence of Passes, got {wrong_type}.'
             raise TypeError(msg)
 
+        if not isinstance(name, str):
+            raise TypeError(f'Expected name to be str, got {type(name)}.')
+
+        self._name = name
         self._passes = list(passes)
 
         if len(self._passes) == 0:
@@ -55,27 +67,8 @@ class Workflow(BasePass, Sequence[BasePass]):
         for pass_obj in self._passes:
             if data.seed is not None:
                 seed_random_sources(data.seed)
+            _logger.debug(f'Running {pass_obj.name}')
             await pass_obj.run(circuit, data)
-
-    # @staticmethod
-    # def build_compile_flow() -> Workflow:
-    #     pass
-
-    # @staticmethod
-    # def build_transpile_flow() -> Workflow:
-    #     pass
-
-    # @staticmethod
-    # def build_synthesize_flow() -> Workflow:
-    #     pass
-
-    # @staticmethod
-    # def build_map_flow() -> Workflow:
-    #     pass
-
-    # @staticmethod
-    # def build_prepare_flow() -> Workflow:
-    #     pass
 
     def save(self, filename: str) -> None:
         import pickle
@@ -88,11 +81,15 @@ class Workflow(BasePass, Sequence[BasePass]):
         with open(filename, 'rb') as f:
             return pickle.load(f)
 
-    # def __str__(self) -> str:
-    #     pass  # TODO:
+    @property
+    def name(self) -> str:
+        """The name of the pass."""
+        return self._name or self.__class__.__name__
 
-    # def __repr__(self) -> str:
-    #     pass  # TODO:
+    def __str__(self) -> str:
+        name_seq = f'Workflow: {self.name}\n\t'
+        pass_strs = [f'{i}. {p}' for i, p in enumerate(self._passes)]
+        return name_seq + '\n\t'.join(pass_strs)
 
     def __add__(self, other: WorkflowLike) -> Workflow:
         return Workflow(self._passes + Workflow(other)._passes)

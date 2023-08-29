@@ -53,6 +53,10 @@ class BasePass(abc.ABC):
               This is because it will be potentially run in parallel.
         """
 
+    def __str__(self) -> str:
+        """Return a string representation of the pass."""
+        return self.name
+
     @staticmethod
     def get_model(_: Any, data: PassData) -> MachineModel:
         """
