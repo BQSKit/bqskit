@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -10,6 +11,7 @@ from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_sequence
 _logger = logging.getLogger(__name__)
 
 
@@ -21,12 +23,18 @@ class SingleQuditLayerGenerator(LayerGenerator):
     hetergenous gate support.
     """
 
-    def __init__(self, gates: list[Gate], allow_repeats: bool = False) -> None:
+    def __init__(
+        self,
+        gates: Sequence[Gate] | None,
+        allow_repeats: bool = False,
+    ) -> None:
         """
         Construct a SingleQuditLayerGenerator.
 
         Args:
-            gates (Gate): The single-qudit gate set.
+            gates (Sequence[Gate] | None): The single-qudit gate list. If None,
+                then the generator will read the pass data for the model's
+                gate set.
 
             allow_repeats (bool): By default this is set to False,
                 and the generator will not generate a circuit that
@@ -43,22 +51,28 @@ class SingleQuditLayerGenerator(LayerGenerator):
 
             ValueError: If `gates` is empty.
         """
-        self.radix = None
-        for gate in gates:
-            if not isinstance(gate, Gate):
-                raise TypeError(f'Expected gate, got {type(gate)}.')
+        if gates is not None:
+            self.radix = None
+            if not is_sequence(gates):
+                raise TypeError(
+                    f'Expected sequence of gates, got {type(gates)}.',
+                )
 
-            if gate.num_qudits > 1:
-                raise ValueError(f'Expected single-qudit gate, got {gate}.')
+            for gate in gates:
+                if not isinstance(gate, Gate):
+                    raise TypeError(f'Expected gate, got {type(gate)}.')
 
-            if self.radix is None:
-                self.radix = gate.radixes[0]
+                if gate.num_qudits > 1:
+                    raise ValueError(f'Expected single-qudit gate, got {gate}.')
 
-            elif gate.radixes[0] != self.radix:
-                raise ValueError('Gate set has a radix inconsistency.')
+                if self.radix is None:
+                    self.radix = gate.radixes[0]
 
-        if len(gates) == 0:
-            raise ValueError('Empty gate set.')
+                elif gate.radixes[0] != self.radix:
+                    raise ValueError('Gate set has a radix inconsistency.')
+
+            if len(gates) == 0:
+                raise ValueError('Empty gate set.')
 
         self.gates = gates
         self.allow_repeats = allow_repeats
@@ -77,6 +91,11 @@ class SingleQuditLayerGenerator(LayerGenerator):
 
             ValueError: If `target` is not single-qudit.
         """
+        if self.gates is None:
+            self.gates = list(data.gate_set.single_qudit_gates)
+            self.radix = self.gates[0].radixes[0]
+            if not all(g.radixes[0] == self.radix for g in self.gates):
+                raise RuntimeError('Gate set has a radix inconsistency.')
 
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
@@ -111,7 +130,7 @@ class SingleQuditLayerGenerator(LayerGenerator):
 
         # Generate successors
         successors = []
-        for gate in self.gates:
+        for gate in self.gates:  # type: ignore  # self.gates is set earlier
 
             # Skip adding a gate that repeats the last one on the circuit
             if not self.allow_repeats and gate == last_gate:
