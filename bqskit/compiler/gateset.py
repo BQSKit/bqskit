@@ -87,6 +87,10 @@ class GateSet(SuperType):
                 return FourParamGenerator()
 
             gate = list(self.two_qudit_gates)[0]
+
+            if isinstance(gate, GeneralGate):
+                return WideLayerGenerator(gate, None)
+
             return SimpleLayerGenerator(gate, self.get_general_sq_gate())
 
         return WideLayerGenerator(
