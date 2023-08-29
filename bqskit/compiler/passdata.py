@@ -36,6 +36,8 @@ class PassData(MutableMapping[str, Any]):
         'error',
         'seed',
         'machine_model',
+        'initial_mapping',
+        'final_mapping',
     ]
 
     def __init__(self, circuit: Circuit) -> None:
@@ -44,11 +46,13 @@ class PassData(MutableMapping[str, Any]):
         if circuit.num_qudits <= 8:
             self._target = circuit.get_unitary()
         else:
-            self._target = circuit
+            self._target = circuit  # Lazy evaluation
 
         self._error = 0.0
         self._model = MachineModel(circuit.num_qudits)
         self._placement = list(range(circuit.num_qudits))
+        self._initial_mapping = list(range(circuit.num_qudits))
+        self._final_mapping = list(range(circuit.num_qudits))
         self._data: dict[str, Any] = {}
         self._seed: int | None = None
 
@@ -136,6 +140,46 @@ class PassData(MutableMapping[str, Any]):
             )
 
         self._placement = list(int(x) for x in _val)
+
+    @property
+    def initial_mapping(self) -> list[int]:
+        """Return the initial mapping of logical to physical qudits."""
+        return self._initial_mapping
+
+    @initial_mapping.setter
+    def initial_mapping(self, _val: Sequence[int]) -> None:
+        if not is_sequence(_val):
+            raise TypeError(
+                f'Cannot set initial_mapping to {type(_val)}.'
+                ' Expected a sequence of integers.',
+            )
+
+        if not all(is_integer(x) for x in _val):
+            raise TypeError(
+                'Cannot set initial_mapping. Expected a sequence of integers.',
+            )
+
+        self._initial_mapping = list(int(x) for x in _val)
+
+    @property
+    def final_mapping(self) -> list[int]:
+        """Return the final mapping of logical to physical qudits."""
+        return self._final_mapping
+
+    @final_mapping.setter
+    def final_mapping(self, _val: Sequence[int]) -> None:
+        if not is_sequence(_val):
+            raise TypeError(
+                f'Cannot set final_mapping to {type(_val)}.'
+                ' Expected a sequence of integers.',
+            )
+
+        if not all(is_integer(x) for x in _val):
+            raise TypeError(
+                'Cannot set final_mapping. Expected a sequence of integers.',
+            )
+
+        self._final_mapping = list(int(x) for x in _val)
 
     @property
     def seed(self) -> int | None:
