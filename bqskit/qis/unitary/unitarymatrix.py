@@ -490,4 +490,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
 
 
-UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
+UnitaryLike = Union[
+    UnitaryMatrix, np.ndarray,
+    Sequence[Sequence[int | float | complex]],
+]
