@@ -131,7 +131,11 @@ class AutoRebase2QuditGatePass(Rebase2QuditGatePass):
                     num_retries = 0
 
                 # Group together a 2-qubit block composed of gates from old set
-                point = self.group_near_gates(circuit, circuit.point(g))
+                point = self.group_near_gates(
+                    circuit,
+                    circuit.point(g),
+                    old_gates,
+                )
                 circuits_with_new_gate = []
                 for circ in circs:
                     circuit_copy = circuit.copy()
