@@ -38,7 +38,7 @@ class StateSystem(Mapping[StateVector, StateVector]):
         self._dim = list(self._system.keys())[0].dim
         self._vec_count = len(self._system)
 
-        for k, v in system.items():
+        for k, v in self._system.items():
             if k.radixes != self.radixes:
                 raise ValueError('States in system have mismatch in dimension.')
             if v.radixes != self.radixes:
