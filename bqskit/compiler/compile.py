@@ -6,6 +6,8 @@ import logging
 import warnings
 from typing import Any
 from typing import Callable
+from typing import Literal
+from typing import overload
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -86,6 +88,60 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None = ...,
+    *,
+    with_mapping: Literal[False] = ...,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    **compiler_kwargs: Any,
+) -> Circuit:
+    ...
+
+
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None = ...,
+    *,
+    with_mapping: Literal[True],
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    **compiler_kwargs: Any,
+) -> tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
+    ...
+
+
+@overload
+def compile(
+    input: Circuit | UnitaryLike | StateLike | StateSystemLike,
+    model: MachineModel | None = ...,
+    *,
+    with_mapping: bool,
+    optimization_level: int = ...,
+    max_synthesis_size: int = ...,
+    synthesis_epsilon: float = ...,
+    error_threshold: float | None = ...,
+    error_sim_size: int = ...,
+    compiler: Compiler | None = ...,
+    seed: int | None = ...,
+    **compiler_kwargs: Any,
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
+    ...
+
+
 def compile(
     input: Circuit | UnitaryLike | StateLike | StateSystemLike,
     model: MachineModel | None = None,
@@ -96,9 +152,9 @@ def compile(
     error_sim_size: int = 8,
     compiler: Compiler | None = None,
     seed: int | None = None,
-    *compiler_args: Any,
+    with_mapping: bool = False,
     **compiler_kwargs: Any,
-) -> Circuit:
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
     """
     Compile a circuit, unitary, or state with a standard workflow.
 
@@ -145,9 +201,15 @@ def compile(
         seed (int | None): Set a seed for the compile function for
             better reproducibility. If left as None, will not set seed.
 
-        compiler_args (Any): Passed directly to BQSKit compiler construction.
-            Arguments for connecting to a cluster can go here.
-            See :class:`Compiler` for more info.
+        with_mapping (bool): If True, three values will be returned
+            instead of just the compiled circuit. The first value is the
+            compiled circuit, the second value is the initial mapping,
+            and the third value is the final mapping. The initial mapping
+            is a tuple where `initial_mapping[i] = j` implies that logical
+            qudit `i` in the input system starts on the physical qudit
+            `q` in the final circuit. Likewise, the final mapping describes
+            where the logical qudits are in the physical circuit at the end
+            of execution. (Default: False)
 
         compiler_kwargs (Any): Passed directly to BQSKit compiler construction.
             Arguments for connecting to a cluster can go here.
@@ -333,7 +395,7 @@ def compile(
     managed_compiler = compiler is None
 
     if managed_compiler:
-        compiler = Compiler(*compiler_args, **compiler_kwargs)
+        compiler = Compiler(**compiler_kwargs)
 
     elif not isinstance(compiler, Compiler):
         raise TypeError(
@@ -357,6 +419,12 @@ def compile(
     # Close managed compiler
     if managed_compiler:
         compiler.close()
+
+    # Gather mapping data if necessary
+    if with_mapping:
+        pi = data.get('initial_mapping', list(range(input.num_qudits)))
+        pf = data.get('final_mapping', list(range(input.num_qudits)))
+        return out, pi, pf
 
     return out
 

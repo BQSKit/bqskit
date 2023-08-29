@@ -51,6 +51,7 @@ class PermutationAwareSynthesisPass(SynthesisPass):
                 score the permuted circuits. The smallest score wins.
                 (Default: :func:`op_count`)
         """
+        # TODO: Add option to choose first returned result
         if not isinstance(inner_synthesis, SynthesisPass):
             bad_type = type(inner_synthesis)
             raise TypeError(f'Expected SynthesisPass object, got {bad_type}.')
