@@ -28,20 +28,50 @@ class GateCountPredicate(PassPredicate):
 
     key = 'GateCountPredicate_circuit_count'
 
-    def __init__(self, gate: Gate | Sequence[Gate]) -> None:
-        """Construct a GateCountPredicate."""
+    def __init__(self, gate: Gate | Sequence[Gate] | str) -> None:
+        """
+        Construct a GateCountPredicate.
+
+        Args:
+            gate (Gate | Sequence[Gate] | str): The gate(s) to count.
+             Either a single gate, a sequence of gates, or a string
+                representing the gate type. The allowed strings are:
+                    - 'sq' for single qudit gates
+                    - 'tq' for two qudit gates
+                    - 'multi' for multi-qudit gates
+                    - 'many' for gates with more than 2 qudits
+        """
 
         if isinstance(gate, Gate):
             gate = [gate]
 
-        if not is_sequence(gate) or not all(isinstance(g, Gate) for g in gate):
-            raise TypeError(f'Expected gate, got {type(gate)}')
+        if not isinstance(gate, str):
+            if not is_sequence(gate):
+                raise TypeError(f'Expected gate, got {type(gate)}')
 
-        self.gate = gate
+            if not all(isinstance(g, Gate) for g in gate):
+                raise TypeError(f'Expected gate, got {type(gate)}')
+
+        else:
+            if gate not in ['sq', 'tq', 'multi', 'many']:
+                raise ValueError(f'Unknown gate type {gate}.')
+
+        self.gate = list(gate) if not isinstance(gate, str) else gate
 
     def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
-        gate_count = sum(circuit.count(g) for g in self.gate)
+        if isinstance(self.gate, str):
+            gates = list({
+                'sq': circuit.gate_set.single_qudit_gates,
+                'tq': circuit.gate_set.two_qudit_gates,
+                'multi': circuit.gate_set.multi_qudit_gates,
+                'many': circuit.gate_set.many_qudit_gates,
+            }[self.gate])
+
+        else:
+            gates = self.gate  # type: ignore
+
+        gate_count = sum(circuit.count(g) for g in gates)
 
         # If first call, record data and return true
         if self.key not in data:
