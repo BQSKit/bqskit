@@ -19,12 +19,12 @@ class U3Decomposition(BasePass):
 
         if circuit.num_qudits != 1:
             raise ValueError(
-                'Cannot convert multi-qudit circuit into ZXZXZ sequence.',
+                'Cannot convert multi-qudit circuit into U3 gate.',
             )
 
         if circuit.radixes[0] != 2:
             raise ValueError(
-                'Cannot convert non-qubit circuit into ZXZXZ sequence.',
+                'Cannot convert non-qubit circuit into U3 gate.',
             )
 
         utry = circuit.get_unitary()

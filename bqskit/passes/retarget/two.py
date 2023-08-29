@@ -139,7 +139,7 @@ class Rebase2QuditGatePass(BasePass):
                 f'Expected single-qudit gate, got {single_qudit_gate}.',
             )
 
-        self.gates = gate_in_circuit
+        self.gates: list[Gate] = list(gate_in_circuit)
         self.ngates = new_gate
         self.max_depth = max_depth  # TODO: Compute from weyl chamber coords
         self.max_retries = max_retries
@@ -183,7 +183,11 @@ class Rebase2QuditGatePass(BasePass):
                     num_retries = 0
 
                 # Group together a 2-qubit block composed of gates from old set
-                point = self.group_near_gates(circuit, circuit.point(g))
+                point = self.group_near_gates(
+                    circuit,
+                    circuit.point(g),
+                    self.gates,
+                )
                 circuits_with_new_gate = []
                 for circ in self.circs:
                     circuit_copy = circuit.copy()
@@ -222,11 +226,16 @@ class Rebase2QuditGatePass(BasePass):
                 _logger.debug(self.replaced_log_messages[best_index])
                 circuit.become(instantiated_circuits[best_index])
 
-    def group_near_gates(self, circuit: Circuit, center: Point) -> Point:
+    def group_near_gates(
+        self,
+        circuit: Circuit,
+        center: Point,
+        gates: list[Gate],
+    ) -> Point:
         """Group gates similar to the gate at center on the same qubits."""
         op = circuit[center]
         qubits = op.location
-        counts = {g: 0.0 for g in self.gates}
+        counts = {g: 0.0 for g in gates}
         counts[op.gate] += 1.0
 
         # Go to the left until cant
@@ -245,7 +254,7 @@ class Rebase2QuditGatePass(BasePass):
                         i -= 1
                         moving_left = False
                         break
-                    if lop.num_qudits != 1 and lop.gate not in self.gates:
+                    if lop.num_qudits != 1 and lop.gate not in gates:
                         i -= 1
                         moving_left = False
                         break
@@ -267,7 +276,7 @@ class Rebase2QuditGatePass(BasePass):
                         j -= 1
                         moving_right = False
                         break
-                    if rop.num_qudits != 1 and rop.gate not in self.gates:
+                    if rop.num_qudits != 1 and rop.gate not in gates:
                         j -= 1
                         moving_right = False
                         break
@@ -321,10 +330,10 @@ class Rebase2QuditGatePass(BasePass):
         # Preprocess log messages
         replaced_log_messages = []
         for circ in circs + [overdrive]:
-            counts = [circ.count(g) for g in circ.gate_set]
+            g_counts = [circ.count(g) for g in circ.gate_set]
             gate_count_str = ', '.join([
                 f'{c} {g}' + ('s' if c > 1 else '')
-                for c, g in zip(counts, circ.gate_set)
+                for c, g in zip(g_counts, circ.gate_set)
             ])
             msg = f'Replaced gate with {gate_count_str}.'
             replaced_log_messages.append(msg)

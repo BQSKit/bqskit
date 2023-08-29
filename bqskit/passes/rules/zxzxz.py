@@ -9,7 +9,9 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant.sx import SqrtXGate
+from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rz import RZGate
+from bqskit.ir.gates.parameterized.u1 import U1Gate
 
 
 class ZXZXZDecomposition(BasePass):
@@ -18,6 +20,33 @@ class ZXZXZDecomposition(BasePass):
 
     Convert a single-qubit circuit to ZXZXZ sequence.
     """
+
+    def __init__(
+        self,
+        always_use_rx: bool = False,
+        always_use_u1: bool = False,
+    ) -> None:
+        """
+        Construct a ZXZXZDecomposition pass.
+
+        Args:
+            always_use_rx (bool): If True, always use RX instead of SX.
+
+            always_use_u1 (bool): If True, always use U1 instead of RZ.
+        """
+
+        if not isinstance(always_use_rx, bool):
+            raise TypeError(
+                f'Expected bool for always_use_rx, got {type(always_use_rx)}.',
+            )
+
+        if not isinstance(always_use_u1, bool):
+            raise TypeError(
+                f'Expected bool for always_use_u1, got {type(always_use_u1)}.',
+            )
+
+        self.always_use_rx = always_use_rx
+        self.always_use_u1 = always_use_u1
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
@@ -31,6 +60,14 @@ class ZXZXZDecomposition(BasePass):
             raise ValueError(
                 'Cannot convert non-qubit circuit into ZXZXZ sequence.',
             )
+
+        # Decide on RX or SX
+        no_sx = RXGate() in data.gate_set and SqrtXGate() not in data.gate_set
+        use_rx = self.always_use_rx or no_sx
+
+        # Decide on RZ or U1
+        no_rz = U1Gate() in data.gate_set and RZGate() not in data.gate_set
+        use_u1 = self.always_use_u1 or no_rz
 
         utry = circuit.get_unitary()
 
@@ -48,9 +85,30 @@ class ZXZXZDecomposition(BasePass):
         l = (l + np.pi) % (2 * np.pi) - np.pi
 
         new_circuit = Circuit(1)
-        new_circuit.append_gate(RZGate(), 0, [l])
-        new_circuit.append_gate(SqrtXGate(), 0)
-        new_circuit.append_gate(RZGate(), 0, [t])
-        new_circuit.append_gate(SqrtXGate(), 0)
-        new_circuit.append_gate(RZGate(), 0, [p])
+
+        if use_u1:
+            new_circuit.append_gate(U1Gate(), 0, [l])
+        else:
+            new_circuit.append_gate(RZGate(), 0, [l])
+
+        if use_rx:
+            new_circuit.append_gate(RXGate(), 0, [np.pi / 2])
+        else:
+            new_circuit.append_gate(SqrtXGate(), 0)
+
+        if use_u1:
+            new_circuit.append_gate(U1Gate(), 0, [t])
+        else:
+            new_circuit.append_gate(RZGate(), 0, [t])
+
+        if use_rx:
+            new_circuit.append_gate(RXGate(), 0, [np.pi / 2])
+        else:
+            new_circuit.append_gate(SqrtXGate(), 0)
+
+        if use_u1:
+            new_circuit.append_gate(U1Gate(), 0, [p])
+        else:
+            new_circuit.append_gate(RZGate(), 0, [p])
+
         circuit.become(new_circuit)
