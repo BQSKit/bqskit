@@ -11,7 +11,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
-class HGate(QuditGate):
+class HGate(ConstantGate,QuditGate):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 
@@ -65,24 +65,13 @@ class HGate(QuditGate):
         self._num_levels = num_levels
         self._radixes = tuple([num_levels])
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-
         matrix = np.zeros([self.num_levels, self.num_levels], dtype=complex)
         omega = np.exp(2j * np.pi / self.num_levels)
         for i in range(self.num_levels):
             for j in range(i, self.num_levels):
                 matrix[i, j] = omega**(i * j)
                 matrix[j, i] = omega**(i * j)
-        u_mat = UnitaryMatrix(
+        self._utry = UnitaryMatrix(
             matrix * 1 / np.sqrt(self.num_levels), self.radixes,
         )
-        return u_mat
-
-    def get_grad(self) -> npt.NDArray[np.complex128]:
-        return np.array([])
-    
-    def get_unitary_and_grad(self, params: RealVector = []) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
-        return self.get_unitary(), self.get_grad()
-    
 

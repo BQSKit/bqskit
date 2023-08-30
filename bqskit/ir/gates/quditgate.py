@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Sequence
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_sequence_of_int
 
 
 class QuditGate(Gate):
@@ -17,10 +19,10 @@ class QuditGate(Gate):
         if hasattr(self, '_radixes'):
             return getattr(self, '_radixes')
         else:
-            if type(self._num_levels) ==int:
-                _radixes = tuple([self.num_levels] * self.num_qudits)
-            elif type(self._num_levels)== Sequence[int]:
-                _radixes = tuple(self._num_levels)
+            if is_integer(self._num_levels):
+                self._radixes = tuple([self.num_levels] * self.num_qudits)
+            elif is_sequence_of_int(self._num_levels):
+                self._radixes = tuple(self._num_levels)
             return getattr(self, '_radixes')
 
     @property

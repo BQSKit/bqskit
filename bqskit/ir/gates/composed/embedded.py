@@ -14,6 +14,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_sequence_of_int, is_sequence
 # from bqskit.utils.typing import is_valid_radixes
 
 
@@ -58,23 +59,29 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s.' % type(gate))
 
-        if not is_integer(target_radixes) and type(target_radixes) != Sequence[int]:
+        if not is_integer(target_radixes) and not is_sequence_of_int(target_radixes):
             raise TypeError(
-                'Expected target radixes to be integer or a sequence of integers, got %s.' % type(
+                'Expected target radixes to be integer or a sequence of integers, got %s.' % 
                     target_radixes,
-                ),
             )
 
-        if type(level_map) != Sequence[int] and type(level_map) != Sequence[Sequence[int]]:
+        if not is_sequence_of_int(level_map) and not is_sequence(level_map):
             raise TypeError(
-                'Expected level map to a sequence of integers or a sequence of sequences of integers, got %s.' % type(
+                'Expected level map to a sequence of integers or a sequence of sequences of integers, got %s.' % 
                     level_map,
-                ),
             )
+        elif is_sequence(level_map) and not is_sequence_of_int(level_map):
+            for element in level_map:
+                if not is_sequence_of_int(element):
+                    raise TypeError(
+                'Expected level map to a sequence of integers or a sequence of sequences of integers, got %s.' % 
+                    level_map,
+            )
+
 
         if is_integer(target_radixes):
             _target_radixes = [target_radixes for i in range(len(gate.radixes))]
-        elif type(target_radixes) == Sequence[int]:
+        elif is_sequence_of_int(target_radixes):
             _target_radixes = list(target_radixes)
 
         if len(_target_radixes) != len(gate.radixes):
@@ -91,12 +98,12 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
                 )
 
         if len(gate.radixes) == 1:
-            if type(level_map) == Sequence[int]:
+            if is_sequence_of_int(level_map):
                 if len(level_map) != gate.radixes[0]:
                     raise ValueError(
                         f'Level map must be a sequnce of {gate.radixes[0]} integers, or a sequence with one sequence element of {gate.radixes[0]} integers.',
                     )
-            elif type(level_map) == Sequence[Sequence[int]]:
+            elif is_sequence(level_map):
                 if len(level_map) != 1 and len(level_map[0]) != gate.radixes[0]:
                     raise ValueError(
                         f'Level map must be a sequnce of {gate.radixes[0]} integers, or a sequence with one sequence element of {gate.radixes[0]} integers.',
@@ -106,7 +113,7 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
                 'Level map must have the same length as gate.radixes.',
             )
 
-        if type(level_map) == Sequence[Sequence[int]]:
+        if is_sequence(level_map) and not is_sequence_of_int(level_map): # level_map is a sequence of sequence of integers
             for i in range(len(level_map)):
                 if len(level_map[i]) != gate.radixes[i]:
                     raise ValueError(
@@ -122,9 +129,9 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
                             i, gate.radixes[i],
                         ),
                     )
-        if type(level_map) == Sequence[int]:
+        if is_sequence_of_int(level_map):
             _level_map = [list(level_map)]
-        elif type(level_map) == Sequence[Sequence[int]]:
+        elif is_sequence(level_map):
             _level_map = []
             for level in level_map:
                 _level_map.append(list(level))
@@ -158,8 +165,8 @@ class EmbeddedGate(ComposedGate, QuditGate, DifferentiableUnitary):
             for i in range(self.gate.radixes[0]):
                 for j in range(self.gate.radixes[0]):
                     Matrix[
-                        self._level_map[i],
-                        self._level_map[j],
+                        self._level_map[0][i],
+                        self._level_map[0][j],
                     ] = Unitary[i, j]
         elif len(self.gate.radixes) == 2:
             for i1 in range(self.gate.radixes[0]):

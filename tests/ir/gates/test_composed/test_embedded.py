@@ -30,10 +30,10 @@ def test_embded_x() -> None:
 
 def test_embded_shift() -> None:
     ES =np.array([
-        [0, 0, 1 ,0],
+        [0, 0, 0 ,1],
         [0, 1, 0, 0],
-        [0, 0, 0, 1],
         [1, 0, 0, 0],
+        [0, 0, 1, 0],
     ]) 
-    es = EmbeddedGate(ShiftGate(),4,[0,2,3])
+    es = EmbeddedGate(ShiftGate(3),4,[0,2,3])
     assert es.get_unitary() == ES

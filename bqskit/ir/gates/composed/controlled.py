@@ -15,6 +15,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_sequence_of_int, is_sequence
 
 
 class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
@@ -106,7 +107,7 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         if not is_integer(num_controls):
             raise TypeError('num_controls must be an integer')
 
-        if not is_integer(num_control_levels) and type(num_control_levels) != Sequence[int]:
+        if not is_integer(num_control_levels) and not is_sequence_of_int(num_control_levels):
             raise TypeError(
                 'num_control_levels must be an integer or sequence of integers',
             )
@@ -119,35 +120,37 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
             raise ValueError(
                 'num_levels must be a postive integer >= 2 or sequence of such integers.',
             )
-        if type(num_control_levels) == Sequence[int]:
+        if is_sequence_of_int(num_control_levels):
             if len(num_control_levels) != num_controls:
                 raise ValueError(
                     'Sequence of number of levels must have the same length as the number of controls.',
                 )
-        if type(num_control_levels) == int:
+        if is_integer(num_control_levels):
             _num_control_levels = [
                 int(num_control_levels)
                 for i in range(num_controls)
             ]
-        elif type(num_control_levels) == Sequence[int]:
+        elif is_sequence_of_int(num_control_levels):
             _num_control_levels = [level for level in num_control_levels]
 
         if level_of_each_control is None:
             _level_of_each_control = []
             for i in range(num_controls):
                 _level_of_each_control.append([_num_control_levels[i] - 1])
-        elif type(level_of_each_control) != Sequence[Sequence[int]]:
-            raise TypeError(
-                'level_of_each_control type must be Seqence[Sequnce[int]] but is %s' %type(level_of_each_control),
-            )
+        elif is_sequence(level_of_each_control):
+            for element in level_of_each_control:
+                if not is_sequence_of_int(element):
+                    raise TypeError(
+                    'level_of_each_control type must be Seqence[Sequnce[int]] but I got %s' %level_of_each_control,
+                    )
 
-        if type(level_of_each_control) == Sequence[Sequence[int]]:
+        if is_sequence(level_of_each_control):
             if len(level_of_each_control) != num_controls:
                 raise ValueError(
                     'Sequence of levels of each control must have the same length as the number of controls.',
                 )
             for i in range(len(level_of_each_control)):
-                if np.any(np.array(level_of_each_control[i]) >= num_control_levels[i]):
+                if np.any(np.array(level_of_each_control[i]) >= _num_control_levels[i]):
                     raise ValueError(
                         'Levels of control qubit must be less than the number of levels.',
                     )
