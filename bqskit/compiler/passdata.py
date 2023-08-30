@@ -44,7 +44,10 @@ class PassData(MutableMapping[str, Any]):
         """Initialize a PassData object from `circuit`."""
         self._target: Circuit | StateVector | UnitaryMatrix | StateSystem
         if circuit.num_qudits <= 8:
-            self._target = circuit.get_unitary()
+            try:
+                self._target = circuit.get_unitary()
+            except:
+                self._target = circuit
         else:
             self._target = circuit  # Lazy evaluation
 
