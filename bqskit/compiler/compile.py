@@ -708,7 +708,8 @@ def build_workflow(
                 'Unable to compile states with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
-
+        
+        
         return _stateprep_workflow(
             input,
             model,
@@ -726,7 +727,8 @@ def build_workflow(
                 'Unable to compile state systems with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
-
+        
+        
         return _statemap_workflow(
             input,
             model,
@@ -1091,7 +1093,6 @@ def build_single_qudit_retarget_workflow(
             ),
         ], name='Single Qudit Retargeting',
     )
-
 
 def build_sabre_mapping_workflow() -> Workflow:
     """
