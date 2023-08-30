@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-
+import math 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -232,11 +232,13 @@ class QSearchSynthesisPass(SynthesisPass):
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         Umtx=utry.numpy
-        
+     
         from squander import N_Qubit_Decomposition_adaptive
         
         cDecompose=N_Qubit_Decomposition_adaptive(Umtx.conj().T, level_limit_max=5,level_limit_min=0)
         cDecompose.Start_Decomposition()
+        qubitnum=math.floor(math.log2(utry.__len__()))
+        print("ez kell neked aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",qubitnum)
         self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
         
         frontier = Frontier(utry, self.heuristic_function)
