@@ -106,7 +106,7 @@ class QuickPartitioner(BasePass):
                     if all(
                         dividing_line[qudit] == start
                         for qudit, start in bin.starts.items()
-                    ) or isinstance(bin, BarrierBin):
+                    ):
                         to_remove.append(bin)
                         subc = circuit.get_slice(bin.op_list)
                         loc = list(sorted(bin.qudits))
@@ -181,7 +181,7 @@ class QuickPartitioner(BasePass):
                         num_closed += 1
 
                 # Track the barrier to restore it in partitioned circuit
-                pending_bins.append(BarrierBin(point, location))
+                pending_bins.append(BarrierBin(point, location, circuit))
                 continue
 
             # Get all the currently active bins that can have op added to them
@@ -344,14 +344,38 @@ class Bin:
 class BarrierBin(Bin):
     """A special bin made to mark and preserve barrier location."""
 
-    def __init__(self, point: CircuitPoint, location: CircuitLocation) -> None:
+    def __init__(
+        self,
+        point: CircuitPoint,
+        location: CircuitLocation,
+        circuit: Circuit,
+    ) -> None:
         """Initialize a BarrierBin with the point and location of a barrier."""
         super().__init__()
 
         # Add the barrier
         self.add_op(point, location)
 
+        # Barriar bins fill the volume between the previous and next gates
+        prevs = circuit.prev(point)
+        starts = {q: 0 for q in location}
+        for p in prevs:
+            loc = circuit[p].location
+            for q in loc:
+                if q in starts and starts[q] < p.cycle:
+                    starts[q] = p.cycle + 1
+
+        nexts = circuit.next(point)
+        ends: dict[int, int | None] = {q: None for q in location}
+        for p in nexts:
+            loc = circuit[p].location
+            for q in loc:
+                if q in ends and (ends[q] is None or ends[q] > p.cycle):  # type: ignore # noqa # short-circuit safety for >
+                    ends[q] = p.cycle - 1
+
+        self.starts = starts
+        self.ends = ends
+
         # Close the bin
         for q in location:
             self.active_qudits.remove(q)
-            self.ends[q] = point.cycle
