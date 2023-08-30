@@ -3,6 +3,7 @@ from __future__ import annotations
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 
+
 def test_measures_doesnt_error() -> None:
     input = """
         OPENQASM 2.0;
@@ -12,4 +13,4 @@ def test_measures_doesnt_error() -> None:
         measure q[0] -> c[0];
     """
     circuit = OPENQASM2Language().decode(input)
-    data = PassData(circuit)
+    _ = PassData(circuit)

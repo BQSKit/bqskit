@@ -46,7 +46,7 @@ class PassData(MutableMapping[str, Any]):
         if circuit.num_qudits <= 8:
             try:
                 self._target = circuit.get_unitary()
-            except:
+            except RuntimeError:
                 self._target = circuit
         else:
             self._target = circuit  # Lazy evaluation
