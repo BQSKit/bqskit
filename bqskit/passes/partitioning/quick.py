@@ -106,7 +106,7 @@ class QuickPartitioner(BasePass):
                     if all(
                         dividing_line[qudit] == start
                         for qudit, start in bin.starts.items()
-                    ):
+                    ) or isinstance(bin, BarrierBin):
                         to_remove.append(bin)
                         subc = circuit.get_slice(bin.op_list)
                         loc = list(sorted(bin.qudits))

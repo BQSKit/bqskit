@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+
 from bqskit import compile
 from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
@@ -7,6 +9,7 @@ from bqskit.ir.gates import BarrierPlaceholder
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CXGate
 from bqskit.ir.gates import U3Gate
+from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.passes.partitioning.quick import QuickPartitioner
 
 
@@ -50,3 +53,19 @@ def test_barrier_end_to_end_single_qubit_syn(compiler: Compiler) -> None:
     circuit.append_gate(U3Gate(), 0)
     out = compile(circuit, compiler=compiler)
     assert out.num_operations == 7
+
+
+def test_barrier_corner_case(compiler: Compiler) -> None:
+    input = """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        barrier q[0],q[1];
+        h q[0];
+        barrier q[0],q[1];
+        h q[0];
+    """
+
+    circuit = OPENQASM2Language().decode(input)
+    out_circuit = compiler.compile(circuit, [QuickPartitioner(3)])
+    assert out_circuit.get_unitary().get_distance_from(np.eye(4)) < 1e-8
