@@ -44,6 +44,7 @@ class CSUMGate(QuditGate):
 
     _num_qudits = 2
     _num_params = 0
+    _radixes = tuple([3,3])
 
     def __init__(
         self,

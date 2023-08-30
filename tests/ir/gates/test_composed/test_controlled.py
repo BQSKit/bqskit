@@ -10,6 +10,7 @@ from bqskit.ir.gates import HGate
 from bqskit.ir.gates import SqrtCNOTGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import XGate
+from bqskit.ir.gates import ShiftGate
 
 
 def test_ch() -> None:
@@ -40,3 +41,35 @@ def test_toffoli() -> None:
     ])
     ccx = ControlledGate(XGate(), 2)
     assert ccx.get_unitary() == toffoli
+
+def test_controlshift_qutrit() -> None:
+    CX1 = np.array([
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+    ]) 
+    cx1 = ControlledGate(gate=ShiftGate(),num_controls=1,num_control_levels=3,level_of_each_control=[[0]])
+    assert cx1.get_unitary() == CX1
+
+    CX2 = np.array([
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+    ]) 
+    cx2 = ControlledGate(gate=ShiftGate(),num_controls=1,num_control_levels=3,level_of_each_control=[[0,1]])
+    assert cx2.get_unitary() == CX2
+
+
+
+
+

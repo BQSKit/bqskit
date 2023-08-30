@@ -106,9 +106,9 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         if not is_integer(num_controls):
             raise TypeError('num_controls must be an integer')
 
-        if not is_integer(num_control_levels) or type(num_control_levels) != Sequence[int]:
+        if not is_integer(num_control_levels) and type(num_control_levels) != Sequence[int]:
             raise TypeError(
-                'num_levels must be an integer or sequence of integers',
+                'num_control_levels must be an integer or sequence of integers',
             )
 
         if num_controls < 1:
@@ -135,10 +135,10 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
         if level_of_each_control is None:
             _level_of_each_control = []
             for i in range(num_controls):
-                _level_of_each_control.append([num_control_levels[i] - 1])
+                _level_of_each_control.append([_num_control_levels[i] - 1])
         elif type(level_of_each_control) != Sequence[Sequence[int]]:
             raise TypeError(
-                'level_of_each_control type must be Seqence[Sequnce[int]]',
+                'level_of_each_control type must be Seqence[Sequnce[int]] but is %s' %type(level_of_each_control),
             )
 
         if type(level_of_each_control) == Sequence[Sequence[int]]:
@@ -157,6 +157,8 @@ class ControlledGate(ComposedGate, QuditGate, DifferentiableUnitary):
 
         self.gate = gate
         self._num_controls = num_controls
+        self._num_levels = _num_control_levels+list(self.gate.radixes)
+        self._radixes= tuple(self._num_levels)
         self._num_control_levels = _num_control_levels
         self._level_of_each_control = _level_of_each_control
         self._num_qudits = gate._num_qudits + self._num_controls

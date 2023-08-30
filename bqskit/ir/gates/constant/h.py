@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -62,6 +63,7 @@ class HGate(QuditGate):
             )
 
         self._num_levels = num_levels
+        self._radixes = tuple([num_levels])
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -79,3 +81,8 @@ class HGate(QuditGate):
 
     def get_grad(self) -> npt.NDArray[np.complex128]:
         return np.array([])
+    
+    def get_unitary_and_grad(self, params: RealVector = []) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
+        return self.get_unitary(), self.get_grad()
+    
+
