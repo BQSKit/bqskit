@@ -85,4 +85,4 @@ def test_barrier_corner_case_2(compiler: Compiler) -> None:
 
     circuit = OPENQASM2Language().decode(input)
     out_circuit = compiler.compile(circuit, [QuickPartitioner(3)])
-    assert out_circuit.get_unitary().get_distance_from(np.eye(4)) < 1e-8
+    assert out_circuit.get_unitary().get_distance_from(np.eye(8)) < 1e-8
