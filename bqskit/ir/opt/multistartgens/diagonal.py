@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from bqskit.ir.opt.multistartgen import MultiStartGenerator
+from bqskit.qis.state.system import StateSystem
 from bqskit.utils.typing import is_integer
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ class DiagonalStartGenerator(MultiStartGenerator):
         self,
         multistarts: int,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> list[npt.NDArray[np.float64]]:
         """
         Generate `multistarts` starting points for instantiation.
@@ -32,7 +33,7 @@ class DiagonalStartGenerator(MultiStartGenerator):
 
             circuit (Circuit): The circuit to generate the points for.
 
-            target (UnitaryMatrix | StateVector): The target.
+            target (UnitaryMatrix | StateVector | StateSystem): The target.
 
         Return:
             (list[npt.NDArray[np.float64]]): List of starting inputs for

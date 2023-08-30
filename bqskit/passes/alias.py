@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
+from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
+
+if TYPE_CHECKING:
+    from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 
 class PassAlias(BasePass):
@@ -15,7 +18,7 @@ class PassAlias(BasePass):
     def get_passes(self) -> list[BasePass]:
         """Return the passes that should be run, when this alias is called."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         for bqskit_pass in self.get_passes():
-            bqskit_pass.run(circuit, data)
+            await bqskit_pass.run(circuit, data)

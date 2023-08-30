@@ -6,7 +6,7 @@ from lark import Tree
 
 _OPENQASMPARSER = Lark(
     r"""
-ID: /[a-z][A-Za-z0-9_]*/
+ID: /[a-zA-Z][A-Za-z0-9_]*/
 REAL: /([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?/
 NNINTEGER: /[1-9]+[0-9]*|0/
 PI: "pi"
@@ -27,17 +27,19 @@ statement: decl
             | "opaque" ID "(" idlist ")" idlist ";"
             | qop
             | "if" "(" ID "==" NNINTEGER ")" qop
-            | "barrier" anylist ";"
+            | barrier
             | incstmt
 incstmt: "include" ESCAPED_STRING ";"
 decl: qreg | creg
 creg: "creg" ID "[" NNINTEGER "]" ";"
 qreg: "qreg" ID "[" NNINTEGER "]" ";"
+barrier: "barrier" anylist ";"
+barrierp: "barrier" anylist ";"
 gatedecl: "gate" ID idlist "{"
             | "gate" ID "(" ")" idlist "{"
             | "gate" ID "(" idlist ")" idlist "{"
 goplist: uopp
-            | "barrier" idlist ";"
+            | "barrierp" idlist ";"
             | goplist uopp
             | goplist "barrier" idlist ";"
 qop: uop

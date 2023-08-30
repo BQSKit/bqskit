@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import FrozenParameterGate
+from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from random import randint
 
+from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.operation import Operation
@@ -106,7 +107,7 @@ class TestBatchReplace:
             (3, 1),
         ) == op_5b
 
-    def test_random_batch_replace(self) -> None:
+    def test_random_batch_replace(self, compiler: Compiler) -> None:
         num_gates = 200
         num_q = 10
 
@@ -118,7 +119,7 @@ class TestBatchReplace:
                 b = (b + 1) % num_q
             circ.append_gate(CNOTGate(), [a, b])
 
-        ScanPartitioner(2).run(circ, {})
+        circ = compiler.compile(circ, [ScanPartitioner(2)])
 
         points = []
         ops = []

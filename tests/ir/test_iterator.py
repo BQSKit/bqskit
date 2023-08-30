@@ -5,8 +5,8 @@ from typing import cast
 
 from hypothesis import given
 
-from bqskit.ir import Circuit
 from bqskit.ir import CircuitIterator
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.operation import Operation

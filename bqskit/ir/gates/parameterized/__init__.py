@@ -1,10 +1,13 @@
 """This package contains parameterized gates."""
 from __future__ import annotations
 
+from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cp import CPGate
+from bqskit.ir.gates.parameterized.cphase import ArbitraryCPhaseGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
+from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
@@ -24,10 +27,13 @@ from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 
 __all__ = [
+    'ArbitraryCPhaseGate',
+    'CCPGate',
     'CPGate',
     'CRXGate',
     'CRYGate',
     'CRZGate',
+    'CUGate',
     'FSIMGate',
     'PauliGate',
     'PhasedXZGate',

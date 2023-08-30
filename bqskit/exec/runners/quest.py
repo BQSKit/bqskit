@@ -9,14 +9,13 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import dual_annealing
 
-from bqskit.compiler import CompilationTask
-from bqskit.compiler import Compiler
-from bqskit.compiler import MachineModel
+from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.machine import MachineModel
 from bqskit.exec.results import RunnerResults
 from bqskit.exec.runner import CircuitRunner
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.control import ForEachBlockPass
@@ -104,17 +103,17 @@ class QuestRunner(CircuitRunner):
         if self.model is not None:
             pass_list.insert(0, SetModelPass(self.model))
 
-        task = CompilationTask(circuit.copy(), pass_list)
-
         started = False
         if self.compiler is None:
             self.compiler = Compiler()
             started = True
-        # self.compiler = cast(Compiler, self.compiler)
-        blocked_circuit = self.compiler.compile(task)
+
+        blocked_circuit, data = self.compiler.compile(
+            circuit.copy(), pass_list, True,
+        )
 
         # 2. Gather partial solutions
-        data = self.compiler.analyze(task, ForEachBlockPass.key)
+        data = data[ForEachBlockPass.key]
         psols, pts = self.parse_data(blocked_circuit, data)
         # psols: psols[i] = list[[circuit, dist]] -> block i's partial solutions
         # pts: pts[i] = CircuitPoint -> block i's locations
@@ -358,14 +357,13 @@ def gen_approximate_circuits(
     if model is not None:
         pass_list.insert(0, SetModelPass(model))
 
-    task = CompilationTask(circuit.copy(), pass_list)
-
     started = False
     if compiler is None:
         compiler = Compiler()
         started = True
-    # compiler = cast(Compiler, compiler)
-    blocked_circuit = compiler.compile(task)
+
+    blocked_circuit, data = compiler.compile(circuit.copy(), pass_list, True)
+    data = data[ForEachBlockPass.key]
 
     # 2. Gather partial solutions
     runner = QuestRunner(
@@ -380,7 +378,6 @@ def gen_approximate_circuits(
         instantiate_options,
     )
 
-    data = compiler.analyze(task, ForEachBlockPass.key)
     psols, pts = runner.parse_data(blocked_circuit, data)
     # psols: psols[i] = list[[circuit, dist]] -> block i's partial solutions
     # pts: pts[i] = CircuitPoint -> block i's locations

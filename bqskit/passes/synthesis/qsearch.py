@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -13,7 +14,10 @@ from bqskit.passes.search.generators import SimpleLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
@@ -132,19 +136,21 @@ class QSearchSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix | StateVector | StateSystem,
+        data: PassData,
+    ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
+
         frontier = Frontier(utry, self.heuristic_function)
 
         # Seed the search with an initial layer
         initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer = self.execute(
-            data,
-            Circuit.instantiate,
-            [initial_layer],
-            target=utry,
-            **self.instantiate_options,
-        )[0]
+        initial_layer.instantiate(utry, **instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -169,13 +175,15 @@ class QSearchSynthesisPass(SynthesisPass):
             # Generate successors
             successors = self.layer_gen.gen_successors(top_circuit, data)
 
+            if len(successors) == 0:
+                continue
+
             # Instantiate successors
-            circuits = self.execute(
-                data,
+            circuits = await get_runtime().map(
                 Circuit.instantiate,
                 successors,
                 target=utry,
-                **self.instantiate_options,
+                **instantiate_options,
             )
 
             # Evaluate successors
@@ -189,9 +197,10 @@ class QSearchSynthesisPass(SynthesisPass):
                     return circuit
 
                 if dist < best_dist:
+                    plural = '' if layer == 0 else 's'
                     _logger.debug(
-                        'New best circuit found with %d layer%s and cost: %e.'
-                        % (layer + 1, '' if layer == 0 else 's', dist),
+                        f'New best circuit found with {layer + 1} layer{plural}'
+                        f' and cost: {dist:.12e}.',
                     )
                     best_dist = dist
                     best_circ = circuit

@@ -1,15 +1,14 @@
 """This module implements the CNOTToCYPass."""
 from __future__ import annotations
 
-from typing import Any
-
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import CYGate
-from bqskit.ir.gates import SdgGate
-from bqskit.ir.gates import SGate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.constant.cy import CYGate
+from bqskit.ir.gates.constant.s import SGate
+from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.operation import Operation
 
 
@@ -28,7 +27,7 @@ class CNOTToCYPass(BasePass):
         circuit.append_gate(SdgGate(), 1)
         self.cg = CircuitGate(circuit)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find all cnots

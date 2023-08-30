@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.constant import XGate
 from bqskit.ir.gates.parameterized import RXGate
 from bqskit.ir.opt.cost import HilbertSchmidtResidualsGenerator

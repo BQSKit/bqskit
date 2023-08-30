@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.compiler import MachineModel
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes import GeneralizedSabreLayoutPass
@@ -21,12 +20,12 @@ def test_simple(compiler: Compiler) -> None:
     for i in range(4):
         circuit.append_gate(CNOTGate(), (4, i))
         circuit.append_gate(
-            U3Gate(), 4, U3Gate.calc_params(
+            U3Gate(), 4, U3Gate().calc_params(
                 UnitaryMatrix.random(1),
             ),
         )
         circuit.append_gate(
-            U3Gate(), i, U3Gate.calc_params(
+            U3Gate(), i, U3Gate().calc_params(
                 UnitaryMatrix.random(1),
             ),
         )
@@ -34,19 +33,16 @@ def test_simple(compiler: Compiler) -> None:
 
     in_utry = circuit.get_unitary()
 
-    task = CompilationTask(
-        circuit,
-        [
-            SetModelPass(model),
-            GreedyPlacementPass(),
-            GeneralizedSabreLayoutPass(),
-            GeneralizedSabreRoutingPass(),
-        ],
-    )
+    workflow = [
+        SetModelPass(model),
+        GreedyPlacementPass(),
+        GeneralizedSabreLayoutPass(),
+        GeneralizedSabreRoutingPass(),
+    ]
 
-    cc = compiler.compile(task)
-    pi = compiler.analyze(task, 'initial_mapping')
-    pf = compiler.analyze(task, 'final_mapping')
+    cc, data = compiler.compile(circuit, workflow, True)
+    pi = data['initial_mapping']
+    pf = data['final_mapping']
     PI = PermutationMatrix.from_qubit_location(5, pi)
     PF = PermutationMatrix.from_qubit_location(5, pf)
     assert cc.get_unitary().get_distance_from(PF.T @ in_utry @ PI) < 1e-7

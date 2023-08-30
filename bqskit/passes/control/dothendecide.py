@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
-from typing import Callable
-from typing import Sequence
+from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.ir.circuit import Circuit
-from bqskit.utils.typing import is_sequence
+from bqskit.compiler.workflow import Workflow
+
+if TYPE_CHECKING:
+    from typing import Callable
+
+    from bqskit.compiler.passdata import PassData
+    from bqskit.compiler.workflow import WorkflowLike
+    from bqskit.ir.circuit import Circuit
+
 
 _logger = logging.getLogger(__name__)
 
@@ -17,14 +22,14 @@ class DoThenDecide(BasePass):
     """
     The DoThenDecide class.
 
-    This is a control pass that executes a pass or sequence of passes and then
-    conditionally accepts it or reverts to the original state.
+    This is a control pass that executes a workflow and then conditionally
+    accepts the resulting circuit or reverts to the original state.
     """
 
     def __init__(
         self,
         condition: Callable[[Circuit, Circuit], bool],
-        pass_list: BasePass | Sequence[BasePass],
+        workflow: WorkflowLike,
     ) -> None:
         """
         Construct a DoThenDecide.
@@ -32,47 +37,37 @@ class DoThenDecide(BasePass):
         Args:
             condition (Callable[[Circuit, Circuit], bool]): The condition
                 function that determines if the new circuit
-                (second parameter) after running `pass_list` should replace
+                (second parameter) after running `workflow` should replace
                 the original circuit (first parameter). If the condition
-                returns True, then replaced the original circuit with the
-                new one.
+                returns True, then replace the original circuit with the
+                new one. Note when passing callables to BQSKit passes,
+                they need to be defined at the module level (0-indent)
+                with a name (no lambdas).
 
-            pass_list (BasePass | Sequence[BasePass]): The pass or passes
-                to execute.
-
-        Raises:
-            ValueError: If a Sequence[BasePass] is given, but it is empty.
+            workflow (WorkflowLike): The pass or passes to execute.
         """
-        if not is_sequence(pass_list) and not isinstance(pass_list, BasePass):
-            raise TypeError(
-                'Expected Pass or sequence of Passes, got %s.'
-                % type(pass_list),
-            )
-
-        if is_sequence(pass_list):
-            truth_list = [isinstance(elem, BasePass) for elem in pass_list]
-            if not all(truth_list):
-                raise TypeError(
-                    'Expected Pass or sequence of Passes, got %s.'
-                    % type(pass_list[truth_list.index(False)]),
-                )
-            if len(pass_list) == 0:
-                raise ValueError('Expected at least one pass.')
+        if not callable(condition):
+            bad_type = type(condition)
+            msg = f'Expected callable function for condition, got {bad_type}'
+            raise TypeError(msg)
 
         self.condition = condition
-        self.pass_list = pass_list if is_sequence(pass_list) else [pass_list]
+        self.workflow = Workflow(workflow)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        # Perform Work
+        # Store old state
         old_circuit = circuit.copy()
-        _logger.debug('Pass list executing...')
-        for bqskit_pass in self.pass_list:
-            bqskit_pass.run(circuit, data)
+        old_data = data.copy()
 
+        # Execute the workflow
+        await self.workflow.run(circuit, data)
+
+        # Evaluate condition
         if self.condition(old_circuit, circuit):
-            _logger.debug('Accepted circuit.')
+            _logger.info('Accepted circuit.')
 
         else:
             circuit.become(old_circuit)
-            _logger.debug('Rejected circuit.')
+            data.become(old_data)
+            _logger.info('Rejected circuit.')

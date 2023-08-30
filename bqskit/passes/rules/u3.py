@@ -1,11 +1,10 @@
 """This module implements the U3Decomposition."""
 from __future__ import annotations
 
-from typing import Any
-
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import U3Gate
+from bqskit.ir.gates.parameterized.u3 import U3Gate
 
 
 class U3Decomposition(BasePass):
@@ -15,7 +14,7 @@ class U3Decomposition(BasePass):
     Convert a single-qubit circuit to U3 gate.
     """
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         if circuit.num_qudits != 1:
@@ -30,5 +29,5 @@ class U3Decomposition(BasePass):
 
         utry = circuit.get_unitary()
         new_circuit = Circuit(1)
-        new_circuit.append_gate(U3Gate(), 0, U3Gate.calc_params(utry))
+        new_circuit.append_gate(U3Gate(), 0, U3Gate().calc_params(utry))
         circuit.become(new_circuit)
