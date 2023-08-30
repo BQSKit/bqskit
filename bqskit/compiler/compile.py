@@ -528,7 +528,7 @@ def compile(
         and not StateVector.is_pure_state(input)
         and not StateSystem.is_state_system(input)
     ):
-        typed_inputs = [type_and_check_input(i) for i in input]
+        typed_inputs = [type_and_check_input(i) for i in input]  # type: ignore
 
         if len(typed_inputs) == 0:
             raise ValueError('Input iterable is empty.')
@@ -690,7 +690,7 @@ def build_workflow(
                 'Unable to compile unitary with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
-        
+
         return _synthesis_workflow(
             input,
             model,
@@ -708,8 +708,7 @@ def build_workflow(
                 'Unable to compile states with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
-        
-        
+
         return _stateprep_workflow(
             input,
             model,
@@ -727,8 +726,7 @@ def build_workflow(
                 'Unable to compile state systems with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
-        
-        
+
         return _statemap_workflow(
             input,
             model,
@@ -1023,74 +1021,76 @@ def build_single_qudit_retarget_workflow(
         },
     )
 
-    return Workflow([
-        IfThenElsePass(
-            NotPredicate(SinglePhysicalPredicate()),
-            [
-                LogPass('Retargeting single-qudit gates.'),
-                UnfoldPass(),
-                GroupSingleQuditGatePass(),
-                IfThenElsePass(
-                    AllConstantSingleQuditGates(),
-                    # TODO: Implement better retargeting techniques
-                    # for constant gate sets
-                    LogPass(
-                        'The standard workflow with BQSKit may have trouble'
-                        ' targeting gate sets containing no parameterized'
-                        ' single-qudit gates.',
-                        logging.WARNING,
+    sq_gate_deletion = build_partitioning_workflow(
+        ScanningGateRemovalPass(
+            success_threshold=synthesis_epsilon,
+            collection_filter=_sq_gate_collection_filter,
+            instantiate_options=get_instantiate_options(optimization_level),
+        ),
+        max_synthesis_size,
+        None if error_threshold is None else error_sim_size,
+    )
+
+    return Workflow(
+        [
+            IfThenElsePass(
+                NotPredicate(SinglePhysicalPredicate()),
+                [
+                    LogPass('Retargeting single-qudit gates.'),
+                    UnfoldPass(),
+                    GroupSingleQuditGatePass(),
+                    IfThenElsePass(
+                        AllConstantSingleQuditGates(),
+                        # TODO: Implement better retargeting techniques
+                        # for constant gate sets
+                        LogPass(
+                            'The standard workflow with BQSKit may have trouble'
+                            ' targeting gate sets containing no parameterized'
+                            ' single-qudit gates.',
+                            logging.WARNING,
+                        ),
                     ),
-                ),
-                IfThenElsePass(
-                    NoSingleQuditGatesInModel(),
-                    [
-                        LogPass('Attempting to remove single-qudit gates.'),
-                        build_partitioning_workflow(
-                            ScanningGateRemovalPass(
-                                success_threshold=synthesis_epsilon,
-                                collection_filter=_sq_gate_collection_filter,
-                                instantiate_options=get_instantiate_options(
-                                    optimization_level,
-                                ),
-                            ),
-                            max_synthesis_size,
-                            None if error_threshold is None else error_sim_size,
-                        ),
-                        IfThenElsePass(
-                            NotPredicate(SinglePhysicalPredicate()),
-                            LogPass(
-                                'Unable to remove all single-qudit gates;'
-                                ' gate set may not be universal without'
-                                ' single-qudit gates. Consider changing'
-                                ' gate set, increasing optimization_level'
-                                ' or max_synthesis_size.',
-                                logging.WARNING,
-                            ),
-                        ),
-                    ],
-                    [
-                        ForEachBlockPass(
+                    IfThenElsePass(
+                        NoSingleQuditGatesInModel(),
+                        [
+                            LogPass('Attempting to remove single-qudit gates.'),
+                            sq_gate_deletion,
                             IfThenElsePass(
                                 NotPredicate(SinglePhysicalPredicate()),
-                                [
-                                    IfThenElsePass(
-                                        HasGeneralSingleQuditGate(),
-                                        GeneralSQDecomposition(),
-                                        IfThenElsePass(
-                                            ZXGatePredicate(),
-                                            ZXZXZDecomposition(),
-                                            sq_synthesis,
-                                        ),
-                                    ),
-                                ],
+                                LogPass(
+                                    'Unable to remove all single-qudit gates;'
+                                    ' gate set may not be universal without'
+                                    ' single-qudit gates. Consider changing'
+                                    ' gate set, increasing optimization_level'
+                                    ' or max_synthesis_size.',
+                                    logging.WARNING,
+                                ),
                             ),
-                        ),
-                    ],
-                ),
-                UnfoldPass(),
-            ],
-        ),
-    ], name='Single Qudit Retargeting')
+                        ],
+                        [
+                            ForEachBlockPass(
+                                IfThenElsePass(
+                                    NotPredicate(SinglePhysicalPredicate()),
+                                    [
+                                        IfThenElsePass(
+                                            HasGeneralSingleQuditGate(),
+                                            GeneralSQDecomposition(),
+                                            IfThenElsePass(
+                                                ZXGatePredicate(),
+                                                ZXZXZDecomposition(),
+                                                sq_synthesis,
+                                            ),
+                                        ),
+                                    ],
+                                ),
+                            ),
+                        ],
+                    ),
+                    UnfoldPass(),
+                ],
+            ),
+        ], name='Single Qudit Retargeting',
+    )
 
 
 def build_sabre_mapping_workflow() -> Workflow:
@@ -1478,7 +1478,7 @@ def _synthesis_workflow(
                 'When performing direct synthesis, the error threshold'
                 ' cannot be less than the synthesis epsilon.',
             )
-        
+
     sq_synthesis = QSearchSynthesisPass(
         layer_generator=SingleQuditLayerGenerator(None, allow_repeats=True),
         heuristic_function=DijkstraHeuristic(),
@@ -1506,7 +1506,7 @@ def _synthesis_workflow(
     else:
         in_synthesis = qsearch if input.num_qudits <= 3 else leap
         synthesis = PermutationAwareSynthesisPass(inner_synthesis=in_synthesis)
-    
+
     if input.num_qudits == 1:
         synthesis = sq_synthesis
 

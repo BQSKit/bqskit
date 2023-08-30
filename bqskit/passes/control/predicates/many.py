@@ -17,9 +17,9 @@ class ManyQuditGatesPredicate(PassPredicate):
     """Check if many-qudit gates are in the circuit and/or model."""
 
     def __init__(
-        self, 
+        self,
         check_circuit: bool = True,
-        check_model: bool = True
+        check_model: bool = True,
     ) -> None:
         """
         Construct a ManyQuditGatesPredicate.
@@ -30,7 +30,7 @@ class ManyQuditGatesPredicate(PassPredicate):
 
             check_model (bool): Whether to check the model for many-qudit
                 gates. (Default: True)
-        
+
         Raises:
             ValueError: If both check_circuit and check_model are False.
         """
@@ -38,17 +38,17 @@ class ManyQuditGatesPredicate(PassPredicate):
             raise TypeError(
                 f'Expected bool for check_circuit, got {type(check_circuit)}.',
             )
-        
+
         if not isinstance(check_model, bool):
             raise TypeError(
                 f'Expected bool for check_model, got {type(check_model)}.',
             )
-        
+
         if not check_circuit and not check_model:
             raise ValueError(
                 'At least one of check_circuit or check_model must be True.',
             )
-        
+
         self.check_circuit = check_circuit
         self.check_model = check_model
 
@@ -59,11 +59,11 @@ class ManyQuditGatesPredicate(PassPredicate):
                 if gate.num_qudits > 2:
                     _logger.debug(f'Found many-qudit gate in circuit: {gate}.')
                     return True
-        
+
         if self.check_model:
             for gate in data.gate_set:
                 if gate.num_qudits > 2:
                     _logger.debug(f'Found many-qudit gate in model: {gate}.')
                     return True
-        
+
         return False
