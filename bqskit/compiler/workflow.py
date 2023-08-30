@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+
 class Workflow(BasePass, Sequence[BasePass]):
     """A BQSKit workflow captures a quantum circuit compilation process."""
 
