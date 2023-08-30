@@ -23,7 +23,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.iterator import CircuitIterator

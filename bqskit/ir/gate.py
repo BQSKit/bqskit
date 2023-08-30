@@ -54,40 +54,57 @@ class Gate(Unitary):
             '], q['.join([str(q) for q in location]),
         ).replace('()', '')
 
-    def is_self_inverse(self) -> bool:
+    def is_self_inverse(self, params: RealVector = []) -> bool:
         """
         Checks whether the gate is its own inverse.
 
         A gate is its own inverse if its unitary matrix is equal to
         its Hermitian conjugate.
 
+        Args:
+            params (RealVector): The parameters of the gate to check.
+
         Returns:
             bool: True if the gate is self-inverse, False otherwise.
+
+        Note:
+            - This checks that the gate is self-inverse for the given
+              parameters only.
         """
         # Get the unitary matrix of the gate
-        unitary_matrix = self.get_unitary()
+        unitary_matrix = self.get_unitary(params)
 
         # Calculate the Hermitian conjugate (adjoint) of the unitary matrix
-        hermitian_conjugate = unitary_matrix.conj().T
+        hermitian_conjugate = unitary_matrix.dagger
 
         # Check if the unitary matrix is equal to its Hermitian conjugate
         return np.allclose(unitary_matrix, hermitian_conjugate)
 
-    def get_inverse_params(self, params: RealVector = []):
-        if params:
-            # Negate the parameters and normalize to the 0-2pi range
-            inverse_params = [-param % (2 * np.pi) for param in params]
-            # Create a new gate of the same type with the inverse parameters
-            self.check_parameters(inverse_params)
-            return self, inverse_params
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """
+        Return the parameters that invert the gate.
+
+        Args:
+            params (RealVector): The parameters of the gate to invert.
+
+        Note:
+            - The default implementation returns the same paramters because
+              the default implementation of `Gate.get_inverse` returns a
+              :class:`DaggerGate` wrapper of the gate. The wrapper will
+              correctly handle the inversion. When overriding `get_inverse`,
+              on a parameterized gate this method should be overridden
+              as well.
+        """
+        return params
 
     def get_inverse(self) -> Gate:
         """Return the gate's inverse as a gate."""
-        if self.is_self_inverse():
+        if self.is_constant() and self.is_self_inverse():
             return self
-        else:
-            from bqskit.ir.gates.composed import DaggerGate
-            return DaggerGate(self)
+
+        from bqskit.ir.gates.composed import DaggerGate
+        return getattr(self, '_inverse', DaggerGate(self))
+        # TODO: Fill out inverse definitions throughout the gate library
 
     with_frozen_params: ClassVar[
         Callable[[Gate, dict[int, float]], FrozenParameterGate]

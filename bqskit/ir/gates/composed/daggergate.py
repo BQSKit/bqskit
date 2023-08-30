@@ -106,3 +106,7 @@ class DaggerGate(
 
     def __hash__(self) -> int:
         return hash(self.gate)
+
+    def get_inverse(self) -> Gate:
+        """Return the gate's inverse as a gate."""
+        return self.gate
