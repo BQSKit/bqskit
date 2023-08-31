@@ -14,12 +14,10 @@ from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-# from bqskit.qis.unitary.unitary import Sequence[int]
 
 __all__ = [
     'Unitary',
     'RealVector',
-    # 'Sequence[int]',
     'UnitaryLike',
     'UnitaryMatrix',
     'UnitaryBuilder',

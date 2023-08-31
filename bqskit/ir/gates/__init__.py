@@ -2,19 +2,6 @@
 BQSKit Gates (:mod:`bqskit.ir.gates`)
 =====================================
 
-.. rubric:: Gate Base Classes
-
-.. autosummary::
-    :toctree: autogen
-    :recursive:
-    :nosignatures:
-    :template: autosummary/gate.rst
-
-    ComposedGate
-    QubitGate
-    QutritGate
-    ConstantGate
-
 .. rubric:: Constant Gates
 
 .. autosummary::
@@ -23,9 +10,11 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
+    BGate
     CCXGate
     ToffoliGate
     CHGate
+    ClockGate
     CPIGate
     CSGate
     CSUMGate
@@ -38,13 +27,19 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     IdentityGate
     ISwapGate
     IToffoliGate
+    PDGate
     PermutationGate
+    MargolusGate
+    RC3XGate
+    RCCXGate
     SGate
     SdgGate
+    ShiftGate
     SqrtCNOTGate
+    SqrtISwapGate
+    SubSwapGate
     SwapGate
     SqrtXGate
-    SqrtISwapGate
     SXGate
     SycamoreGate
     TGate
@@ -65,15 +60,19 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
-    ArbitraryCPhaseGate
     CCPGate
+    CKMGate
+    CKMDGate
     CPGate
+    ArbitraryCPhaseGate
     CRXGate
     CRYGate
     CRZGate
+    CUGate
     FSIMGate
     PauliGate
     PhasedXZGate
+    RSU3Gate
     RXGate
     RXXGate
     RYGate
@@ -82,12 +81,11 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     RZZGate
     U1Gate
     U1qGate
-    U1qPiGate
     U1qPi2Gate
+    U1qPiGate
     U2Gate
     U3Gate
     U8Gate
-    RSU3Gate
     VariableUnitaryGate
 
 .. rubric:: Composed Gates
@@ -100,6 +98,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
 
     ControlledGate
     DaggerGate
+    EmbeddedGate
     FrozenParameterGate
     TaggedGate
     VariableLocationGate
@@ -113,6 +112,22 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
 
     CircuitGate
     MeasurementPlaceholder
+    BarrierPlaceholder
+
+.. rubric:: Gate Base Classes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+    :nosignatures:
+    :template: autosummary/gate.rst
+
+    ComposedGate
+    QubitGate
+    QutritGate
+    QuditGate
+    ConstantGate
+    GeneralGate
 """
 from __future__ import annotations
 

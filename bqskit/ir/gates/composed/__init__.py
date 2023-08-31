@@ -13,7 +13,6 @@ __all__ = [
     'DaggerGate',
     'EmbeddedGate',
     'FrozenParameterGate',
-    'VariableLocationGate',
     'TaggedGate',
-    'EmbeddedGate',
+    'VariableLocationGate',
 ]

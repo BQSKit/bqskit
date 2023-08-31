@@ -30,10 +30,10 @@ from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 
 __all__ = [
+    'CCPGate',
     'CKMGate',
     'CKMDGate',
     'CPGate',
-    'CCPGate',
     'ArbitraryCPhaseGate',
     'CRXGate',
     'CRYGate',
@@ -41,8 +41,8 @@ __all__ = [
     'CUGate',
     'FSIMGate',
     'PauliGate',
-    'RSU3Gate',
     'PhasedXZGate',
+    'RSU3Gate',
     'RXGate',
     'RXXGate',
     'RYGate',
@@ -51,8 +51,8 @@ __all__ = [
     'RZZGate',
     'U1Gate',
     'U1qGate',
-    'U1qPiGate',
     'U1qPi2Gate',
+    'U1qPiGate',
     'U2Gate',
     'U3Gate',
     'U8Gate',
