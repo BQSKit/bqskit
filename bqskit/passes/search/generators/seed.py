@@ -47,13 +47,6 @@ class SeedLayerGenerator(LayerGenerator):
                 (Default: 1)
 
         Raises:
-            TypeError: If `seed` are not of type None, Circuit,
-                or Sequence[Circuit].
-
-            TypeError: If `forward_generator` is not a LayerGenerator.
-
-            TypeError: If `num_removed` is not an integer.
-
             ValueError: If 'num_removed' is negative.
         """
         if not isinstance(forward_generator, LayerGenerator):
@@ -96,7 +89,7 @@ class SeedLayerGenerator(LayerGenerator):
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(f'Expected unitary or state, got {type(target)}.')
 
-        return Circuit(target.num_qudits)
+        return Circuit(target.num_qudits, target.radixes)
 
     def gen_successors(
         self,
@@ -104,8 +97,11 @@ class SeedLayerGenerator(LayerGenerator):
         data: PassData,
     ) -> list[Circuit]:
         """
-        Generate the successors of a circuit node. If `circuit` is the empty
-        Circuit, seeds of the correct dimension will be used.
+        Generate the successors of a circuit node.
+
+        If `circuit` is the empty Circuit, seeds with dimension matching
+        `circuit` will be used. If seeds are provided in the PassData
+        argument, they are given priority.
 
         Raises:
             TypeError: If `circuit` is not a Circuit.
@@ -115,20 +111,26 @@ class SeedLayerGenerator(LayerGenerator):
         if not isinstance(circuit, Circuit):
             raise TypeError(f'Expected Circuit, got {type(circuit)}.')
 
+        data = self.init_data_hash(data)
+
         # If circuit is empty Circuit, successors are seeds
         if circuit.is_empty:
-            # Check if any seed dim matches, only use those seeds
-            data['seed_seen_before'] = set()
-            useable_seeds = []
-            for seed in self.seeds:
-                if circuit.dim != seed.dim:
-                    continue
-                useable_seeds.append(seed)
-            # If there are no usable seeds, proceed to normal search
-            if len(useable_seeds) > 0:
-                for seed in useable_seeds:
+            # Check if any seeds match circuit, only use those seeds
+            circ_hash = self.hash_structure(circuit)
+            # Do not return seeds if empty circuit already visited
+            if circ_hash in data['seed_seen_before']:
+                return []
+            data['seed_seen_before'] = {self.hash_structure(circuit)}
+            usable_seeds = self.find_usable_seeds(circuit)
+            if len(usable_seeds) > 0:
+                for seed in usable_seeds:
                     data['seed_seen_before'].add(self.hash_structure(seed))
-                return useable_seeds
+                return usable_seeds
+
+            else:
+                # Root node of this synthesis tree will not start with
+                # single qubit gates
+                self.no_usable_seeds_warning()
 
         # Generate successors
         successors = self.forward_generator.gen_successors(circuit, data)
@@ -157,7 +159,7 @@ class SeedLayerGenerator(LayerGenerator):
 
     def remove_atomic_units(self, circuit: Circuit) -> list[Circuit]:
         """
-        Return circuits that correspond to removing upto num_removed synthesis
+        Return circuits after removing upto self.num_removed synthesis
         atomic units.
 
         For two qudit synthesis, these atomic units look like:
@@ -169,6 +171,8 @@ class SeedLayerGenerator(LayerGenerator):
         Generally, this will find the last `num_removed` multi-qudit
         gates, and remove them and any single qudit gates that are
         directly dependent on them.
+
+        This function will leave single qudit circutis unchanged.
         """
         num_removed = 0
         ancestor_circuits = []
@@ -181,7 +185,7 @@ class SeedLayerGenerator(LayerGenerator):
             if op.num_qudits == 1:
                 continue
 
-            # Remove multi-qudit gate and single qubit dependents
+            # Remove multi-qudit gate and single qudit dependents
             point = CircuitPoint(cycle, op.location[0])
             dependents = []
             for next_point in circuit_copy.next(point):
@@ -189,9 +193,7 @@ class SeedLayerGenerator(LayerGenerator):
                     dependents.append(next_point)
             to_remove = dependents + [point]
 
-            for point in to_remove:
-                if not circuit_copy.is_point_idle(point):
-                    circuit_copy.pop(point)
+            circuit_copy.batch_pop(to_remove)
 
             ancestor_circuits.append(circuit_copy)
             circuit_copy = circuit_copy.copy()
@@ -200,15 +202,13 @@ class SeedLayerGenerator(LayerGenerator):
         return ancestor_circuits
 
     def is_seed_circuit_seq(self, seed: Any) -> TypeGuard[Sequence[Circuit]]:
-        return is_sequence(seed) and all(
-            [isinstance(s, Circuit) for s in seed],
-        )
+        return is_sequence(seed) and all([self.is_circuit(s) for s in seed])
 
-    def is_seed_circuit(self, seed: Any) -> TypeGuard[Circuit]:
+    def is_circuit(self, seed: Any) -> TypeGuard[Circuit]:
         return isinstance(seed, Circuit)
 
     def check_valid_seed(self, seed: Any) -> list[Circuit]:
-        if self.is_seed_circuit(seed):
+        if self.is_circuit(seed):
             return [seed]
         elif self.is_seed_circuit_seq(seed):
             return list(seed)
@@ -219,7 +219,47 @@ class SeedLayerGenerator(LayerGenerator):
             if is_sequence(seed):
                 for i, s in enumerate(seed):
                     if not isinstance(s, Circuit):
-                        msg += f' Got type Sequence[{type(s)}] at index {i}.'
+                        msg += (
+                            f' Got Sequence with type [{type(s)}] '
+                            f'at index {i}.'
+                        )
             else:
                 msg += f' Got type {type(seed)} instead.'
             raise ValueError(msg)
+
+    def circuit_fits_seed(self, circuit: Circuit, seed: Circuit) -> bool:
+        return (
+            circuit.num_qudits == seed.num_qudits and
+            all([cr == sr for (cr, sr) in zip(circuit.radixes, seed.radixes)])
+        )
+
+    def find_usable_seeds(self, circuit: Circuit) -> list[Circuit]:
+        usable_seeds = []
+        for seed in self.seeds:
+            if not self.circuit_fits_seed(circuit, seed):
+                continue
+            usable_seeds.append(seed)
+        return usable_seeds
+
+    def no_usable_seeds_warning(self) -> None:
+        """
+        Log warning if no usable seeds. Circuit may be malformed.
+
+        Give additional warning if no seeds were provided at initialization
+        and the `PassData` object contains no `seed_circuits` key.
+        """
+        msg = (
+            'Generating successors from empty circuit. '
+            'This circuit may be malformed.'
+        )
+        if len(self.seeds) == 0:
+            msg += (
+                'No seeds provided at initialization (seed = None), '
+                'but no usable seeds provided in `PassData`.'
+            )
+        _logger.warning(msg)
+
+    def init_data_hash(self, data: PassData) -> PassData:
+        if 'seed_seen_before' not in data:
+            data['seed_seen_before'] = set([])
+        return data
