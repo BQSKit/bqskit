@@ -1,21 +1,33 @@
 """This module implements the StructureAnalysisPass."""
 from __future__ import annotations
 
+import logging
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.circuit import CircuitGate
 from bqskit.ir.structure import CircuitStructure
 
+_logger = logging.getLogger(__name__)
+
 
 class StructureAnalysisPass(BasePass):
     """
     A pass that catalogs circuit structures used in a partitioned circuit.
 
-    Note: For each partitioned CircuitGate in the Circuit, the recursive
-    `unfold_all` method is called to ensure that structure is defined at
-    the gate level. For structures to be considered the same, they must
-    consist of the same gates, in the same locations.
+    If a circuit contains hierarchically defined gates, these hierarchies
+    are discarded to check gate level equivalence between structures.
+
+    Example:
+        The left shows a hierarchically defined gate sequence. The
+        right shows the same gate sequence but it is specified at the
+        gate level. These two structures are considered equivalent.
+           ----------    ----------
+        --|-cx-rz-cx-|--|-cx-rz-cx-|--    --cx-rz-cx-cx-rz-cx--
+          | |     |  |  | |     |  |   ==   |     |  |     |
+        --|-cx-rz-cx-|--|-cx-rz-cx-|--    --cx-rz-cx-cx-rz-cx--
+           ----------    ----------
     """
 
     def __init__(self) -> None:
@@ -24,18 +36,19 @@ class StructureAnalysisPass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
-        if 'structures' not in data:
-            data['structures'] = []
-
-        structures_seen: list[CircuitStructure] = []
+        structures_seen: dict[CircuitStructure, int] = {}
 
         for block in circuit:
-            if not isinstance(block.gate, CircuitGate):
-                continue
-            subcirc = Circuit.from_operation(block)
-            # Structure depends on the gate level, call unfold_all
-            subcirc.unfold_all()
-            structure = CircuitStructure(subcirc)
-            structures_seen.append(structure)
+            if isinstance(block.gate, CircuitGate):
+                subcirc = block.gate._circuit  # type: ignore
+                # Structure depends on the gate level, call unfold_all
+                subcirc.unfold_all()
+                structure = CircuitStructure(subcirc)
+                if structure not in structures_seen:
+                    structures_seen[structure] = 1
+                else:
+                    structures_seen[structure] += 1
 
-        data['structures'].extend(structures_seen)
+        if 'structures' in data:
+            _logger.warning('Overriding `structures` field in PassData.')
+        data['structures'] = structures_seen

@@ -25,12 +25,12 @@ def test_list_structures(compiler: Compiler) -> None:
 
     for edge in [(0, 1), (1, 2), (1, 2), (0, 2), (0, 2), (0, 2)]:
         circuit.append_gate(CNOTGate(), edge)
-    _, data = compiler.compile(
+    circuit, data = compiler.compile(
         circuit, [partitioner, analyzer], request_data=True,
     )
 
     pass_structures = data['structures']
     assert len(pass_structures) == 3
-    assert pass_structures[0] == true_structures[0]
-    assert pass_structures[1] == true_structures[1]
-    assert pass_structures[2] == true_structures[2]
+    for ts, ps in zip(true_structures, pass_structures.keys()):
+        assert ts == ps
+        assert pass_structures[ps] == 1
