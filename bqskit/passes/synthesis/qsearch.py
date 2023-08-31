@@ -10,6 +10,7 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
@@ -146,12 +147,15 @@ class QSearchSynthesisPass(SynthesisPass):
         # Initialize run-dependent options
         instantiate_options = self.instantiate_options.copy()
 
+        # Seed the PRNG
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+        # Set layer generator depending on if seed_circuits or another
+        # LayerGenerator have been provided
+        layer_gen = self._set_layer_gen(data)
 
-        # Seed the search with an initial layer
+        # Begin the search with an initial layer
         frontier = Frontier(utry, self.heuristic_function)
         initial_layer = layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(utry, **instantiate_options)
@@ -232,3 +236,18 @@ class QSearchSynthesisPass(SynthesisPass):
             data['psols'] = psols
 
         return best_circ
+
+    def _set_layer_gen(self, data: PassData) -> LayerGenerator:
+        # Priority given to seeded synthesis
+        if 'seed_circuits' in data:
+            # Assumes that seed_circuits are compatible with machine model
+            layer_gen: LayerGenerator = SeedLayerGenerator(
+                seed=data['seed_circuits'],
+            )
+        # Use machine generator if self.layer_gen is None
+        elif self.layer_gen is None:
+            layer_gen = data.gate_set.build_mq_layer_generator()
+        else:
+            layer_gen = self.layer_gen
+
+        return layer_gen

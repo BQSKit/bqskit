@@ -2,16 +2,19 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.point import CircuitPoint
 from bqskit.passes.search.generator import LayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
+
 _logger = logging.getLogger(__name__)
 
 
@@ -20,50 +23,34 @@ class SeedLayerGenerator(LayerGenerator):
 
     def __init__(
         self,
-        seeds: Circuit | Sequence[Circuit],
+        seed: Circuit | Sequence[Circuit] | None = None,
         forward_generator: LayerGenerator = SimpleLayerGenerator(),
-        back_step_size: int = 1,
+        num_removed: int = 1,
     ) -> None:
         """
         Construct a SeedLayerGenerator.
 
         Args:
-            seeds (Circuit | Sequence[Circuit]): The seed or seeds to start
-                synthesis from.
+            seeds (Circuit | Sequence[Circuit] | None): The seed or seeds
+                to start synthesis from. (Default: None)
 
             forward_generator (LayerGenerator): A generator used to grow
-                the circuit.
+                the circuit. (Default: SimpleLayerGenerator)
 
-            back_step_size (int): The number of atomic gate units removed from
-                the circuit in each backwards branch.
+            num_removed (int): The number of atomic gate units removed
+                from the circuit in each backwards branch. (Default: 1)
 
         Raises:
-            TypeError: If `seeds` are not a Sequence of Circuits or a
-                single Circuit.
-
-            ValueError: If Circuits in `seeds` do not all have the same
-                dimension.
+            TypeError: If `seeds` are not of type None, Circuit,
+                or Sequence[Circuit].
 
             TypeError: If `forward_generator` is not a LayerGenerator.
 
-            TypeError: If `back_step_size` is not an integer.
+            TypeError: If `num_removed` is not an integer.
 
-            ValueError: If 'back_step_size' is negative.
+            ValueError: If 'num_removed' is negative.
         """
-        if not isinstance(seeds, Circuit) and not isinstance(seeds, Sequence):
-            raise TypeError(
-                f'Expected Circuit or Sequence of Circuits for '
-                f'seed, got {type(seeds)} instead.',
-            )
-
-        if isinstance(seeds, Sequence):
-            if not all([isinstance(c, Circuit) for c in seeds]):
-                raise TypeError('Expected seed to be Sequence of Circuits.')
-            self.seed_dim = seeds[0].dim
-            if not all([s.dim == self.seed_dim for s in seeds]):
-                raise ValueError('Each seed must be the same dimension.')
-        else:
-            self.seed_dim = seeds.dim
+        self._check_seed_type(seed)
 
         if not isinstance(forward_generator, LayerGenerator):
             raise TypeError(
@@ -71,44 +58,46 @@ class SeedLayerGenerator(LayerGenerator):
                 f', got {type(forward_generator)}.',
             )
 
-        if not is_integer(back_step_size):
+        if not is_integer(num_removed):
             raise TypeError(
-                'Expected integer for back_step_size, '
-                f'got {type(back_step_size)}.',
+                'Expected integer for num_removed, '
+                f'got {type(num_removed)}.',
             )
-        if back_step_size < 0:
+        if num_removed < 0:
             raise ValueError(
-                'Expected non-negative value for back_step_size, '
-                f'got {back_step_size}.',
+                'Expected non-negative value for num_removed, '
+                f'got {num_removed}.',
             )
 
-        self.seeds = [seeds] if not isinstance(seeds, Sequence) else list(seeds)
+        if seed is None:
+            self.seeds = []
+        else:
+            self.seeds = [seed] if not isinstance(
+                seed, Sequence,
+            ) else list(seed)
         self.forward_generator = forward_generator
-        self.back_step_size = back_step_size
+        self.num_removed = num_removed
 
     def gen_initial_layer(
         self,
         target: UnitaryMatrix | StateVector | StateSystem,
         data: PassData,
-    ) -> list[Circuit]:
+    ) -> Circuit:
         """
         Generate the initial layer, see LayerGenerator for more.
 
-        Raises:
-            ValueError: If `target` has a size or radix mismatch with
-                `self.seed`.
-        """
+        Note: For seeded layer generation, the initial_layer is the
+            empty Circuit. The `gen_successors` method checks for this
+            before returning `self.seeds` as successors.
 
-        if not isinstance(target, (UnitaryMatrix, StateVector)):
+        Raises:
+            TypeError: If target is not a UnitaryMatrix, StateVector, or
+                StateSystem.
+        """
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(f'Expected unitary or state, got {type(target)}.')
 
-        if target.dim != self.seed_dim:
-            raise ValueError('Seed dimension mismatch with target.')
-
-        for seed in self.seeds:
-            data['seed_seen_before'] = {self.hash_structure(seed)}
-
-        return self.seeds
+        return Circuit(target.num_qudits)
 
     def gen_successors(
         self,
@@ -116,16 +105,31 @@ class SeedLayerGenerator(LayerGenerator):
         data: PassData,
     ) -> list[Circuit]:
         """
-        Generate the successors of a circuit node.
+        Generate the successors of a circuit node. If `circuit` is the empty
+        Circuit, seeds of the correct dimension will be used.
 
         Raises:
-            ValueError: If circuit is a single-qudit circuit.
+            TypeError: If `circuit` is not a Circuit.
+
+            ValueError: If `circuit` is a single-qudit circuit.
         """
         if not isinstance(circuit, Circuit):
-            raise TypeError(f'Expected Circuit , got {type(circuit)}.')
+            raise TypeError(f'Expected Circuit, got {type(circuit)}.')
 
-        if circuit.dim != self.seed_dim:
-            raise ValueError('Seed and circuit dimensions do not match.')
+        # If circuit is empty Circuit, successors are seeds
+        if self._is_empty_circuit(circuit):
+            # Check if any seed dim matches, only use those seeds
+            data['seed_seen_before'] = set()
+            useable_seeds = []
+            for seed in self.seeds:
+                if circuit.dim != seed.dim:
+                    continue
+                useable_seeds.append(seed)
+            # If there are no usable seeds, proceed to normal search
+            if len(useable_seeds) > 0:
+                for seed in useable_seeds:
+                    data['seed_seen_before'].add(self.hash_structure(seed))
+                return useable_seeds
 
         # Generate successors
         successors = self.forward_generator.gen_successors(circuit, data)
@@ -154,13 +158,18 @@ class SeedLayerGenerator(LayerGenerator):
 
     def remove_atomic_units(self, circuit: Circuit) -> list[Circuit]:
         """
-        Search for the last `back_step_size` number of atmoic units:
+        Return circuits that correspond to removing upto `num_removed` synthesis
+        atomic units.
+
+        For two qudit synthesis, these atomic units look like:
 
             -- two_qudit_gate -- single_qudit_gate_1 --
                     |
             -- two_qudit_gate -- single_qudit_gate_2 --
 
-        and remove them.
+        Generally, this will find the last `num_removed` multi-qudit
+        gates, and remove them and any single qudit gates that are
+        directly dependent on them.
         """
         num_removed = 0
         ancestor_circuits = []
@@ -168,20 +177,58 @@ class SeedLayerGenerator(LayerGenerator):
         circuit_copy = circuit.copy()
         for cycle, op in circuit.operations_with_cycles(reverse=True):
 
-            if num_removed >= self.back_step_size:
+            if num_removed >= self.num_removed:
                 break
             if op.num_qudits == 1:
                 continue
 
-            for place in op.location:
-                point = (cycle + 1, place)
+            # Remove multi-qudit gate and single qubit dependents
+            point = CircuitPoint(cycle, op.location[0])
+            dependents = []
+            for next_point in circuit_copy.next(point):
+                if circuit_copy.get_operation(next_point).num_qudits == 1:
+                    dependents.append(next_point)
+            to_remove = dependents + [point]
+
+            for point in to_remove:
                 if not circuit_copy.is_point_idle(point):
                     circuit_copy.pop(point)
-
-            circuit_copy.pop((cycle, op.location[0]))
 
             ancestor_circuits.append(circuit_copy)
             circuit_copy = circuit_copy.copy()
             num_removed += 1
 
         return ancestor_circuits
+
+    def _check_seed_type(self, seed: Any) -> None:
+        """
+        Check that the seed provided is valid.
+
+        Args:
+            seed (Any): Seed element to check.
+
+        Raises:
+            ValueError: If seed is not None, a Circuit, or a Sequence of
+                Circuits.
+        """
+        none_type = seed is None
+        circ_type = isinstance(seed, Circuit)
+        seq_type = isinstance(seed, Sequence)
+        seq_circ_type = False
+        if seq_type:
+            seq_circ_type = all([isinstance(c, Circuit) for c in seed])
+
+        if not none_type and not circ_type and not seq_circ_type:
+            error_msg = (
+                'Provided `seed` is not of a valid type (None, Circuit,'
+                'Sequence[Circuit]). '
+            )
+            if seq_type and not seq_circ_type:
+                error_msg += (
+                    f'Provided a Sequence, but of type {type(seed[0])}.'
+                )
+
+            raise TypeError(error_msg)
+
+    def _is_empty_circuit(self, circuit: Circuit) -> bool:
+        return circuit.num_operations == 0
