@@ -125,7 +125,6 @@ def test_barrier_corner_case_4(compiler: Compiler) -> None:
     assert out_circuit.get_unitary().get_distance_from(correct_utry) < 1e-7
 
 
-
 def test_barrier_corner_case_5(compiler: Compiler) -> None:
     input = """
         OPENQASM 2.0;

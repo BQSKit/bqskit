@@ -157,7 +157,7 @@ class QuickPartitioner(BasePass):
                         )
                         for qudit in bin.qudits:
                             if bin.ends[qudit] is not None:
-                                dividing_line[qudit] = bin.ends[qudit] + 1
+                                dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore # noqa
                             else:
                                 dividing_line[qudit] = circuit.num_cycles
 
@@ -184,8 +184,8 @@ class QuickPartitioner(BasePass):
                     if close_bin_qudits(bin, location, cycle):
                         num_closed += 1
                     else:
-                        indirect = [q for q in location if q not in bin.qudits]
-                        bin.blocked_qudits.update(indirect)
+                        extended = [q for q in location if q not in bin.qudits]
+                        bin.blocked_qudits.update(extended)
 
                 # Track the barrier to restore it in partitioned circuit
                 pending_bins.append(BarrierBin(point, location, circuit))
