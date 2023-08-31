@@ -21,23 +21,23 @@ class TestQSearch:
         dist = circuit.get_unitary().get_distance_from(utry, 1)
         assert dist <= 1e-5
 
-    def test_small_qutrit(self) -> None:
+    def test_small_qutrit(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2, [3, 3])
         circuit = Circuit.from_unitary(utry)
         layer_gen = SimpleLayerGenerator(CPIGate(), U8Gate())
         leap = QSearchSynthesisPass(layer_generator=layer_gen)
-        circuit.perform(leap)
+        circuit = compiler.compile(circuit, [leap])
         dist = circuit.get_unitary().get_distance_from(utry, 1)
         assert dist <= leap.success_threshold
 
-    def test_seed(self) -> None:
+    def test_seed(self, compiler: Compiler) -> None:
         seed = Circuit(2)
         seed.append_gate(CNOTGate(), (0, 1))
         layer_gen = SeedLayerGenerator(seed)
         qsearch = QSearchSynthesisPass(layer_generator=layer_gen)
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
-        circuit.perform(qsearch)
+        circuit = compiler.compile(circuit, [qsearch])
         dist = circuit.get_unitary().get_distance_from(utry, 1)
         assert dist <= 1e-5
 
