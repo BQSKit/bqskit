@@ -277,6 +277,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 active_qudits.add(qudit)
         return list(sorted(active_qudits))
 
+    @property
+    def is_empty(self) -> bool:
+        """If there are any operations in the Circuit."""
+        return self.num_operations > 0
+
     def is_differentiable(self) -> bool:
         """Check if all gates are differentiable."""
         return all(
