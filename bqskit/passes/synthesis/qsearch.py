@@ -238,21 +238,20 @@ class QSearchSynthesisPass(SynthesisPass):
         return best_circ
 
     def _set_layer_gen(self, data: PassData) -> LayerGenerator:
-
         if self.layer_gen is not None:
             _gen = self.layer_gen
-        elif 'gate_set' in data.keys():
+        elif 'gate_set' in data:
             _gen = data.gate_set.build_mq_layer_generator()
         else:
-            _logger.warning(
-                'No provided `self.layer_gen` and no `gate_set` specified '
-                'in PassData. Defaulting to `SimpleLayerGenerator`.'
-            )
             _gen = SimpleLayerGenerator()
 
         # Priority given to seeded synthesis
         if 'seed_circuits' in data:
-            # Assumes that seed_circuits are compatible with machine model
+            if isinstance(_gen, SimpleLayerGenerator):
+                _logger.warning(
+                    'No provided `self.layer_gen` and no `gate_set` specified '
+                    'in PassData. Defaulting to `SimpleLayerGenerator`.'
+                )
             _gen: LayerGenerator = SeedLayerGenerator(
                 seed=data['seed_circuits'],
                 forward_generator=_gen,

@@ -13,6 +13,8 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.seed import SeedLayerGenerator
+from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
@@ -169,7 +171,9 @@ class LEAPSynthesisPass(SynthesisPass):
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+        # Set layer generator depending on if seed_circuits or another
+        # LayerGenerator have been provided
+        layer_gen = self._set_layer_gen(data)
 
         # Seed the search with an initial layer
         frontier = Frontier(utry, self.heuristic_function)
@@ -348,3 +352,24 @@ class LEAPSynthesisPass(SynthesisPass):
 
         layers_added = new_layer - last_prefix_layer
         return delta < 0 and layers_added >= self.min_prefix_size
+
+    def _set_layer_gen(self, data: PassData) -> LayerGenerator:
+        if self.layer_gen is not None:
+            _gen = self.layer_gen
+        elif 'gate_set' in data:
+            _gen = data.gate_set.build_mq_layer_generator()
+        else:
+            _gen = SimpleLayerGenerator()
+
+        # Priority given to seeded synthesis
+        if 'seed_circuits' in data:
+            if isinstance(_gen, SimpleLayerGenerator):
+                _logger.warning(
+                    'No provided `self.layer_gen` and no `gate_set` specified '
+                    'in PassData. Defaulting to `SimpleLayerGenerator`.'
+                )
+            _gen: LayerGenerator = SeedLayerGenerator(
+                seed=data['seed_circuits'],
+                forward_generator=_gen,
+            )
+        return _gen
