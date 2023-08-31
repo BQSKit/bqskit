@@ -156,7 +156,11 @@ class QuickPartitioner(BasePass):
                             True,
                         )
                         for qudit in bin.qudits:
-                            dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore  # noqa
+                            if bin.ends[qudit] is not None:
+                                dividing_line[qudit] = bin.ends[qudit] + 1
+                            else:
+                                dividing_line[qudit] = circuit.num_cycles
+
                         need_to_reprocess = True
                         break
 
@@ -179,6 +183,9 @@ class QuickPartitioner(BasePass):
                 for bin in overlapping_bins:
                     if close_bin_qudits(bin, location, cycle):
                         num_closed += 1
+                    else:
+                        indirect = [q for q in location if q not in bin.qudits]
+                        bin.blocked_qudits.update(indirect)
 
                 # Track the barrier to restore it in partitioned circuit
                 pending_bins.append(BarrierBin(point, location, circuit))
@@ -356,24 +363,16 @@ class BarrierBin(Bin):
         # Add the barrier
         self.add_op(point, location)
 
-        # Barriar bins fill the volume between the previous and next gates
-        prevs = circuit.prev(point)
-        starts = {q: 0 for q in location}
-        for p in prevs:
-            loc = circuit[p].location
-            for q in loc:
-                if q in starts and starts[q] < p.cycle:
-                    starts[q] = p.cycle + 1
+        # Barriar bins fill the volume to the next gates
 
         nexts = circuit.next(point)
         ends: dict[int, int | None] = {q: None for q in location}
         for p in nexts:
             loc = circuit[p].location
             for q in loc:
-                if q in ends and (ends[q] is None or ends[q] > p.cycle):  # type: ignore # noqa # short-circuit safety for >
+                if q in ends and (ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
                     ends[q] = p.cycle - 1
 
-        self.starts = starts
         self.ends = ends
 
         # Close the bin
