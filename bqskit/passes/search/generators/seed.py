@@ -159,8 +159,8 @@ class SeedLayerGenerator(LayerGenerator):
 
     def remove_atomic_units(self, circuit: Circuit) -> list[Circuit]:
         """
-        Return circuits after removing upto self.num_removed synthesis
-        atomic units.
+        Return circuits after removing upto self.num_removed synthesis atomic
+        units.
 
         For two qudit synthesis, these atomic units look like:
 
@@ -229,8 +229,8 @@ class SeedLayerGenerator(LayerGenerator):
 
     def circuit_fits_seed(self, circuit: Circuit, seed: Circuit) -> bool:
         return (
-            circuit.num_qudits == seed.num_qudits and
-            all([cr == sr for (cr, sr) in zip(circuit.radixes, seed.radixes)])
+            circuit.num_qudits == seed.num_qudits
+            and all([c == s for (c, s) in zip(circuit.radixes, seed.radixes)])
         )
 
     def find_usable_seeds(self, circuit: Circuit) -> list[Circuit]:
@@ -261,5 +261,5 @@ class SeedLayerGenerator(LayerGenerator):
 
     def init_data_hash(self, data: PassData) -> PassData:
         if 'seed_seen_before' not in data:
-            data['seed_seen_before'] = set([])
+            data['seed_seen_before'] = set()
         return data

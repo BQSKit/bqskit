@@ -366,9 +366,9 @@ class LEAPSynthesisPass(SynthesisPass):
             if isinstance(_gen, SimpleLayerGenerator):
                 _logger.warning(
                     'No provided `self.layer_gen` and no `gate_set` specified '
-                    'in PassData. Defaulting to `SimpleLayerGenerator`.'
+                    'in PassData. Defaulting to `SimpleLayerGenerator`.',
                 )
-            _gen: LayerGenerator = SeedLayerGenerator(
+            _gen = SeedLayerGenerator(
                 seed=data['seed_circuits'],
                 forward_generator=_gen,
             )

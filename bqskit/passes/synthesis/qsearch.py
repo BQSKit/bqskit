@@ -89,7 +89,7 @@ class QSearchSynthesisPass(SynthesisPass):
         """
         if not isinstance(heuristic_function, HeuristicFunction):
             raise TypeError(
-                f'Expected HeursiticFunction, got {type(heuristic_function)}.'
+                f'Expected HeursiticFunction, got {type(heuristic_function)}.',
             )
 
         if layer_generator is not None:
@@ -101,29 +101,29 @@ class QSearchSynthesisPass(SynthesisPass):
         if not is_real_number(success_threshold):
             raise TypeError(
                 'Expected real number for success_threshold'
-                f', got {type(success_threshold)}'
+                f', got {type(success_threshold)}',
             )
 
         if not isinstance(cost, CostFunctionGenerator):
             raise TypeError(
                 'Expected cost to be a CostFunctionGenerator'
-                f', got {type(cost)}'
+                f', got {type(cost)}',
             )
 
         if max_layer is not None and not is_integer(max_layer):
             raise TypeError(
-                f'Expected max_layer to be an integer, got {type(max_layer)}.'
+                f'Expected max_layer to be an integer, got {type(max_layer)}.',
             )
 
         if max_layer is not None and max_layer <= 0:
             raise ValueError(
-                f'Expected max_layer to be positive, got {int(max_layer)}.'
+                f'Expected max_layer to be positive, got {int(max_layer)}.',
             )
 
         if not isinstance(instantiate_options, dict):
             raise TypeError(
                 'Expected dictionary for instantiate_options'
-                f', got {type(instantiate_options)}'
+                f', got {type(instantiate_options)}',
             )
 
         self.heuristic_function = heuristic_function
@@ -250,9 +250,9 @@ class QSearchSynthesisPass(SynthesisPass):
             if isinstance(_gen, SimpleLayerGenerator):
                 _logger.warning(
                     'No provided `self.layer_gen` and no `gate_set` specified '
-                    'in PassData. Defaulting to `SimpleLayerGenerator`.'
+                    'in PassData. Defaulting to `SimpleLayerGenerator`.',
                 )
-            _gen: LayerGenerator = SeedLayerGenerator(
+            _gen = SeedLayerGenerator(
                 seed=data['seed_circuits'],
                 forward_generator=_gen,
             )
