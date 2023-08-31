@@ -31,7 +31,7 @@ class SeedLayerGenerator(LayerGenerator):
         Construct a SeedLayerGenerator.
 
         Args:
-            seeds (Circuit | Sequence[Circuit] | None): The seed or seeds
+            seed (Circuit | Sequence[Circuit] | None): The seed or seeds
                 to start synthesis from. (Default: None)
 
             forward_generator (LayerGenerator): A generator used to grow
@@ -41,7 +41,7 @@ class SeedLayerGenerator(LayerGenerator):
                 from the circuit in each backwards branch. (Default: 1)
 
         Raises:
-            TypeError: If `seeds` are not of type None, Circuit,
+            TypeError: If `seed` are not of type None, Circuit,
                 or Sequence[Circuit].
 
             TypeError: If `forward_generator` is not a LayerGenerator.
