@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 from typing import Sequence
+from typing import TypeGuard
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -14,6 +15,7 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
 
@@ -32,13 +34,17 @@ class SeedLayerGenerator(LayerGenerator):
 
         Args:
             seed (Circuit | Sequence[Circuit] | None): The seed or seeds
-                to start synthesis from. (Default: None)
+                to start synthesis from. If `None`, seed circuits can
+                still be passed when calling `gen_successors` through
+                the `PassData` argument. (Default: None)
 
             forward_generator (LayerGenerator): A generator used to grow
                 the circuit. (Default: SimpleLayerGenerator)
 
             num_removed (int): The number of atomic gate units removed
-                from the circuit in each backwards branch. (Default: 1)
+                from the circuit in each backwards branch. If 0, no
+                backwards traversal of the synthesis tree will be done.
+                (Default: 1)
 
         Raises:
             TypeError: If `seed` are not of type None, Circuit,
@@ -50,8 +56,6 @@ class SeedLayerGenerator(LayerGenerator):
 
             ValueError: If 'num_removed' is negative.
         """
-        self._check_seed_type(seed)
-
         if not isinstance(forward_generator, LayerGenerator):
             raise TypeError(
                 'Expected LayerGenerator for forward_generator'
@@ -69,12 +73,7 @@ class SeedLayerGenerator(LayerGenerator):
                 f'got {num_removed}.',
             )
 
-        if seed is None:
-            self.seeds = []
-        else:
-            self.seeds = [seed] if not isinstance(
-                seed, Sequence,
-            ) else list(seed)
+        self.seeds = self.check_valid_seed(seed)
         self.forward_generator = forward_generator
         self.num_removed = num_removed
 
@@ -117,7 +116,7 @@ class SeedLayerGenerator(LayerGenerator):
             raise TypeError(f'Expected Circuit, got {type(circuit)}.')
 
         # If circuit is empty Circuit, successors are seeds
-        if self._is_empty_circuit(circuit):
+        if circuit.is_empty:
             # Check if any seed dim matches, only use those seeds
             data['seed_seen_before'] = set()
             useable_seeds = []
@@ -158,7 +157,7 @@ class SeedLayerGenerator(LayerGenerator):
 
     def remove_atomic_units(self, circuit: Circuit) -> list[Circuit]:
         """
-        Return circuits that correspond to removing upto `num_removed` synthesis
+        Return circuits that correspond to removing upto num_removed synthesis
         atomic units.
 
         For two qudit synthesis, these atomic units look like:
@@ -200,35 +199,27 @@ class SeedLayerGenerator(LayerGenerator):
 
         return ancestor_circuits
 
-    def _check_seed_type(self, seed: Any) -> None:
-        """
-        Check that the seed provided is valid.
+    def is_seed_circuit_seq(self, seed: Any) -> TypeGuard[Sequence[Circuit]]:
+        return is_sequence(seed) and all(
+            [isinstance(s, Circuit) for s in seed],
+        )
 
-        Args:
-            seed (Any): Seed element to check.
+    def is_seed_circuit(self, seed: Any) -> TypeGuard[Circuit]:
+        return isinstance(seed, Circuit)
 
-        Raises:
-            ValueError: If seed is not None, a Circuit, or a Sequence of
-                Circuits.
-        """
-        none_type = seed is None
-        circ_type = isinstance(seed, Circuit)
-        seq_type = isinstance(seed, Sequence)
-        seq_circ_type = False
-        if seq_type:
-            seq_circ_type = all([isinstance(c, Circuit) for c in seed])
-
-        if not none_type and not circ_type and not seq_circ_type:
-            error_msg = (
-                'Provided `seed` is not of a valid type (None, Circuit,'
-                'Sequence[Circuit]). '
-            )
-            if seq_type and not seq_circ_type:
-                error_msg += (
-                    f'Provided a Sequence, but of type {type(seed[0])}.'
-                )
-
-            raise TypeError(error_msg)
-
-    def _is_empty_circuit(self, circuit: Circuit) -> bool:
-        return circuit.num_operations == 0
+    def check_valid_seed(self, seed: Any) -> list[Circuit]:
+        if self.is_seed_circuit(seed):
+            return [seed]
+        elif self.is_seed_circuit_seq(seed):
+            return list(seed)
+        elif seed is None:
+            return []
+        else:
+            msg = 'Provided seed must be a Circuit | Sequence[Circuit] | None.'
+            if is_sequence(seed):
+                for i, s in enumerate(seed):
+                    if not isinstance(s, Circuit):
+                        msg += f' Got type Sequence[{type(s)}] at index {i}.'
+            else:
+                msg += f' Got type {type(seed)} instead.'
+            raise ValueError(msg)
