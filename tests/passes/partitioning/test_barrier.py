@@ -9,6 +9,7 @@ from bqskit.ir.gates import BarrierPlaceholder
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates import CXGate
 from bqskit.ir.gates import U3Gate
+from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.passes.partitioning.quick import QuickPartitioner
 
@@ -86,3 +87,59 @@ def test_barrier_corner_case_2(compiler: Compiler) -> None:
     circuit = OPENQASM2Language().decode(input)
     out_circuit = compiler.compile(circuit, [QuickPartitioner(3)])
     assert out_circuit.get_unitary().get_distance_from(np.eye(8)) < 1e-8
+
+
+def test_barrier_corner_case_3(compiler: Compiler) -> None:
+    input = """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[3];
+        cx q[0],q[1];
+        cx q[0],q[1];
+        barrier q;
+    """
+
+    circuit = OPENQASM2Language().decode(input)
+    out_circuit = compiler.compile(circuit, [QuickPartitioner(3)])
+    assert out_circuit.get_unitary().get_distance_from(np.eye(8)) < 1e-8
+
+
+def test_barrier_corner_case_4(compiler: Compiler) -> None:
+    input = """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[4];
+        h q[1];
+        cx q[2],q[3];
+        cx q[0],q[2];
+        barrier q[0], q[1];
+    """
+
+    circuit = OPENQASM2Language().decode(input)
+    out_circuit = compiler.compile(circuit, [QuickPartitioner(3)])
+    correct_circuit = Circuit(4)
+    correct_circuit.append_gate(HGate(), 1)
+    correct_circuit.append_gate(CXGate(), (2, 3))
+    correct_circuit.append_gate(CXGate(), (0, 2))
+    correct_utry = correct_circuit.get_unitary()
+    assert out_circuit.get_unitary().get_distance_from(correct_utry) < 1e-7
+
+
+
+def test_barrier_corner_case_5(compiler: Compiler) -> None:
+    input = """
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[3];
+        cx q[0],q[1];
+        barrier q[1], q[2];
+        cx q[0],q[2];
+    """
+
+    circuit = OPENQASM2Language().decode(input)
+    out_circuit = compiler.compile(circuit, [QuickPartitioner(3)])
+    correct_circuit = Circuit(3)
+    correct_circuit.append_gate(CXGate(), (0, 1))
+    correct_circuit.append_gate(CXGate(), (0, 2))
+    correct_utry = correct_circuit.get_unitary()
+    assert out_circuit.get_unitary().get_distance_from(correct_utry) < 1e-7
