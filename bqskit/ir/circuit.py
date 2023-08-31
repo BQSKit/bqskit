@@ -279,8 +279,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     @property
     def is_empty(self) -> bool:
-        """If there are any operations in the Circuit."""
-        return self.num_operations > 0
+        """If there are no operations in the Circuit."""
+        return self.num_operations == 0
 
     def is_differentiable(self) -> bool:
         """Check if all gates are differentiable."""
