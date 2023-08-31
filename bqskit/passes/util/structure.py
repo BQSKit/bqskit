@@ -40,7 +40,7 @@ class StructureAnalysisPass(BasePass):
 
         for block in circuit:
             if isinstance(block.gate, CircuitGate):
-                subcirc = block.gate._circuit  # type: ignore
+                subcirc = block.gate._circuit
                 # Structure depends on the gate level, call unfold_all
                 subcirc.unfold_all()
                 structure = CircuitStructure(subcirc)
