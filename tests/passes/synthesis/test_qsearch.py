@@ -9,6 +9,7 @@ from bqskit.passes import QSearchSynthesisPass
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
 from bqskit.qis import UnitaryMatrix
+from bqskit.passes.util.update import UpdateDataPass
 
 
 class TestQSearch:
@@ -41,13 +42,13 @@ class TestQSearch:
         dist = circuit.get_unitary().get_distance_from(utry, 1)
         assert dist <= 1e-5
 
-    def test_seed_in_data(self) -> None:
+    def test_seed_in_data(self, compiler: Compiler) -> None:
         seed = Circuit(2)
         seed.append_gate(CNOTGate(), (0, 1))
         qsearch = QSearchSynthesisPass()
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)
-        data = {'seed_circuits': [seed]}
-        circuit.perform(qsearch, data)
+        update = UpdateDataPass('seed_circuits', [seed])
+        circuit = compiler.compile(circuit, [qsearch, update])
         dist = circuit.get_unitary().get_distance_from(utry, 1)
         assert dist <= 1e-5
