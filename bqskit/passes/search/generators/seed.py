@@ -178,6 +178,12 @@ class SeedLayerGenerator(LayerGenerator):
         ancestor_circuits = []
 
         circuit_copy = circuit.copy()
+
+        if circuit_copy.num_qudits == 1:
+            init_num_cycles = circuit_copy.depth
+            for _ in range(min((self.num_removed, init_num_cycles))):
+                circuit_copy.pop_cycle(circuit_copy.depth - 1)
+
         for cycle, op in circuit.operations_with_cycles(reverse=True):
 
             if num_removed >= self.num_removed:
