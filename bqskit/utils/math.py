@@ -167,10 +167,8 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
 
-# Generators of SU(N)
 
-
-def SUGenerator(n: int) -> npt.NDArray[np.complex128]:
+def compute_su_generators(n: int) -> npt.NDArray[np.complex128]:
     """
     Computes the Lie algebra generators for SU(n).
 
@@ -190,16 +188,25 @@ def SUGenerator(n: int) -> npt.NDArray[np.complex128]:
     # TODO HermitianMatrix objects
 
     if n <= 0:
-        raise ValueError('n can not be a non-positive integer')
+        raise ValueError(f'Expected positive integer for n, got: {n}.')
+
     elif n == 1:
         return np.array([1], dtype=np.complex128)
+
     elif n == 2:
-        return np.array([np.array([[0, 1], [1, 0]], dtype=np.complex128), np.array([[0, -1j], [1j, 0]], dtype=np.complex128), np.array([[1, 0], [0, -1]], dtype=np.complex128)])
+        return np.array(
+            [
+                [[0, 1], [1, 0]],
+                [[0, -1j], [1j, 0]],
+                [[1, 0], [0, -1]],
+            ], dtype=np.complex128,
+        )
+
     else:
-        PreviousGenerators = SUGenerator(n - 1)
+        previous_generators = compute_su_generators(n - 1)
         generators = [
-            np.pad(PreviousGenerators[i], (0, 1))
-            for i in range(len(PreviousGenerators))
+            np.pad(previous_generators[i], (0, 1))
+            for i in range(len(previous_generators))
         ]
         for i in range(n - 1):
             t = np.zeros((n, n), dtype=np.complex128)
