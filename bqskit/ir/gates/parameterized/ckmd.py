@@ -11,23 +11,34 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class CKMDGate(QutritGate, DifferentiableUnitary, CachedClass):
+class CKMdgGate(QutritGate, DifferentiableUnitary, CachedClass):
     """
-    The Cabibbo–Kobayashi–Maskawa dagger single qutrit gate.
+    The Cabibbo-Kobayashi-Maskawa dagger single qutrit gate.
 
-    For more information consult the Particle Data Group review: https://pdg.lbl.gov/2023/reviews/rpp2022-rev-ckm-matrix.pdf
+    References:
+        - Particle Data Group review:
+          https://pdg.lbl.gov/2023/reviews/rpp2022-rev-ckm-matrix.pdf
 
-    Due to the current experimental searches for the exact values of the mixing parameters,
-    and to allow for beyond standard model physics, we provide the user with the flexibility of setting each parameter.
+        - https://link.springer.com/article/10.1007/JHEP01(2019)106
+
+    Notes:
+        - Due to the current experimental searches for the exact values
+          of the mixing parameters, and to allow for beyond standard
+          model physics, we provide the user with the flexibility of
+          setting each parameter.
     """
 
     _num_qudits = 1
     _num_params = 4
-    _qasm_name = 'CKMD'
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
+        # Parameters are mapped to the reference above as follows:
+        #   - params[0] -> 1-3
+        #   - params[1] -> 1-2
+        #   - params[2] -> 2-3
+        #   - params[3] -> cp
 
         s1 = np.sin(-params[0])
         c1 = np.cos(-params[0])

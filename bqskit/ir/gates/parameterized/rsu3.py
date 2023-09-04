@@ -17,34 +17,41 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
     Rotation by SU3 generator for a single qutrit gate.
 
     .. math::
-    \\exp(i * params[0] * \\lambda_j)
+        \\exp(i * \\theta * \\lambda_j)
 
     where lambda_j is the j-th generator of the SU(3) Lie algebra.
-    We use the physics notation, so each generator is Hermitian (not unitary).
-    There are N^2-1 = 3^2-1 =8 generators, and N-1-=3-1=2 generators that coomutate.
+    We use the physics notation, so each generator is Hermitian and not
+    necessarily unitary. See See
+    :func:`~bqskit.utils.math.compute_su_generators` for more info on the
+    generators. There are N^2-1 = 3^2-1 = 8 generators and N-1 = 3-1 = 2
+    mutually commute.
 
-    Reference: "Lie algebras in particle physics : from isospin to unified theories", Howard Georgi
+    References:
+        - "Lie algebras in particle physics : from isospin to unified theories",
+          Howard Georgi
     """
 
     _num_qudits = 1
     _num_params = 1
-    num_levels = 3
 
-    def __init__(self, index: int):
+    def __init__(self, index: int) -> None:
         """
-            Raises:
-            TypeError: If index is not an integer
+        Construct a RSU3Gate.
 
+        Args:
+            index (int): The index of the generator to use. See
+                :func:`~bqskit.utils.math.compute_su_generators` for more
+                info on the generators.
+
+        Raises:
             ValueError: If index is less than 0 or greater than 7
         """
         if not is_integer(index):
-            raise TypeError(
-                'RSU3Gate generator index must be an integer.',
-            )
+            raise TypeError('RSU3Gate generator index must be an integer.')
+
         if index < 0 or index > 7:
-            raise ValueError(
-                'RSU3Gate generator index must be a non negative integer between 0 and 7.',
-            )
+            raise ValueError(f'Expected index between 0 and 7, got {index}.')
+
         self.index = index
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
@@ -55,7 +62,7 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
         cos = np.cos(params[0])
         sin = np.sin(params[0])
 
-        matrix = np.eye(self.num_levels, dtype=np.complex128)
+        matrix = np.eye(3, dtype=np.complex128)
 
         if self.index == 0:
             matrix[0, 0] = cos
@@ -108,7 +115,7 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
         sin = np.sin(params[0])
 
         matrix = np.zeros(
-            (self.num_levels, self.num_levels),
+            (3, 3),
             dtype=np.complex128,
         )
         if self.index == 0:
