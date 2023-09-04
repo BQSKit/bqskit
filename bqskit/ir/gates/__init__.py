@@ -150,3 +150,9 @@ __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
 __all__ += ['CircuitGate', 'MeasurementPlaceholder', 'BarrierPlaceholder']
 __all__ += ['GeneralGate']
+
+# TODO: Implement the rest of the gates in:
+# https://pubs.aip.org/aip/jmp/article-abstract/56/3/032202/763827
+
+# TODO: Implement generalization of CZ and CZD
+# https://arxiv.org/abs/2206.07216
