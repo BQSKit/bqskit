@@ -47,11 +47,10 @@ class SubSwapGate(ConstantGate, QuditGate):
         if radix < 2:
             raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
-        if type(qudit_levels) != str:
+        if not isinstance(qudit_levels, str):
             raise TypeError(
-                'Expected qudit_levels object to be string, got %s.' % type(
-                    qudit_levels,
-                ),
+                'Expected qudit_levels object to be string'
+                f', got {type(qudit_levels)}.'
             )
 
         self._radix = radix
