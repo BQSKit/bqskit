@@ -10,8 +10,6 @@ from typing import Callable
 from typing import ClassVar
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import Unitary
 
@@ -53,32 +51,6 @@ class Gate(Unitary):
             ', '.join([str(p) for p in params]),
             '], q['.join([str(q) for q in location]),
         ).replace('()', '')
-
-    def is_self_inverse(self, params: RealVector = []) -> bool:
-        """
-        Checks whether the gate is its own inverse.
-
-        A gate is its own inverse if its unitary matrix is equal to
-        its Hermitian conjugate.
-
-        Args:
-            params (RealVector): The parameters of the gate to check.
-
-        Returns:
-            bool: True if the gate is self-inverse, False otherwise.
-
-        Note:
-            - This checks that the gate is self-inverse for the given
-              parameters only.
-        """
-        # Get the unitary matrix of the gate
-        unitary_matrix = self.get_unitary(params)
-
-        # Calculate the Hermitian conjugate (adjoint) of the unitary matrix
-        hermitian_conjugate = unitary_matrix.dagger
-
-        # Check if the unitary matrix is equal to its Hermitian conjugate
-        return np.allclose(unitary_matrix, hermitian_conjugate)
 
     def get_inverse_params(self, params: RealVector = []) -> RealVector:
         """
