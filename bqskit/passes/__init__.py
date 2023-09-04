@@ -42,9 +42,18 @@ synthesis pass to convert the circuit to native gates.
 
     ExhaustiveGateRemovalPass
     IterativeScanningGateRemovalPass
-    Rebase2QuditGatePass
     ScanningGateRemovalPass
     SubstitutePass
+
+.. rubric:: Retargeting Passes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    AutoRebase2QuditGatePass
+    GeneralSQDecomposition
+    Rebase2QuditGatePass
 
 .. rubric:: Control Passes
 
@@ -72,11 +81,16 @@ This objects are designed as conditions for use with control passes.
     PassPredicate
     ChangePredicate
     GateCountPredicate
+    ManyQuditGatesPredicate
     NotPredicate
     WidthPredicate
     PhysicalPredicate
     SinglePhysicalPredicate
     MultiPhysicalPredicate
+    NoSingleQuditGatesInModel
+    HasGeneralSingleQuditGate
+    ZXGatePredicate
+    AllConstantSingleQuditGates
 
 .. rubric:: Rule-based Passes
 
@@ -184,10 +198,15 @@ from bqskit.passes.control.paralleldo import ParallelDo
 from bqskit.passes.control.predicate import PassPredicate
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
+from bqskit.passes.control.predicates.many import ManyQuditGatesPredicate
 from bqskit.passes.control.predicates.multi import MultiPhysicalPredicate
 from bqskit.passes.control.predicates.notpredicate import NotPredicate
 from bqskit.passes.control.predicates.physical import PhysicalPredicate
+from bqskit.passes.control.predicates.single import AllConstantSingleQuditGates
+from bqskit.passes.control.predicates.single import HasGeneralSingleQuditGate
+from bqskit.passes.control.predicates.single import NoSingleQuditGatesInModel
 from bqskit.passes.control.predicates.single import SinglePhysicalPredicate
+from bqskit.passes.control.predicates.single import ZXGatePredicate
 from bqskit.passes.control.predicates.width import WidthPredicate
 from bqskit.passes.control.whileloop import WhileLoopPass
 from bqskit.passes.group import PassGroup
@@ -215,9 +234,11 @@ from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
 from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
-from bqskit.passes.processing.rebase import Rebase2QuditGatePass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
+from bqskit.passes.retarget.auto import AutoRebase2QuditGatePass
+from bqskit.passes.retarget.general import GeneralSQDecomposition
+from bqskit.passes.retarget.two import Rebase2QuditGatePass
 from bqskit.passes.rules.ch2cnot import CHToCNOTPass
 from bqskit.passes.rules.cnot2ch import CNOTToCHPass
 from bqskit.passes.rules.cnot2cy import CNOTToCYPass
@@ -345,4 +366,11 @@ __all__ = [
     'SubtopologySelectionPass',
     'PermutationAwareSynthesisPass',
     'ToVariablePass',
+    'AutoRebase2QuditGatePass',
+    'ManyQuditGatesPredicate',
+    'NoSingleQuditGatesInModel',
+    'HasGeneralSingleQuditGate',
+    'ZXGatePredicate',
+    'AllConstantSingleQuditGates',
+    'GeneralSQDecomposition',
 ]

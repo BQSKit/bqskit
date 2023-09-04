@@ -43,6 +43,9 @@ def test_compile_with_mapping(
         optimization_level=optimization_level,
     )
 
+    assert len(initial_mapping) == 3
+    assert len(final_mapping) == 3
+
     # This simple circuit shouldn't have moving pieces in the mapping
     assert set(initial_mapping) == set(final_mapping)
 
