@@ -68,12 +68,23 @@ class HGate(ConstantGate, QuditGate):
         self._radix = radix
 
         # Calculate unitary
-        matrix = np.zeros([radix] * 2, dtype=np.complex128)
-        omega = np.exp(2j * np.pi / radix)
-        for i in range(radix):
-            for j in range(i, radix):
-                val = omega ** (i * j)
-                matrix[i, j] = val
-                matrix[j, i] = val
-        matrix *= 1 / np.sqrt(radix)
-        self._utry = UnitaryMatrix(matrix, self.radixes)
+        if radix == 2:
+            matrix = np.array(
+                [
+                    [np.sqrt(2) / 2, np.sqrt(2) / 2],
+                    [np.sqrt(2) / 2, -np.sqrt(2) / 2],
+                ],
+                dtype=np.complex128,
+            )
+            self._utry = UnitaryMatrix(matrix)
+
+        else:
+            matrix = np.zeros([radix] * 2, dtype=np.complex128)
+            omega = np.exp(2j * np.pi / radix)
+            for i in range(radix):
+                for j in range(i, radix):
+                    val = omega ** (i * j)
+                    matrix[i, j] = val
+                    matrix[j, i] = val
+            matrix *= 1 / np.sqrt(radix)
+            self._utry = UnitaryMatrix(matrix, self.radixes)
