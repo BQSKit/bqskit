@@ -50,7 +50,7 @@ class SubSwapGate(ConstantGate, QuditGate):
         if not isinstance(qudit_levels, str):
             raise TypeError(
                 'Expected qudit_levels object to be string'
-                f', got {type(qudit_levels)}.'
+                f', got {type(qudit_levels)}.',
             )
 
         self._radix = radix
