@@ -45,11 +45,11 @@ class GreedyPlacementPass(BasePass):
                 if n not in placement and n not in neighbors:
                     neighbors.append(n)
 
-        data['placement'] = sorted(placement)
+        data.placement = sorted(placement)
 
-        _logger.info(f'Placed qudits on {data["placement"]}')
+        _logger.info(f'Placed qudits on {data.placement}')
 
         # Raise an error if this is not a valid placement
-        sg = graph.get_subgraph(data['placement'])
+        sg = graph.get_subgraph(data.placement)
         if not sg.is_fully_connected():
             raise RuntimeError('No valid placement found.')

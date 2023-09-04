@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -118,3 +119,12 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass, GeneralGate):
         phi = (a + b)
         lamb = (a - b)
         return [theta, phi, lamb]
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the parameters that invert the gate, see :class:`Gate`."""
+        self.check_parameters(params)
+        return [-params[0], -params[2], -params[1]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        return U3Gate()

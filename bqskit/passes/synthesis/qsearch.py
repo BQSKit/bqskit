@@ -10,7 +10,6 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
-from bqskit.passes.search.generators import SimpleLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
@@ -38,7 +37,7 @@ class QSearchSynthesisPass(SynthesisPass):
     def __init__(
         self,
         heuristic_function: HeuristicFunction = AStarHeuristic(),
-        layer_generator: LayerGenerator = SimpleLayerGenerator(),
+        layer_generator: LayerGenerator | None = None,
         success_threshold: float = 1e-10,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
@@ -53,8 +52,10 @@ class QSearchSynthesisPass(SynthesisPass):
             heuristic_function (HeuristicFunction): The heuristic to guide
                 search.
 
-            layer_generator (LayerGenerator): The successor function
-                to guide node expansion.
+            layer_generator (LayerGenerator | None): The successor function
+                to guide node expansion. If left as none, then a default
+                will be selected before synthesis based on the target
+                model's gate set. (Default: None)
 
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
@@ -90,11 +91,11 @@ class QSearchSynthesisPass(SynthesisPass):
                 % type(heuristic_function),
             )
 
-        if not isinstance(layer_generator, LayerGenerator):
-            raise TypeError(
-                'Expected LayerGenerator, got %s.'
-                % type(layer_generator),
-            )
+        if layer_generator is not None:
+            if not isinstance(layer_generator, LayerGenerator):
+                raise TypeError(
+                    f'Expected LayerGenerator, got {type(layer_generator)}.',
+                )
 
         if not is_real_number(success_threshold):
             raise TypeError(
@@ -142,14 +143,17 @@ class QSearchSynthesisPass(SynthesisPass):
         data: PassData,
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        # Initialize run-dependent options
         instantiate_options = self.instantiate_options.copy()
+
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        frontier = Frontier(utry, self.heuristic_function)
+        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
 
         # Seed the search with an initial layer
-        initial_layer = self.layer_gen.gen_initial_layer(utry, data)
+        frontier = Frontier(utry, self.heuristic_function)
+        initial_layer = layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(utry, **instantiate_options)
         frontier.add(initial_layer, 0)
 
@@ -173,7 +177,7 @@ class QSearchSynthesisPass(SynthesisPass):
             top_circuit, layer = frontier.pop()
 
             # Generate successors
-            successors = self.layer_gen.gen_successors(top_circuit, data)
+            successors = layer_gen.gen_successors(top_circuit, data)
 
             if len(successors) == 0:
                 continue

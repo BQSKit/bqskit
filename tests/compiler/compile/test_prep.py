@@ -89,7 +89,6 @@ def test_state_inst_3() -> None:
     assert out_state.get_distance_from(state) < 1e-8
 
 
-@pytest.mark.skip(reason='Tests run for 4 hours, and falls sometimes')
 def test_state_map(compiler: Compiler) -> None:
     num_qudits = 3
     utry = UnitaryMatrix.random(num_qudits)
@@ -99,7 +98,7 @@ def test_state_map(compiler: Compiler) -> None:
         out_state = utry.get_statevector(in_state)
         state_map[in_state] = out_state
     system = StateSystem(state_map)
-    out_circuit = compile(system, compiler=compiler)
+    out_circuit = compile(system, compiler=compiler, synthesis_epsilon=1e-6)
     print(out_circuit.gate_counts)
 
     for in_state, out_state in state_map.items():
