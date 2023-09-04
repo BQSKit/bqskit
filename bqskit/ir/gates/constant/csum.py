@@ -2,15 +2,14 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 
+from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
-class CSUMGate(QuditGate):
+class CSUMGate(ConstantGate, QuditGate):
     """
     The two-qudit Conditional-SUM gate.
 
@@ -40,53 +39,43 @@ class CSUMGate(QuditGate):
         0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\\\
         0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\\\
         \\end{pmatrix}
+
+    References:
+        - https://www.frontiersin.org/articles/10.3389/fphy.2020.589504/full
+        - https://pubs.aip.org/aip/jmp/article-abstract/56/3/032202/763827
     """
 
     _num_qudits = 2
     _num_params = 0
-    _radixes = tuple([3,3])
 
-    def __init__(
-        self,
-        num_levels: int = 3,
-    ) -> None:
+    def __init__(self, radix: int = 3) -> None:
         """
-            Args:
-            num_levels (int): The number of qudit levels (>=2).
+        Construct a CSUMGate.
 
-            Raises:
-            Typerror: if num_levels is not an integer
+        Args:
+            radix (int): The number of qudit levels (>=2). Defaults to
+                qutrits.
 
-            ValueError: if num_levels < 2
-
+        Raises:
+            ValueError: if radix < 2
         """
-        if not is_integer(num_levels):
-            raise TypeError(
-                'CSUMGate num_levels must be an integer.',
-            )
-        if num_levels < 2:
-            raise ValueError(
-                'CSUMGate num_levels must be a postive integer greater than or equal to 2.',
-            )
+        if not is_integer(radix):
+            raise TypeError(f'Expected integer for radix, got {type(radix)}.')
 
-        self._num_levels = num_levels
+        if radix < 2:
+            raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
+        self._radix = radix
 
         ival = 0
         jval = 0
-        matrix = np.zeros([self.num_levels**2, self.num_levels**2])
+        matrix = np.zeros([self.radix**2, self.radix**2])
         for i, col in enumerate(matrix.T):
-            col[self.num_levels * jval + ((ival + jval) % self.num_levels)] = 1
+            col[self.radix * jval + ((ival + jval) % self.radix)] = 1
             matrix[:, i] = col
-            if ival == self.num_levels - 1:
+            if ival == self.radix - 1:
                 ival = 0
                 jval += 1
             else:
                 ival += 1
-        u_mat = UnitaryMatrix(matrix, self.radixes)
-        return u_mat
-
-    def get_grad(self) -> npt.NDArray[np.complex128]:
-        return np.array([])
+        self._utry = UnitaryMatrix(matrix, self.radixes)

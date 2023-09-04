@@ -1,21 +1,31 @@
-"""This module implements the HDGate."""
+"""This module implements the HGate."""
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 
 
-class HGate(ConstantGate,QuditGate):
+class HGate(ConstantGate, QuditGate):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 
-    The HGate is given by the following formula:
+    By default, the HGate is a qubit Hadamard gate. However, it can be
+    generalized to qudits by setting the radix parameter during construction.
+
+    It is represented by the following matrix for qubits:
+
+    .. math::
+
+        \\begin{pmatrix}
+        \\frac{\\sqrt{2}}{2} & \\frac{\\sqrt{2}}{2} \\\\
+        \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2} \\\\
+        \\end{pmatrix}
+
+    However, generally it is given by the following formula:
 
     .. math::
         \\begin{equation}
@@ -23,55 +33,47 @@ class HGate(ConstantGate,QuditGate):
         \\end{equation}
 
     where
-    .. math:: \\omega = \\exp(2\\pi*i/d)
-    and d is the number of levels (2 levels is a qubit,
+
+    .. math::
+        \\omega = \\exp(2\\pi*i/d)
+
+    and `d` is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
 
-    for qubits the gate is,
-    .. math::
-
-        \\begin{pmatrix}
-        \\frac{\\sqrt{2}}{2} & \\frac{\\sqrt{2}}{2} \\\\
-        \\frac{\\sqrt{2}}{2} & -\\frac{\\sqrt{2}}{2} \\\\
-        \\end{pmatrix}
+    References:
+        - https://www.frontiersin.org/articles/10.3389/fphy.2020.589504/full
+        - https://pubs.aip.org/aip/jmp/article-abstract/56/3/032202/763827
     """
 
     _num_qudits = 1
-    _num_params = 0
     _qasm_name = 'h'
 
-    def __init__(
-        self,
-        num_levels: int = 2,
-    ) -> None:
+    def __init__(self, radix: int = 2) -> None:
         """
-            Args:
-            num_levels (int): The number of qudit levels (>=2).
+        Construct a HGate.
 
-            Raises:
-            TypeError: If num_levels is not an integer
+        Args:
+            radix (int): The number of qudit levels (>=2). By default, this
+                is 2, which is gives a qubit Hadamard gate.
 
-            ValueError: if num_levels < 2
+        Raises:
+            ValueError: if radix < 2
         """
-        if not is_integer(num_levels):
-            raise TypeError(
-                'ClockGate num_levels must be an integer.',
-            )
-        if num_levels < 2:
-            raise ValueError(
-                'ClockGate num_levels must be a postive integer greater than or equal to 2.',
-            )
+        if not is_integer(radix):
+            raise TypeError(f'Expected integer for radix, got {type(radix)}.')
 
-        self._num_levels = num_levels
-        self._radixes = tuple([num_levels])
+        if radix < 2:
+            raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
-        matrix = np.zeros([self.num_levels, self.num_levels], dtype=complex)
-        omega = np.exp(2j * np.pi / self.num_levels)
-        for i in range(self.num_levels):
-            for j in range(i, self.num_levels):
-                matrix[i, j] = omega**(i * j)
-                matrix[j, i] = omega**(i * j)
-        self._utry = UnitaryMatrix(
-            matrix * 1 / np.sqrt(self.num_levels), self.radixes,
-        )
+        self._radix = radix
 
+        # Calculate unitary
+        matrix = np.zeros([radix] * 2, dtype=np.complex128)
+        omega = np.exp(2j * np.pi / radix)
+        for i in range(radix):
+            for j in range(i, radix):
+                val = omega ** (i * j)
+                matrix[i, j] = val
+                matrix[j, i] = val
+        matrix *= 1 / np.sqrt(radix)
+        self._utry = UnitaryMatrix(matrix, self.radixes)
