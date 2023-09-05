@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from bqskit import compile
 from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
