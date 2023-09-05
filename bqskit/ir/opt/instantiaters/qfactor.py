@@ -30,6 +30,12 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
         if 'cost_fn_gen' in kwargs:
             del kwargs['cost_fn_gen']
 
+        if 'ftol' in kwargs:
+            del kwargs['ftol']
+
+        if 'gtol' in kwargs:
+            del kwargs['gtol']
+
         new_obj = super().__new__(cls, **kwargs)
 
         new_obj.__orig_kwargs = copy.deepcopy(kwargs)

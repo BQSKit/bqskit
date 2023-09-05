@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.constant.csum import CSUMGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.parameterized.cphase import ArbitraryCPhaseGate
@@ -114,7 +115,7 @@ class GateSet(SuperType):
         if len(self.radix_set) != 1:
             raise RuntimeError(
                 'Cannot automatically suggest general single-qudit gate for'
-                ' hybrid level systems.',
+                ' mixed radix systems.',
             )
 
         if U3Gate() in self:
@@ -124,9 +125,12 @@ class GateSet(SuperType):
             return U8Gate()
 
         for g in self:
-            if isinstance(g, VariableUnitaryGate):
-                if g.num_qudits == 1:
-                    return g
+            if isinstance(g, VariableUnitaryGate) and g.num_qudits == 1:
+                return g
+
+        for g in self:
+            if isinstance(g, GeneralGate) and g.num_qudits == 1:
+                return g
 
         radix = list(self.radix_set)[0]
 
@@ -171,6 +175,10 @@ class GateSet(SuperType):
         gates: set[Gate] = set()
         for r in unique_radixes:
             gates.add(VariableUnitaryGate(1, [r]))
+
+        if len(unique_radixes) == 1:
+            gates.add(CSUMGate(list(unique_radixes)[0]))
+            return GateSet(gates)
 
         for r1 in unique_radixes:
             for r2 in unique_radixes:

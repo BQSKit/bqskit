@@ -789,6 +789,9 @@ def get_instantiate_options(optimization_level: int) -> dict[str, Any]:
             'multistarts': 1,
             'ftol': 1e-6,
             'gtol': 1e-10,
+            'diff_tol_r': 1e-4,
+            'max_iters': 1000,
+            'min_iters': 0,
         }
 
     elif optimization_level == 2:
@@ -796,6 +799,9 @@ def get_instantiate_options(optimization_level: int) -> dict[str, Any]:
             'multistarts': 2,
             'ftol': 5e-12,
             'gtol': 1e-14,
+            'diff_tol_r': 1e-5,
+            'max_iters': 10000,
+            'min_iters': 100,
         }
 
     elif optimization_level == 3:
@@ -803,6 +809,9 @@ def get_instantiate_options(optimization_level: int) -> dict[str, Any]:
             'multistarts': 4,
             'ftol': 5e-16,
             'gtol': 1e-15,
+            'diff_tol_r': 5e-5,
+            'max_iters': 50000,
+            'min_iters': 200,
         }
 
     elif optimization_level == 4:
@@ -810,6 +819,9 @@ def get_instantiate_options(optimization_level: int) -> dict[str, Any]:
             'multistarts': 8,
             'ftol': 5e-16,
             'gtol': 1e-15,
+            'diff_tol_r': 1e-6,
+            'max_iters': 100000,
+            'min_iters': 1000,
         }
 
     else:
@@ -1488,7 +1500,7 @@ def _synthesis_workflow(
             'method': 'minimization',
             'minimizer': ScipyMinimizer(),
             'cost_fn_gen': HilbertSchmidtCostGenerator(),
-        },
+        } if input.radixes == (2,) else {},
     )
 
     qsearch = QSearchSynthesisPass(

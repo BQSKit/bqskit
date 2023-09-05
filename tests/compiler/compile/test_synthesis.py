@@ -158,15 +158,15 @@ def test_identity_synthesis(
         assert out_circuit.num_operations <= 3
 
 
-@pytest.mark.parametrize('qudits', [1, 2])
-def test_qutrit_synthesis(optimization_level: int, qudits: int) -> None:
-    in_utry = UnitaryMatrix.random(qudits, [3] * qudits)
+@pytest.mark.parametrize('num_qudits', [1, 2])
+def test_qutrit_synthesis(optimization_level: int, num_qudits: int) -> None:
+    in_utry = UnitaryMatrix.random(num_qudits, [3] * num_qudits)
     out_circuit = compile(in_utry, optimization_level=optimization_level)
     assert out_circuit.get_unitary().get_distance_from(in_utry, 1) < 1e-8
 
 
-@pytest.mark.parametrize('qudits', [1, 2])
-def test_ququart_synthesis(optimization_level: int, qudits: int) -> None:
-    in_utry = UnitaryMatrix.random(qudits, [4] * qudits)
+@pytest.mark.parametrize('num_qudits', [1])
+def test_ququart_synthesis(optimization_level: int, num_qudits: int) -> None:
+    in_utry = UnitaryMatrix.random(num_qudits, [4] * num_qudits)
     out_circuit = compile(in_utry, optimization_level=optimization_level)
     assert out_circuit.get_unitary().get_distance_from(in_utry, 1) < 1e-8

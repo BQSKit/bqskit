@@ -157,4 +157,4 @@ class PermutationMatrix(UnitaryMatrix):
             row = b * radix + a
             mat[row][col] = 1
 
-        return UnitaryMatrix(mat)
+        return UnitaryMatrix(mat, [radix, radix])
