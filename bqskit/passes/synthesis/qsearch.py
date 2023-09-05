@@ -10,6 +10,7 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
@@ -87,8 +88,7 @@ class QSearchSynthesisPass(SynthesisPass):
         """
         if not isinstance(heuristic_function, HeuristicFunction):
             raise TypeError(
-                'Expected HeursiticFunction, got %s.'
-                % type(heuristic_function),
+                f'Expected HeursiticFunction, got {type(heuristic_function)}.',
             )
 
         if layer_generator is not None:
@@ -100,29 +100,29 @@ class QSearchSynthesisPass(SynthesisPass):
         if not is_real_number(success_threshold):
             raise TypeError(
                 'Expected real number for success_threshold'
-                ', got %s' % type(success_threshold),
+                f', got {type(success_threshold)}',
             )
 
         if not isinstance(cost, CostFunctionGenerator):
             raise TypeError(
-                'Expected cost to be a CostFunctionGenerator, got %s'
-                % type(cost),
+                'Expected cost to be a CostFunctionGenerator'
+                f', got {type(cost)}',
             )
 
         if max_layer is not None and not is_integer(max_layer):
             raise TypeError(
-                'Expected max_layer to be an integer, got %s' % type(max_layer),
+                f'Expected max_layer to be an integer, got {type(max_layer)}.',
             )
 
         if max_layer is not None and max_layer <= 0:
             raise ValueError(
-                'Expected max_layer to be positive, got %d.' % int(max_layer),
+                f'Expected max_layer to be positive, got {int(max_layer)}.',
             )
 
         if not isinstance(instantiate_options, dict):
             raise TypeError(
-                'Expected dictionary for instantiate_options, got %s.'
-                % type(instantiate_options),
+                'Expected dictionary for instantiate_options'
+                f', got {type(instantiate_options)}',
             )
 
         self.heuristic_function = heuristic_function
@@ -146,12 +146,14 @@ class QSearchSynthesisPass(SynthesisPass):
         # Initialize run-dependent options
         instantiate_options = self.instantiate_options.copy()
 
+        # Seed the PRNG
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+        # Get layer generator for search
+        layer_gen = self._get_layer_gen(data)
 
-        # Seed the search with an initial layer
+        # Begin the search with an initial layer
         frontier = Frontier(utry, self.heuristic_function)
         initial_layer = layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(utry, **instantiate_options)
@@ -203,8 +205,8 @@ class QSearchSynthesisPass(SynthesisPass):
                 if dist < best_dist:
                     plural = '' if layer == 0 else 's'
                     _logger.debug(
-                        f'New best circuit found with {layer + 1} layer{plural}'
-                        f' and cost: {dist:.12e}.',
+                        f'New best circuit found with {layer + 1} '
+                        f'layer{plural} and cost: {dist:.12e}.',
                     )
                     best_dist = dist
                     best_circ = circuit
@@ -232,3 +234,23 @@ class QSearchSynthesisPass(SynthesisPass):
             data['psols'] = psols
 
         return best_circ
+
+    def _get_layer_gen(self, data: PassData) -> LayerGenerator:
+        """
+        Set the layer generator.
+
+        If a layer generator has been passed into the constructor, then that
+        layer generator will be used. Otherwise, a default layer generator will
+        be selected by the gateset.
+
+        If seeds are passed into the data dict, then a SeedLayerGenerator will
+        wrap the previously selected layer generator.
+        """
+        # TODO: Deduplicate this code with leap synthesis
+        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+
+        # Priority given to seeded synthesis
+        if 'seed_circuits' in data:
+            return SeedLayerGenerator(data['seed_circuits'], layer_gen)
+
+        return layer_gen

@@ -13,6 +13,7 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
@@ -166,12 +167,15 @@ class LEAPSynthesisPass(SynthesisPass):
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         # Initialize run-dependent options
         instantiate_options = self.instantiate_options.copy()
+
+        # Seed the PRNG
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+        # Get layer generator for search
+        layer_gen = self._get_layer_gen(data)
 
-        # Seed the search with an initial layer
+        # Begin the search with an initial layer
         frontier = Frontier(utry, self.heuristic_function)
         initial_layer = layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(utry, **instantiate_options)
@@ -348,3 +352,23 @@ class LEAPSynthesisPass(SynthesisPass):
 
         layers_added = new_layer - last_prefix_layer
         return delta < 0 and layers_added >= self.min_prefix_size
+
+    def _get_layer_gen(self, data: PassData) -> LayerGenerator:
+        """
+        Set the layer generator.
+
+        If a layer generator has been passed into the constructor, then that
+        layer generator will be used. Otherwise, a default layer generator will
+        be selected by the gateset.
+
+        If seeds are passed into the data dict, then a SeedLayerGenerator will
+        wrap the previously selected layer generator.
+        """
+        # TODO: Deduplicate this code with qsearch synthesis
+        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+
+        # Priority given to seeded synthesis
+        if 'seed_circuits' in data:
+            return SeedLayerGenerator(data['seed_circuits'], layer_gen)
+
+        return layer_gen
