@@ -491,6 +491,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
 
 UnitaryLike = Union[
-    UnitaryMatrix, np.ndarray,
-    Sequence[Sequence[int | float | complex]],
+    UnitaryMatrix,
+    np.ndarray,
+    Sequence[Sequence[Union[int, float, complex]]],
 ]

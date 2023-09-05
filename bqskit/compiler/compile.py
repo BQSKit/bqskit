@@ -342,7 +342,7 @@ def compile(
         ValueError: If the maximum synthesis size is less than the
             largest gate in the model.
 
-        ValueError: If the maximum synthesis size is less than 3.
+        ValueError: If the maximum synthesis size is less than 2.
 
         ValueError: If the synthesis epsilon is not between 0 and 1.
 
@@ -373,9 +373,9 @@ def compile(
             f', got{type(max_synthesis_size)}.',
         )
 
-    if max_synthesis_size <= 2:
+    if max_synthesis_size <= 1:
         raise ValueError(
-            'The maximum synthesis size must be greater than 2.'
+            'The maximum synthesis size must be greater than or equal to 2.'
             f' Got {max_synthesis_size}.',
         )
 

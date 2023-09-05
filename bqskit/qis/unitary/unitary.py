@@ -124,5 +124,31 @@ class Unitary(metaclass=UnitaryMeta):
                 % (self.num_params, len(params)),
             )
 
+    def is_self_inverse(self, params: RealVector = []) -> bool:
+        """
+        Checks whether the unitary is its own inverse.
+
+        A unitary is its own inverse if its matrix is equal to its
+        Hermitian conjugate.
+
+        Args:
+            params (RealVector): The parameters of the unitary to check.
+
+        Returns:
+            bool: True if the unitary is self-inverse, False otherwise.
+
+        Note:
+            - This checks that the unitary is self-inverse for the given
+              parameters only.
+        """
+        # Get the unitary matrix of the gate
+        unitary_matrix = self.get_unitary(params)
+
+        # Calculate the Hermitian conjugate (adjoint) of the unitary matrix
+        hermitian_conjugate = unitary_matrix.dagger
+
+        # Check if the unitary matrix is equal to its Hermitian conjugate
+        return np.allclose(unitary_matrix, hermitian_conjugate)
+
 
 RealVector = Union[Sequence[float], np.ndarray]

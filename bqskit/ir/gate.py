@@ -52,6 +52,32 @@ class Gate(Unitary):
             '], q['.join([str(q) for q in location]),
         ).replace('()', '')
 
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """
+        Return the parameters that invert the gate.
+
+        Args:
+            params (RealVector): The parameters of the gate to invert.
+
+        Note:
+            - The default implementation returns the same paramters because
+              the default implementation of `Gate.get_inverse` returns a
+              :class:`DaggerGate` wrapper of the gate. The wrapper will
+              correctly handle the inversion. When overriding `get_inverse`,
+              on a parameterized gate this method should be overridden
+              as well.
+        """
+        return params
+
+    def get_inverse(self) -> Gate:
+        """Return the gate's inverse as a gate."""
+        if self.is_constant() and self.is_self_inverse():
+            return self
+
+        from bqskit.ir.gates.composed import DaggerGate
+        return getattr(self, '_inverse', DaggerGate(self))
+        # TODO: Fill out inverse definitions throughout the gate library
+
     with_frozen_params: ClassVar[
         Callable[[Gate, dict[int, float]], FrozenParameterGate]
     ]

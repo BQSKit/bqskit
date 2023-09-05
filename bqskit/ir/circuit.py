@@ -23,7 +23,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.iterator import CircuitIterator
@@ -2521,13 +2520,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Return the circuit's inverse circuit."""
         circuit = Circuit(self.num_qudits, self.radixes)
         for op in reversed(self):
-            circuit.append(
-                Operation(
-                    DaggerGate(op.gate),
-                    op.location,
-                    op.params,
-                ),
-            )
+            circuit.append(op.get_inverse())
         return circuit
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
