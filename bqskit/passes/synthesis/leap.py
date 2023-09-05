@@ -167,14 +167,15 @@ class LEAPSynthesisPass(SynthesisPass):
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         # Initialize run-dependent options
         instantiate_options = self.instantiate_options.copy()
+
+        # Seed the PRNG
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        # Set layer generator depending on if seed_circuits or another
-        # LayerGenerator have been provided
-        layer_gen = self._set_layer_gen(data)
+        # Get layer generator for search
+        layer_gen = self._get_layer_gen(data)
 
-        # Seed the search with an initial layer
+        # Begin the search with an initial layer
         frontier = Frontier(utry, self.heuristic_function)
         initial_layer = layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(utry, **instantiate_options)
@@ -352,16 +353,22 @@ class LEAPSynthesisPass(SynthesisPass):
         layers_added = new_layer - last_prefix_layer
         return delta < 0 and layers_added >= self.min_prefix_size
 
-    def _set_layer_gen(self, data: PassData) -> LayerGenerator:
-        if self.layer_gen is not None:
-            _gen = self.layer_gen
-        else:
-            _gen = data.gate_set.build_mq_layer_generator()
+    def _get_layer_gen(self, data: PassData) -> LayerGenerator:
+        """
+        Set the layer generator.
+
+        If a layer generator has been passed into the constructor, then that
+        layer generator will be used. Otherwise, a default layer generator will
+        be selected by the gateset.
+
+        If seeds are passed into the data dict, then a SeedLayerGenerator will
+        wrap the previously selected layer generator.
+        """
+        # TODO: Deduplicate this code with qsearch synthesis
+        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
 
         # Priority given to seeded synthesis
         if 'seed_circuits' in data:
-            _gen = SeedLayerGenerator(
-                seed=data['seed_circuits'],
-                forward_generator=_gen,
-            )
-        return _gen
+            return SeedLayerGenerator(data['seed_circuits'], layer_gen)
+
+        return layer_gen

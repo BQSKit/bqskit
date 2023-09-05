@@ -8,8 +8,8 @@ from bqskit.ir.gates.parameterized.u8 import U8Gate
 from bqskit.passes import QSearchSynthesisPass
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.generators.simple import SimpleLayerGenerator
-from bqskit.qis import UnitaryMatrix
 from bqskit.passes.util.update import UpdateDataPass
+from bqskit.qis import UnitaryMatrix
 
 
 class TestQSearch:
