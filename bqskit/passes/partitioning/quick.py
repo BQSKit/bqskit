@@ -156,7 +156,11 @@ class QuickPartitioner(BasePass):
                             True,
                         )
                         for qudit in bin.qudits:
-                            dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore  # noqa
+                            if bin.ends[qudit] is not None:
+                                dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore # noqa
+                            else:
+                                dividing_line[qudit] = circuit.num_cycles
+
                         need_to_reprocess = True
                         break
 
@@ -179,9 +183,12 @@ class QuickPartitioner(BasePass):
                 for bin in overlapping_bins:
                     if close_bin_qudits(bin, location, cycle):
                         num_closed += 1
+                    else:
+                        extended = [q for q in location if q not in bin.qudits]
+                        bin.blocked_qudits.update(extended)
 
                 # Track the barrier to restore it in partitioned circuit
-                pending_bins.append(BarrierBin(point, location))
+                pending_bins.append(BarrierBin(point, location, circuit))
                 continue
 
             # Get all the currently active bins that can have op added to them
@@ -344,14 +351,30 @@ class Bin:
 class BarrierBin(Bin):
     """A special bin made to mark and preserve barrier location."""
 
-    def __init__(self, point: CircuitPoint, location: CircuitLocation) -> None:
+    def __init__(
+        self,
+        point: CircuitPoint,
+        location: CircuitLocation,
+        circuit: Circuit,
+    ) -> None:
         """Initialize a BarrierBin with the point and location of a barrier."""
         super().__init__()
 
         # Add the barrier
         self.add_op(point, location)
 
+        # Barriar bins fill the volume to the next gates
+
+        nexts = circuit.next(point)
+        ends: dict[int, int | None] = {q: None for q in location}
+        for p in nexts:
+            loc = circuit[p].location
+            for q in loc:
+                if q in ends and (ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
+                    ends[q] = p.cycle - 1
+
+        self.ends = ends
+
         # Close the bin
         for q in location:
             self.active_qudits.remove(q)
-            self.ends[q] = point.cycle
