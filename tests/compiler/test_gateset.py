@@ -9,6 +9,7 @@ from hypothesis.strategies import sets
 from bqskit.compiler.gateset import GateSet
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constant.ccx import ToffoliGate
+from bqskit.ir.gates.constant.csum import CSUMGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cz import CZGate
 from bqskit.ir.gates.constant.sx import SXGate
@@ -82,7 +83,7 @@ def test_gate_set_build_layer_generator_qutrit() -> None:
     gate_set = GateSet.default_gate_set(3)
     layergen = gate_set.build_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
-    assert layergen.two_qudit_gate == ArbitraryCPhaseGate([3, 3])
+    assert layergen.two_qudit_gate == CSUMGate(3)
     assert layergen.initial_layer_gate == VariableUnitaryGate(1, [3])
     assert layergen.single_qudit_gate_1 == VariableUnitaryGate(1, [3])
     assert layergen.single_qudit_gate_2 == VariableUnitaryGate(1, [3])
@@ -110,7 +111,7 @@ def test_gate_set_build_mq_layer_generator_qutrit() -> None:
     gate_set = GateSet.default_gate_set(3)
     layergen = gate_set.build_mq_layer_generator()
     assert isinstance(layergen, SimpleLayerGenerator)
-    assert layergen.two_qudit_gate == ArbitraryCPhaseGate([3, 3])
+    assert layergen.two_qudit_gate == CSUMGate(3)
     assert layergen.initial_layer_gate == VariableUnitaryGate(1, [3])
     assert layergen.single_qudit_gate_1 == VariableUnitaryGate(1, [3])
     assert layergen.single_qudit_gate_2 == VariableUnitaryGate(1, [3])
@@ -145,7 +146,7 @@ def test_gate_set_default_gate_set_qutrits() -> None:
     gate_set = GateSet.default_gate_set(3)
     assert len(gate_set) == 2
     assert VariableUnitaryGate(1, [3]) in gate_set
-    assert ArbitraryCPhaseGate([3, 3]) in gate_set
+    assert CSUMGate(3) in gate_set
 
 
 def test_gate_set_default_gate_set_hybrid() -> None:
