@@ -5,7 +5,7 @@ import numpy as np
 from hypothesis import given
 from hypothesis.strategies import floats
 
-from bqskit.ir.gates import CPGate
+from bqskit.ir.gates.parameterized import CPGate
 from bqskit.qis.unitary import UnitaryMatrix
 
 

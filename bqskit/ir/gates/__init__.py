@@ -2,19 +2,6 @@
 BQSKit Gates (:mod:`bqskit.ir.gates`)
 =====================================
 
-.. rubric:: Gate Base Classes
-
-.. autosummary::
-    :toctree: autogen
-    :recursive:
-    :nosignatures:
-    :template: autosummary/gate.rst
-
-    ComposedGate
-    QubitGate
-    QutritGate
-    ConstantGate
-
 .. rubric:: Constant Gates
 
 .. autosummary::
@@ -25,10 +12,9 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
 
     BGate
     CCXGate
-    RCCXGate
-    RC3XGate
     ToffoliGate
     CHGate
+    ClockGate
     CPIGate
     CSGate
     CSUMGate
@@ -41,13 +27,19 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     IdentityGate
     ISwapGate
     IToffoliGate
+    PDGate
     PermutationGate
+    MargolusGate
+    RC3XGate
+    RCCXGate
     SGate
     SdgGate
+    ShiftGate
     SqrtCNOTGate
+    SqrtISwapGate
+    SubSwapGate
     SwapGate
     SqrtXGate
-    SqrtISwapGate
     SXGate
     SycamoreGate
     TGate
@@ -68,9 +60,11 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :nosignatures:
     :template: autosummary/gate.rst
 
-    ArbitraryCPhaseGate
     CCPGate
+    CKMGate
+    CKMDGate
     CPGate
+    ArbitraryCPhaseGate
     CRXGate
     CRYGate
     CRZGate
@@ -78,6 +72,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     FSIMGate
     PauliGate
     PhasedXZGate
+    RSU3Gate
     RXGate
     RXXGate
     RYGate
@@ -86,8 +81,8 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     RZZGate
     U1Gate
     U1qGate
-    U1qPiGate
     U1qPi2Gate
+    U1qPiGate
     U2Gate
     U3Gate
     U8Gate
@@ -103,6 +98,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
 
     ControlledGate
     DaggerGate
+    EmbeddedGate
     FrozenParameterGate
     TaggedGate
     VariableLocationGate
@@ -117,6 +113,21 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CircuitGate
     MeasurementPlaceholder
     BarrierPlaceholder
+
+.. rubric:: Gate Base Classes
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+    :nosignatures:
+    :template: autosummary/gate.rst
+
+    ComposedGate
+    QubitGate
+    QutritGate
+    QuditGate
+    ConstantGate
+    GeneralGate
 """
 from __future__ import annotations
 
@@ -139,3 +150,9 @@ __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
 __all__ += ['CircuitGate', 'MeasurementPlaceholder', 'BarrierPlaceholder']
 __all__ += ['GeneralGate']
+
+# TODO: Implement the rest of the gates in:
+# https://pubs.aip.org/aip/jmp/article-abstract/56/3/032202/763827
+
+# TODO: Implement generalization of CZ and CZD
+# https://arxiv.org/abs/2206.07216

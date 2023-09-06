@@ -10,8 +10,8 @@ class RCCXGate(ConstantGate, QubitGate):
     """
     The relative phase ccx gate.
 
-    Reference:
-        https://arxiv.org/pdf/1508.03273.pdf
+    References:
+        - https://arxiv.org/pdf/1508.03273.pdf
     """
 
     _num_qudits = 3
@@ -37,8 +37,8 @@ class RC3XGate(ConstantGate, QubitGate):
     """
     The relative phase c3x gate.
 
-    Reference:
-        https://arxiv.org/pdf/1508.03273.pdf
+    References:
+        - https://arxiv.org/pdf/1508.03273.pdf
     """
 
     _num_qudits = 4

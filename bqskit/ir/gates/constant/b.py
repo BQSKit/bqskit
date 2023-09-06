@@ -19,15 +19,17 @@ class BGate(ConstantGate, QubitGate):
     .. math::
         \\exp(i * \\pi/4 * \\sigma_{xx}) * \\exp(i * \\pi/8 * \\sigma_{yy})
 
-    Unitary expression taken from: https://arxiv.org/pdf/quant-ph/0312193.pdf
+    References:
+        - https://arxiv.org/pdf/quant-ph/0312193.pdf
     """
+
     _num_qudits = 2
     _qasm_name = 'b'
 
     def __init__(self) -> None:
+        """Construct a BGate."""
         paulis = PauliMatrices(2)
         xx = paulis[5]
         yy = paulis[10]
-        self._utry = UnitaryMatrix(
-            expm(1j * pi / 4 * xx) @ expm(1j * pi / 8 * yy),
-        )
+        mat = expm(1j * pi / 4 * xx) @ expm(1j * pi / 8 * yy)
+        self._utry = UnitaryMatrix(mat)

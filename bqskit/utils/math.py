@@ -166,3 +166,60 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     A = np.stack(flatten_paulis, axis=-1)
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
+
+
+def compute_su_generators(n: int) -> npt.NDArray[np.complex128]:
+    """
+    Computes the Lie algebra generators for SU(n).
+
+    Args:
+        n (int): dimension of SU(n) algebra
+
+    Returns:
+        npt.NDArray[np.complex128]: list of the SU(N) generators,
+        note that they are Hermitian, but not neccesarily unitary.
+
+    Raises:
+        ValueError: if n<=0
+
+    References:
+        https://walterpfeifer.ch/liealgebra/LieAlg_wieBuch4.pdf
+    """
+    # TODO HermitianMatrix objects
+
+    if n <= 0:
+        raise ValueError(f'Expected positive integer for n, got: {n}.')
+
+    elif n == 1:
+        return np.array([1], dtype=np.complex128)
+
+    elif n == 2:
+        return np.array(
+            [
+                [[0, 1], [1, 0]],
+                [[0, -1j], [1j, 0]],
+                [[1, 0], [0, -1]],
+            ], dtype=np.complex128,
+        )
+
+    else:
+        previous_generators = compute_su_generators(n - 1)
+        generators = [
+            np.pad(previous_generators[i], (0, 1))
+            for i in range(len(previous_generators))
+        ]
+        for i in range(n - 1):
+            t = np.zeros((n, n), dtype=np.complex128)
+            t[i, n - 1] = 1.0
+            t[n - 1, i] = 1.0
+            generators.append(t)
+            t2 = np.zeros((n, n), dtype=np.complex128)
+            t2[i, n - 1] = -1j
+            t2[n - 1, i] = 1j
+            generators.append(t2)
+
+        t3 = np.eye(n)
+        t3[n - 1, n - 1] = -n + 1
+        t3 *= np.sqrt(2 / (n * (n - 1)))
+        generators.append(t3)
+        return np.array(generators, dtype=np.complex128)

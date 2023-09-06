@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import numpy as np
 
+from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.typing import is_integer
 
 
-class ClockGate(QuditGate):
+class ClockGate(ConstantGate, QuditGate):
     """
     The one-qudit clock (Z) gate. This is a Weyl-Heisenberg gate.
 
@@ -22,22 +23,32 @@ class ClockGate(QuditGate):
     where d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
 
-    __init__() arguments:
-        num_levels : int
-            Number of levels in each qudit (d).
+    References:
+        - https://arxiv.org/pdf/2302.07966.pdf
     """
 
     _num_qudits = 1
-    _num_params = 0
 
-    def __init__(self, num_levels: int):
-        self.num_levels = num_levels
+    def __init__(self, radix: int = 3) -> None:
+        """
+        Construct a ClockGate.
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
+        Args:
+            radix (int): The number of qudit levels (>=2). Defaults to
+                qutrits.
 
-        diags = np.zeros(self.num_levels, dtype=complex)
-        for i in range(self.num_levels):
-            diags[i] = np.exp(2j * np.pi * i / self.num_levels)
-        u_mat = UnitaryMatrix(np.diag(diags), self.radixes)
-        return u_mat
+        Raises:
+            ValueError: if radix < 2
+        """
+
+        if not is_integer(radix):
+            raise TypeError(f'Expected integer for radix, got {type(radix)}.')
+
+        if radix < 2:
+            raise ValueError(f'Radix must be greater than 1, got {radix}.')
+
+        self._radix = radix
+
+        # Calculate unitary
+        diags = [np.exp(2j * np.pi * i / radix) for i in range(radix)]
+        self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
