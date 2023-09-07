@@ -133,9 +133,11 @@ class QSearchSynthesisPass(SynthesisPass):
         self.partials_per_depth = partials_per_depth
 
     def transform_circuit_from_squander_to_qsearch(self,
+    cDecompose,
     qubitnum)-> Circuit:
+        
         circuit=Circuit(qubitnum)
-        gates=squander.gates
+        gates=cDecompose.get_Gates()
         for idx in range(len(gates)-1, -1, -1):
             
             gate = gates[idx]
@@ -227,20 +229,29 @@ class QSearchSynthesisPass(SynthesisPass):
                 control_qbit=gate.get("control_qbit")                
                 target_qbit=gate.get("target_qbit")                
                 circuit.append_gate(RZGate(), [target_qbit])
-                
-            return(circuit)
+        print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",circuit,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+        return(circuit)
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         Umtx=utry.numpy
-     
         from squander import N_Qubit_Decomposition_adaptive
         
         cDecompose=N_Qubit_Decomposition_adaptive(Umtx.conj().T, level_limit_max=5,level_limit_min=0)
         cDecompose.Start_Decomposition()
         qubitnum=math.floor(math.log2(utry.__len__()))
-        print("ez kell neked aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",qubitnum)
-        self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
+        if qubitnum > 2 :
+            Circuit2=self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
+            print("\n\n\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \n\n\n",Circuit2,"\n\n\n aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n\n\n")
+          
+            quantum_circuit = cDecompose.get_Quantum_Circuit()
+            circuit_bqskit=Circuit.get_unitary(Circuit2)	
+            import numpy.linalg as LA
+            product_matrix = np.dot(Umtx,circuit_bqskit.conj().T)
+            phase = np.angle(product_matrix[0,0])
+            decomposition_error = (np.real(np.trace(product_matrix)))/2
+            print('The error of the decomposition is ' + str(decomposition_error))	
         
+        "ide kell majd az összehasonlítás az umtx-el a Circuit 2"
         frontier = Frontier(utry, self.heuristic_function)
 
         # Seed the search with an initial layer
