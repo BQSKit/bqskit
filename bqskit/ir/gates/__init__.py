@@ -62,7 +62,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
 
     CCPGate
     CKMGate
-    CKMDGate
+    CKMdgGate
     CPGate
     ArbitraryCPhaseGate
     CRXGate
@@ -145,9 +145,11 @@ from bqskit.ir.gates.parameterized import *  # noqa
 from bqskit.ir.gates.parameterized import __all__ as parameterized_all
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.ir.gates.qutritgate import QutritGate
+from bqskit.ir.gates.quditgate import QuditGate
 
 __all__ = composed_all + constant_all + parameterized_all
-__all__ += ['ComposedGate', 'QubitGate', 'QutritGate', 'ConstantGate']
+__all__ += ['ComposedGate', 'ConstantGate']
+__all__ += ['QubitGate', 'QutritGate', 'QuditGate']
 __all__ += ['CircuitGate', 'MeasurementPlaceholder', 'BarrierPlaceholder']
 __all__ += ['GeneralGate']
 
