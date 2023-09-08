@@ -144,8 +144,8 @@ from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized import *  # noqa
 from bqskit.ir.gates.parameterized import __all__ as parameterized_all
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.ir.gates.quditgate import QuditGate
+from bqskit.ir.gates.qutritgate import QutritGate
 
 __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate', 'ConstantGate']
