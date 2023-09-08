@@ -40,6 +40,7 @@ minversion = "2.8"
 testpaths = ["tests/"]
 python_files = "test*.py"
 norecursedirs = ".env"
+addopts = "--doctest-modules"
 
 [tool.mypy]
 check_untyped_defs = true
