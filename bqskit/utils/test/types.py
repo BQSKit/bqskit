@@ -51,8 +51,8 @@ def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
 
     Examples:
 
-        >>> list(powerset([1,2,3]))
-        ... [() (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)]
+        >>> list(_powerset([1,2,3]))
+        [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
 
     References:
 
@@ -60,7 +60,7 @@ def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
         itertools.
     """
     s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)))
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
 def _split_generic_arguments(args: str) -> list[str]:

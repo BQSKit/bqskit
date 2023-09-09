@@ -25,8 +25,9 @@ class DaggerGate(
     conjugate transpose of the input gate.
 
     For example:
+        >>> from bqskit.ir.gates import TGate, TdgGate
         >>> DaggerGate(TGate()).get_unitary() == TdgGate().get_unitary()
-        ... True
+        True
     """
 
     def __init__(self, gate: Gate) -> None:

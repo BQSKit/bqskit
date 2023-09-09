@@ -82,14 +82,15 @@ class SubSwapGate(ConstantGate, QuditGate):
 
         Example:
             >>> from bqskit.ir.gates.constant.subswap import SubSwapGate
-            >>> u = SubSwapGate.calculate_level_swap_unitary(2, (1, 1), (0, 1))
+            >>> u = SubSwapGate.calculate_level_swap_unitary(2, (1, 1), (1, 0))
             >>> u
-            UnitaryMatrix([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
-                            [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
-                            [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
-                            [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], [2, 2])
+            array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                   [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
+                   [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
+                   [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]])
             >>> from bqskit.ir.gates.constant.cx import CNOTGate
             >>> u == CNOTGate().get_unitary()
+            True
         """
         if any(l >= radix for l in level1 + level2):
             raise ValueError(
