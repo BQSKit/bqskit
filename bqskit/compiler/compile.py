@@ -251,7 +251,7 @@ def compile(
 
         synthesis_epsilon (float): The maximum distance between target
             and circuit unitary during any instantiation or synthesis
-            algorithms. (Default: 1e-10)
+            algorithms. (Default: 1e-8)
 
         error_threshold (float | None): This parameter controls the
             verification mechanism in this compile function. By default,
@@ -647,7 +647,7 @@ def build_workflow(
     input: Circuit | UnitaryMatrix | StateVector | StateSystem,
     model: MachineModel | None,
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -744,7 +744,7 @@ def build_workflow(
 def _circuit_workflow(
     model: MachineModel,
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -917,7 +917,7 @@ def build_partitioning_workflow(
 
 def build_standard_search_synthesis_workflow(
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
 ) -> BasePass:
     """
     Build standard search-based synthesis pass for block-level compilation.
@@ -928,7 +928,7 @@ def build_standard_search_synthesis_workflow(
 
         synthesis_epsilon (float): The maximum distance between target
             and circuit unitary allowed to declare successful synthesis.
-            Set to 0 for exact synthesis. (Default: 1e-10)
+            Set to 0 for exact synthesis. (Default: 1e-8)
 
     Returns:
         BasePass: The synthesis pass.
@@ -969,7 +969,7 @@ def build_standard_search_synthesis_workflow(
 
 def build_multi_qudit_retarget_workflow(
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1017,7 +1017,7 @@ def build_multi_qudit_retarget_workflow(
 
 def build_single_qudit_retarget_workflow(
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1126,7 +1126,7 @@ def build_sabre_mapping_workflow() -> Workflow:
 
 def build_gate_deletion_optimization_workflow(
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1153,7 +1153,7 @@ def build_gate_deletion_optimization_workflow(
 
 def build_resynthesis_optimization_workflow(
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1188,7 +1188,7 @@ def build_resynthesis_optimization_workflow(
 
 def _opt1_workflow(
     model: MachineModel,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1232,7 +1232,7 @@ def _opt1_workflow(
 
 def _opt2_workflow(
     model: MachineModel,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1285,7 +1285,7 @@ def _opt2_workflow(
 
 def _opt3_workflow(
     model: MachineModel,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1348,7 +1348,7 @@ def _opt3_workflow(
 
 def _opt4_workflow(
     model: MachineModel,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,
@@ -1551,7 +1551,7 @@ def _stateprep_workflow(
     state: StateVector,
     model: MachineModel,
     optimization_level: int = 1,
-    synthesis_epsilon: float = 1e-10,
+    synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
     error_threshold: float | None = None,
     error_sim_size: int = 8,

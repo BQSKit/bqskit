@@ -39,7 +39,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self,
         heuristic_function: HeuristicFunction = AStarHeuristic(),
         layer_generator: LayerGenerator | None = None,
-        success_threshold: float = 1e-10,
+        success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
         store_partial_solutions: bool = False,
@@ -60,7 +60,7 @@ class QSearchSynthesisPass(SynthesisPass):
 
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
-                described by the cost function. (Default: 1e-10)
+                described by the cost function. (Default: 1e-8)
 
             cost (CostFunction | None): The cost function that determines
                 distance during synthesis. The goal of this synthesis pass

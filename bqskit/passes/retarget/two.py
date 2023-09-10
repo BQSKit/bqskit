@@ -33,7 +33,7 @@ class Rebase2QuditGatePass(BasePass):
         new_gate: Gate | Sequence[Gate],
         max_depth: int = 3,
         max_retries: int = -1,
-        success_threshold: float = 1e-10,
+        success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         instantiate_options: dict[str, Any] = {},
         single_qudit_gate: Gate = U3Gate(),
@@ -58,7 +58,7 @@ class Rebase2QuditGatePass(BasePass):
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
                 described by the hilbert schmidt cost function.
-                (Default: 1e-10)
+                (Default: 1e-8)
 
             cost (CostFunction | None): The cost function that determines
                 successful removal of a gate.

@@ -39,7 +39,7 @@ class QFASTDecompositionPass(SynthesisPass):
     def __init__(
         self,
         gate: Gate = PauliGate(2),
-        success_threshold: float = 1e-10,
+        success_threshold: float = 1e-8,
         progress_threshold: float = 5e-3,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_depth: int | None = None,
@@ -55,7 +55,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
-                described by the cost function. (Default: 1e-6)
+                described by the cost function. (Default: 1e-8)
 
             progress_threshold (float): The distance necessary to improve
                 for the synthesis algorithm to complete a layer and move
