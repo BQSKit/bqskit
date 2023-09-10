@@ -389,6 +389,8 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
 
     for tuple_len in tuple_valids:
         for valid_set in _powerset(list(range(tuple_len))):  # (), (0,), (1,)
+            if len(valid_set) == tuple_len:
+                continue
             strategy_builder = []
             for i in range(tuple_len):
                 if i in valid_set:
@@ -482,6 +484,8 @@ def invalid_type_test(
 
     strategies = []
     for valid_set in _powerset(list(range(len(valids)))):
+        if len(valid_set) == len(valids):
+            continue
         strategy_builder = []
         for i in range(len(valids)):
             if i in valid_set:
