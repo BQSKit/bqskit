@@ -280,7 +280,7 @@ def compile(
             and the third value is the final mapping. The initial mapping
             is a tuple where `initial_mapping[i] = j` implies that logical
             qudit `i` in the input system starts on the physical qudit
-            `j` in the final circuit. Likewise, the final mapping describes
+            `j` in the output circuit. Likewise, the final mapping describes
             where the logical qudits are in the physical circuit at the end
             of execution. (Default: False)
 
