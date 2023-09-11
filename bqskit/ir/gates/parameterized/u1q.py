@@ -15,7 +15,7 @@ from bqskit.utils.cachedclass import CachedClass
 
 class U1qGate(QubitGate, DifferentiableUnitary, CachedClass):
     """
-    The Honeywell U1q single qubit gate.
+    The Quantinuum U1q single qubit gate.
 
     It is given by the following parameterized unitary:
 
