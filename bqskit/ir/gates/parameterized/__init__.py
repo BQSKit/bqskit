@@ -8,6 +8,9 @@ from bqskit.ir.gates.parameterized.cphase import ArbitraryCPhaseGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
+from bqskit.ir.gates.parameterized.mcry import MCRYGate
+from bqskit.ir.gates.parameterized.mcrz import MCRZGate
+from bqskit.ir.gates.parameterized.cun import CUNGate
 from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
