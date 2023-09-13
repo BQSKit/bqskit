@@ -33,6 +33,7 @@ represents a pure quantum operation in matrix form.
     UnitaryMatrix
     UnitaryBuilder
     StateVector
+    StateSystem
     PauliMatrices
     PermutationMatrix
     CouplingGraph
@@ -45,6 +46,7 @@ represents a pure quantum operation in matrix form.
 
     UnitaryLike
     StateLike
+    StateSystemLike
     RealVector
     CouplingGraphLike
 """

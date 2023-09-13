@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from qiskit import QuantumCircuit
-from qiskit.providers.ibmq import IBMQBackend
+from typing import TYPE_CHECKING
 
 from bqskit.exec.results import RunnerResults
 from bqskit.exec.runner import CircuitRunner
 from bqskit.ir.circuit import Circuit
+
+if TYPE_CHECKING:
+    from qiskit.providers.ibmq import IBMQBackend
 
 
 class IBMQRunner(CircuitRunner):
@@ -21,6 +23,7 @@ class IBMQRunner(CircuitRunner):
         # TODO
 
         # 2. Convert to Qiskit IR
+        from qiskit import QuantumCircuit
         qiskit_circ = QuantumCircuit.from_qasm_str(circuit.to('qasm'))
         qiskit_circ.measure_all()
 

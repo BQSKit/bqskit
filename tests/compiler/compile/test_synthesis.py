@@ -9,7 +9,7 @@ from bqskit import MachineModel
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.gateset import GateSet
 from bqskit.ext.cirq.models import google_gate_set
-from bqskit.ext.honeywell import honeywell_gate_set
+from bqskit.ext.quantinuum import quantinuum_gate_set
 from bqskit.ext.rigetti import rigetti_gate_set
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
@@ -44,7 +44,7 @@ def get_distance_from_pa(U: UnitaryMatrix, V: UnitaryMatrix) -> float:
         {U1qGate(), XGate()},
         GateSet.default_gate_set(),
         rigetti_gate_set,
-        honeywell_gate_set,
+        quantinuum_gate_set,
         google_gate_set,
         {IToffoliGate(), U3Gate()},
         {IToffoliGate(), CNOTGate(), U3Gate()},
@@ -74,7 +74,7 @@ def test_single_qudit_synthesis(
     'gate_set', [
         GateSet.default_gate_set(),
         rigetti_gate_set,
-        honeywell_gate_set,
+        quantinuum_gate_set,
         google_gate_set,
         {IToffoliGate(), CNOTGate(), U3Gate()},
     ],
@@ -106,7 +106,7 @@ def test_two_qudit_synthesis(
     'gate_set', [
         GateSet.default_gate_set(),
         rigetti_gate_set,
-        honeywell_gate_set,
+        quantinuum_gate_set,
         {IToffoliGate(), U3Gate()},
         {ToffoliGate(), U3Gate()},
     ],

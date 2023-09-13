@@ -420,7 +420,7 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
             )
 
         control_levels = [
-            [level] * num_controls if is_integer(level) else level
+            [level] if is_integer(level) else level
             for level in control_levels
         ]
 

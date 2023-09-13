@@ -51,8 +51,8 @@ def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
 
     Examples:
 
-        >>> list(powerset([1,2,3]))
-        ... [() (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)]
+        >>> list(_powerset([1,2,3]))
+        [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
 
     References:
 
@@ -60,7 +60,7 @@ def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
         itertools.
     """
     s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)))
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
 def _split_generic_arguments(args: str) -> list[str]:
@@ -389,6 +389,8 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
 
     for tuple_len in tuple_valids:
         for valid_set in _powerset(list(range(tuple_len))):  # (), (0,), (1,)
+            if len(valid_set) == tuple_len:
+                continue
             strategy_builder = []
             for i in range(tuple_len):
                 if i in valid_set:
@@ -482,6 +484,8 @@ def invalid_type_test(
 
     strategies = []
     for valid_set in _powerset(list(range(len(valids)))):
+        if len(valid_set) == len(valids):
+            continue
         strategy_builder = []
         for i in range(len(valids)):
             if i in valid_set:

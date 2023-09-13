@@ -161,6 +161,8 @@ class Operation(DifferentiableUnitary):
         return f'{self.gate}@{self.location}'
 
     def __repr__(self) -> str:
+        if len(self.params) == 0:
+            return f'{self.gate}@{self.location}'
         return f'{self.gate}({self.params})@{self.location}'
 
     def is_differentiable(self) -> bool:
