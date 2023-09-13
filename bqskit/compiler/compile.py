@@ -768,7 +768,7 @@ def _circuit_workflow(
         error_sim_size,
     )
     workflow += [RestoreMeasurements()]
-    return Workflow(workflow)
+    return Workflow(workflow, name='Off-the-Shelf Circuit Compilation')
 
 
 def get_instantiate_options(optimization_level: int) -> dict[str, Any]:
@@ -980,39 +980,41 @@ def build_multi_qudit_retarget_workflow(
     This workflow assumes that SetModelPass will be run earlier in the full
     workflow and doesn't add it in here.
     """
-    return Workflow([
-        IfThenElsePass(
-            NotPredicate(WidthPredicate(2)),
-            [
-                LogPass('Retargeting multi-qudit gates.'),
-                build_partitioning_workflow(
-                    [
-                        FillSingleQuditGatesPass(),
-                        IfThenElsePass(
-                            NotPredicate(MultiPhysicalPredicate()),
+    return Workflow(
+        [
+            IfThenElsePass(
+                NotPredicate(WidthPredicate(2)),
+                [
+                    LogPass('Retargeting multi-qudit gates.'),
+                    build_partitioning_workflow(
+                        [
+                            FillSingleQuditGatesPass(),
                             IfThenElsePass(
-                                ManyQuditGatesPredicate(),
-                                build_standard_search_synthesis_workflow(
-                                    optimization_level,
-                                    synthesis_epsilon,
+                                NotPredicate(MultiPhysicalPredicate()),
+                                IfThenElsePass(
+                                    ManyQuditGatesPredicate(),
+                                    build_standard_search_synthesis_workflow(
+                                        optimization_level,
+                                        synthesis_epsilon,
+                                    ),
+                                    AutoRebase2QuditGatePass(3, 5),
                                 ),
-                                AutoRebase2QuditGatePass(3, 5),
-                            ),
-                            ScanningGateRemovalPass(
-                                success_threshold=synthesis_epsilon,
-                                collection_filter=_mq_gate_collection_filter,
-                                instantiate_options=get_instantiate_options(
-                                    optimization_level,
+                                ScanningGateRemovalPass(
+                                    success_threshold=synthesis_epsilon,
+                                    collection_filter=_mq_gate_collection_filter,  # noqa: E501
+                                    instantiate_options=get_instantiate_options(
+                                        optimization_level,
+                                    ),
                                 ),
                             ),
-                        ),
-                    ],
-                    max_synthesis_size,
-                    None if error_threshold is None else error_sim_size,
-                ),
-            ],
-        ),
-    ])
+                        ],
+                        max_synthesis_size,
+                        None if error_threshold is None else error_sim_size,
+                    ),
+                ],
+            ),
+        ], name='Multi Qudit Retargeting',
+    )
 
 
 def build_single_qudit_retarget_workflow(
@@ -1116,12 +1118,14 @@ def build_sabre_mapping_workflow() -> Workflow:
         - It also assumes that ApplyPlacement will be run later in the full
           workflow and doesn't add it in here.
     """
-    return Workflow([
-        LogPass('Mapping circuit.'),
-        GreedyPlacementPass(),
-        GeneralizedSabreLayoutPass(),
-        GeneralizedSabreRoutingPass(),
-    ])
+    return Workflow(
+        [
+            LogPass('Mapping circuit.'),
+            GreedyPlacementPass(),
+            GeneralizedSabreLayoutPass(),
+            GeneralizedSabreRoutingPass(),
+        ], name='SABRE Mapping',
+    )
 
 
 def build_gate_deletion_optimization_workflow(
@@ -1133,20 +1137,28 @@ def build_gate_deletion_optimization_workflow(
     iterative: bool = False,
 ) -> Workflow:
     """Build standard workflow for circuit gate deletion optimization."""
-    core_workflow = Workflow([
-        LogPass('Attempting to delete gates.'),
-        build_partitioning_workflow(
-            ScanningGateRemovalPass(
-                success_threshold=synthesis_epsilon,
-                instantiate_options=get_instantiate_options(optimization_level),
+    core_workflow = Workflow(
+        [
+            LogPass('Attempting to delete gates.'),
+            build_partitioning_workflow(
+                ScanningGateRemovalPass(
+                    success_threshold=synthesis_epsilon,
+                    instantiate_options=get_instantiate_options(
+                        optimization_level,
+                    ),
+                ),
+                max_synthesis_size,
+                None if error_threshold is None else error_sim_size,
             ),
-            max_synthesis_size,
-            None if error_threshold is None else error_sim_size,
-        ),
-    ])
+        ],
+        name='Gate Deletion Optimization',
+    )
 
     if iterative:
-        return Workflow(WhileLoopPass(ChangePredicate(), core_workflow))
+        return Workflow(
+            WhileLoopPass(ChangePredicate(), core_workflow),
+            name='Iterative Gate Deletion Optimization',
+        )
 
     return core_workflow
 
@@ -1160,28 +1172,32 @@ def build_resynthesis_optimization_workflow(
     iterative: bool = False,
 ) -> Workflow:
     """Build standard workflow for circuit resynthesis optimization."""
-    core_workflow = Workflow([
-        LogPass('Resynthesizing blocks.'),
-        build_partitioning_workflow(
-            IfThenElsePass(
-                NotPredicate(WidthPredicate(2)),
-                build_standard_search_synthesis_workflow(
-                    optimization_level,
-                    synthesis_epsilon,
+    core_workflow = Workflow(
+        [
+            LogPass('Resynthesizing blocks.'),
+            build_partitioning_workflow(
+                IfThenElsePass(
+                    NotPredicate(WidthPredicate(2)),
+                    build_standard_search_synthesis_workflow(
+                        optimization_level,
+                        synthesis_epsilon,
+                    ),
                 ),
+                max_synthesis_size,
+                None if error_threshold is None else error_sim_size,
             ),
-            max_synthesis_size,
-            None if error_threshold is None else error_sim_size,
-        ),
-    ])
+        ], name='Resynthesis Optimization',
+    )
 
     if iterative:
-        return Workflow([
-            WhileLoopPass(
-                GateCountPredicate('multi'),
-                core_workflow,
-            ),
-        ])
+        return Workflow(
+            [
+                WhileLoopPass(
+                    GateCountPredicate('multi'),
+                    core_workflow,
+                ),
+            ], name='Iterative Resynthesis Optimization',
+        )
 
     return core_workflow
 
@@ -1385,55 +1401,58 @@ def _opt4_workflow(
                 model.radixes,
             ),
         ),
-        IfThenElsePass(
-            NotPredicate(WidthPredicate(2)),
-            [
-                QuickPartitioner(3),
-                ForEachBlockPass(
-                    IfThenElsePass(
-                        WidthPredicate(4),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=qsearch,
-                            input_perm=True,
-                            output_perm=False,
-                            vary_topology=False,
-                        ),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=leap,
-                            input_perm=True,
-                            output_perm=False,
-                            vary_topology=False,
+        Workflow(
+            IfThenElsePass(
+                NotPredicate(WidthPredicate(2)),
+                [
+                    QuickPartitioner(3),
+                    ForEachBlockPass(
+                        IfThenElsePass(
+                            WidthPredicate(4),
+                            EmbedAllPermutationsPass(
+                                inner_synthesis=qsearch,
+                                input_perm=True,
+                                output_perm=False,
+                                vary_topology=False,
+                            ),
+                            EmbedAllPermutationsPass(
+                                inner_synthesis=leap,
+                                input_perm=True,
+                                output_perm=False,
+                                vary_topology=False,
+                            ),
                         ),
                     ),
-                ),
-                PAMRoutingPass(),
-                UnfoldPass(),
+                    PAMRoutingPass(),
+                    UnfoldPass(),
 
-                SetModelPass(model),
-                SubtopologySelectionPass(3),
-                QuickPartitioner(3),
-                ForEachBlockPass(
-                    IfThenElsePass(
-                        WidthPredicate(4),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=qsearch,
-                            input_perm=False,
-                            output_perm=True,
-                            vary_topology=True,
-                        ),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=leap,
-                            input_perm=False,
-                            output_perm=True,
-                            vary_topology=True,
+                    SetModelPass(model),
+                    SubtopologySelectionPass(3),
+                    QuickPartitioner(3),
+                    ForEachBlockPass(
+                        IfThenElsePass(
+                            WidthPredicate(4),
+                            EmbedAllPermutationsPass(
+                                inner_synthesis=qsearch,
+                                input_perm=False,
+                                output_perm=True,
+                                vary_topology=True,
+                            ),
+                            EmbedAllPermutationsPass(
+                                inner_synthesis=leap,
+                                input_perm=False,
+                                output_perm=True,
+                                vary_topology=True,
+                            ),
                         ),
                     ),
-                ),
-                ApplyPlacement(),
-                PAMLayoutPass(3),
-                PAMRoutingPass(0.1),
-                UnfoldPass(),
-            ],
+                    ApplyPlacement(),
+                    PAMLayoutPass(3),
+                    PAMRoutingPass(0.1),
+                    UnfoldPass(),
+                ],
+            ),
+            name='SeqPAM Mapping',
         ),
 
         build_multi_qudit_retarget_workflow(
@@ -1544,7 +1563,7 @@ def _synthesis_workflow(
         scan if optimization_level >= 2 else NOOPPass(),
     ]
 
-    return Workflow(workflow)
+    return Workflow(workflow, name='Off-the-Shelf Unitary Synthesis')
 
 
 def _stateprep_workflow(
@@ -1645,7 +1664,7 @@ def _stateprep_workflow(
         scan if optimization_level >= 2 else NOOPPass(),
     ]
 
-    return Workflow(workflow)
+    return Workflow(workflow, name='Off-the-Shelf State Synthesis')
 
 
 def _statemap_workflow(
@@ -1743,7 +1762,7 @@ def _statemap_workflow(
         scan if optimization_level >= 2 else NOOPPass(),
     ]
 
-    return Workflow(workflow)
+    return Workflow(workflow, name='Off-the-Shelf State System Synthesis')
 
 
 def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
