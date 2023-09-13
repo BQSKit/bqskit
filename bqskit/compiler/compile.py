@@ -645,7 +645,7 @@ def compile(
 
 def build_workflow(
     input: Circuit | UnitaryMatrix | StateVector | StateSystem,
-    model: MachineModel | None,
+    model: MachineModel | None = None,
     optimization_level: int = 1,
     synthesis_epsilon: float = 1e-8,
     max_synthesis_size: int = 3,
