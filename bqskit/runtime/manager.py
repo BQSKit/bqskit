@@ -82,7 +82,7 @@ class Manager(ServerBase):
         super().__init__()
 
         # Connect upstream
-        self.upstream = self.listen_once(port)
+        self.upstream = self.listen_once('0.0.0.0', port)
 
         # Handshake with upstream
         msg, payload = self.upstream.recv()
