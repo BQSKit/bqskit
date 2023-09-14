@@ -60,6 +60,7 @@ see the :obj:`~bqskit.compiler` documentation.
     ~bqskit.runtime.manager.Manager
     ~bqskit.runtime.detached.start_server
     ~bqskit.runtime.manager.start_manager
+    ~bqskit.runtime.worker.start_worker_rank
 
 Parallelize Pass Computation
 ############################
