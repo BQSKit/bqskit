@@ -35,19 +35,27 @@ class CUNGate(
     _qasm_name = 'cun'
 
     def __init__(self, num_qudits: int, num_control: int) -> None:
-        self._num_qudits = num_qudits
-        self.num_control = num_control
+        self.num_control = int(num_control)
+        self._num_qudits = int(num_qudits)
+        self._dim = int(2 ** (num_qudits))
+        self.shape = (self.dim, self.dim)
+        u_dim = int(self._dim / (2 ** self.num_control))
+        self.u_shape = (u_dim, u_dim)
+        self._num_params = 2 * (4 ** (num_qudits - num_control))
+        self._name = 'CUNGate(%d, %s)' % (
+            self.num_qudits, str(self.num_control),
+        )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-        matrix = np.zeros((2 ** self._num_qudits, 2 ** self._num_qudits))
         self.check_parameters(params)
+        matrix = np.identity(2 ** self._num_qudits, dtype=np.complex128)
         mid = len(params) // 2
         real = np.array(params[:mid], dtype=np.complex128)
         imag = 1j * np.array(params[mid:], dtype=np.complex128)
         x = real + imag
-        start = 2 ** self.num_control
+        # Only last block is the unitary
+        start = self.dim - self.u_shape[0]
+        x = np.reshape(x, self.u_shape)
         matrix[start:, start:] = x
-        matrix[0:start, 0:start] = np.identity(start)
-
         return UnitaryMatrix(matrix)

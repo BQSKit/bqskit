@@ -56,39 +56,41 @@ class QSDPass(BasePass):
             self.start_from_left = start_from_left
             self.min_qudit_size = min_qudit_size
 
-    def create_multiplexed_circ(self, u1: UnitaryMatrix, u2: UnitaryMatrix, select_qubits: list[int]) -> Circuit:
+    def create_multiplexed_circ(self, us: list[UnitaryMatrix], select_qubits: list[int], controlled_qubits: list[int]) -> Circuit:
+        # TODO: Expand to multiple unitaries
+        u1 = us[0]
+        u2 = us[1]
+        assert(2 ** len(select_qubits) == len(us))
         assert(u1.num_qudits == u2.num_qudits)
         # First apply u1 gate
         u1_gate = VariableUnitaryGate(u1.num_qudits)
-        u1_params = np.real(u1._utry) + np.imag(u1._utry)
+        u1_params = np.concatenate((np.real(u1._utry).flatten(), np.imag(u1._utry).flatten()))
         # Now create controlled unitary of u1h @ u2
-        inv_mat = u1.dagger()._utry @ u2._utry
-        inv_params = np.real(inv_mat).flatten() + np.imag(inv_mat).flatten()
+        inv_mat =  u2._utry @ u1.dagger._utry
+        inv_params = np.concatenate((np.real(inv_mat).flatten(), np.imag(inv_mat).flatten()))
         inv_gate = CUNGate(u2.num_qudits + len(select_qubits), len(select_qubits))
 
         circ = Circuit(u1.num_qudits + len(select_qubits))
-        controlled_bits = sorted(set(range(u1.num_qudits)).difference(set(select_qubits)))
-        circ.append_gate(u1_gate, CircuitLocation(controlled_bits), u1_params)
-        circ.append_gate(inv_gate, CircuitLocation(select_qubits + controlled_bits), inv_params)
+        circ.append_gate(u1_gate, CircuitLocation(controlled_qubits), u1_params)
+        circ.append_gate(inv_gate, CircuitLocation(select_qubits + controlled_qubits), inv_params)
         return circ
 
-    async def qsd(self, u: UnitaryMatrix) -> Circuit:
+    def qsd(self, u: UnitaryMatrix) -> Circuit:
         '''
         Return the circuit that is generated from one levl of QSD. 
         '''
-        (u1, u2), theta_y, (v1h, v2h) = cossin(self._utry, p=self.shape[0]/2, q=self.shape[1]/2, separate=True)
+        (u1, u2), theta_y, (v1h, v2h) = cossin(u._utry, p=u.shape[0]/2, q=u.shape[1]/2, separate=True)
+        assert(len(theta_y) == u.shape[0] / 2)
         select_qubits = [0]
         controlled_qubits = list(range(1, u.num_qudits))
-        circ_1 = self.create_multiplexed_circ(UnitaryMatrix(u1), UnitaryMatrix(u2), select_qubits)
-        gate_2 = MCRYGate(u.num_qudits - 1)
-        circ_1.append_gate(gate_2, CircuitLocation(select_qubits + controlled_qubits), theta_y)
-        circ_2 = self.create_multiplexed_circ(UnitaryMatrix(v1h), UnitaryMatrix(v2h), select_qubits)
+        circ_1 = self.create_multiplexed_circ([UnitaryMatrix(v1h), UnitaryMatrix(v2h)], select_qubits, controlled_qubits)
+        gate_2 = MCRYGate(u.num_qudits, 0)
+        circ_1.append_gate(gate_2, CircuitLocation(select_qubits + controlled_qubits), 2 * theta_y)
+        circ_2 = self.create_multiplexed_circ([UnitaryMatrix(u1), UnitaryMatrix(u2)], select_qubits, controlled_qubits)
         circ_1.append_circuit(circ_2, CircuitLocation(list(range(u.num_qudits))))
         return circ_1
 
-
-
-    async def perform_decomposition(self, circuit: Circuit, op: Operation, cycle: int) -> None:
+    def perform_decomposition(self, circuit: Circuit, op: Operation, cycle: int) -> None:
         pt = circuit.point(op, (cycle, op.location[0]))
         new_circ = self.qsd(op.get_unitary())
         circuit.replace_with_circuit(pt, new_circ)

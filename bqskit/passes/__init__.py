@@ -268,6 +268,7 @@ from bqskit.passes.synthesis.qpredict import QPredictDecompositionPass
 from bqskit.passes.synthesis.qsearch import QSearchSynthesisPass
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.passes.synthesis.target import SetTargetPass
+from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.passes.util.compress import CompressPass
 from bqskit.passes.util.conversion import BlockConversionPass
 from bqskit.passes.util.converttou3 import ToU3Pass
@@ -300,6 +301,7 @@ __all__ = [
     'LEAPSynthesisPass',
     'QSearchSynthesisPass',
     'QFASTDecompositionPass',
+    'QSDPass',
     'QPredictDecompositionPass',
     'CompressPass',
     'RecordStatsPass',

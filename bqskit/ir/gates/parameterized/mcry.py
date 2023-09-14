@@ -9,7 +9,21 @@ from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
+from typing import Sequence
 
+
+def get_indices(index: int, controlled_qudit, num_qudits):
+    # 0 corresponds to MSB
+    shift_qubit = num_qudits - controlled_qudit - 1
+    shift = 2 ** shift_qubit
+    # Split into two parts around controlled qubit
+    # 100 | 111
+    left = index // shift
+    right = index % shift
+    # Now, shift left
+    left *= (shift * 2)
+    # Now add 0 * new_ind and 1 * new_ind to ge indices
+    return left + right, left + shift + right
 
 class MCRYGate(
     QubitGate,
@@ -32,23 +46,39 @@ class MCRYGate(
     """
     _qasm_name = 'mcry'
 
-    def __init__(self, num_qudits: int) -> None:
+    def __init__(self, num_qudits: int, controlled_qubit: int) -> None:
         self._num_qudits = num_qudits
-        self._num_params = 1
+        # 1 param for each configuration of the selec qubits
+        self._num_params = 2 ** (num_qudits - 1)
+        self.controlled_qubit = controlled_qubit
         super().__init__()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
+        if len(params) == 1:
+            # If we want to turn on only if all the selects are 1, that corresponds to
+            # [0, 0, ...., 0, theta] so that is why we pad in front
+            params = list(np.zeros(len(params) - self.num_params)) + list(params)
         self.check_parameters(params)
 
-        cos = np.cos(params[0] / 2)
-        sin = np.sin(params[0] / 2)
+        matrix = np.zeros((2 ** self.num_qudits, 2 ** self.num_qudits), dtype=np.complex128)
+        for i, param in enumerate(params):
+            cos = np.cos(param / 2)
+            sin = np.sin(param / 2)
 
-        matrix = np.identity(2 ** self.num_qudits, dtype=np.complex128)
-        matrix[-1, -1] = cos
-        matrix[-2, -2] = cos
-        matrix[-1, -2] = sin
-        matrix[-2, -1] = -1 * sin
+            # Now, get indices based on control qubit.
+            # i corresponds to the configuration of the 
+            # select qubits (e.g 5 = 101). Now, the 
+            # controlled qubit is 0,1 for both the row and col
+            # indices. So, if i = 5 and the controlled_qubit is 2
+            # Then the rows/cols are 1001 and 1101
+            # Use helper function
+            x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
+
+            matrix[x1, x1] = cos
+            matrix[x2, x2] = cos
+            matrix[x2, x1] = sin
+            matrix[x1, x2] = -1 * sin
 
         return UnitaryMatrix(matrix)
 
@@ -58,15 +88,21 @@ class MCRYGate(
 
         See :class:`DifferentiableUnitary` for more info.
         """
+        if len(params) < self.num_params:
+            # Pad Zeros to front
+            params = list(np.zeros(len(params) - self.num_params)) + list(params)
         self.check_parameters(params)
 
-        dcos = -np.sin(params[0] / 2) / 2
-        dsin = -1j * np.cos(params[0] / 2) / 2
+        matrix = np.zeros((2 ** self.num_qudits, 2 ** self.num_qudits), dtype=np.complex128)
+        for i, param in enumerate(params):
+            dcos = -np.sin(param / 2) / 2
+            dsin = -1j * np.cos(param / 2) / 2
 
-        matrix = np.identity(2 ** self.num_qudits, dtype=np.complex128)
-        matrix[-1, -1] = dcos
-        matrix[-2, -2] = dcos
-        matrix[-1, -2] = dsin
-        matrix[-2, -1] = -1 * dsin
+            x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
 
-        return matrix
+            matrix[x1, x1] = dcos
+            matrix[x2, x2] = dcos
+            matrix[x2, x1] = dsin
+            matrix[x1, x2] = -1 * dsin
+
+        return UnitaryMatrix(matrix)
