@@ -17,7 +17,7 @@ class MCRZGate(
     CachedClass,
 ):
     """
-    A gate representing a multi-controlled Z rotation.
+    A gate representing a multiplexed Z rotation.
 
     It is given by the following parameterized unitary:
     """

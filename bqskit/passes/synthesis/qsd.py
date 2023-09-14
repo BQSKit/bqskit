@@ -15,9 +15,13 @@ from bqskit.ir.gates.parameterized.mcry import MCRYGate
 from bqskit.ir.gates.parameterized.mcrz import MCRZGate
 from bqskit.ir.gates.parameterized.cun import CUNGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.location import CircuitLocation
+from bqskit.ir.gates import CircuitGate
+from bqskit.runtime import get_runtime
 from scipy.linalg import cossin, diagsvd, schur
 import numpy as np
+import time
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +40,13 @@ class QSDPass(BasePass):
         ISSN 0024-3795,
         https://doi.org/10.1016/0024-3795(94)90446-4.
     """
+
+    cs_time = 0
+    schur_time = 0
+    create_circ_time = 0
+    append_circ_time = 0
+    init_time = 0
+    replace_time = 0
 
     def __init__(
             self,
@@ -57,12 +68,15 @@ class QSDPass(BasePass):
             self.start_from_left = start_from_left
             self.min_qudit_size = min_qudit_size
 
-    def create_unitary_gate(self, u: UnitaryMatrix):
-         gate = VariableUnitaryGate(u.num_qudits)
-         params = np.concatenate((np.real(u).flatten(), np.imag(u).flatten()))
-         return gate, params
+    @staticmethod
+    def create_unitary_gate(u: UnitaryMatrix):
+        gate = ConstantUnitaryGate(u)
+        #  params = np.concatenate((np.real(u).flatten(), np.imag(u).flatten()))
+        params = []
+        return gate, params
 
-    def create_multiplexed_circ(self, us: list[UnitaryMatrix], select_qubits: list[int], controlled_qubits: list[int]) -> Circuit:
+    @staticmethod
+    def create_multiplexed_circ(us: list[UnitaryMatrix], select_qubits: list[int], controlled_qubits: list[int]) -> Circuit:
         '''Using this paper: https://arxiv.org/pdf/quant-ph/0406176.pdf. Thm 12'''
         # TODO: Expand to multiple unitaries
         u1 = us[0]
@@ -72,18 +86,21 @@ class QSDPass(BasePass):
         # First apply u1 gate
         # Now create controlled unitary of u1h @ u2
         # This breaks down into a Variable Unitary, Rz, and Variable unitary
+        # # TODO: Eval Schur vs Eig
+        start = time.time()
         D_2, V  = schur(u1._utry @ u2.dagger._utry)
+        QSDPass.schur_time += (time.time() - start)
         D = np.sqrt(np.diag(np.diag(D_2))) # D^2 will be diagonal since u1u2h is unitary
         # Calculate W @ U1
         left_mat = D @ V.conj().T @ u2._utry
-        left_gate, left_params = self.create_unitary_gate(UnitaryMatrix(left_mat))
+        left_gate, left_params = QSDPass.create_unitary_gate(UnitaryMatrix(left_mat))
 
         # Create Multi Controlled Z Gate
         z_params = 2 * np.angle(np.diag(D)).flatten()
         z_gate = MCRZGate(len(select_qubits) + len(controlled_qubits), 0)
 
         # Create right gate
-        right_gate, right_params = self.create_unitary_gate(UnitaryMatrix(V))
+        right_gate, right_params = QSDPass.create_unitary_gate(UnitaryMatrix(V))
 
         circ = Circuit(u1.num_qudits + len(select_qubits))
         circ.append_gate(left_gate, CircuitLocation(controlled_qubits), left_params)
@@ -106,32 +123,70 @@ class QSDPass(BasePass):
         # print(np.allclose)
 
         return circ
-
-    def qsd(self, u: UnitaryMatrix) -> Circuit:
+    
+    @staticmethod
+    def qsd(u: UnitaryMatrix) -> Circuit:
         '''
         Return the circuit that is generated from one levl of QSD. 
         '''
+        start = time.time()
         (u1, u2), theta_y, (v1h, v2h) = cossin(u._utry, p=u.shape[0]/2, q=u.shape[1]/2, separate=True)
+        QSDPass.cs_time += (time.time() - start)
+        # print(QSDPass.cs_time)
         assert(len(theta_y) == u.shape[0] / 2)
         select_qubits = [0]
         controlled_qubits = list(range(1, u.num_qudits))
-        circ_1 = self.create_multiplexed_circ([UnitaryMatrix(v1h), UnitaryMatrix(v2h)], select_qubits, controlled_qubits)
+        start = time.time()
+        circ_1 = QSDPass.create_multiplexed_circ([UnitaryMatrix(v1h), UnitaryMatrix(v2h)], select_qubits, controlled_qubits)
+        circ_2 = QSDPass.create_multiplexed_circ([UnitaryMatrix(u1), UnitaryMatrix(u2)], select_qubits, controlled_qubits)
+        QSDPass.create_circ_time += (time.time() - start)
         gate_2 = MCRYGate(u.num_qudits, 0)
+        start = time.time()
         circ_1.append_gate(gate_2, CircuitLocation(select_qubits + controlled_qubits), 2 * theta_y)
-        circ_2 = self.create_multiplexed_circ([UnitaryMatrix(u1), UnitaryMatrix(u2)], select_qubits, controlled_qubits)
         circ_1.append_circuit(circ_2, CircuitLocation(list(range(u.num_qudits))))
+        QSDPass.append_circ_time += (time.time() - start)
         return circ_1
-
-    def perform_decomposition(self, circuit: Circuit, op: Operation, cycle: int) -> None:
-        pt = circuit.point(op, (cycle, op.location[0]))
-        new_circ = self.qsd(op.get_unitary())
-        circuit.replace_with_circuit(pt, new_circ)
-        return
-
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        num_ops = 10
         
-        for cyc, op in circuit.operations_with_cycles():
-            if op.num_qudits > self.min_qudit_size:
-                 self.perform_decomposition(circuit, op, cyc)
+        while num_ops > 0:
+            start = time.time()
+            unitaries = []
+            pts = []
+            locations = []
+            num_ops = 0
+            all_ops = list(circuit.operations_with_cycles(reverse=True))
+            # Gather all of the unitaries
+            for cyc, op in all_ops:
+                if op.num_qudits > self.min_qudit_size and not (isinstance(op.gate, MCRYGate) or isinstance(op.gate, MCRZGate)):
+                    num_ops += 1
+                    unitaries.append(op.get_unitary())
+                    pts.append((cyc, op.location[0]))
+                    locations.append(op.location)
+            
+            QSDPass.init_time += (time.time() - start)
+
+
+            start = time.time()
+            if len(unitaries) > 0:
+                # Do a bulk QSDs -> circs
+                circs = await get_runtime().map(QSDPass.qsd, unitaries)
+                # Do bulk replace (single threaded)
+                circ_gates = [CircuitGate(x) for x in circs]
+                circ_ops = [Operation(x, locations[i], x._circuit.params) for i,x in enumerate(circ_gates)]
+                circuit.batch_replace(pts, circ_ops)
+                # circuit.replace_with_circuit(pts[0], circ_ops[0])
+                circuit.unfold_all()
+
+            QSDPass.replace_time += (time.time() - start)
+
+        print(f"Init Time: {QSDPass.init_time}")
+        print(f"CS Time: {QSDPass.cs_time}")
+        print(f"Schur Time: {QSDPass.schur_time}")
+        print(f"Create Circ Time: {QSDPass.create_circ_time}")
+        print(f"Append Circ Time: {QSDPass.append_circ_time}")
+        print(f"Replace Time: {QSDPass.replace_time}")
+
+        circuit.unfold_all()
