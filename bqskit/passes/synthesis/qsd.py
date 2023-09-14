@@ -12,10 +12,11 @@ from bqskit.ir.operation import Operation
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.parameterized.mcry import MCRYGate
+from bqskit.ir.gates.parameterized.mcrz import MCRZGate
 from bqskit.ir.gates.parameterized.cun import CUNGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.location import CircuitLocation
-from scipy.linalg import cossin
+from scipy.linalg import cossin, diagsvd, schur
 import numpy as np
 
 _logger = logging.getLogger(__name__)
@@ -56,23 +57,54 @@ class QSDPass(BasePass):
             self.start_from_left = start_from_left
             self.min_qudit_size = min_qudit_size
 
+    def create_unitary_gate(self, u: UnitaryMatrix):
+         gate = VariableUnitaryGate(u.num_qudits)
+         params = np.concatenate((np.real(u).flatten(), np.imag(u).flatten()))
+         return gate, params
+
     def create_multiplexed_circ(self, us: list[UnitaryMatrix], select_qubits: list[int], controlled_qubits: list[int]) -> Circuit:
+        '''Using this paper: https://arxiv.org/pdf/quant-ph/0406176.pdf. Thm 12'''
         # TODO: Expand to multiple unitaries
         u1 = us[0]
         u2 = us[1]
         assert(2 ** len(select_qubits) == len(us))
         assert(u1.num_qudits == u2.num_qudits)
         # First apply u1 gate
-        u1_gate = VariableUnitaryGate(u1.num_qudits)
-        u1_params = np.concatenate((np.real(u1._utry).flatten(), np.imag(u1._utry).flatten()))
         # Now create controlled unitary of u1h @ u2
-        inv_mat =  u2._utry @ u1.dagger._utry
-        inv_params = np.concatenate((np.real(inv_mat).flatten(), np.imag(inv_mat).flatten()))
-        inv_gate = CUNGate(u2.num_qudits + len(select_qubits), len(select_qubits))
+        # This breaks down into a Variable Unitary, Rz, and Variable unitary
+        D_2, V  = schur(u1._utry @ u2.dagger._utry)
+        D = np.sqrt(np.diag(np.diag(D_2))) # D^2 will be diagonal since u1u2h is unitary
+        # Calculate W @ U1
+        left_mat = D @ V.conj().T @ u2._utry
+        left_gate, left_params = self.create_unitary_gate(UnitaryMatrix(left_mat))
+
+        # Create Multi Controlled Z Gate
+        z_params = 2 * np.angle(np.diag(D)).flatten()
+        z_gate = MCRZGate(len(select_qubits) + len(controlled_qubits), 0)
+
+        # Create right gate
+        right_gate, right_params = self.create_unitary_gate(UnitaryMatrix(V))
 
         circ = Circuit(u1.num_qudits + len(select_qubits))
-        circ.append_gate(u1_gate, CircuitLocation(controlled_qubits), u1_params)
-        circ.append_gate(inv_gate, CircuitLocation(select_qubits + controlled_qubits), inv_params)
+        circ.append_gate(left_gate, CircuitLocation(controlled_qubits), left_params)
+        circ.append_gate(z_gate, CircuitLocation(select_qubits + controlled_qubits), z_params)
+        circ.append_gate(right_gate, CircuitLocation(controlled_qubits), right_params)
+
+        # # Comparison!!!
+        # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
+        # orig_mat = np.identity(2 ** 3)
+        # orig_mat[:4,:4] = u1._utry
+        # orig_mat[4:, 4:] = u2._utry
+        # print(orig_mat)
+
+        # # New matrix from calculation
+        # calc_mat = np.identity(2 ** 3)
+        # calc_mat[:4, :4] = V @ D @ D @ V.conj().T @ u2._utry
+        # calc_mat[4:, 4:] = V @ D.conj().T @ D @ V.conj().T @ u2._utry
+
+        # print(calc_mat)
+        # print(np.allclose)
+
         return circ
 
     def qsd(self, u: UnitaryMatrix) -> Circuit:
