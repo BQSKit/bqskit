@@ -1,4 +1,4 @@
-# Distributing Workload
+# Distributing BQSKit Across a Cluster
 
 This guide describes how to launch a BQSKit Runtime Server in detached mode on
 one or more computers, connect to it, and perform compilations on the server.
@@ -91,6 +91,12 @@ Lastly, the server is started the same way:
 ```sh
 bqskit-server <most-senior-manager-ip-1> <most-senior-manager-ip-2> ...
 ```
+
+### Shutting Down a Server
+
+Interrupting the central server will properly shut down the entire runtime
+architecture and clean up all resources. A client cannot shut down the
+runtime in detached mode.
 
 ## Connecting to and Compiling with a Server
 
