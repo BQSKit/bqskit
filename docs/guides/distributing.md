@@ -50,8 +50,17 @@ same system. For example, in a multi-GPU system, you may use environment
 variables to control access to GPUs and want to split the workers to different
 GPUs but still have one manager responsible for the lot.
 
-To accomplish this, we now start the workers independently, then the
-managers, and finally the server as usual:
+To accomplish this, we first start the manager, then the workers independently,
+and finally the server as usual. In this start-up method, we need to tell
+the manager to connect to the workers rather than spawn them. This is
+done with `-x` flag:
+
+```sh
+bqskit-manager -x
+```
+
+Then, you start the workers and connect them to the manager:
+
 
 ```sh
 ENV_VAR=SOMETHING bqskit-worker <num_workers_in_rank>
@@ -59,13 +68,6 @@ ENV_VAR=SOMETHING bqskit-worker <num_workers_in_rank>
 
 See `bqskit-worker --help` for more info. You can also use the `--cpus`
 flag to pin workers to cores.
-
-In this start-up method, we need to tell the manager to connect to the workers
-rather than spawn them. This is done with `-x` flag.
-
-```sh
-bqskit-manager -x
-```
 
 ### Spawning a Manager Hierarchy
 
