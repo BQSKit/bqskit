@@ -14,11 +14,11 @@ transparently to the user whenever they instantiate a [`Compiler`](https://bqski
 
 The detached runtime architecture consists of four types of entities:
 
-    1. **Clients** who submit compilation tasks
-    2. A **Server** that acts as a central controller
-    3. **Managers** that manage workers and act as a liaison between the
-       server and workers
-    4. **Workers** that perform the actual computation
+1. **Clients** who submit compilation tasks
+2. A **Server** that acts as a central controller
+3. **Managers** that manage workers and act as a liaison between the
+    server and workers
+4. **Workers** that perform the actual computation
 
 ## Starting a Detached Server
 
@@ -79,7 +79,7 @@ desired.
 While spawning the server, we spawn the lower-level managers first,
 then work our way up until we complete the runtime with a server. The
 lowest-level workers and managers can be spawned the same as above, but now
-we spawn the next-level up managers by passing in the ip address of the
+we spawn the next-level up managers by passing in the IP address of the
 lower-level managers:
 
 ```sh
@@ -101,7 +101,7 @@ runtime in detached mode.
 ## Connecting to and Compiling with a Server
 
 Once a bqskit server has been started in detached mode, we can connect to it
-by simplying passing it's IP address into a `Compiler` constructor or as a
+by simply passing its IP address into a `Compiler` constructor or as a
 keyword argument in the `compile()` method:
 
 ```python
