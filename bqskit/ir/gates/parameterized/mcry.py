@@ -6,11 +6,14 @@ import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from typing import Sequence
+import logging
 
+_logger = logging.getLogger(__name__)
 
 def get_indices(index: int, controlled_qudit, num_qudits):
     # 0 corresponds to MSB
@@ -29,6 +32,7 @@ class MCRYGate(
     QubitGate,
     DifferentiableUnitary,
     CachedClass,
+    LocallyOptimizableUnitary
 ):
     """
     A gate representing a multi-controlled Y rotation.
@@ -106,3 +110,25 @@ class MCRYGate(
             matrix[x1, x2] = -1 * dsin
 
         return UnitaryMatrix(matrix)
+
+
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
+        self.check_env_matrix(env_matrix)
+        thetas = [0] * self.num_params
+
+        _logger.debug()
+
+        for i in range(self.num_params):
+            x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
+            a = np.real(env_matrix[x1, x1] + env_matrix[x2, x2])
+            b = np.real(env_matrix[x2, x1] - env_matrix[x1, x2])
+            theta = 2 * np.arccos(a / np.sqrt(a ** 2 + b ** 2))
+            theta *= -1 if b > 0 else 1
+            thetas[i] = theta
+
+        return thetas

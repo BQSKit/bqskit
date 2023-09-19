@@ -6,6 +6,7 @@ import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
@@ -15,6 +16,7 @@ class MCRZGate(
     QubitGate,
     DifferentiableUnitary,
     CachedClass,
+    LocallyOptimizableUnitary
 ):
     """
     A gate representing a multiplexed Z rotation.
@@ -79,3 +81,32 @@ class MCRZGate(
             matrix[x2, x2] = dneg
 
         return UnitaryMatrix(matrix)
+    
+
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
+        self.check_env_matrix(env_matrix)
+        thetas = [0] * self.num_params
+
+        for i in range(self.num_params):
+            x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
+            # Optimize each RZ independently from indices
+            # Taken from QFACTOR repo
+            a = np.real(env_matrix[x1, x1])
+            b = np.imag(env_matrix[x2, x2])
+            arctan = np.arctan( b / a )
+
+            if a < 0 and b > 0:
+                arctan += np.pi
+            elif a < 0 and b < 0:
+                arctan -= np.pi
+
+            new_theta = -arctan
+            # print(thetas)
+            thetas[i] = new_theta
+            
+        return thetas

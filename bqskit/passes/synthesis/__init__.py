@@ -9,6 +9,7 @@ from bqskit.passes.synthesis.qsearch import QSearchSynthesisPass
 from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.passes.synthesis.target import SetTargetPass
 from bqskit.passes.synthesis.qsd import QSDPass
+from bqskit.passes.synthesis.full_qsd import FullQSDPass
 
 __all__ = [
     'LEAPSynthesisPass',
@@ -18,5 +19,6 @@ __all__ = [
     'SynthesisPass',
     'SetTargetPass',
     'PermutationAwareSynthesisPass',
-    'QSDPass'
+    'QSDPass',
+    'FullQSDPass'
 ]

@@ -50,29 +50,22 @@ class QSDPass(BasePass):
 
     def __init__(
             self,
-            start_from_left: bool = True,
             min_qudit_size: int = 4,
         ) -> None:
             """
             Construct a single level of the QSDPass.
 
             Args:
-                start_from_left (bool): Determines where the scan starts
-                    attempting to remove gates from. If True, scan goes left
-                    to right, otherwise right to left. (Default: True)
-
                 min_qudit_size (int): Performs a decomposition on all gates
                     with widht > min_qudit_size
             """
-
-            self.start_from_left = start_from_left
             self.min_qudit_size = min_qudit_size
 
     @staticmethod
     def create_unitary_gate(u: UnitaryMatrix):
-        gate = ConstantUnitaryGate(u)
-        #  params = np.concatenate((np.real(u).flatten(), np.imag(u).flatten()))
-        params = []
+        gate = VariableUnitaryGate(u.num_qudits)
+        params = np.concatenate((np.real(u).flatten(), np.imag(u).flatten()))
+        # params = []
         return gate, params
 
     @staticmethod
@@ -149,44 +142,43 @@ class QSDPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
-        num_ops = 10
+        # while num_ops > 0:
+        start = time.time()
+        unitaries = []
+        pts = []
+        locations = []
+        num_ops = 0
+        all_ops = list(circuit.operations_with_cycles(reverse=True))
+        # Gather all of the unitaries
+        for cyc, op in all_ops:
+            if op.num_qudits > self.min_qudit_size and not (isinstance(op.gate, MCRYGate) or isinstance(op.gate, MCRZGate)):
+                num_ops += 1
+                unitaries.append(op.get_unitary())
+                pts.append((cyc, op.location[0]))
+                locations.append(op.location)
         
-        while num_ops > 0:
-            start = time.time()
-            unitaries = []
-            pts = []
-            locations = []
-            num_ops = 0
-            all_ops = list(circuit.operations_with_cycles(reverse=True))
-            # Gather all of the unitaries
-            for cyc, op in all_ops:
-                if op.num_qudits > self.min_qudit_size and not (isinstance(op.gate, MCRYGate) or isinstance(op.gate, MCRZGate)):
-                    num_ops += 1
-                    unitaries.append(op.get_unitary())
-                    pts.append((cyc, op.location[0]))
-                    locations.append(op.location)
-            
-            QSDPass.init_time += (time.time() - start)
+        QSDPass.init_time += (time.time() - start)
 
+        start = time.time()
+        if len(unitaries) > 0:
+            # Do a bulk QSDs -> circs
+            circs = await get_runtime().map(QSDPass.qsd, unitaries)
+            # Do bulk replace (single threaded)
+            circ_gates = [CircuitGate(x) for x in circs]
+            circ_ops = [Operation(x, locations[i], x._circuit.params) for i,x in enumerate(circ_gates)]
+            circuit.batch_replace(pts, circ_ops)
+            # circuit.replace_with_circuit(pts[0], circ_ops[0])
+            circuit.unfold_all()
 
-            start = time.time()
-            if len(unitaries) > 0:
-                # Do a bulk QSDs -> circs
-                circs = await get_runtime().map(QSDPass.qsd, unitaries)
-                # Do bulk replace (single threaded)
-                circ_gates = [CircuitGate(x) for x in circs]
-                circ_ops = [Operation(x, locations[i], x._circuit.params) for i,x in enumerate(circ_gates)]
-                circuit.batch_replace(pts, circ_ops)
-                # circuit.replace_with_circuit(pts[0], circ_ops[0])
-                circuit.unfold_all()
+        QSDPass.replace_time += (time.time() - start)
 
-            QSDPass.replace_time += (time.time() - start)
-
-        print(f"Init Time: {QSDPass.init_time}")
-        print(f"CS Time: {QSDPass.cs_time}")
-        print(f"Schur Time: {QSDPass.schur_time}")
-        print(f"Create Circ Time: {QSDPass.create_circ_time}")
-        print(f"Append Circ Time: {QSDPass.append_circ_time}")
-        print(f"Replace Time: {QSDPass.replace_time}")
+        # print(f"Init Time: {QSDPass.init_time}")
+        # print(f"CS Time: {QSDPass.cs_time}")
+        # print(f"Schur Time: {QSDPass.schur_time}")
+        # print(f"Create Circ Time: {QSDPass.create_circ_time}")
+        # print(f"Append Circ Time: {QSDPass.append_circ_time}")
+        # print(f"Replace Time: {QSDPass.replace_time}")
 
         circuit.unfold_all()
+
+        _logger.debug(f"Running Scanning gate removal on circuit with {circuit.gate_counts}")
