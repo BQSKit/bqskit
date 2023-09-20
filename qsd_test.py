@@ -1,5 +1,6 @@
 from bqskit.passes import FullQSDPass
 from bqskit import Circuit
+from bqskit.ir.operation import Operation
 from bqskit.ir.gates import *
 import numpy.random as rand
 import numpy as np
@@ -14,11 +15,14 @@ enable_logging(True)
 
 # Let's create a random 4-qubit unitary to synthesize and add it to a
 # circuit.
-circuit = Circuit.from_unitary(UnitaryMatrix.random(3))
+start_num = 7
+end_num = 2
+
+circuit = Circuit.from_unitary(UnitaryMatrix.random(start_num))
 
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
-    FullQSDPass(min_qudit_size=2),
+    FullQSDPass(min_qudit_size=end_num),
 ]
 
 start = time.time()
@@ -34,12 +38,12 @@ with Compiler(num_workers=1) as compiler:
 
 # QSDPass(min_qudit_size=2).run(circuit, None)
 
-np.set_printoptions(threshold=np.inf, linewidth=np.inf, precision=3)
-for cycle, op in compiled_circuit.operations_with_cycles():
-    print(op.get_unitary())
+# np.set_printoptions(threshold=np.inf, linewidth=np.inf, precision=3)
+# for cycle, op in compiled_circuit.operations_with_cycles():
+#     print(op.get_unitary())
 
-utry_1 = circuit.get_unitary()
-utry_2 = compiled_circuit.get_unitary()
+utry_1 = compiled_circuit.get_unitary()
+utry_2 = circuit.get_unitary()
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 # print(utry_1)
