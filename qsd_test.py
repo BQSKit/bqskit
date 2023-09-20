@@ -28,7 +28,7 @@ with Compiler(num_workers=1) as compiler:
     start = time.time()
     compiled_circuit = compiler.compile(circuit, workflow)
     print(time.time() - start)
-    # print(compiled_circuit.gate_counts)
+    print(compiled_circuit.gate_counts)
 
 # For debugging
 

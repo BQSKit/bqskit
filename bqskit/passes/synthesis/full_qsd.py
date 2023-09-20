@@ -31,6 +31,7 @@ from bqskit.passes.control import IfThenElsePass
 from bqskit.passes.partitioning import ScanPartitioner
 from bqskit.passes.synthesis import QSDPass
 from bqskit.passes.control import ChangePredicate
+from bqskit.passes.control import ManyQuditGatesPredicate
 
 _logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class FullQSDPass(PassAlias):
     def __init__(
             self,
             start_from_left: bool = True,
-            min_qudit_size: int = 4,
+            min_qudit_size: int = 2,
             instantiation_options = {},
         ) -> None:
             """
@@ -83,7 +84,7 @@ class FullQSDPass(PassAlias):
             qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.passes: list[BasePass] = [
                 WhileLoopPass(
-                    ChangePredicate(),
+                    ManyQuditGatesPredicate(check_circuit=True, check_model=False),
                     [qsd, scan]
                 ),
             ]
