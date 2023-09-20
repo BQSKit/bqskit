@@ -80,12 +80,12 @@ class FullQSDPass(PassAlias):
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
             instantiation_options.update(instantiation_options)
-            scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
+            # scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
             qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.passes: list[BasePass] = [
                 WhileLoopPass(
-                    ManyQuditGatesPredicate(check_circuit=True, check_model=False),
-                    [qsd, scan]
+                    ChangePredicate(),
+                    [qsd]
                 ),
             ]
 

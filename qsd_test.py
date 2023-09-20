@@ -14,7 +14,7 @@ enable_logging(True)
 
 # Let's create a random 4-qubit unitary to synthesize and add it to a
 # circuit.
-circuit = Circuit.from_unitary(UnitaryMatrix.random(5))
+circuit = Circuit.from_unitary(UnitaryMatrix.random(3))
 
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
@@ -33,6 +33,10 @@ with Compiler(num_workers=1) as compiler:
 # For debugging
 
 # QSDPass(min_qudit_size=2).run(circuit, None)
+
+np.set_printoptions(threshold=np.inf, linewidth=np.inf, precision=3)
+for cycle, op in compiled_circuit.operations_with_cycles():
+    print(op.get_unitary())
 
 utry_1 = circuit.get_unitary()
 utry_2 = compiled_circuit.get_unitary()
