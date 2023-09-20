@@ -261,11 +261,31 @@ class QSearchSynthesisPass(SynthesisPass):
         cDecompose.Start_Decomposition()
         qubitnum=math.floor(math.log2(utry.__len__()))
         if qubitnum > 2 :
+            #try with qiskit
+            from squander import utils
+
+            quantum_circuit = cDecompose.get_Quantum_Circuit()
+            decomposed_matrix_qskit = utils.get_unitary_from_qiskit_circuit( quantum_circuit )
+            product_matrix_qskit = np.dot(Umtx,decomposed_matrix_qskit.conj().T)
+            phase_qskit = np.angle(product_matrix_qskit[0,0])
+            product_matrix_qskit = product_matrix_qskit*np.exp(-1j*phase_qskit)
+            shape_qskit=np.shape(product_matrix_qskit)
+            product_matrix_qskit = np.eye(8)*2 - product_matrix_qskit - product_matrix_qskit.conj().T
+            # the error of the decomposition
+            decomposition_error_qskit = (np.real(np.trace(product_matrix_qskit)))/2
+       
+            print('The error of the decomposition in qskit is' + str(decomposition_error_qskit,))
+            
+            
+            
             Circuit2=self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
             Unitarymatrix_bqskit=Circuit.get_unitary(Circuit2)	
             import numpy.linalg as LA
             product_matrix = np.dot(Umtx,Unitarymatrix_bqskit.conj().T)
             phase = np.angle(product_matrix[0,0])
+            product_matrix = product_matrix*np.exp(-1j*phase)
+            shape=np.shape(product_matrix)
+            product_matrix = np.eye(shape[0])*2 - product_matrix - product_matrix.conj().T
             decomposition_error = (np.real(np.trace(product_matrix)))/2
             print('\n\n\nThe error of the decomposition is ' + str(decomposition_error),"\n\n\n ")	
         
