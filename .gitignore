@@ -15,3 +15,10 @@ dask-worker-space
 dist
 build
 scratch/
+
+**/*.txt
+**/*.qasm
+**/*.data
+**/*.pickle
+**/job*.sh
+**/test.log
