@@ -1,5 +1,6 @@
 from bqskit.passes import FullQSDPass
 from bqskit import Circuit
+from bqskit.ir.operation import Operation
 from bqskit.ir.gates import *
 import numpy.random as rand
 import numpy as np
@@ -10,6 +11,7 @@ import time
 from bqskit import enable_logging
 from bqskitgpu.qfactor_jax import QFactor_jax
 import logging
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 
 # QFactor hyperparameters - 
 # see intantiation example for more detiles on the parameters
@@ -42,7 +44,7 @@ instantiate_options={
 'multistarts': num_multistarts,
 }
 
-enable_logging(True)
+# enable_logging(True)
 
 # Let's create a random 4-qubit unitary to synthesize and add it to a
 # circuit.
@@ -66,8 +68,15 @@ with Compiler(num_workers=amount_of_workers, runtime_log_level=logging.INFO) as 
 
 # QSDPass(min_qudit_size=2).run(circuit, None)
 
-utry_1 = circuit.get_unitary()
-utry_2 = compiled_circuit.get_unitary()
+# np.set_printoptions(threshold=np.inf, linewidth=np.inf, precision=3)
+# for cycle, op in compiled_circuit.operations_with_cycles():
+#     print(op.get_unitary())
+
+utry_1 = compiled_circuit.get_unitary()
+utry_2 = circuit.get_unitary()
+
+cost_function = HilbertSchmidtResidualsGenerator()
+print(cost_function(compiled_circuit, circuit.get_unitary()))
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 # print(utry_1)

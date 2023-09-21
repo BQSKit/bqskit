@@ -121,8 +121,6 @@ class MCRYGate(
         self.check_env_matrix(env_matrix)
         thetas = [0] * self.num_params
 
-        _logger.debug()
-
         for i in range(self.num_params):
             x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
             a = np.real(env_matrix[x1, x1] + env_matrix[x2, x2])

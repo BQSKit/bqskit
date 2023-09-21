@@ -84,7 +84,7 @@ class FullQSDPass(PassAlias):
             qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.passes: list[BasePass] = [
                 WhileLoopPass(
-                    ManyQuditGatesPredicate(check_circuit=True, check_model=False),
+                    ChangePredicate(),
                     [qsd, scan]
                 ),
             ]
