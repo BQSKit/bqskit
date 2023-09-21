@@ -130,3 +130,9 @@ class MCRYGate(
             thetas[i] = theta
 
         return thetas
+    
+    @property
+    def name(self) -> str:
+        """The name of this gate."""
+        base_name = getattr(self, '_name', self.__class__.__name__)
+        return f"{base_name}_{self.num_qudits}"
