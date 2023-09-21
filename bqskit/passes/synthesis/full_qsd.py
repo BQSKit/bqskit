@@ -62,7 +62,7 @@ class FullQSDPass(PassAlias):
             self,
             start_from_left: bool = True,
             min_qudit_size: int = 2,
-            instantiation_options = {},
+            instantiate_options = {},
         ) -> None:
             """
             Construct a single level of the QSDPass.
@@ -79,7 +79,7 @@ class FullQSDPass(PassAlias):
             self.start_from_left = start_from_left
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
-            instantiation_options.update(instantiation_options)
+            instantiation_options.update(instantiate_options)
             scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
             qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.passes: list[BasePass] = [

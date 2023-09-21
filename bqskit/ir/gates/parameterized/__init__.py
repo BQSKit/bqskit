@@ -10,6 +10,8 @@ from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
 from bqskit.ir.gates.parameterized.mcry import MCRYGate
 from bqskit.ir.gates.parameterized.mcrz import MCRZGate
+from bqskit.ir.gates.parameterized.mcry_acc import MCRYAccGate
+from bqskit.ir.gates.parameterized.mcrz_acc import MCRZAccGate
 from bqskit.ir.gates.parameterized.cun import CUNGate
 from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
@@ -58,4 +60,9 @@ __all__ = [
     'U3Gate',
     'U8Gate',
     'VariableUnitaryGate',
+    'MCRYGate',
+    'MCRZGate',
+    'MCRYAccGate',
+    'MCRZAccGate',
+    'CUNGate'
 ]
