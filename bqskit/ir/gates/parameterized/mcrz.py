@@ -96,17 +96,10 @@ class MCRZGate(
             x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
             # Optimize each RZ independently from indices
             # Taken from QFACTOR repo
-            a = np.real(env_matrix[x1, x1])
-            b = np.imag(env_matrix[x2, x2])
-            arctan = np.arctan( b / a )
-
-            if a < 0 and b > 0:
-                arctan += np.pi
-            elif a < 0 and b < 0:
-                arctan -= np.pi
-
-            new_theta = -arctan
+            a = np.angle(env_matrix[x1, x1])
+            b = np.angle(env_matrix[x2, x2])
+            new_theta = a - b
             # print(thetas)
-            thetas[i] = new_theta
+            thetas[i] = -1 * new_theta
             
         return thetas

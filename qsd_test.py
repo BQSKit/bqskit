@@ -9,16 +9,21 @@ from bqskit.qis import UnitaryMatrix
 from bqskit.compiler import Compiler
 import time
 from bqskit import enable_logging
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 
 
-enable_logging(True)
+# enable_logging(True)
 
 # Let's create a random 4-qubit unitary to synthesize and add it to a
 # circuit.
-start_num = 7
+start_num = 4
 end_num = 2
 
-circuit = Circuit.from_unitary(UnitaryMatrix.random(start_num))
+circuit = Circuit(num_qudits=start_num)
+for _ in range(2):
+    circ = Circuit.from_unitary(UnitaryMatrix.random(start_num))
+    # circ.append_gate(CNOTGate(), (0,2))
+    circuit.append_circuit(circ, list(range(start_num)))
 
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
@@ -28,7 +33,7 @@ workflow = [
 start = time.time()
 
 # Finally let's create create the compiler and execute the CompilationTask.
-with Compiler(num_workers=1) as compiler:
+with Compiler() as compiler:
     start = time.time()
     compiled_circuit = compiler.compile(circuit, workflow)
     print(time.time() - start)
@@ -44,6 +49,9 @@ with Compiler(num_workers=1) as compiler:
 
 utry_1 = compiled_circuit.get_unitary()
 utry_2 = circuit.get_unitary()
+
+cost_function = HilbertSchmidtResidualsGenerator()
+print(cost_function(compiled_circuit, circuit.get_unitary()))
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 # print(utry_1)
