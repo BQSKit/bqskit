@@ -12,16 +12,20 @@ from bqskit import enable_logging
 from bqskitgpu.qfactor_jax import QFactor_jax
 import logging
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
+import jax.config as config
+
+
+config.update("jax_enable_x64",True)
 
 # QFactor hyperparameters - 
 # see intantiation example for more detiles on the parameters
-amount_of_workers = 10
+amount_of_workers = 1
 num_multistarts = 32
 max_iters = 100000
 min_iters = 3
 diff_tol_r = 1e-5
 diff_tol_a = 0.0
-dist_tol = 1e-10
+dist_tol = 1e-8
 
 diff_tol_step_r = 0.1
 diff_tol_step = 200
@@ -43,12 +47,18 @@ instantiate_options={
 'method': batched_instantiation,
 'multistarts': num_multistarts,
 }
+# instantiate_options = {}
 
 # enable_logging(True)
 
 # Let's create a random 4-qubit unitary to synthesize and add it to a
 # circuit.
-circuit = Circuit.from_unitary(UnitaryMatrix.random(4))
+circuit = Circuit(3)
+for _ in range(3):
+    circ = Circuit.from_unitary(UnitaryMatrix.random(3))
+    circuit.append_circuit(circ, list(range(3)))
+
+print(circuit.gate_counts)
 
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [

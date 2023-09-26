@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import jax.numpy as jnp
+import numpy as np
+import jax.random as rand
 import jax.scipy.linalg as jla
 import numpy.typing as npt
+import jax.typing as jpt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -46,11 +49,15 @@ class MCRYAccGate(
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrixJax:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
+        if len(params) == 0: # Random parameters
+            params = rand.uniform(rand.PRNGKey(23), shape=(self.num_params,))
+
         if len(params) == 1:
             # If we want to turn on only if all the selects are 1, that corresponds to
             # [0, 0, ...., 0, theta] so that is why we pad in front
             params = list(jnp.zeros(len(params) - self.num_params)) + list(params)
 
+        params = jnp.array(params)
         cos = jnp.cos(params / 2)
         sin = jnp.sin(params / 2)
         zeros = jnp.zeros(len(params))
@@ -66,16 +73,21 @@ class MCRYAccGate(
 
         return UnitaryMatrixJax(matrix)
 
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[jnp.complex128]:
+    def get_grad(self, params: RealVector = []) -> jpt.NDArray[jnp.complex128]:
         """
         Return the gradient for this gate.
 
         See :class:`DifferentiableUnitary` for more info.
         """
+        if len(params) == 0:
+            # params = rand.uniform(rand.PRNGKey(23), shape=(self.num_params,))
+            params = jnp.zeros((len(params),)) 
+
         if len(params) < self.num_params:
             # Pad Zeros to front
             params = list(jnp.zeros(len(params) - self.num_params)) + list(params)
 
+        params = jnp.array(params)
         dcos = -jnp.sin(params / 2) / 2
         dsin = -1j * jnp.cos(params / 2) / 2
         zeros = jnp.zeros(len(params))
@@ -92,7 +104,7 @@ class MCRYAccGate(
         return UnitaryMatrixJax(matrix)
 
 
-    def optimize(self, env_matrix: npt.NDArray[jnp.complex128]) -> list[float]:
+    def optimize(self, env_matrix: jpt.NDArray[jnp.complex128], get_untry=False, prev_utry: UnitaryMatrixJax = None, beta: float = 0.0) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
 
@@ -105,6 +117,8 @@ class MCRYAccGate(
         a = jnp.real(diag[0::2] + diag[1::2])
         b = jnp.real(down_diag - up_diag)[0::2]
         thetas = 2 * jnp.arccos(a / jnp.sqrt(a ** 2 + b ** 2))
+        if get_untry:
+            return self.get_unitary(thetas)
         return thetas
     
     @property
@@ -112,3 +126,10 @@ class MCRYAccGate(
         """The name of this gate."""
         base_name = getattr(self, '_name', self.__class__.__name__)
         return f"{base_name}_{self.num_qudits}"
+    
+    @staticmethod
+    def get_params(utry: jpt.NDArray[jnp.complex128]) -> RealVector:
+        """Return the params for this gate, given a unitary matrix."""
+        diag = jnp.diag(utry)
+        a = jnp.arccos(diag[0::2]) * 2
+        return list(np.array(a, dtype=np.float64))

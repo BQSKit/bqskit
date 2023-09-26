@@ -23,7 +23,7 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
-from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
+from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.lang import get_language
@@ -47,6 +47,7 @@ from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
+from bqskitgpu.unitarybuilderjax import UnitaryBuilderJax
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.random import seed_random_sources
@@ -3195,8 +3196,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Construct a circuit from a single unitary."""
         utry = UnitaryMatrix(utry)
         circuit = Circuit(utry.num_qudits, utry.radixes)
+        params = np.concatenate((np.real(utry._utry).flatten(), np.imag(utry._utry).flatten()))
         circuit.append_gate(
-            ConstantUnitaryGate(utry), list(range(utry.num_qudits)),
+            VariableUnitaryGate(utry.num_qudits), list(range(utry.num_qudits)), params
         )
         return circuit
 
