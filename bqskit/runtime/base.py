@@ -332,10 +332,10 @@ class ServerBase:
         self.num_idle_workers = num_workers
         self.logger.info(f'Node has connected to {num_workers} workers.')
 
-    def listen_once(self, port: int) -> Connection:
-        """Listen on `port` for a connection and return on first one."""
+    def listen_once(self, ip: str, port: int) -> Connection:
+        """Listen on `ip`:`port` for a connection and return on first one."""
         family = 'AF_INET' if sys.platform == 'win32' else None
-        listener = Listener(('0.0.0.0', port), family)
+        listener = Listener((ip, port), family)
         conn = listener.accept()
         listener.close()
         return conn

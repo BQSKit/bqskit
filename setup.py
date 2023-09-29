@@ -65,7 +65,7 @@ setup(
     },
     packages=find_packages(exclude=['examples*', 'test*']),
     install_requires=[
-        'bqskitrs>=0.4.0rc5',
+        'bqskitrs>=0.4.0',
         'lark-parser',
         'numpy>=1.22.0',
         'scipy>=1.8.0',

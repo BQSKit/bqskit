@@ -74,6 +74,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             ...         [1, 0],
             ...     ],
             ... )  # Creates a single-qubit Pauli X unitary matrix.
+            array([[0.+0.j, 1.+0.j],
+                   [1.+0.j, 0.+0.j]])
         """
 
         # Stop any actual logic when building documentation

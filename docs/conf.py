@@ -92,7 +92,6 @@ napoleon_preprocess_types = True
 napoleon_use_rtype = True
 myst_enable_extensions = ['dollarmath', 'amsmath']
 autodoc_mock_imports = [
-    'bqskitrs',
     'scipy',
     'numpy',
     'qiskit',

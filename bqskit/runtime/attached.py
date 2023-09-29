@@ -63,7 +63,7 @@ class AttachedServer(DetachedServer):
         self.spawn_workers(num_workers, worker_port)
 
         # Connect to client
-        client_conn = self.listen_once(port)
+        client_conn = self.listen_once('localhost', port)
         self.clients[client_conn] = set()
         self.sel.register(
             client_conn,

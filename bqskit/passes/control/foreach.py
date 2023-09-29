@@ -358,11 +358,11 @@ def _less_than_fn_respecting(
     if isinstance(old.gate, CircuitGate):
         if not _is_respecting(old.gate._circuit, old.location, model):
             if not _is_respecting(new, old.location, model):
-                _logger.warning("New circuit doesn't respect model.")
+                _logger.debug("New block doesn't respect model.")
             return True
 
         if not _is_respecting(new, old.location, model):
-            _logger.warning("New circuit doesn't respect model.")
+            _logger.debug("New block doesn't respect model.")
             return False
 
     return fn(new, old)
@@ -379,11 +379,11 @@ def _less_than_fn_respecting_fully(
     if isinstance(old.gate, CircuitGate):
         if not _is_respecting(old.gate._circuit, old.location, model, True):
             if not _is_respecting(new, old.location, model, True):
-                _logger.warning("New circuit doesn't respect model.")
+                _logger.debug("New block doesn't respect model.")
             return True
 
         if not _is_respecting(new, old.location, model, True):
-            _logger.warning("New circuit doesn't respect model.")
+            _logger.debug("New block doesn't respect model.")
             return False
 
     return fn(new, old)
