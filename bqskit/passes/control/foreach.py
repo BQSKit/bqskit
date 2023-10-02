@@ -505,3 +505,15 @@ def gen_replace_filter(method: str, model: MachineModel) -> ReplaceFilterFn:
 
 
 ReplaceFilterFn = Callable[[Circuit, Operation], bool]
+
+
+class ClearAllBlockData(BasePass):
+    """Clear all block data and passed down data from the pass data."""
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """Perform the pass's operation, see :class:`BasePass` for more."""
+        for key in list(data.keys()):
+            if key.startswith(ForEachBlockPass.key):
+                del data[key]
+            elif key.startswith(ForEachBlockPass.pass_down_key_prefix):
+                del data[key]
