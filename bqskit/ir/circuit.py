@@ -1035,12 +1035,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         raise ValueError('No such operation exists in the circuit.')
 
-    def append(self, op: Operation) -> None:
+    def append(self, op: Operation) -> int:
         """
-        Append `op` to the end of the circuit.
+        Append `op` to the end of the circuit and return its cycle index.
 
         Args:
             op (Operation): The operation to append.
+
+        Returns:
+            int: The cycle index of the appended operation.
 
         Raises:
             ValueError: If `op` cannot be placed on the circuit due to
@@ -1093,12 +1096,14 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self._gate_info[op.gate] = 0
         self._gate_info[op.gate] += 1
 
+        return cycle_index
+
     def append_gate(
         self,
         gate: Gate,
         location: CircuitLocationLike,
         params: RealVector = [],
-    ) -> None:
+    ) -> int:
         """
         Append the gate object to the circuit on the qudits in location.
 
@@ -1110,6 +1115,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             params (RealVector): The gate's parameters.
                 (Default: all zeros)
 
+        Returns:
+            int: The cycle index of the appended gate.
+
         Examples:
             >>> from bqskit.ir.gates import HGate
             >>> circ = Circuit(1)
@@ -1119,7 +1127,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         See Also:
             :func:`append`
         """
-        self.append(Operation(gate, location, params))
+        return self.append(Operation(gate, location, params))
 
     def append_circuit(
         self,
@@ -1127,7 +1135,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         location: CircuitLocationLike,
         as_circuit_gate: bool = False,
         move: bool = False,
-    ) -> None:
+    ) -> int:
         """
         Append `circuit` at the qudit location specified.
 
@@ -1142,6 +1150,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             move (bool): Move circuit into circuit gate rather than copy.
                 (Default: False)
+
+        Returns:
+            int: The starting cycle index of the appended circuit.
 
         Raises:
             ValueError: If `circuit` is not the same size as `location`.
@@ -1165,12 +1176,19 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         if as_circuit_gate:
             op = Operation(CircuitGate(circuit, move), location, circuit.params)
-            self.append(op)
-            return
+            return self.append(op)
 
+        cycle_index: int | None = None
         for op in circuit:
             mapped_location = [location[q] for q in op.location]
-            self.append(Operation(op.gate, mapped_location, op.params))
+            ci = self.append(Operation(op.gate, mapped_location, op.params))
+            if cycle_index is None:
+                cycle_index = ci
+
+        if cycle_index is None:
+            raise RuntimeError('Cannot append empty circuit.')
+
+        return cycle_index
 
     def extend(self, ops: Iterable[Operation]) -> None:
         """
