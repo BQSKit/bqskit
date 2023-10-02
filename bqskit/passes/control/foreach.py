@@ -235,8 +235,7 @@ class ForEachBlockPass(BasePass):
                 block_data['replaced'] = True
 
                 # Calculate Error
-                if self.calculate_error_bound:
-                    error_sum += block_data.error
+                error_sum += block_data.error
             else:
                 block_data['replaced'] = False
 
@@ -247,8 +246,8 @@ class ForEachBlockPass(BasePass):
         data[self.key].append(completed_block_datas)
 
         # Record error
+        data.update_error_mul(error_sum)
         if self.calculate_error_bound:
-            data.error = (1 - ((1 - data.error) * (1 - error_sum)))
             _logger.debug(f'New circuit error is {data.error}.')
 
 
