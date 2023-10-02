@@ -1,7 +1,9 @@
-from bqskit.ir.circuit import Circuit
-from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.compiler import Compiler
+from __future__ import annotations
+
 from bqskit.compiler.compile import build_seqpam_mapping_optimization_workflow
+from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.machine import MachineModel
+from bqskit.ir.circuit import Circuit
 from bqskit.passes import SetModelPass
 from bqskit.qis.permutation import PermutationMatrix
 

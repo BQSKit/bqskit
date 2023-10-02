@@ -1,7 +1,10 @@
 """This module implements the PAMVerificationSequence and helper passes."""
+from __future__ import annotations
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.passes.alias import PassAlias
 from bqskit.passes.control.foreach import ForEachBlockPass
@@ -11,7 +14,6 @@ from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.utils.typing import is_integer
-from bqskit.ir.gates import TaggedGate
 
 
 class TagPAMBlockDataPass(BasePass):
@@ -21,7 +23,7 @@ class TagPAMBlockDataPass(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         if PAMRoutingPass.out_data_key not in data:
             raise RuntimeError('PAMRoutingPass must be run to verify results.')
-        
+
         block_datas: PAMBlockResultDict = data[PAMRoutingPass.out_data_key]
         for block_point, block_data in block_datas.items():
             op = circuit[block_point]
@@ -30,9 +32,9 @@ class TagPAMBlockDataPass(BasePass):
                 block_point,
                 tagged_gate,
                 op.location,
-                op.params
+                op.params,
             )
-        
+
         del data[PAMRoutingPass.out_data_key]
 
 
@@ -49,7 +51,7 @@ class CalculatePAMErrorsPass(BasePass):
         for op in circuit:
             if not isinstance(op.gate, TaggedGate):
                 raise RuntimeError('Expected tagged gate.')
-            
+
             pi = op.gate.tag['pre_perm']
             pf = op.gate.tag['post_perm']
             in_utry = op.gate.tag['original_utry']
@@ -74,12 +76,12 @@ class UnTagPAMBlockDataPass(BasePass):
         for cycle, op in circuit.operations_with_cycles():
             if not isinstance(op.gate, TaggedGate):
                 raise RuntimeError('Expected tagged gate.')
-            
+
             circuit.replace_gate(
                 (cycle, op.location[0]),
                 op.gate.gate,
                 op.location,
-                op.params
+                op.params,
             )
 
 
@@ -96,12 +98,12 @@ class PAMVerificationSequence(PassAlias):
         """
         if not is_integer(error_sim_size):
             raise TypeError(f'Expected integer, got {type(error_sim_size)}.')
-        
+
         if error_sim_size < 2:
             raise ValueError('Expected positive integer greater than 1.')
-        
+
         self.error_sim_size = error_sim_size
-    
+
     def get_passes(self) -> list[BasePass]:
         """Return the aliased passes, see :class:`PassAlias` for more info."""
         return [
@@ -111,4 +113,3 @@ class PAMVerificationSequence(PassAlias):
             UnfoldPass(),
             UnTagPAMBlockDataPass(),
         ]
-
