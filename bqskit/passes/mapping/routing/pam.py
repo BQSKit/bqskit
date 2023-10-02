@@ -16,6 +16,9 @@ _logger = logging.getLogger(__name__)
 
 
 class PAMRoutingPass(PermutationAwareMappingAlgorithm, BasePass):
+
+    out_data_key = '_pam_routing_block_out_data'
+
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         model = self.get_model(circuit, data)
@@ -35,8 +38,9 @@ class PAMRoutingPass(PermutationAwareMappingAlgorithm, BasePass):
         else:
             pi = [i for i in range(circuit.num_qudits)]
 
-        self.forward_pass(circuit, pi, subgraph, perm_data, modify_circuit=True)
+        out_data = self.forward_pass(circuit, pi, subgraph, perm_data, True)
         if 'final_mapping' in data:
             self._apply_perm(data['final_mapping'], pi)
         data['final_mapping'] = pi
         _logger.info(f'Finished routing with layout: {str(pi)}')
+        data[self.out_data_key] = out_data

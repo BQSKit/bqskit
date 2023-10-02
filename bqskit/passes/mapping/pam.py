@@ -4,8 +4,11 @@ from __future__ import annotations
 import itertools as it
 import logging
 from typing import Dict
+from typing import Literal
+from typing import overload
 from typing import Sequence
 from typing import Tuple
+from typing import TypedDict
 
 import numpy as np
 
@@ -14,12 +17,22 @@ from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.mapping.sabre import GeneralizedSabreAlgorithm
 from bqskit.qis.graph import CouplingGraph
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 _logger = logging.getLogger(__name__)
 
 
 PAMBlockPermData = Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], Circuit]
 PAMBlockTAPermData = Dict[CouplingGraph, PAMBlockPermData]
+
+
+class PAMBlockResultData(TypedDict):
+    pre_perm: tuple[int, ...]
+    post_perm: tuple[int, ...]
+    original_utry: UnitaryMatrix
+
+
+PAMBlockResultDict = Dict[CircuitPoint, PAMBlockResultData]
 
 
 class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
@@ -72,6 +85,28 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
             extended_set_weight,
         )
 
+    @overload  # type: ignore
+    def forward_pass(
+        self,
+        circuit: Circuit,
+        pi: list[int],
+        cg: CouplingGraph,
+        perm_data: dict[CircuitPoint, PAMBlockTAPermData],
+        modify_circuit: Literal[False] = False,
+    ) -> None:
+        ...
+
+    @overload
+    def forward_pass(
+        self,
+        circuit: Circuit,
+        pi: list[int],
+        cg: CouplingGraph,
+        perm_data: dict[CircuitPoint, PAMBlockTAPermData],
+        modify_circuit: Literal[True],
+    ) -> PAMBlockResultDict:
+        ...
+
     def forward_pass(  # type: ignore
         self,
         circuit: Circuit,
@@ -79,7 +114,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         cg: CouplingGraph,
         perm_data: dict[CircuitPoint, PAMBlockTAPermData],
         modify_circuit: bool = False,
-    ) -> None:
+    ) -> PAMBlockResultDict | None:
         """
         Apply a forward pass of the PAM algorithm to `pi`.
 
@@ -109,6 +144,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
         if modify_circuit:
             mapped_circuit = Circuit(circuit.num_qudits, circuit.radixes)
+            out_data: PAMBlockResultDict = {}
 
         # Main Loop
         while len(F) > 0:
@@ -154,11 +190,17 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
                     if modify_circuit:
                         physical_location = [pi[q] for q in op.location]
-                        mapped_circuit.append_circuit(
+                        cycle = mapped_circuit.append_circuit(
                             circ,
                             physical_location,
                             True,
                         )
+                        new_point = CircuitPoint(cycle, physical_location[0])
+                        out_data[new_point] = {
+                            'pre_perm': self._global_to_local_perm(p1),
+                            'post_perm': self._global_to_local_perm(p2),
+                            'original_utry': op.get_unitary(),
+                        }
 
                     self._apply_perm(p2, pi)
 
@@ -213,6 +255,12 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
         if modify_circuit:
             circuit.become(mapped_circuit)
+            return out_data
+
+    def _global_to_local_perm(self, gperm: Sequence[int]) -> tuple[int, ...]:
+        """Return the local permutation from a global permutation."""
+        global_to_local_map = {q: i for i, q in enumerate(sorted(gperm))}
+        return tuple(global_to_local_map[i] for i in gperm)
 
     def _get_best_perm(
         self,
