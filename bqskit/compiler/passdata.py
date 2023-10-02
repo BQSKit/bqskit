@@ -262,3 +262,7 @@ class PassData(MutableMapping[str, Any]):
             self._placement = copy.copy(other._placement)
             self._data = copy.copy(other._data)
             self._seed = copy.copy(other._seed)
+
+    def update_error_mul(self, error: float) -> None:
+        """Update the error multiplicatively."""
+        self.error = (1 - ((1 - self.error) * (1 - error)))
