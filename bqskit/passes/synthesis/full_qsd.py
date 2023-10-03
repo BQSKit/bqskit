@@ -1,37 +1,17 @@
 """This module implements the Quantum Shannon Decomposition for one level."""
 from __future__ import annotations
 
-import copy
 import logging
-from typing import Any
-from typing import Sequence
+
+from bqskit.compiler.basepass import BasePass
 
 from bqskit.compiler.passdata import PassData
-from bqskit.compiler.basepass import BasePass
-from bqskit.ir.operation import Operation
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.parameterized.mcry import MCRYGate
-from bqskit.ir.gates.parameterized.mcrz import MCRZGate
-from bqskit.ir.gates.parameterized.cun import CUNGate
-from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
-from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
-from bqskit.ir.location import CircuitLocation
-from bqskit.ir.gates import CircuitGate
-from bqskit.runtime import get_runtime
-from scipy.linalg import cossin, diagsvd, schur
-import numpy as np
-import time
+from bqskit.compiler.workflow import Workflow
 from bqskit.passes.alias import PassAlias
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
-from bqskit.passes.control import WhileLoopPass
-from bqskit.passes.control import WidthPredicate
-from bqskit.passes.control import ForEachBlockPass
-from bqskit.passes.control import IfThenElsePass
-from bqskit.passes.partitioning import ScanPartitioner
-from bqskit.passes.synthesis import QSDPass
-from bqskit.passes.control import ChangePredicate
-from bqskit.passes.control import ManyQuditGatesPredicate
+from bqskit.passes.synthesis.qsd import QSDPass
+from bqskit.passes.synthesis.mgdp import MGDPass
+from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
 
@@ -80,15 +60,23 @@ class FullQSDPass(PassAlias):
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
             instantiation_options.update(instantiate_options)
-            scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
-            qsd = QSDPass(min_qudit_size=min_qudit_size)
-            self.passes: list[BasePass] = [
-                WhileLoopPass(
-                    ChangePredicate(),
-                    [qsd, scan]
-                ),
-            ]
+            self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
+            self.qsd = QSDPass(min_qudit_size=min_qudit_size)
+            self.mgd = MGDPass()
 
     def get_passes(self) -> list[BasePass]:
-        """Return the passes to be run, see :class:`PassAlias` for more."""
-        return self.passes
+          return super().get_passes()
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """Perform the pass's operation, see :class:`BasePass` for more."""
+        passes = []
+        start_num = max(x.num_qudits for x in circuit.operations())
+        for _ in range(self.min_qudit_size, start_num):
+                passes.append(self.qsd)
+                passes.append(self.scan)
+
+        for _ in range(1, start_num):
+              passes.append(self.mgd)
+              passes.append(self.scan)
+
+        await Workflow(passes).run(circuit, data)

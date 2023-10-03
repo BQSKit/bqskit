@@ -47,7 +47,6 @@ from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
-from bqskitgpu.unitarybuilderjax import UnitaryBuilderJax
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.random import seed_random_sources

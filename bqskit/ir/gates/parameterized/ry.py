@@ -75,6 +75,7 @@ class RYGate(
 
         See :class:`LocallyOptimizableUnitary` for more info.
         """
+        print("Using Python optimization")
         self.check_env_matrix(env_matrix)
         a = np.real(env_matrix[0, 0] + env_matrix[1, 1])
         b = np.real(env_matrix[1, 0] - env_matrix[0, 1])

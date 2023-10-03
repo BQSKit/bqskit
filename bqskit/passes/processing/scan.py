@@ -12,6 +12,8 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.utils.typing import is_real_number
+import time
+
 _logger = logging.getLogger(__name__)
 
 
@@ -21,6 +23,8 @@ class ScanningGateRemovalPass(BasePass):
 
     Starting from one side of the circuit, attempt to remove gates one-by-one.
     """
+
+    instantiation_time = 0
 
     def __init__(
         self,
@@ -126,13 +130,16 @@ class ScanningGateRemovalPass(BasePass):
                 cycle -= idx_shift
 
             working_copy.pop((cycle, op.location[0]))
+            start = time.time()
             working_copy.instantiate(target, **instantiate_options)
+            ScanningGateRemovalPass.instantiation_time += time.time() - start
 
             if self.cost(working_copy, target) < self.success_threshold:
                 _logger.debug('Successfully removed operation.')
                 circuit_copy = working_copy
 
         circuit.become(circuit_copy)
+        print(f"Instantiation Time: {ScanningGateRemovalPass.instantiation_time}")
 
 
 def default_collection_filter(op: Operation) -> bool:

@@ -10,7 +10,6 @@ from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
-from typing import Sequence
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -118,6 +117,7 @@ class MCRYGate(
 
         See :class:`LocallyOptimizableUnitary` for more info.
         """
+        print("Using python optimize :(")
         self.check_env_matrix(env_matrix)
         thetas = [0] * self.num_params
 
@@ -131,6 +131,19 @@ class MCRYGate(
 
         return thetas
     
+    @staticmethod
+    def get_decomposition(params: RealVector = []) -> tuple[RealVector, RealVector] :
+        new_num_params = len(params) // 2
+        left_params = np.zeros(new_num_params)
+        right_params = np.zeros(new_num_params)
+        for i in range(len(left_params)):
+            left_param = (params[i] + params[i + new_num_params]) / 2
+            right_param = (params[i] - params[i + new_num_params]) / 2
+            left_params[i] = left_param
+            right_params[i] = right_param
+
+        return left_params, right_params
+        
     @property
     def name(self) -> str:
         """The name of this gate."""

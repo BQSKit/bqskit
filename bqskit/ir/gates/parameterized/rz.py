@@ -6,12 +6,13 @@ import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
+class RZGate(QubitGate, DifferentiableUnitary, CachedClass, LocallyOptimizableUnitary):
     """
     A gate representing an arbitrary rotation around the Z axis.
 
@@ -62,3 +63,18 @@ class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
                 ],
             ], dtype=np.complex128,
         )
+
+
+    def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
+        """
+        Return the optimal parameters with respect to an environment matrix.
+
+        See :class:`LocallyOptimizableUnitary` for more info.
+        """
+        print("Using Python optimization")
+        self.check_env_matrix(env_matrix)
+        a = np.angle(env_matrix[0, 0])
+        b = np.angle(env_matrix[1, 1])
+        theta = 2 * np.arccos(a / np.sqrt(a ** 2 + b ** 2))
+        theta *= -1 if b > 0 else 1
+        return [theta]

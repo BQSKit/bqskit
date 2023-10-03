@@ -104,7 +104,7 @@ class QSDPass(BasePass):
         left_gate, left_params = QSDPass.create_unitary_gate(UnitaryMatrix(left_mat))
 
         # Create Multi Controlled Z Gate
-        z_params = 2 * np.angle(np.diag(D)).flatten()
+        z_params = -2 * np.angle(np.diag(D)).flatten()
         z_gate = MCRZGate(len(all_qubits), u1.num_qudits)
 
         # Create right gate

@@ -10,6 +10,7 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.passes.synthesis.target import SetTargetPass
 from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.passes.synthesis.full_qsd import FullQSDPass
+from bqskit.passes.synthesis.mgdp import MGDPass
 
 __all__ = [
     'LEAPSynthesisPass',
@@ -20,5 +21,6 @@ __all__ = [
     'SetTargetPass',
     'PermutationAwareSynthesisPass',
     'QSDPass',
-    'FullQSDPass'
+    'FullQSDPass',
+    'MGDPass'
 ]

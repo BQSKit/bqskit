@@ -11,6 +11,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.ir.gates.parameterized.mcry import get_indices
+from typing import Any
 
 class MCRZGate(
     QubitGate,
@@ -54,8 +55,8 @@ class MCRZGate(
             # Use helper function
             x1, x2 = get_indices(i, self.controlled_qubit, self.num_qudits)
 
-            matrix[x1, x1] = pos
-            matrix[x2, x2] = neg
+            matrix[x1, x1] = neg
+            matrix[x2, x2] = pos
 
         return UnitaryMatrix(matrix)
 
@@ -98,9 +99,8 @@ class MCRZGate(
             # Taken from QFACTOR repo
             a = np.angle(env_matrix[x1, x1])
             b = np.angle(env_matrix[x2, x2])
-            new_theta = a - b
             # print(thetas)
-            thetas[i] = -1 * new_theta
+            thetas[i] = a - b
             
         return thetas
     
