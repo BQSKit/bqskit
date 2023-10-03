@@ -6,7 +6,7 @@ import numpy.random as rand
 import numpy as np
 from bqskit.passes import UnfoldPass
 from bqskit.qis import UnitaryMatrix
-from bqskit.compiler import Compiler
+from bqskit.compiler import Compiler, compile
 import time
 from bqskit import enable_logging
 # from bqskitqfactorjax.qfactor_jax import QFactor_jax
@@ -21,7 +21,7 @@ import pickle
 
 # # QFactor hyperparameters - 
 # # see intantiation example for more detiles on the parameters
-amount_of_workers = 2
+amount_of_workers = 32
 # num_multistarts = 32
 # max_iters = 100000
 # min_iters = 3
@@ -77,13 +77,15 @@ elif circ_type == "qft":
     unitary = pickle.load(open(f"unitaries/qft_{num_qudits}.unitary", "rb"))
 
 for _ in range(1):
-    circ = Circuit.from_unitary(ccx_unitary)
+    circ = Circuit.from_unitary(unitary)
     circuit.append_circuit(circ, list(range(num_qudits)))
     # circuit.append_gate(CNOTGate(), (num_qudits - 1, num_qudits))
 
+# circuit: Circuit = pickle.load(open("qft4noscan.pickle", "rb"))
+
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
-    FullQSDPass(start_from_left=True, min_qudit_size=min_qudits, instantiate_options=instantiate_options),
+    FullQSDPass(start_from_left=True, min_qudit_size=min_qudits, instantiate_options=instantiate_options, tree_depth=6),
 ]
 
 start = time.time()
@@ -93,8 +95,13 @@ with Compiler(num_workers=amount_of_workers, runtime_log_level=logging.INFO) as 
     start = time.time()
     compiled_circuit = compiler.compile(circuit, workflow)
     print(time.time() - start)
-    print(dict(sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)))
-# compiled_circuit = compile(circuit, optimization_level=4, max_synthesis_size=4)
+    # compiled_circuit = compile(compiled_circuit, optimization_level=4, max_synthesis_size=3, compiler=compiler)
+    # print(time.time() - start)
+
+print(dict(sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)))
+
+pickle.dump(compiled_circuit, open("qft4noscan.pickle", "wb"))
+
 
 utry_1 = compiled_circuit.get_unitary()
 utry_2 = circuit.get_unitary()

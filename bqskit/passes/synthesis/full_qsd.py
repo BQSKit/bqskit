@@ -8,7 +8,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
 from bqskit.passes.alias import PassAlias
-from bqskit.passes.processing.scan import ScanningGateRemovalPass
+from bqskit.passes.processing import ScanningGateRemovalPass, TreeScanningGateRemovalPass
 from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.passes.synthesis.mgdp import MGDPass
 from bqskit.ir.circuit import Circuit
@@ -42,6 +42,7 @@ class FullQSDPass(PassAlias):
             self,
             start_from_left: bool = True,
             min_qudit_size: int = 2,
+            tree_depth: int = 1,
             instantiate_options = {},
         ) -> None:
             """
@@ -60,7 +61,7 @@ class FullQSDPass(PassAlias):
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
             instantiation_options.update(instantiate_options)
-            self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
+            self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
             self.qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.mgd = MGDPass()
 
@@ -72,11 +73,11 @@ class FullQSDPass(PassAlias):
         passes = []
         start_num = max(x.num_qudits for x in circuit.operations())
         for _ in range(self.min_qudit_size, start_num):
-                passes.append(self.qsd)
-                passes.append(self.scan)
+            passes.append(self.qsd)
+            passes.append(self.scan)
 
         for _ in range(1, start_num):
-              passes.append(self.mgd)
-              passes.append(self.scan)
+            passes.append(self.mgd)
+            passes.append(self.scan)
 
         await Workflow(passes).run(circuit, data)
