@@ -61,7 +61,8 @@ class FullQSDPass(PassAlias):
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
             instantiation_options.update(instantiate_options)
-            self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
+            # self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
+            self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
             self.qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.mgd = MGDPass()
 
