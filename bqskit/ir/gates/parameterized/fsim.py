@@ -25,8 +25,6 @@ class FSIMGate(
         It is given by the following parameterized unitary:
 
         .. math::
-
-    $
             \\begin{pmatrix}
             1 & 0 & 0 & 0 \\\\
             0 & \\cos{\\theta} & -i\\sin{\\theta} & 0 \\\\
