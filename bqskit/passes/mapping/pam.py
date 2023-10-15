@@ -403,10 +403,3 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
         pi[:] = pi_bkp[:]
         return front + extend
-
-    def _apply_perm(self, perm: Sequence[int], pi: list[int]) -> None:
-        """Apply the `perm` permutation to the current mapping `pi`."""
-        _logger.debug('applying permutation %s' % str(perm))
-        pi_c = {q: pi[perm[i]] for i, q in enumerate(sorted(perm))}
-        for q in perm:
-            pi[q] = pi_c[q]

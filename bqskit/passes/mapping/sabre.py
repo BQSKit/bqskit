@@ -9,6 +9,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
@@ -510,3 +511,10 @@ class GeneralizedSabreAlgorithm():
                 if pi[center_qudit] == p1 or pi[center_qudit] == p2:
                     continue
                 yield (p1, p2)
+
+    def _apply_perm(self, perm: Sequence[int], pi: list[int]) -> None:
+        """Apply the `perm` permutation to the current mapping `pi`."""
+        _logger.debug('applying permutation %s' % str(perm))
+        pi_c = {q: pi[perm[i]] for i, q in enumerate(sorted(perm))}
+        for q in perm:
+            pi[q] = pi_c[q]
