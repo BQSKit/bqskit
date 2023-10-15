@@ -135,7 +135,7 @@ class EmbedAllPermutationsPass(BasePass):
 
         datas = []
         for graph in graphs:
-            model = MachineModel(circuit.num_qudits, graph)
+            model = MachineModel(circuit.num_qudits, graph, data.gate_set, data.model.radixes)
             target_data = copy.deepcopy(data)
             target_data.model = model
             datas.append(target_data)
