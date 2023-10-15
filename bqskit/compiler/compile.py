@@ -1259,6 +1259,7 @@ def build_seqpam_mapping_optimization_workflow(
                 PAMLayoutPass(num_layout_passes),
                 PAMRoutingPass(0.1),
                 post_pam_seq,
+                ApplyPlacement(),
                 UnfoldPass(),
             ],
         ),
