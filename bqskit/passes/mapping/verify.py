@@ -49,18 +49,20 @@ class CalculatePAMErrorsPass(BasePass):
         # calculate exact panel unitary
         exact_circuit = Circuit(circuit.num_qudits, circuit.radixes)
         for op in circuit:
-            if not isinstance(op.gate, TaggedGate):
-                raise RuntimeError('Expected tagged gate.')
+            if isinstance(op.gate, TaggedGate):
+                pi = op.gate.tag['pre_perm']
+                pf = op.gate.tag['post_perm']
+                in_utry = op.gate.tag['original_utry']
+                n = in_utry.num_qudits
+                PI = PermutationMatrix.from_qubit_location(n, pi)
+                PF = PermutationMatrix.from_qubit_location(n, pf)
+                exact_circuit.append_gate(
+                    ConstantUnitaryGate(PF.T @ in_utry @ PI),
+                    op.location,
+                )
 
-            pi = op.gate.tag['pre_perm']
-            pf = op.gate.tag['post_perm']
-            in_utry = op.gate.tag['original_utry']
-            PI = PermutationMatrix.from_qubit_location(in_utry.num_qudits, pi)
-            PF = PermutationMatrix.from_qubit_location(in_utry.num_qudits, pf)
-            exact_circuit.append_gate(
-                ConstantUnitaryGate(PF @ in_utry @ PI.T),
-                op.location,
-            )
+            else:
+                exact_circuit.append_gate(op.gate, op.location, op.params)
 
         exact_unitary = exact_circuit.get_unitary()
 
@@ -74,15 +76,13 @@ class UnTagPAMBlockDataPass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         for cycle, op in circuit.operations_with_cycles():
-            if not isinstance(op.gate, TaggedGate):
-                raise RuntimeError('Expected tagged gate.')
-
-            circuit.replace_gate(
-                (cycle, op.location[0]),
-                op.gate.gate,
-                op.location,
-                op.params,
-            )
+            if isinstance(op.gate, TaggedGate):
+                circuit.replace_gate(
+                    (cycle, op.location[0]),
+                    op.gate.gate,
+                    op.location,
+                    op.params,
+                )
 
 
 class PAMVerificationSequence(PassAlias):
