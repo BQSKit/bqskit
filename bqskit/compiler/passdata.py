@@ -146,7 +146,12 @@ class PassData(MutableMapping[str, Any]):
 
     @property
     def initial_mapping(self) -> list[int]:
-        """Return the initial mapping of logical to physical qudits."""
+        """
+        Return the initial mapping of logical to physical qudits.
+
+        This always maps how the logical qudits from the original circuit start
+        on the physical qudits of the current circuit.
+        """
         return self._initial_mapping
 
     @initial_mapping.setter
@@ -166,7 +171,12 @@ class PassData(MutableMapping[str, Any]):
 
     @property
     def final_mapping(self) -> list[int]:
-        """Return the final mapping of logical to physical qudits."""
+        """
+        Return the final mapping of logical to physical qudits.
+
+        This always maps how the logical qudits from the original circuit end on
+        the physical qudits of the current circuit.
+        """
         return self._final_mapping
 
     @final_mapping.setter
