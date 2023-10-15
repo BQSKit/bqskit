@@ -17,7 +17,7 @@ class ClockGate(ConstantGate, QuditGate):
 
     .. math::
         \\begin{equation}
-            Z = \\sum_a \\exp(2\\pi ia/d) |a><a|
+            Z = \\sum_a \\exp(2\\pi\\frac{ai}{d}) |a\\rangle\\langle a|
         \\end{equation}
 
     where d is the number of levels (2 levels is a qubit,
