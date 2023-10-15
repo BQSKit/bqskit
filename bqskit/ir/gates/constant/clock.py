@@ -16,9 +16,7 @@ class ClockGate(ConstantGate, QuditGate):
     The clock gate is given by the following formula:
 
     .. math::
-        \\begin{equation}
-            Z = \\sum_a \\exp(2\\pi\\frac{ai}{d}) |a\\rangle\\langle a|
-        \\end{equation}
+        Z = \\sum_a \\exp(2\\pi\\frac{ai}{d}) |a\\rangle\\langle a|
 
     where d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
