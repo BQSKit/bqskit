@@ -330,9 +330,13 @@ class GeneralizedSabreAlgorithm():
 
     def _can_exe(self, op: Operation, pi: list[int], cg: CouplingGraph) -> bool:
         """Return true if `op` is executable given the current mapping `pi`."""
-        # TODO: check if circuitgate of only 1-qubit gates
+        if isinstance(op.gate, CircuitGate):
+            if all(g.num_qudits == 1 for g in op.gate._circuit.gate_set):
+                return True
+
         if op.num_qudits == 1:
             return True
+
         physical_qudits = [pi[i] for i in op.location]
         return cg.get_subgraph(physical_qudits).is_fully_connected()
 
