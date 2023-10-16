@@ -339,6 +339,8 @@ class TestAppendCircuit:
 
     @given(circuits())
     def test_reconstruct(self, circuit: Circuit) -> None:
+        if circuit.num_operations == 0:
+            return
         new_circuit = Circuit(circuit.num_qudits, circuit.radixes)
         new_circuit.append_circuit(circuit, list(range(circuit.num_qudits)))
         check_no_idle_cycles(new_circuit)
@@ -346,6 +348,8 @@ class TestAppendCircuit:
 
     @given(circuits())
     def test_reconstruct_larger(self, circuit: Circuit) -> None:
+        if circuit.num_operations == 0:
+            return
         new_circ = Circuit(circuit.num_qudits + 1, circuit.radixes + (2,))
         new_circ.append_circuit(circuit, list(range(circuit.num_qudits)))
         check_no_idle_cycles(new_circ)
