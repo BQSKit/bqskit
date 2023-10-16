@@ -16,7 +16,7 @@ class CSUMGate(ConstantGate, QuditGate):
     The CSUM gate is given by the following formula:
 
     .. math::
-        CSUM |i,j\\rangle = |i, i + j mod d\\rangle
+        CSUM |i,j\\rangle = |i, i + j \\mathrm{mod} d\\rangle
 
     where d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)
