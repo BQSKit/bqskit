@@ -31,7 +31,7 @@ class PAMRoutingPass(PermutationAwareMappingAlgorithm, BasePass):
 
         pi = [i for i in range(circuit.num_qudits)]
         out_data = self.forward_pass(circuit, pi, subgraph, perm_data, True)
-        data.final_mapping = [pi[x] for x in data.initial_mapping]
+        data.final_mapping = [pi[x] for x in data.final_mapping]
 
         _logger.info(f'Finished routing with layout: {str(pi)}')
         data[self.out_data_key] = out_data
