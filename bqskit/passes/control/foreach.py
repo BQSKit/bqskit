@@ -38,6 +38,11 @@ class ForEachBlockPass(BasePass):
     pass_down_key_prefix = 'ForEachBlockPass_pass_down_'
     """If a key exists in the pass data with this prefix, pass it to blocks."""
 
+    pass_down_block_specific_key_prefix = (
+        'ForEachBlockPass_specific_pass_down_'
+    )
+    """Key for injecting a block specific pass data."""
+
     def __init__(
         self,
         loop_body: WorkflowLike,
@@ -197,6 +202,10 @@ class ForEachBlockPass(BasePass):
             for key in data:
                 if key.startswith(self.pass_down_key_prefix):
                     block_data[key] = data[key]
+                elif key.startswith(
+                    self.pass_down_block_specific_key_prefix,
+                ) and i in data[key]:
+                    block_data[key] = data[key][i]
             block_data.seed = data.seed
 
             subcircuits.append(subcircuit)
