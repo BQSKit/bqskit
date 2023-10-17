@@ -39,3 +39,4 @@ our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
    source/utils
    source/exec
    source/runtime
+   source/ext
