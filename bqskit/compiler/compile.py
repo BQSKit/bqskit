@@ -322,6 +322,15 @@ def compile(
         >>> model = MachineModel(circuit.num_qudits, gate_set=target_gate_set)
         >>> compiled_circuit = compile(circuit, model, optimization_level=2)
 
+        You can also use pre-built models from the :obj:`~bqskit.ext` package
+        for common hardware. For example, to compile to the H1-1 machine
+        from Quantinuum:
+
+        >>> from bqskit import compile, Circuit
+        >>> from bqskit.ext import H1_1Model
+        >>> circuit = Circuit.from_file('input.qasm')
+        >>> compiled_circuit = compile(circuit, H1_1Model)
+
     Raises:
         ValueError: If the input is an empty iterable.
 
