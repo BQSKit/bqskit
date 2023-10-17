@@ -1152,7 +1152,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 (Default: False)
 
         Returns:
-            int: The starting cycle index of the appended circuit.
+            int: The starting cycle index of the appended circuit. If the
+                appended circuit is empty, then this will be -1.
 
         Raises:
             ValueError: If `circuit` is not the same size as `location`.
@@ -1178,15 +1179,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             op = Operation(CircuitGate(circuit, move), location, circuit.params)
             return self.append(op)
 
-        cycle_index: int | None = None
+        cycle_index = -1
+
         for op in circuit:
             mapped_location = [location[q] for q in op.location]
             ci = self.append(Operation(op.gate, mapped_location, op.params))
             if cycle_index is None:
                 cycle_index = ci
-
-        if cycle_index is None:
-            raise RuntimeError('Cannot append empty circuit.')
 
         return cycle_index
 

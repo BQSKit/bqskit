@@ -9,6 +9,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
@@ -329,9 +330,13 @@ class GeneralizedSabreAlgorithm():
 
     def _can_exe(self, op: Operation, pi: list[int], cg: CouplingGraph) -> bool:
         """Return true if `op` is executable given the current mapping `pi`."""
-        # TODO: check if circuitgate of only 1-qubit gates
+        if isinstance(op.gate, CircuitGate):
+            if all(g.num_qudits == 1 for g in op.gate._circuit.gate_set):
+                return True
+
         if op.num_qudits == 1:
             return True
+
         physical_qudits = [pi[i] for i in op.location]
         return cg.get_subgraph(physical_qudits).is_fully_connected()
 
@@ -510,3 +515,10 @@ class GeneralizedSabreAlgorithm():
                 if pi[center_qudit] == p1 or pi[center_qudit] == p2:
                     continue
                 yield (p1, p2)
+
+    def _apply_perm(self, perm: Sequence[int], pi: list[int]) -> None:
+        """Apply the `perm` permutation to the current mapping `pi`."""
+        _logger.debug('applying permutation %s' % str(perm))
+        pi_c = {q: pi[perm[i]] for i, q in enumerate(sorted(perm))}
+        for q in perm:
+            pi[q] = pi_c[q]
