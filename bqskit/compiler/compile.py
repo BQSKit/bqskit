@@ -51,8 +51,11 @@ from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
+from bqskit.passes.mapping.setmodel import ExtractModelConnectivityPass
+from bqskit.passes.mapping.setmodel import RestoreModelConnevtivityPass
 from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
+from bqskit.passes.mapping.verify import PAMVerificationSequence
 from bqskit.passes.measure import ExtractMeasurements
 from bqskit.passes.measure import RestoreMeasurements
 from bqskit.passes.noop import NOOPPass
@@ -1137,6 +1140,142 @@ def build_sabre_mapping_workflow() -> Workflow:
     )
 
 
+def build_seqpam_mapping_optimization_workflow(
+    optimization_level: int = 4,
+    synthesis_epsilon: float = 1e-8,
+    num_layout_passes: int = 3,
+    block_size: int = 3,
+    error_sim_size: int | None = None,
+) -> Workflow:
+    """
+    Build a Sequential-Permutation-Aware Mapping and Optimizing Workflow.
+
+    Note:
+        - This workflow assumes that SetModelPass will be run earlier in the
+          full workflow and doesn't add it in here.
+
+        - This will apply the placement found during the workflow. The
+        resulting circuit will be physically mapped.
+
+    Args:
+        optimization_level (int): The optimization level. See :func:`compile`
+            for more information.
+
+        synthesis_epsilon (float): The maximum distance between target
+            and circuit unitary allowed to declare successful synthesis.
+            Set to 0 for exact synthesis. (Default: 1e-8)
+
+        num_layout_passes (int): The number of layout forward and backward
+            passes to run. See :class:`PamLayoutPass` for more information.
+            (Default: 3)
+
+        block_size (int): The size of the blocks to partition into.
+            Warning, the number of permutation evaluated increases
+            factorially and the difficulty of each permutation increases
+            exponentially with this. (Default: 3)
+
+        error_sim_size (int | None): The size of the blocks to simulate
+            errors on. If None, then no error analysis is performed.
+            (Default: None)
+
+    Raises:
+        ValueError: If block_size < 2.
+
+        ValueError: If error_sim_size < block_size.
+    """
+    if not is_integer(block_size):
+        raise TypeError(
+            f'Expected block_size to be int, got {type(block_size)}.',
+        )
+
+    if block_size < 2:
+        raise ValueError(f'Expected block_size > 1, got {block_size}.')
+
+    if error_sim_size is not None and not is_integer(block_size):
+        raise TypeError(
+            f'Expected int for error_sim_size, got {type(error_sim_size)}.',
+        )
+
+    if error_sim_size is not None and error_sim_size < block_size:
+        raise ValueError(
+            f'Expected error_sim_size >= block_size, got {error_sim_size}.',
+        )
+
+    qsearch = QSearchSynthesisPass(
+        success_threshold=synthesis_epsilon,
+        instantiate_options=get_instantiate_options(optimization_level),
+    )
+
+    leap = LEAPSynthesisPass(
+        success_threshold=synthesis_epsilon,
+        min_prefix_size=9,
+        instantiate_options=get_instantiate_options(optimization_level),
+    )
+
+    if error_sim_size is not None:
+        post_pam_seq: BasePass = PAMVerificationSequence(error_sim_size)
+    else:
+        post_pam_seq = NOOPPass()
+
+    return Workflow(
+        IfThenElsePass(
+            NotPredicate(WidthPredicate(2)),
+            [
+                ExtractModelConnectivityPass(),
+                QuickPartitioner(block_size),
+                ForEachBlockPass(
+                    IfThenElsePass(
+                        WidthPredicate(4),
+                        EmbedAllPermutationsPass(
+                            inner_synthesis=qsearch,
+                            input_perm=True,
+                            output_perm=False,
+                            vary_topology=False,
+                        ),
+                        EmbedAllPermutationsPass(
+                            inner_synthesis=leap,
+                            input_perm=True,
+                            output_perm=False,
+                            vary_topology=False,
+                        ),
+                    ),
+                ),
+                PAMRoutingPass(),
+                post_pam_seq,
+                UnfoldPass(),
+                RestoreModelConnevtivityPass(),
+
+                SubtopologySelectionPass(block_size),
+                QuickPartitioner(block_size),
+                ForEachBlockPass(
+                    IfThenElsePass(
+                        WidthPredicate(4),
+                        EmbedAllPermutationsPass(
+                            inner_synthesis=qsearch,
+                            input_perm=False,
+                            output_perm=True,
+                            vary_topology=True,
+                        ),
+                        EmbedAllPermutationsPass(
+                            inner_synthesis=leap,
+                            input_perm=False,
+                            output_perm=True,
+                            vary_topology=True,
+                        ),
+                    ),
+                ),
+                ApplyPlacement(),
+                PAMLayoutPass(num_layout_passes),
+                PAMRoutingPass(0.1),
+                post_pam_seq,
+                ApplyPlacement(),
+                UnfoldPass(),
+            ],
+        ),
+        name='SeqPAM Mapping',
+    )
+
+
 def build_gate_deletion_optimization_workflow(
     optimization_level: int = 1,
     synthesis_epsilon: float = 1e-8,
@@ -1379,89 +1518,20 @@ def _opt4_workflow(
     error_sim_size: int = 8,
 ) -> list[BasePass]:
     """Build optimization Level 4 workflow for circuit compilation."""
-    if error_threshold is not None:
-        _logger.warning(
-            'Automated error upper bound calculated is not yet'
-            ' ready for opt level 4.',
-        )
-
     if max_synthesis_size > 3:
         _logger.warning(
             'It is currently recommended to set max_synthesis_size to 3'
             ' for optimization level 4. This may change in the future.',
         )
 
-    qsearch = QSearchSynthesisPass(
-        success_threshold=synthesis_epsilon,
-        instantiate_options=get_instantiate_options(4),
-    )
-    leap = LEAPSynthesisPass(
-        success_threshold=synthesis_epsilon,
-        min_prefix_size=9,
-        instantiate_options=get_instantiate_options(4),
-    )
-
     return [
-        SetModelPass(
-            MachineModel(
-                model.num_qudits,
-                None,
-                model.gate_set,
-                model.radixes,
-            ),
-        ),
-        Workflow(
-            IfThenElsePass(
-                NotPredicate(WidthPredicate(2)),
-                [
-                    QuickPartitioner(3),
-                    ForEachBlockPass(
-                        IfThenElsePass(
-                            WidthPredicate(4),
-                            EmbedAllPermutationsPass(
-                                inner_synthesis=qsearch,
-                                input_perm=True,
-                                output_perm=False,
-                                vary_topology=False,
-                            ),
-                            EmbedAllPermutationsPass(
-                                inner_synthesis=leap,
-                                input_perm=True,
-                                output_perm=False,
-                                vary_topology=False,
-                            ),
-                        ),
-                    ),
-                    PAMRoutingPass(),
-                    UnfoldPass(),
+        SetModelPass(model),
 
-                    SetModelPass(model),
-                    SubtopologySelectionPass(3),
-                    QuickPartitioner(3),
-                    ForEachBlockPass(
-                        IfThenElsePass(
-                            WidthPredicate(4),
-                            EmbedAllPermutationsPass(
-                                inner_synthesis=qsearch,
-                                input_perm=False,
-                                output_perm=True,
-                                vary_topology=True,
-                            ),
-                            EmbedAllPermutationsPass(
-                                inner_synthesis=leap,
-                                input_perm=False,
-                                output_perm=True,
-                                vary_topology=True,
-                            ),
-                        ),
-                    ),
-                    ApplyPlacement(),
-                    PAMLayoutPass(3),
-                    PAMRoutingPass(0.1),
-                    UnfoldPass(),
-                ],
-            ),
-            name='SeqPAM Mapping',
+        build_seqpam_mapping_optimization_workflow(
+            4,
+            synthesis_epsilon,
+            block_size=max_synthesis_size,
+            error_sim_size=None if error_threshold is None else error_sim_size,
         ),
 
         build_multi_qudit_retarget_workflow(

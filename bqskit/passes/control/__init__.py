@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from bqskit.passes.control.dothendecide import DoThenDecide
 from bqskit.passes.control.dowhileloop import DoWhileLoopPass
+from bqskit.passes.control.foreach import ClearAllBlockData
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.passes.control.ifthenelse import IfThenElsePass
 from bqskit.passes.control.paralleldo import ParallelDo
@@ -24,6 +25,7 @@ from bqskit.passes.control.whileloop import WhileLoopPass
 __all__ = [
     'DoWhileLoopPass',
     'ForEachBlockPass',
+    'ClearAllBlockData',
     'IfThenElsePass',
     'PassPredicate',
     'ChangePredicate',

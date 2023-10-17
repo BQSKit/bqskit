@@ -82,10 +82,11 @@ class PAMLayoutPass(PermutationAwareMappingAlgorithm, BasePass):
         if not subgraph.is_fully_connected():
             raise RuntimeError('Cannot route circuit on disconnected qudits.')
 
-        pi = data.initial_mapping
+        pi = [i for i in range(circuit.num_qudits)]
+
         for _ in range(self.total_passes):
             self.forward_pass(circuit, pi, subgraph, perm_data)
             self.backward_pass(circuit, pi, subgraph)
 
-        data.initial_mapping = pi
-        _logger.info(f'Found layout: {str(pi)}')
+        self._apply_perm(pi, data.placement)
+        _logger.info(f'Found layout: {pi}, new placement: {data.placement}')

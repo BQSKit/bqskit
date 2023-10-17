@@ -17,13 +17,13 @@ class ApplyPlacement(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         model = data.model
         placement = data.placement
+
+        # Place circuit on the model according to the placement
         physical_circuit = Circuit(model.num_qudits, model.radixes)
         physical_circuit.append_circuit(circuit, placement)
         circuit.become(physical_circuit)
-        if 'final_mapping' in data:
-            pi = data['final_mapping']
-            data['final_mapping'] = [placement[p] for p in pi]
-        if 'initial_mapping' in data:
-            pi = data['initial_mapping']
-            data['initial_mapping'] = [placement[p] for p in pi]
+
+        # Update the relevant data variables
+        data.initial_mapping = [placement[p] for p in data.initial_mapping]
+        data.final_mapping = [placement[p] for p in data.final_mapping]
         data.placement = list(i for i in range(model.num_qudits))

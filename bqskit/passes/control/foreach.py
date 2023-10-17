@@ -235,8 +235,7 @@ class ForEachBlockPass(BasePass):
                 block_data['replaced'] = True
 
                 # Calculate Error
-                if self.calculate_error_bound:
-                    error_sum += block_data.error
+                error_sum += block_data.error
             else:
                 block_data['replaced'] = False
 
@@ -247,8 +246,8 @@ class ForEachBlockPass(BasePass):
         data[self.key].append(completed_block_datas)
 
         # Record error
+        data.update_error_mul(error_sum)
         if self.calculate_error_bound:
-            data.error = (1 - ((1 - data.error) * (1 - error_sum)))
             _logger.debug(f'New circuit error is {data.error}.')
 
 
@@ -506,3 +505,15 @@ def gen_replace_filter(method: str, model: MachineModel) -> ReplaceFilterFn:
 
 
 ReplaceFilterFn = Callable[[Circuit, Operation], bool]
+
+
+class ClearAllBlockData(BasePass):
+    """Clear all block data and passed down data from the pass data."""
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """Perform the pass's operation, see :class:`BasePass` for more."""
+        for key in list(data.keys()):
+            if key.startswith(ForEachBlockPass.key):
+                del data[key]
+            elif key.startswith(ForEachBlockPass.pass_down_key_prefix):
+                del data[key]

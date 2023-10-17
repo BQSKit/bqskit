@@ -9,8 +9,14 @@ from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
+from bqskit.passes.mapping.setmodel import ExtractModelConnectivityPass
+from bqskit.passes.mapping.setmodel import RestoreModelConnevtivityPass
 from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
+from bqskit.passes.mapping.verify import CalculatePAMErrorsPass
+from bqskit.passes.mapping.verify import PAMVerificationSequence
+from bqskit.passes.mapping.verify import TagPAMBlockDataPass
+from bqskit.passes.mapping.verify import UnTagPAMBlockDataPass
 
 __all__ = [
     'GeneralizedSabreLayoutPass',
@@ -23,4 +29,10 @@ __all__ = [
     'PAMRoutingPass',
     'EmbedAllPermutationsPass',
     'SubtopologySelectionPass',
+    'ExtractModelConnectivityPass',
+    'RestoreModelConnevtivityPass',
+    'TagPAMBlockDataPass',
+    'CalculatePAMErrorsPass',
+    'UnTagPAMBlockDataPass',
+    'PAMVerificationSequence',
 ]

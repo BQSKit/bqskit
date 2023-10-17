@@ -9,6 +9,7 @@ from bqskit.passes import GeneralizedSabreLayoutPass
 from bqskit.passes import GeneralizedSabreRoutingPass
 from bqskit.passes import GreedyPlacementPass
 from bqskit.passes import SetModelPass
+from bqskit.passes.mapping.apply import ApplyPlacement
 from bqskit.qis import PermutationMatrix
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
@@ -38,6 +39,7 @@ def test_simple(compiler: Compiler) -> None:
         GreedyPlacementPass(),
         GeneralizedSabreLayoutPass(),
         GeneralizedSabreRoutingPass(),
+        ApplyPlacement(),
     ]
 
     cc, data = compiler.compile(circuit, workflow, True)
@@ -45,5 +47,9 @@ def test_simple(compiler: Compiler) -> None:
     pf = data['final_mapping']
     PI = PermutationMatrix.from_qubit_location(5, pi)
     PF = PermutationMatrix.from_qubit_location(5, pf)
+    inactive = [i for i in range(cc.num_qudits) if i not in cc.active_qudits]
+    inactive.sort(reverse=True)
+    for i in inactive:
+        cc.pop_qudit(i)
     assert cc.get_unitary().get_distance_from(PF.T @ in_utry @ PI) < 1e-7
     assert all(e in cg for e in cc.coupling_graph)

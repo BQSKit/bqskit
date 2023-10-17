@@ -1,7 +1,6 @@
 """This module implements the GeneralizedSabreRoutingPass class."""
 from __future__ import annotations
 
-import copy
 import logging
 
 from bqskit.compiler.basepass import BasePass
@@ -22,16 +21,12 @@ class GeneralizedSabreRoutingPass(BasePass, GeneralizedSabreAlgorithm):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        subgraph = self.get_connectivity(circuit, data)
+        subgraph = data.connectivity
         if not subgraph.is_fully_connected():
             raise RuntimeError('Cannot route circuit on disconnected qudits.')
 
-        if 'initial_mapping' in data:
-            pi = copy.deepcopy(data['initial_mapping'])
-        else:
-            pi = [i for i in range(circuit.num_qudits)]
-
+        pi = [i for i in range(circuit.num_qudits)]
         self.forward_pass(circuit, pi, subgraph, modify_circuit=True)
-        # TODO: if final_mapping is already in data, apply it first
-        data['final_mapping'] = pi
+        data.final_mapping = [pi[x] for x in data.final_mapping]
+
         _logger.info(f'Finished routing with layout: {str(pi)}')
