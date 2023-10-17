@@ -13,6 +13,7 @@ from bqskit.passes.mapping.apply import ApplyPlacement
 from bqskit.qis import PermutationMatrix
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
+
 def test_simple(compiler: Compiler) -> None:
     cg = (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)
     model = MachineModel(8, cg)
