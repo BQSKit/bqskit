@@ -138,28 +138,44 @@ def test_no_hang_on_empty_collection(compiler: Compiler) -> None:
 
 
 def test_pass_down_seeds(compiler: Compiler) -> None:
-    circuit = Circuit(3)
-    circuit.append_gate(CNOTGate(), (0, 1))
+    circuit = Circuit(4)
+    circuit.append_gate(CNOTGate(), (0, 2))
     circuit.append_gate(CNOTGate(), (1, 2))
+    circuit.append_gate(CNOTGate(), (1, 3))
+    circuit.append_gate(CNOTGate(), (2, 3))
 
     seed = Circuit(3)
-    seed.append_gate(CNOTGate(), (0, 1))
+    seed.append_gate(CNOTGate(), (0, 2))
     seed.append_gate(CNOTGate(), (1, 2))
 
-    # Manually sed seed for block 0
-    seeds = {0: [seed]}
-
-    key = 'ForEachBlockPass_specific_pass_down_seed_circuits'
+    # Manually set seed for blocks 0 and 1
+    seeds = {0: [seed], 1: [seed]}
 
     partitioner = QuickPartitioner()
-    updater = UpdateDataPass(key, seeds)
     qsearch = QSearchSynthesisPass()
     foreach = ForEachBlockPass(qsearch)
     unfolder = UnfoldPass()
-    workflow = Workflow([partitioner, updater, foreach, unfolder])
+
+    key = foreach.pass_down_block_specific_key_prefix + 'seed_circuits'
+    updater = UpdateDataPass(key, seeds)
+
+    # For checking specific pass down data exists
+    workflow_1 = Workflow([partitioner, updater])
+    # For checking specific pass down data can be used
+    workflow_2 = Workflow([partitioner, updater, foreach, unfolder])
+
+    # Check existence of block specific keys
+    partitioned, data = compiler.compile(
+        circuit, workflow_1, request_data=True,
+    )
+    for i, block in enumerate(partitioned):
+        data[key][i] == seeds[i]
+
+    # Check that block specific data is usable
     compiled, data = compiler.compile(
-        circuit, workflow, request_data=True,
+        circuit, workflow_2, request_data=True,
     )
     dist = compiled.get_unitary().get_distance_from(circuit.get_unitary())
     assert dist <= 1e-5
     assert key in data
+    assert data[key] == seeds

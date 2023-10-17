@@ -41,7 +41,20 @@ class ForEachBlockPass(BasePass):
     pass_down_block_specific_key_prefix = (
         'ForEachBlockPass_specific_pass_down_'
     )
-    """Key for injecting a block specific pass data."""
+    """
+    Data specific to the processing of individual blocks in a partitioned
+    circuit can be injected into the `PassData` in `run` by using this prefix.
+
+    The expected type of the associated value is `dict[int, Any]`, where
+    integer (sub-)keys correspond to block numbers in a partitioned quantum
+    circuit.
+
+    Pseudocode example for seed circuits:
+        seeds = {block_id: [seed_circuit_a, seed_circuit_b, ...], ...}
+        key = self.pass_down_block_specific_key_prefix + 'seed_circuits'
+        seed_updater = UpdateDataPass(key, seeds)
+        workflow = Workflow([..., seed_updater, ForEachBlockPass(...), ...])
+    """
 
     def __init__(
         self,
