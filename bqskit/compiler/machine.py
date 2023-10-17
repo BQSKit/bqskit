@@ -50,8 +50,8 @@ class MachineModel:
             ValueError: If `num_qudits` is nonpositive.
 
         Note:
-            Pre-built models for many active QPUs exist in the `bqskit.ext`
-            package.
+            Pre-built models for many active QPUs exist in the
+            :obj:`~bqskit.ext` package.
         """
 
         if not is_integer(num_qudits):
