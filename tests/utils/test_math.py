@@ -10,6 +10,7 @@ import scipy as sp
 from scipy.stats import unitary_group
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.utils.math import canonical_unitary
 from bqskit.utils.math import dexpmv
 from bqskit.utils.math import dot_product
 from bqskit.utils.math import pauli_expansion
@@ -185,3 +186,28 @@ class TestPauliExpansion:
         print(alpha)
         H = PauliMatrices(int(np.log2(reH.shape[0]))).dot_product(alpha)
         assert np.linalg.norm(H - reH) < 1e-16
+
+
+class TestCanonicalUnitary:
+    def random_phase(self) -> np.complex128:
+        phase = 2 * np.pi * np.random.rand()
+        return np.exp(1j * phase)
+
+    def assert_closeness(
+        self,
+        unitaries: list[npt.NDArray[np.complex128]],
+    ) -> None:
+        for u in unitaries:
+            for v in unitaries:
+                assert np.allclose(u, v, atol=1e-5)
+
+    def test_canonical_unitary(self) -> None:
+        num_phases = 100
+        for num_qubits in range(1, 5):
+            base_unitary = unitary_group.rvs(2**num_qubits)
+            phases = [self.random_phase() for _ in range(num_phases)]
+            unitaries = [phase * base_unitary for phase in phases]
+            canonical_unitaries = [
+                canonical_unitary(unitary) for unitary in unitaries
+            ]
+            self.assert_closeness(canonical_unitaries)
