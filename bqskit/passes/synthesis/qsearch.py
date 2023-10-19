@@ -160,96 +160,98 @@ class QSearchSynthesisPass(SynthesisPass):
 
             if gate.get("type") == "CNOT":
                 # adding CNOT gate to the quantum circuit
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit")  - 1              
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(CNOTGate(), (control_qbit, target_qbit))
                 
 
             if gate.get("type") == "CRY":
                 # adding CRY gate to the quantum circuit
-                Theta=gate.get("Theta")     
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                Theta= qubitnum - gate.get("Theta") - 1    
+                control_qbit = qubitnum - gate.get("control_qbit") - 1                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(CRYGate() ,(control_qbit, target_qbit),[THeta])
 
             elif gate.get("type") == "CZ":
                 # adding CZ gate to the quantum circuit
             
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")   
-                Theta = gate.get("Theta")                  
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                  
                 circuit.append_gate(CZGate(), (control_qbit, target_qbit))
                
 
             elif gate.get("type") == "CH":
                 # adding CZ gate to the quantum circuit
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit") -1                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(CZGate(), (control_qbit, target_qbit))
                
 
             elif gate.get("type") == "SYC":
                 # Sycamore gate
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit") -1                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(SycamoreGate(), (control_qbit, target_qbit))
                
                 
             elif gate.get("type") == "U3":
-                target_qbit=gate.get("target_qbit") 
-                Theta = gate.get("Theta")     
-                Lambda = gate.get("Lambda") 
-                Phi = gate.get("Phi") 
+                target_qbit = qubitnum - gate.get("target_qbit") - 1 
+                Theta = qubitnum - gate.get("Theta") - 1    
+                Lambda = qubitnum - gate.get("Lambda") - 1 
+                Phi = qubitnum - gate.get("Phi") -1 
                 circuit.append_gate(U3Gate(),target_qbit,[Theta,Phi,Lambda])
 
             elif gate.get("type") == "RX":
                 # RX gate               
-                target_qbit = gate.get("target_qbit")                
-                Theta = gate.get("Theta")                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                
+                Theta = qubitnum - gate.get("Theta") - 1               
                 circuit.append_gate(RXGate(),( target_qbit),[Theta]) 
               
 
             elif gate.get("type") == "RY":
                 # RY gate
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
-                Theta = gate.get("Theta")                
+                target_qbit = int(qubitnum) - int(gate.get("target_qbit")) - 1                
+                Theta = int(qubitnum) - int(gate.get("Theta")) - 1               
                 circuit.append_gate(RYGate(),(target_qbit),[Theta])
                 
 
             elif gate.get("type") == "RZ":
                 # RZ gate
                        
-                target_qbit = gate.get("target_qbit")                
-                Phi = gate.get("Phi")                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                Phi = qubitnum - gate.get("Phi") - 1               
                 circuit.append_gate(RZGate(), (target_qbit),[Phi] )
                
 
             elif gate.get("type") == "X":
                 # X gate
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                
                 circuit.append_gate(XGate(), (target_qbit))
                
 
             elif gate.get("type") == "Y":
                 # Y gate
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(YGate(), (target_qbit))
              
 
             elif gate.get("type") == "Z":
                 # Z gate
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(ZGate(), (target_qbit))
 
             elif gate.get("type") == "SX":
                 # SX gate
-                control_qbit = gate.get("control_qbit")                
-                target_qbit = gate.get("target_qbit")                
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(RZGate(), (target_qbit))
+           #qnum=[]
+            #for qubitnumber in qubitnum:
+             #     qnum.append(qubitnum-qubitnumber)
+            #Circuit_inverse=Circuit.renumber_qudits(Circuit, qnum)
        
         return(circuit)
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
