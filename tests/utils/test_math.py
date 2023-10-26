@@ -189,25 +189,20 @@ class TestPauliExpansion:
 
 
 class TestCanonicalUnitary:
-    def random_phase(self) -> np.complex128:
-        phase = 2 * np.pi * np.random.rand()
-        return np.exp(1j * phase)
-
-    def assert_closeness(
+    @pytest.mark.parametrize(
+        'phase, num_qudits',
+        [
+            (np.exp(1j * 2 * np.pi * np.random.randn()), qudits)
+            for qudits in range(1, 6) for _ in range(100)
+        ],
+    )
+    def test_canonical_unitary(
         self,
-        unitaries: list[npt.NDArray[np.complex128]],
+        phase: np.complex128,
+        num_qudits: int,
     ) -> None:
-        for u in unitaries:
-            for v in unitaries:
-                assert np.allclose(u, v, atol=1e-5)
-
-    def test_canonical_unitary(self) -> None:
-        num_phases = 100
-        for num_qubits in range(1, 5):
-            base_unitary = unitary_group.rvs(2**num_qubits)
-            phases = [self.random_phase() for _ in range(num_phases)]
-            unitaries = [phase * base_unitary for phase in phases]
-            canonical_unitaries = [
-                canonical_unitary(unitary) for unitary in unitaries
-            ]
-            self.assert_closeness(canonical_unitaries)
+        base_unitary = unitary_group.rvs(2**num_qudits)
+        canon_unitary = canonical_unitary(base_unitary)
+        phased_unitary = phase * base_unitary
+        recanon_unitary = canonical_unitary(phased_unitary)
+        assert np.allclose(canon_unitary, recanon_unitary, atol=1e-5)
