@@ -58,17 +58,6 @@ class QuickPartitioner(BasePass):
 
             data (dict[str,Any]): Optional data unique to specific run.
         """
-        if self.block_size > circuit.num_qudits:
-            _logger.warning(
-                'Configured block size is greater than circuit size; '
-                'blocking entire circuit.',
-            )
-            circuit.fold({
-                qudit_index: (0, circuit.num_cycles - 1)
-                for qudit_index in range(circuit.num_qudits)
-            })
-            return
-
         # The partitioned circuit that will be built and returned
         partitioned_circuit = Circuit(circuit.num_qudits, circuit.radixes)
 
