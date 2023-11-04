@@ -443,7 +443,7 @@ class Compiler:
 
             return self._recv_handle_log_error()
 
-        except Exception as e:
+        except Exception as e:  
             self.conn = None
             self.close()
             raise RuntimeError('Server connection unexpectedly closed.') from e
