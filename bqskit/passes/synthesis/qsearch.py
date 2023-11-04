@@ -248,11 +248,9 @@ class QSearchSynthesisPass(SynthesisPass):
                 control_qbit = qubitnum - gate.get("control_qbit") - 1               
                 target_qbit = qubitnum - gate.get("target_qbit") - 1               
                 circuit.append_gate(RZGate(), (target_qbit))
-           #qnum=[]
-            #for qubitnumber in qubitnum:
-             #     qnum.append(qubitnum-qubitnumber)
-            #Circuit_inverse=Circuit.renumber_qudits(Circuit, qnum)
        
+  
+  
         return(circuit)
     def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
