@@ -3,8 +3,12 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+<<<<<<< HEAD
 
 from bqskit.compiler.passdata import PassData
+=======
+import math 
+>>>>>>> master
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -137,7 +141,10 @@ class QSearchSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
+<<<<<<< HEAD
      
+=======
+>>>>>>> master
     def transform_circuit_from_squander_to_qsearch(self,
     cDecompose,
     qubitnum)-> Circuit:
@@ -155,7 +162,11 @@ class QSearchSynthesisPass(SynthesisPass):
         from bqskit.ir.gates.constant.y import YGate
         from bqskit.ir.gates.constant.z import ZGate
         from bqskit.ir.gates.constant.sx import SqrtXGate
+<<<<<<< HEAD
         
+=======
+        import numpy as np
+>>>>>>> master
         
         
         circuit=Circuit(qubitnum)
@@ -163,6 +174,158 @@ class QSearchSynthesisPass(SynthesisPass):
         for idx in range(len(gates)-1, -1, -1):
             
             gate = gates[idx]
+<<<<<<< HEAD
+=======
+
+            if gate.get("type") == "CNOT":
+                # adding CNOT gate to the quantum circuit
+                control_qbit = qubitnum - gate.get("control_qbit")  - 1              
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(CNOTGate(), (control_qbit, target_qbit))
+                
+
+            if gate.get("type") == "CRY":
+                # adding CRY gate to the quantum circuit
+                Theta=  gate.get("Theta")     
+                control_qbit = qubitnum - gate.get("control_qbit") - 1                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(CRYGate() ,(control_qbit, target_qbit),[THeta])
+
+            elif gate.get("type") == "CZ":
+                # adding CZ gate to the quantum circuit
+            
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                  
+                circuit.append_gate(CZGate(), (control_qbit, target_qbit))
+               
+
+            elif gate.get("type") == "CH":
+                # adding CZ gate to the quantum circuit
+                control_qbit = qubitnum - gate.get("control_qbit") -1                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(CZGate(), (control_qbit, target_qbit))
+               
+
+            elif gate.get("type") == "SYC":
+                # Sycamore gate
+                control_qbit = qubitnum - gate.get("control_qbit") -1                
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(SycamoreGate(), (control_qbit, target_qbit))
+               
+                
+            elif gate.get("type") == "U3":
+                target_qbit = qubitnum - gate.get("target_qbit") - 1 
+                Theta = gate.get("Theta")     
+                Lambda =  gate.get("Lambda")  
+                Phi = gate.get("Phi")  
+                circuit.append_gate(U3Gate(),target_qbit,[Theta,Phi,Lambda])
+
+            elif gate.get("type") == "RX":
+                # RX gate               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                
+                Theta = gate.get("Theta")               
+                circuit.append_gate(RXGate(),( target_qbit),[Theta]) 
+              
+
+            elif gate.get("type") == "RY":
+                # RY gate
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                
+                Theta = gate.get("Theta")               
+                circuit.append_gate(RYGate(),(target_qbit),[Theta])
+                
+
+            elif gate.get("type") == "RZ":
+                # RZ gate
+                       
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                Phi =  gate.get("Phi")               
+                circuit.append_gate(RZGate(), (target_qbit),[Phi] )
+               
+
+            elif gate.get("type") == "X":
+                # X gate
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1                
+                circuit.append_gate(XGate(), (target_qbit))
+               
+
+            elif gate.get("type") == "Y":
+                # Y gate
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(YGate(), (target_qbit))
+             
+
+            elif gate.get("type") == "Z":
+                # Z gate
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(ZGate(), (target_qbit))
+
+            elif gate.get("type") == "SX":
+                # SX gate
+                control_qbit = qubitnum - gate.get("control_qbit") - 1               
+                target_qbit = qubitnum - gate.get("target_qbit") - 1               
+                circuit.append_gate(RZGate(), (target_qbit))
+       
+  
+  
+        return(circuit)
+    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+        """Synthesize `utry`, see :class:`SynthesisPass` for more."""
+        Umtx = utry.numpy
+        from squander import N_Qubit_Decomposition_adaptive
+        import numpy as np
+        import numpy.linalg as LA
+        from squander import utils
+        import random
+        
+        qubitnum=math.floor(math.log2(utry.__len__()))
+        if qubitnum > 2 :
+          
+            
+                #Python map containing hyper-parameters
+            config = { 	
+                'Randomized_Radius': 0.3, 
+                'randomized_adaptive_layers': 1,
+                'optimization_tolerance': self.success_threshold}
+            
+            
+            cDecompose = N_Qubit_Decomposition_adaptive(Umtx.conj().T, level_limit_max=5,level_limit_min=0, config=config)
+            cDecompose.set_Verbose(0)
+            cDecompose.Start_Decomposition()
+            
+   
+            Circuit_squander=self.transform_circuit_from_squander_to_qsearch(cDecompose,qubitnum)
+            Unitarymatrix_bqskit=Circuit.get_unitary(Circuit_squander)	
+            
+            product_matrix = np.dot(Umtx,Unitarymatrix_bqskit.conj().T)
+            phase = np.angle(product_matrix[0,0])
+            product_matrix = product_matrix*np.exp(-1j*phase)
+            shape=np.shape(product_matrix)
+            product_matrix = np.eye(shape[0])*2 - product_matrix - product_matrix.conj().T
+            decomposition_error = (np.real(np.trace(product_matrix)))/2
+            _logger.debug("The error of the decomposition is"  + str(decomposition_error))	
+            
+            squander_decomposition_error=cDecompose.get_Decomposition_Error()
+            
+            
+            if decomposition_error < self.success_threshold:
+                num = random.random()
+                Circuit.save(Circuit_squander,"bad_circuit{num}.qasm")
+                np.savetxt("bad_Unitarybqskit{num}.txt",Unitarymatrix_bqskit)
+                np.savetxt("bad_umtx{num}.txt",Umtx)
+                _logger.debug('the squander decomposition error is bigger than the succes_treshold, with the value of:',squander_decomposition_error)
+                #exit()
+                
+            else: 
+                _logger.debug('Successful synthesis with squander.')
+                return(Circuit_squander) 
+                
+                
+        "ide kell majd az összehasonlítás az umtx-el a Circuit 2"
+        frontier = Frontier(utry, self.heuristic_function)
+>>>>>>> master
 
             if gate.get("type") == "CNOT":
                 # adding CNOT gate to the quantum circuit
@@ -338,7 +501,7 @@ class QSearchSynthesisPass(SynthesisPass):
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
-        best_dist = self.cost.calc_cost(initial_layer, utry)
+        best_dist = self.cost.calc_cost(initial_layer, utry) # megnézni mit csinál mennyire hasonlít.
         best_circ = initial_layer
         best_layer = 0
 
@@ -375,7 +538,7 @@ class QSearchSynthesisPass(SynthesisPass):
             for circuit in circuits:
                 dist = self.cost.calc_cost(circuit, utry)
 
-                if dist < self.success_threshold:
+                if dist < self.success_threshold: #ifben átírni succes tressholdra
                     _logger.debug('Successful synthesis.')
                     if self.store_partial_solutions:
                         data['psols'] = psols
