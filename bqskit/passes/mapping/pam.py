@@ -13,6 +13,7 @@ from typing import TypedDict
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.point import CircuitPoint
 from bqskit.passes.mapping.sabre import GeneralizedSabreAlgorithm
@@ -175,6 +176,13 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
                 E = self._calc_extended_set(circuit, F)
                 for n in execute_list:
                     op = circuit[n]
+
+                    if isinstance(op.gate, BarrierPlaceholder):
+                        if modify_circuit:
+                            physical_location = [pi[q] for q in op.location]
+                            mapped_circuit.append_gate(op.gate, op.location)
+                        continue
+
                     p1, circ, p2 = self._get_best_perm(
                         circuit,
                         perm_data[n],

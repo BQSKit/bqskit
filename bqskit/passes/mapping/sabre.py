@@ -9,6 +9,7 @@ from typing import Sequence
 import numpy as np
 
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.operation import Operation
@@ -330,6 +331,9 @@ class GeneralizedSabreAlgorithm():
 
     def _can_exe(self, op: Operation, pi: list[int], cg: CouplingGraph) -> bool:
         """Return true if `op` is executable given the current mapping `pi`."""
+        if isinstance(op.gate, BarrierPlaceholder):
+            return True
+        
         if isinstance(op.gate, CircuitGate):
             if all(g.num_qudits == 1 for g in op.gate._circuit.gate_set):
                 return True
