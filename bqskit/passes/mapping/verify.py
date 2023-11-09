@@ -4,16 +4,17 @@ from __future__ import annotations
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import PermutationGate
 from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.passes.alias import PassAlias
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.passes.mapping.pam import PAMBlockResultDict
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
-from bqskit.passes.partitioning.quick import QuickPartitioner
+from bqskit.passes.partitioning import QuickPartitioner
 from bqskit.passes.util.unfold import UnfoldPass
-from bqskit.qis.permutation import PermutationMatrix
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import Sequence
 
 
 class TagPAMBlockDataPass(BasePass):
@@ -41,6 +42,10 @@ class TagPAMBlockDataPass(BasePass):
 class CalculatePAMErrorsPass(BasePass):
     """Calculates error of a panel consisting of blocks tagged with PAM data."""
 
+    @staticmethod
+    def get_opp_perm(in_perm: Sequence[int]) -> Sequence[int]:
+        return tuple(in_perm.index(i) for i in range(len(in_perm)))
+
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
         # calculate approximate (current) panel unitary
@@ -54,11 +59,18 @@ class CalculatePAMErrorsPass(BasePass):
                 pf = op.gate.tag['post_perm']
                 in_utry = op.gate.tag['original_utry']
                 n = in_utry.num_qudits
-                PI = PermutationMatrix.from_qubit_location(n, pi)
-                PF = PermutationMatrix.from_qubit_location(n, pf)
                 exact_circuit.append_gate(
-                    ConstantUnitaryGate(PF.T @ in_utry @ PI),
-                    op.location,
+                    PermutationGate(
+                        n, CalculatePAMErrorsPass.get_opp_perm(pi),
+                    ), op.location,
+                )
+                exact_circuit.append_gate(
+                    ConstantUnitaryGate(in_utry), op.location,
+                )
+                exact_circuit.append_gate(
+                    PermutationGate(
+                        n, CalculatePAMErrorsPass.get_opp_perm(pf),
+                    ), op.location,
                 )
 
             else:
