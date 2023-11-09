@@ -333,7 +333,7 @@ class GeneralizedSabreAlgorithm():
         """Return true if `op` is executable given the current mapping `pi`."""
         if isinstance(op.gate, BarrierPlaceholder):
             return True
-        
+
         if isinstance(op.gate, CircuitGate):
             if all(g.num_qudits == 1 for g in op.gate._circuit.gate_set):
                 return True
