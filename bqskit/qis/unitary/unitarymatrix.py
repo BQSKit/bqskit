@@ -212,7 +212,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             are equal up to global phase and 1 means the two unitaries are
             very unsimilar or far apart.
         """
-        other = UnitaryMatrix(other)
+        other = UnitaryMatrix(other, check_arguments=False)
         num = np.abs(np.trace(self.conj().T @ other))
         dem = self.dim
         frac = min(num / dem, 1)
@@ -475,7 +475,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         )
 
         if convert_back:
-            return UnitaryMatrix(out, self.radixes)
+            return UnitaryMatrix(out, self.radixes, False)
 
         return out
 
