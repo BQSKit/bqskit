@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.passes.mapping.sabre import GeneralizedSabreAlgorithm
 
@@ -67,17 +67,17 @@ class GeneralizedSabreLayoutPass(BasePass, GeneralizedSabreAlgorithm):
             extended_set_weight,
         )
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        subgraph = self.get_connectivity(circuit, data)
+        subgraph = data.connectivity
         if not subgraph.is_fully_connected():
             raise RuntimeError('Cannot layout circuit on disconnected qudits.')
 
         pi = [i for i in range(circuit.num_qudits)]
+
         for _ in range(self.total_passes):
             self.forward_pass(circuit, pi, subgraph)
             self.backward_pass(circuit, pi, subgraph)
 
-        # select qubits
-        _logger.info(f'Found layout: {str(pi)}')
-        data['initial_mapping'] = pi
+        self._apply_perm(pi, data.placement)
+        _logger.info(f'Found layout: {pi}, new placement: {data.placement}')

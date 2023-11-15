@@ -2,22 +2,18 @@
 from __future__ import annotations
 
 from typing import Sequence
+from typing import TYPE_CHECKING
 
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.gate import Gate
-from bqskit.ir.gates.constant.cx import CNOTGate
-from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.compiler.gateset import GateSet
+from bqskit.compiler.gateset import GateSetLike
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.graph import CouplingGraphLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
 
-
-default_gate_set: set[Gate] = {
-    CNOTGate(),
-    U3Gate(),
-}
+if TYPE_CHECKING:
+    from bqskit.ir.circuit import Circuit
 
 
 class MachineModel:
@@ -27,7 +23,7 @@ class MachineModel:
         self,
         num_qudits: int,
         coupling_graph: CouplingGraphLike | None = None,
-        gate_set: set[Gate] = default_gate_set,
+        gate_set: GateSetLike | None = None,
         radixes: Sequence[int] = [],
     ) -> None:
         """
@@ -42,8 +38,9 @@ class MachineModel:
                 an all-to-all coupling graph is used as a default.
                 (Default: None)
 
-            gate_set (set[Gate]): The native gate set available on the
-                machine.
+            gate_set (GateSetLike | None): The native gate set available
+                on the machine. If left as None, the default gate set
+                will be used. See :func:`~GateSet.default_gate_set`.
 
             radixes (Sequence[int]): A sequence with its length equal
                 to `num_qudits`. Each element specifies the base of a
@@ -53,8 +50,8 @@ class MachineModel:
             ValueError: If `num_qudits` is nonpositive.
 
         Note:
-            Pre-built models for many active QPUs exist in the `bqskit.ext`
-            package.
+            Pre-built models for many active QPUs exist in the
+            :obj:`~bqskit.ext` package.
         """
 
         if not is_integer(num_qudits):
@@ -84,11 +81,13 @@ class MachineModel:
         ):
             raise TypeError('Invalid coupling graph, expected list of tuples')
 
-        if not isinstance(gate_set, set):
-            raise TypeError(f'Expected set of gates, got {type(gate_set)}.')
+        if gate_set is None:
+            gate_set = GateSet.default_gate_set(radixes)
+        else:
+            gate_set = GateSet(gate_set)
 
-        if not all(isinstance(g, Gate) for g in gate_set):
-            raise TypeError(f'Expected set of gates, got {type(gate_set)}.')
+        if not isinstance(gate_set, GateSet):
+            raise TypeError(f'Expected GateSet, got {type(gate_set)}.')
 
         self.gate_set = gate_set
         self.coupling_graph = CouplingGraph(coupling_graph)
@@ -98,7 +97,11 @@ class MachineModel:
         """Return all `block_size` connected blocks of qudit indicies."""
         return self.coupling_graph.get_subgraphs_of_size(block_size)
 
-    def is_compatible(self, circuit: Circuit) -> bool:
+    def is_compatible(
+        self,
+        circuit: Circuit,
+        placement: list[int] | None = None,
+    ) -> bool:
         """Check if a circuit is compatible with this model."""
         if circuit.num_qudits > self.num_qudits:
             return False
@@ -106,10 +109,19 @@ class MachineModel:
         if any(g not in self.gate_set for g in circuit.gate_set):
             return False
 
-        if any(e not in self.coupling_graph for e in circuit.coupling_graph):
+        if placement is None:
+            placement = list(range(circuit.num_qudits))
+
+        if any(
+            (placement[e[0]], placement[e[1]]) not in self.coupling_graph
+            for e in circuit.coupling_graph
+        ):
             return False
 
-        if any(r != self.radixes[i] for i, r in enumerate(circuit.radixes)):
+        if any(
+            r != self.radixes[placement[i]]
+            for i, r in enumerate(circuit.radixes)
+        ):
             return False
 
         return True

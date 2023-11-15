@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ctypes
+import random
 from ctypes.util import find_library
 from sys import platform
 
@@ -16,3 +17,4 @@ def seed_random_sources(seed: int) -> None:
         libc.srand(seed)
     # set numpy seed
     np.random.seed(seed)
+    random.seed(seed)

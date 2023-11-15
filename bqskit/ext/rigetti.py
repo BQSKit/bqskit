@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from bqskit.compiler.machine import MachineModel
-from bqskit.ir.gates import CZGate
-from bqskit.ir.gates import RZGate
-from bqskit.ir.gates import SXGate
-from bqskit.ir.gates import XGate
+from bqskit.ir.gates.constant.cz import CZGate
+from bqskit.ir.gates.constant.sx import SXGate
+from bqskit.ir.gates.constant.x import XGate
+from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.qis.graph import CouplingGraph
 
 rigetti_gate_set = {SXGate(), XGate(), RZGate(), CZGate()}

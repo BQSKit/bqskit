@@ -22,6 +22,13 @@ our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
    intro/license
 
 .. toctree::
+   :caption: Guides
+   :maxdepth: 1
+
+   guides/distributing.md
+   guides/custompass.md
+
+.. toctree::
    :caption: API Reference
    :maxdepth: 1
 
@@ -31,3 +38,5 @@ our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
    source/qis
    source/utils
    source/exec
+   source/runtime
+   source/ext

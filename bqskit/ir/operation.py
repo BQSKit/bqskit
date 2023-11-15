@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates import FrozenParameterGate
+from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -107,6 +107,14 @@ class Operation(DifferentiableUnitary):
 
         return self.gate.get_unitary(self.params)
 
+    def get_inverse(self) -> Operation:
+        """Return the operation's inverse operation."""
+        return Operation(
+            self.gate.get_inverse(),
+            self.location,
+            self.gate.get_inverse_params(self.params),
+        )
+
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this operation.
@@ -153,6 +161,8 @@ class Operation(DifferentiableUnitary):
         return f'{self.gate}@{self.location}'
 
     def __repr__(self) -> str:
+        if len(self.params) == 0:
+            return f'{self.gate}@{self.location}'
         return f'{self.gate}({self.params})@{self.location}'
 
     def is_differentiable(self) -> bool:

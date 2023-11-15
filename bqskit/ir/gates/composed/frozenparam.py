@@ -88,6 +88,7 @@ class FrozenParameterGate(
             self.gate.name,
             str(self.frozen_params),
         )
+        # TODO: If new gate is constant; cache its unitary
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

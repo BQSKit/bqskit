@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 import numpy as np
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 _logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 class GreedyPlacementPass(BasePass):
     """Find a placement by starting with the most connected qudit."""
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find physical qudit with highest degree
@@ -45,11 +45,11 @@ class GreedyPlacementPass(BasePass):
                 if n not in placement and n not in neighbors:
                     neighbors.append(n)
 
-        data['placement'] = sorted(placement)
+        data.placement = sorted(placement)
 
-        _logger.info(f'Placed qudits on {data["placement"]}')
+        _logger.info(f'Placed qudits on {data.placement}')
 
         # Raise an error if this is not a valid placement
-        sg = graph.get_subgraph(data['placement'])
+        sg = graph.get_subgraph(data.placement)
         if not sg.is_fully_connected():
             raise RuntimeError('No valid placement found.')

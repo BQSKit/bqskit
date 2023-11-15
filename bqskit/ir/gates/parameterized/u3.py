@@ -4,6 +4,8 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gate import Gate
+from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -11,7 +13,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
+class U3Gate(QubitGate, DifferentiableUnitary, CachedClass, GeneralGate):
     """
     The U3 single qubit gate.
 
@@ -89,8 +91,7 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
             ], dtype=np.complex128,
         )
 
-    @staticmethod
-    def calc_params(utry: UnitaryMatrix) -> tuple[float, float, float]:
+    def calc_params(self, utry: UnitaryMatrix) -> list[float]:
         """
         Calculate the three parameters to a U3Gate from a given unitary.
 
@@ -99,13 +100,12 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
                 calculate a U3Gate's parameters for.
 
         Returns:
-            tuple[float, float, float]: The three parameters to a U3Gate,
+            list[float]: The three parameters to a U3Gate,
                 such that, `U3Gate().get_unitary` will return `utry`.
 
         Raises:
             ValueError: If `utry` is not a single-qubit unitary.
         """
-
         if utry.radixes != (2,):
             raise ValueError('Expected single-qubit unitary.')
 
@@ -118,4 +118,13 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass):
         theta = 2 * float(np.arctan2(c, d))
         phi = (a + b)
         lamb = (a - b)
-        return theta, phi, lamb
+        return [theta, phi, lamb]
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the parameters that invert the gate, see :class:`Gate`."""
+        self.check_parameters(params)
+        return [-params[0], -params[2], -params[1]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        return U3Gate()

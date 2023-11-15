@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qutritgate import QutritGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -11,7 +12,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U8Gate(QutritGate, DifferentiableUnitary, CachedClass):
+class U8Gate(QutritGate, DifferentiableUnitary, CachedClass, GeneralGate):
     """The U8 single qutrit gate."""
 
     _num_qudits = 1
@@ -183,3 +184,38 @@ class U8Gate(QutritGate, DifferentiableUnitary, CachedClass):
                 ],
             ],
         )
+
+    def calc_params(self, utry: UnitaryMatrix) -> list[float]:
+        """Return the parameters for this gate to implement `utry`"""
+        if utry.radixes != (3,):
+            raise ValueError('Expected single-qutrit unitary.')
+
+        params = [0.0] * 8
+
+        mag = np.linalg.det(utry.numpy) ** (-1 / 3)
+        su = mag * utry
+
+        params[5] = np.arctan2(su[0][1].imag, su[0][1].real)
+
+        s1 = (su[0][1] * np.exp(-1j * params[5])).real
+        params[0] = np.arcsin(s1)
+
+        c2p1 = su[0][0] / np.cos(params[0])
+        params[3] = np.arctan2(c2p1.imag, c2p1.real)
+
+        c2 = (c2p1 * np.exp(-1j * params[3])).real
+        params[1] = np.arccos(c2)
+
+        c3p2 = su[1][1] / np.cos(params[0])
+        params[4] = np.arctan2(c3p2.imag, c3p2.real)
+
+        c3 = (c3p2 * np.exp(-1j * params[4])).real
+        params[2] = np.arccos(c3)
+
+        p4 = su[0][2] / (np.cos(params[0]) * np.sin(params[1]))
+        params[6] = np.arctan2(p4.imag, p4.real)
+
+        p5 = su[2][1] / (np.cos(params[0]) * np.sin(params[2]))
+        params[7] = np.arctan2(p5.imag, p5.real)
+
+        return params

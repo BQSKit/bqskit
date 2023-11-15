@@ -1,22 +1,25 @@
 """This module implements the ForEachBlockPass class."""
 from __future__ import annotations
 
+import functools
 import logging
-from typing import Any
 from typing import Callable
-from typing import Sequence
 
+from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.passdata import PassData
+from bqskit.compiler.workflow import Workflow
+from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
-from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_sequence
+from bqskit.runtime import get_runtime
 
 _logger = logging.getLogger(__name__)
 
@@ -25,27 +28,47 @@ class ForEachBlockPass(BasePass):
     """
     A pass that executes other passes on each block in the circuit.
 
-    This is a control pass that executes another pass or passes on every block
-    in the circuit. This will be done in parallel if run from a compiler.
+    This is a control pass that executes a workflow on every block in the
+    circuit. This will be done in parallel.
     """
 
     key = 'ForEachBlockPass_data'
     """The key in data, where block data will be put."""
 
+    pass_down_key_prefix = 'ForEachBlockPass_pass_down_'
+    """If a key exists in the pass data with this prefix, pass it to blocks."""
+
+    pass_down_block_specific_key_prefix = (
+        'ForEachBlockPass_specific_pass_down_'
+    )
+    """
+    Data specific to the processing of individual blocks in a partitioned
+    circuit can be injected into the `PassData` in `run` by using this prefix.
+
+    The expected type of the associated value is `dict[int, Any]`, where
+    integer (sub-)keys correspond to block numbers in a partitioned quantum
+    circuit.
+
+    Pseudocode example for seed circuits:
+        seeds = {block_id: [seed_circuit_a, seed_circuit_b, ...], ...}
+        key = self.pass_down_block_specific_key_prefix + 'seed_circuits'
+        seed_updater = UpdateDataPass(key, seeds)
+        workflow = Workflow([..., seed_updater, ForEachBlockPass(...), ...])
+    """
+
     def __init__(
         self,
-        loop_body: BasePass | Sequence[BasePass],
+        loop_body: WorkflowLike,
         calculate_error_bound: bool = False,
         collection_filter: Callable[[Operation], bool] | None = None,
-        replace_filter: Callable[[Circuit, Operation], bool] | None = None,
-        batch_size: int = 1,
+        replace_filter: ReplaceFilterFn | str = 'always',
+        batch_size: int | None = None,
     ) -> None:
         """
         Construct a ForEachBlockPass.
 
         Args:
-            loop_body (BasePass | Sequence[BasePass]): The pass or passes
-                to execute on every block.
+            loop_body (WorkflowLike): The workflow to execute on every block.
 
             calculate_error_bound (bool): If set to true, will calculate
                 errors on blocks after running `loop_body` on them and
@@ -59,71 +82,89 @@ class ForEachBlockPass(BasePass):
                 be formed into an individual circuit and passed through
                 `loop_body`. Defaults to all CircuitGates,
                 ConstantUnitaryGates, and VariableUnitaryGates.
+                #TODO: address importability
 
-            replace_filter (Callable[[Circuit, Operation], bool] | None):
+            replace_filter (ReplaceFilterFn | str | None):
                 A predicate that determines if the resulting circuit, after
                 calling `loop_body` on a block, should replace the original
                 operation. Called with the circuit output from `loop_body`
                 and the original operation. If this returns true, the
                 operation will be replaced with the new circuit.
-                Defaults to always replace.
+                Defaults to always replace. If none is passed, will
+                generate a replace filter always replaces. If a string is
+                passed, will generate a replace filter corresponding to
+                the string. The string should either be 'always', 'less-than',
+                'less-than-multi', 'less-than-many', 'less-than-respecting',
+                'less-than-respecting-multi', or 'less-than-respecting-many'.
+                    - 'always' will always replace
+                    - 'less-than' will replace if the new circuit has fewer
+                        gates than the old circuit.
+                    - 'less-than-multi' will replace if the new circuit has
+                        fewer multi-qudit gates than the old circuit.
+                    - 'less-than-many' will replace if the new circuit has
+                        fewer many-qudit gates than the old circuit.
+                    - 'less-than-respecting' will replace if the new circuit
+                        has fewer gates than the old circuit or the old
+                        doesn't respect the model (ignoring single-qudit
+                        gate sets).
+                    - 'less-than-respecting-multi' will replace if the new
+                        circuit has fewer multi-qudit gates than the old
+                        circuit or the old doesn't respect the model
+                        (ignoring single-qudit gate sets).
+                    - 'less-than-respecting-many' will replace if the new
+                        circuit has fewer many-qudit gates than the old
+                        circuit or the old doesn't respect the model
+                        (ignoring single-qudit gate sets).
+                    - 'less-than-respecting-fully' will replace if the new
+                        circuit has fewer gates than the old circuit or
+                        the old doesn't respect the model.
+                    - 'less-than-respecting-fully-multi' will replace if
+                        the new circuit has fewer multi-qudit gates than
+                        the old circuit or the old doesn't respect the model.
+                    - 'less-than-respecting-fully-many' will replace if
+                        the new circuit has fewer many-qudit gates than
+                        the old circuit or the old doesn't respect the model.
+                Defaults to 'always'.  #TODO: address importability
 
-            batch_size (int): The amount of blocks to batch in one job.
-                If zero, batch all blocks in one job. (Default: 1).
-
-        Raises:
-            ValueError: If a Sequence[BasePass] is given, but it is empty.
+            batch_size (int): (Deprecated).
         """
-
-        if not is_sequence(loop_body) and not isinstance(loop_body, BasePass):
-            raise TypeError(
-                'Expected Pass or sequence of Passes, got %s.'
-                % type(loop_body),
+        if batch_size is not None:
+            import warnings
+            warnings.warn(
+                'Batch size is no longer supported, this warning will'
+                ' become an error in a future update.',
+                DeprecationWarning,
             )
 
-        if is_sequence(loop_body):
-            truth_list = [isinstance(elem, BasePass) for elem in loop_body]
-            if not all(truth_list):
-                raise TypeError(
-                    'Expected Pass or sequence of Passes, got %s.'
-                    % type(loop_body[truth_list.index(False)]),
-                )
-            if len(loop_body) == 0:
-                raise ValueError('Expected at least one pass.')
-
-        if not is_integer(batch_size):
-            raise TypeError(
-                'Expected integer for batch_size'
-                f', got {type(batch_size)}',
-            )
-
-        if batch_size < 0:
-            raise ValueError(
-                'Expected nonnegative integer for batch_size'
-                f', got {batch_size}',
-            )
-
-        self.loop_body = loop_body if is_sequence(loop_body) else [loop_body]
         self.calculate_error_bound = calculate_error_bound
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
-        self.batch_size = batch_size
+        self.workflow = Workflow(loop_body)
 
         if not callable(self.collection_filter):
             raise TypeError(
                 'Expected callable method that maps Operations to booleans for'
-                ' collection_filter, got %s.' % type(self.collection_filter),
+                f' collection_filter, got {type(self.collection_filter)}.',
             )
 
-        if not callable(self.replace_filter):
-            raise TypeError(
-                'Expected callable method that maps Circuit and Operations to'
-                ' booleans for replace_filter'
-                ', got %s.' % type(self.replace_filter),
-            )
+        if not isinstance(self.replace_filter, str):
+            if not callable(self.replace_filter):
+                raise TypeError(
+                    'Expected either string representing a valid replacement'
+                    ' filter or callable method that maps Circuit and'
+                    ' Operations to bools for replace_filter'
+                    f' , got {type(self.replace_filter)}.',
+                )
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        # Get the callable replacement filter
+        if isinstance(self.replace_filter, str):
+            method = self.replace_filter
+            replace_filter = gen_replace_filter(method, data.model)
+        else:
+            replace_filter = self.replace_filter
+
         # Make room in data for block data
         if self.key not in data:
             data[self.key] = []
@@ -134,15 +175,19 @@ class ForEachBlockPass(BasePass):
             if self.collection_filter(op):
                 blocks.append((cycle, op))
 
+        # No blocks, no work
+        if len(blocks) == 0:
+            data[self.key].append([])
+            return
+
         # Get the machine model
-        model = self.get_model(circuit, data)
-        coupling_graph = self.get_connectivity(circuit, data)
+        model = data.model
+        coupling_graph = data.connectivity
 
         # Preprocess blocks
         subcircuits: list[Circuit] = []
-        block_datas: list[dict[str, Any]] = []
+        block_datas: list[PassData] = []
         for i, (cycle, op) in enumerate(blocks):
-            block_data: dict[str, Any] = {}
 
             # Form Subcircuit
             if isinstance(op.gate, CircuitGate):
@@ -151,7 +196,7 @@ class ForEachBlockPass(BasePass):
             else:
                 subcircuit = Circuit.from_operation(op)
 
-            # Form Subtopology
+            # Form Submodel
             subradixes = [circuit.radixes[q] for q in op.location]
             subnumbering = {op.location[i]: i for i in range(len(op.location))}
             submodel = MachineModel(
@@ -161,44 +206,34 @@ class ForEachBlockPass(BasePass):
                 subradixes,
             )
 
-            # Form subdata
+            # Form Subdata
+            block_data: PassData = PassData(subcircuit)
             block_data['subnumbering'] = subnumbering
-            block_data['machine_model'] = submodel
-            block_data['parallel'] = self.in_parallel(data)
+            block_data['model'] = submodel
             block_data['point'] = CircuitPoint(cycle, op.location[0])
             block_data['calculate_error_bound'] = self.calculate_error_bound
+            for key in data:
+                if key.startswith(self.pass_down_key_prefix):
+                    block_data[key] = data[key]
+                elif key.startswith(
+                    self.pass_down_block_specific_key_prefix,
+                ) and i in data[key]:
+                    block_data[key] = data[key][i]
+            block_data.seed = data.seed
 
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
 
-        # Group them into batches
-        if self.batch_size == 0:
-            batched_subcircuits = [subcircuits]
-            batched_block_datas = [block_datas]
-        else:
-            batched_subcircuits = [
-                subcircuits[i:i + self.batch_size]
-                for i in range(0, len(blocks), self.batch_size)
-            ]
-            batched_block_datas = [
-                block_datas[i:i + self.batch_size]
-                for i in range(0, len(blocks), self.batch_size)
-            ]
-
         # Do the work
-        results = self.execute(
-            data,
+        results = await get_runtime().map(
             _sub_do_work,
-            [self.loop_body] * len(batched_subcircuits),
-            batched_subcircuits,
-            batched_block_datas,
+            [self.workflow] * len(subcircuits),
+            subcircuits,
+            block_datas,
         )
 
         # Unpack results
-        completed_subcircuits, completed_block_datas = [], []
-        for batch in results:
-            completed_subcircuits.extend(list(zip(*batch))[0])
-            completed_block_datas.extend(list(zip(*batch))[1])
+        completed_subcircuits, completed_block_datas = zip(*results)
 
         # Postprocess blocks
         points: list[CircuitPoint] = []
@@ -209,7 +244,7 @@ class ForEachBlockPass(BasePass):
             block_data = completed_block_datas[i]
 
             # Mark Blocks to be Replaced
-            if self.replace_filter(subcircuit, op):
+            if replace_filter(subcircuit, op):
                 _logger.debug(f'Replacing block {i}.')
                 points.append(CircuitPoint(cycle, op.location[0]))
                 ops.append(
@@ -222,8 +257,7 @@ class ForEachBlockPass(BasePass):
                 block_data['replaced'] = True
 
                 # Calculate Error
-                if self.calculate_error_bound:
-                    error_sum += block_data['error']
+                error_sum += block_data.error
             else:
                 block_data['replaced'] = False
 
@@ -234,12 +268,9 @@ class ForEachBlockPass(BasePass):
         data[self.key].append(completed_block_datas)
 
         # Record error
+        data.update_error_mul(error_sum)
         if self.calculate_error_bound:
-            if 'error' in data:
-                data['error'] += error_sum
-            else:
-                data['error'] = error_sum
-            _logger.debug(f"New circuit error is {data['error']}.")
+            _logger.debug(f'New circuit error is {data.error}.')
 
 
 def default_collection_filter(op: Operation) -> bool:
@@ -254,26 +285,257 @@ def default_collection_filter(op: Operation) -> bool:
 
 
 def default_replace_filter(circuit: Circuit, op: Operation) -> bool:
+    """Always replace."""
+    # legacy name and style for backwards compatibility
     return True
 
 
-def _sub_do_work(
-    loop_body: Sequence[BasePass],
-    subcircuits: list[Circuit],
-    subdatas: list[dict[str, Any]],
-) -> list[tuple[Circuit, dict[str, Any]]]:
-    results = []
-    for subcircuit, subdata in zip(subcircuits, subdatas):
-        if subdata['calculate_error_bound']:
-            old_utry = subcircuit.get_unitary()
+def _less_than(new: Circuit, old: Operation) -> bool:
+    """Return true if the new circuit has fewer gates."""
+    if isinstance(old.gate, CircuitGate):
+        return new.num_operations < old.gate._circuit.num_operations
 
-        for loop_pass in loop_body:
-            loop_pass.run(subcircuit, subdata)
+    return True  # TODO: Re-evaluate always true when old is not a circuit
 
-        if subdata['calculate_error_bound']:
-            new_utry = subcircuit.get_unitary()
-            error = new_utry.get_distance_from(old_utry)
-            subdata['error'] = error
 
-        results.append((subcircuit, subdata))
-    return results
+def _less_than_multi(new: Circuit, old: Operation) -> bool:
+    """Return true if the new circuit has fewer multi-qudit gates."""
+    if isinstance(old.gate, CircuitGate):
+        org = old.gate._circuit
+        omq = sum([c for g, c in org.gate_counts.items() if g.num_qudits > 1])
+        osq = sum([c for g, c in org.gate_counts.items() if g.num_qudits == 1])
+        nmq = sum([c for g, c in new.gate_counts.items() if g.num_qudits > 1])
+        nsq = sum([c for g, c in new.gate_counts.items() if g.num_qudits == 1])
+        return (nmq, nsq) < (omq, osq)
+
+    return True
+
+
+def _less_than_many(new: Circuit, old: Operation) -> bool:
+    """Return true if the new circuit has fewer many-qudit gates."""
+    if isinstance(old.gate, CircuitGate):
+        org = old.gate._circuit
+        omq = sum([c for g, c in org.gate_counts.items() if g.num_qudits > 2])
+        otq = sum([c for g, c in org.gate_counts.items() if g.num_qudits == 2])
+        osq = sum([c for g, c in org.gate_counts.items() if g.num_qudits == 1])
+        nmq = sum([c for g, c in new.gate_counts.items() if g.num_qudits > 2])
+        ntq = sum([c for g, c in new.gate_counts.items() if g.num_qudits == 2])
+        nsq = sum([c for g, c in new.gate_counts.items() if g.num_qudits == 1])
+        return (nmq, ntq, nsq) < (omq, otq, osq)
+
+    return True
+
+
+def _is_respecting(
+    circuit: Circuit,
+    location: CircuitLocation,
+    model: MachineModel,
+    fully: bool = False,
+) -> bool:
+    """
+    Return true if the `circuit` respects the `model` at `location`.
+
+    Args:
+        circuit (Circuit): The circuit to check.
+
+        location (CircuitLocation): The location to check.
+
+        model (MachineModel): The machine model to check against.
+
+        fully (bool): If set to true, will check if the circuit respects
+            the model fully. If set to false, will ignore single-qudit
+            gate sets. (Default: False)
+
+    Returns:
+        True if the circuit respects the model at the location. This implies
+        that the circuit can be run on the machine at the location.
+    """
+    org_mq_gates = circuit.gate_set.multi_qudit_gates
+    org_sq_gates = circuit.gate_set.single_qudit_gates
+
+    if any(g not in model.gate_set for g in org_mq_gates):
+        return False
+
+    if fully and any(g not in model.gate_set for g in org_sq_gates):
+        return False
+
+    if any(
+        (location[e[0]], location[e[1]]) not in model.coupling_graph
+        for e in circuit.coupling_graph
+    ):
+        return False
+
+    return True
+
+
+def _less_than_fn_respecting(
+    new: Circuit,
+    old: Operation,
+    model: MachineModel,
+    fn: ReplaceFilterFn,
+) -> bool:
+    """Return true if the new circuit has fewer gates or the old doesn't respect
+    the model."""
+    if isinstance(old.gate, CircuitGate):
+        if not _is_respecting(old.gate._circuit, old.location, model):
+            if not _is_respecting(new, old.location, model):
+                _logger.debug("New block doesn't respect model.")
+            return True
+
+        if not _is_respecting(new, old.location, model):
+            _logger.debug("New block doesn't respect model.")
+            return False
+
+    return fn(new, old)
+
+
+def _less_than_fn_respecting_fully(
+    new: Circuit,
+    old: Operation,
+    model: MachineModel,
+    fn: ReplaceFilterFn,
+) -> bool:
+    """Return true if the new circuit has fewer gates or the old doesn't respect
+    the model."""
+    if isinstance(old.gate, CircuitGate):
+        if not _is_respecting(old.gate._circuit, old.location, model, True):
+            if not _is_respecting(new, old.location, model, True):
+                _logger.debug("New block doesn't respect model.")
+            return True
+
+        if not _is_respecting(new, old.location, model, True):
+            _logger.debug("New block doesn't respect model.")
+            return False
+
+    return fn(new, old)
+
+
+def gen_always(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that always replaces."""
+    # legacy name and style for backwards compatibility
+    return default_replace_filter
+
+
+def gen_less_than(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    gates."""
+    return _less_than
+
+
+def gen_less_than_multi(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    multi-qudit gates."""
+    return _less_than_multi
+
+
+def gen_less_than_many(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    many-qudit gates."""
+    return _less_than_many
+
+
+def gen_less_than_rspt(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    gates or the old doesn't respect the model."""
+    return functools.partial(
+        _less_than_fn_respecting,
+        model=model,
+        fn=_less_than,
+    )
+
+
+def gen_less_than_rspt_multi(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    multi-qudit gates or the old doesn't respect the model."""
+    return functools.partial(
+        _less_than_fn_respecting,
+        model=model,
+        fn=_less_than_multi,
+    )
+
+
+def gen_less_than_rspt_many(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    many-qudit gates or the old doesn't respect the model."""
+    return functools.partial(
+        _less_than_fn_respecting,
+        model=model,
+        fn=_less_than_many,
+    )
+
+
+def gen_less_than_rspt_fully(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    gates or the old doesn't respect the model."""
+    return functools.partial(
+        _less_than_fn_respecting_fully,
+        model=model,
+        fn=_less_than,
+    )
+
+
+def gen_less_than_rspt_fully_multi(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    multi-qudit gates or the old doesn't respect the model."""
+    return functools.partial(
+        _less_than_fn_respecting_fully,
+        model=model,
+        fn=_less_than_multi,
+    )
+
+
+def gen_less_than_rspt_fully_many(model: MachineModel) -> ReplaceFilterFn:
+    """Generate a replace filter that replaces if the new circuit has fewer
+    many-qudit gates or the old doesn't respect the model."""
+    return functools.partial(
+        _less_than_fn_respecting_fully,
+        model=model,
+        fn=_less_than_many,
+    )
+
+
+def gen_replace_filter(method: str, model: MachineModel) -> ReplaceFilterFn:
+    """
+    Generate a replace filter for use during the standard workflow.
+
+    Args:
+        method (str): The method to use for the replace filter. See
+            :class:`ForEachBlockPass` for more information.
+
+        model (MachineModel): The machine model to potentially respect.
+
+    Returns:
+        A replace filter function.
+    """
+    replace_filters = {
+        'always': gen_always,
+        'less-than': gen_less_than,
+        'less-than-multi': gen_less_than_multi,
+        'less-than-many': gen_less_than_many,
+        'less-than-respecting': gen_less_than_rspt,
+        'less-than-respecting-multi': gen_less_than_rspt_multi,
+        'less-than-respecting-many': gen_less_than_rspt_many,
+        'less-than-respecting-fully': gen_less_than_rspt_fully,
+        'less-than-respecting-fully-multi': gen_less_than_rspt_fully_multi,
+        'less-than-respecting-fully-many': gen_less_than_rspt_fully_many,
+    }
+
+    if method not in replace_filters:
+        raise ValueError(f'Unknown replace filter method {method}.')
+
+    return replace_filters[method](model)
+
+
+ReplaceFilterFn = Callable[[Circuit, Operation], bool]
+
+
+class ClearAllBlockData(BasePass):
+    """Clear all block data and passed down data from the pass data."""
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """Perform the pass's operation, see :class:`BasePass` for more."""
+        for key in list(data.keys()):
+            if key.startswith(ForEachBlockPass.key):
+                del data[key]
+            elif key.startswith(ForEachBlockPass.pass_down_key_prefix):
+                del data[key]

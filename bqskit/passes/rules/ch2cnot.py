@@ -1,16 +1,15 @@
 """This module implements the CHToCNOTPass."""
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CHGate
-from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates import CNOTGate
-from bqskit.ir.gates import RYGate
+from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gates.constant.ch import CHGate
+from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.parameterized.ry import RYGate
 from bqskit.ir.operation import Operation
 
 
@@ -29,7 +28,7 @@ class CHToCNOTPass(BasePass):
         circuit.append_gate(RYGate(), 1, [-np.pi / 4])
         self.cg = CircuitGate(circuit)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
 
         # Find all cnots

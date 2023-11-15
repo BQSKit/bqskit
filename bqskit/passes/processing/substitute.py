@@ -7,6 +7,7 @@ from typing import Any
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.operation import Operation
@@ -28,7 +29,7 @@ class SubstitutePass(BasePass):
         self,
         collection_filter: Callable[[Operation], bool],
         gate: Gate,
-        success_threshold: float = 1e-10,
+        success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         instantiate_options: dict[str, Any] = {},
     ) -> None:
@@ -45,7 +46,7 @@ class SubstitutePass(BasePass):
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
                 described by the hilbert schmidt cost function.
-                (Default: 1e-10)
+                (Default: 1e-8)
 
             cost (CostFunction | None): The cost function that determines
                 successful removal of a gate.
@@ -91,8 +92,11 @@ class SubstitutePass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
 
         # Collect locations in circuit where self.init_gate exists
         points = [
@@ -125,13 +129,7 @@ class SubstitutePass(BasePass):
                 _logger.debug(f'Trying location: {loc}')
                 circuit_copy = circuit.copy()
                 circuit_copy.replace_gate(point, self.gate, loc)
-                circuit_copy = self.execute(
-                    data,
-                    Circuit.instantiate,
-                    [circuit_copy],
-                    target=target,
-                    **self.instantiate_options,
-                )[0]
+                circuit_copy.instantiate(target, **instantiate_options)
 
                 if self.cost(circuit_copy, target) < self.success_threshold:
                     _logger.info('Successfully substituted operation.')

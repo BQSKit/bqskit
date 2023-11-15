@@ -102,4 +102,7 @@ class TaggedGate(
         )
 
     def __hash__(self) -> int:
+        if isinstance(self.tag, dict):
+            return hash((self.gate, tuple(self.tag.items())))
+
         return hash((self.gate, self.tag))

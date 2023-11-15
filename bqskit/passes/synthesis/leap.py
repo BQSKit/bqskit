@@ -7,16 +7,20 @@ from typing import Any
 import numpy as np
 from scipy.stats import linregress
 
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
-from bqskit.passes.search.generators import SimpleLayerGenerator
+from bqskit.passes.search.generators.seed import SeedLayerGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics import AStarHeuristic
 from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
@@ -38,8 +42,8 @@ class LEAPSynthesisPass(SynthesisPass):
     def __init__(
         self,
         heuristic_function: HeuristicFunction = AStarHeuristic(),
-        layer_generator: LayerGenerator = SimpleLayerGenerator(),
-        success_threshold: float = 1e-10,
+        layer_generator: LayerGenerator | None = None,
+        success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
         store_partial_solutions: bool = False,
@@ -54,12 +58,14 @@ class LEAPSynthesisPass(SynthesisPass):
             heuristic_function (HeuristicFunction): The heuristic to guide
                 search.
 
-            layer_generator (LayerGenerator): The successor function
-                to guide node expansion.
+            layer_generator (LayerGenerator | None): The successor function
+                to guide node expansion. If left as none, then a default
+                will be selected before synthesis based on the target
+                model's gate set. (Default: None)
 
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
-                described by the cost function. (Default: 1e-10)
+                described by the cost function. (Default: 1e-8)
 
             cost (CostFunction | None): The cost function that determines
                 distance during synthesis. The goal of this synthesis pass
@@ -94,11 +100,11 @@ class LEAPSynthesisPass(SynthesisPass):
                 % type(heuristic_function),
             )
 
-        if not isinstance(layer_generator, LayerGenerator):
-            raise TypeError(
-                'Expected LayerGenerator, got %s.'
-                % type(layer_generator),
-            )
+        if layer_generator is not None:
+            if not isinstance(layer_generator, LayerGenerator):
+                raise TypeError(
+                    f'Expected LayerGenerator, got {type(layer_generator)}.',
+                )
 
         if not is_real_number(success_threshold):
             raise TypeError(
@@ -153,20 +159,26 @@ class LEAPSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
-    def synthesize(self, utry: UnitaryMatrix, data: dict[str, Any]) -> Circuit:
+    async def synthesize(
+        self,
+        utry: UnitaryMatrix | StateVector | StateSystem,
+        data: PassData,
+    ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
-        frontier = Frontier(utry, self.heuristic_function)
-        data['window_markers'] = []
+        # Initialize run-dependent options
+        instantiate_options = self.instantiate_options.copy()
 
-        # Seed the search with an initial layer
-        initial_layer = self.layer_gen.gen_initial_layer(utry, data)
-        initial_layer = self.execute(
-            data,
-            Circuit.instantiate,
-            [initial_layer],
-            target=utry,
-            **self.instantiate_options,
-        )[0]
+        # Seed the PRNG
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
+
+        # Get layer generator for search
+        layer_gen = self._get_layer_gen(data)
+
+        # Begin the search with an initial layer
+        frontier = Frontier(utry, self.heuristic_function)
+        initial_layer = layer_gen.gen_initial_layer(utry, data)
+        initial_layer.instantiate(utry, **instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
@@ -192,15 +204,17 @@ class LEAPSynthesisPass(SynthesisPass):
             top_circuit, layer = frontier.pop()
 
             # Generate successors
-            successors = self.layer_gen.gen_successors(top_circuit, data)
+            successors = layer_gen.gen_successors(top_circuit, data)
+
+            if len(successors) == 0:
+                continue
 
             # Instantiate successors
-            circuits = self.execute(
-                data,
+            circuits = await get_runtime().map(
                 Circuit.instantiate,
                 successors,
                 target=utry,
-                **self.instantiate_options,
+                **instantiate_options,
             )
 
             # Evaluate successors
@@ -214,9 +228,10 @@ class LEAPSynthesisPass(SynthesisPass):
                     return circuit
 
                 if self.check_new_best(layer + 1, dist, best_layer, best_dist):
+                    plural = '' if layer == 0 else 's'
                     _logger.debug(
-                        'New best circuit found with %d layer%s and cost: %e.'
-                        % (layer + 1, '' if layer == 0 else 's', dist),
+                        f'New best circuit found with {layer + 1} layer{plural}'
+                        f' and cost: {dist:.12e}.',
                     )
                     best_dist = dist
                     best_circ = circuit
@@ -232,7 +247,6 @@ class LEAPSynthesisPass(SynthesisPass):
                         _logger.debug(f'Prefix formed at {layer + 1} layers.')
                         last_prefix_layer = layer + 1
                         frontier.clear()
-                        data['window_markers'].append(circuit.num_cycles)
                         if self.max_layer is None or layer + 1 < self.max_layer:
                             frontier.add(circuit, layer + 1)
 
@@ -338,3 +352,23 @@ class LEAPSynthesisPass(SynthesisPass):
 
         layers_added = new_layer - last_prefix_layer
         return delta < 0 and layers_added >= self.min_prefix_size
+
+    def _get_layer_gen(self, data: PassData) -> LayerGenerator:
+        """
+        Set the layer generator.
+
+        If a layer generator has been passed into the constructor, then that
+        layer generator will be used. Otherwise, a default layer generator will
+        be selected by the gateset.
+
+        If seeds are passed into the data dict, then a SeedLayerGenerator will
+        wrap the previously selected layer generator.
+        """
+        # TODO: Deduplicate this code with qsearch synthesis
+        layer_gen = self.layer_gen or data.gate_set.build_mq_layer_generator()
+
+        # Priority given to seeded synthesis
+        if 'seed_circuits' in data:
+            return SeedLayerGenerator(data['seed_circuits'], layer_gen)
+
+        return layer_gen

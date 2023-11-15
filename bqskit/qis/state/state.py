@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import cast
 from typing import Iterator
 from typing import Sequence
 from typing import TYPE_CHECKING
@@ -17,10 +18,10 @@ from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
 from bqskit.utils.typing import is_vector
 
-
 if TYPE_CHECKING:
     from typing import TypeGuard
-
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+    from bqskit.ir.location import CircuitLocationLike
 
 _logger = logging.getLogger(__name__)
 
@@ -182,11 +183,24 @@ class StateVector(NDArrayOperatorsMixin):
         if isinstance(V, StateVector):
             return True
 
+        from bqskit.qis.state import StateSystem
+        if isinstance(V, StateSystem):
+            return False
+
         if not np.allclose(np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol):
             _logger.debug('Failed pure state criteria.')
             return False
 
         return True
+
+    @staticmethod
+    def zero(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
+        """Prepares the zero state."""
+        if len(radixes) == 0:
+            radixes = [2] * num_qudits
+        state = np.zeros(np.prod(radixes), dtype=np.complex128)
+        state[0] = 1.0
+        return StateVector(state)
 
     @staticmethod
     def random(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
@@ -230,6 +244,10 @@ class StateVector(NDArrayOperatorsMixin):
         U = unitary_group.rvs(int(np.prod(radixes)))
         return StateVector(U[:, 0], radixes)
 
+    def __hash__(self) -> int:
+        """Hash the state vector."""
+        return hash(tuple(self.numpy))
+
     def __eq__(self, other: object) -> bool:
         """Check if `self` is approximately equal to `other`."""
         if isinstance(other, StateVector):
@@ -239,6 +257,117 @@ class StateVector(NDArrayOperatorsMixin):
             return np.allclose(self.numpy, other)
 
         return NotImplemented
+
+    def apply(
+        self,
+        utry: UnitaryMatrix,
+        location: CircuitLocationLike,
+        inverse: bool = False,
+        check_arguments: bool = True,
+    ) -> None:
+        """
+
+        Apply the specified unitary on the right of this StateVector.
+
+        ..
+                .---.   .------.
+                |   |---|      |- 0
+                |   |---| utry |- 1
+                .   .   '------'
+                .   .
+                .   .
+                |   |------------ n-1
+                '---'
+
+        Args:
+            utry (UnitaryMatrix): The unitary to apply.
+
+            location (CircuitLocationLike): The qudits to apply the unitary on.
+
+            inverse (bool): If true, apply the inverse of the unitary.
+
+            check_arguments (bool): If true, check the inputs for type and
+                value errors.
+
+        Raises:
+            ValueError: If `utry`'s size does not match the given location.
+
+            ValueError: if `utry`'s radixes does not match the given location.
+
+        Notes:
+            - Applying the unitary on the left is equivalent to multiplying
+              the unitary on the right of the tensor. The notation comes
+              from the quantum circuit perspective.
+
+            - This operation is performed using tensor contraction.
+        """
+        from bqskit.ir.location import CircuitLocation
+        from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
+        if check_arguments:
+            if not isinstance(utry, UnitaryMatrix):
+                raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
+
+            if not CircuitLocation.is_location(location, self.num_qudits):
+                raise TypeError('Invalid location.')
+
+            location = CircuitLocation(location)
+
+            if len(location) != utry.num_qudits:
+                raise ValueError('Unitary and location size mismatch.')
+
+            for utry_radix, bldr_radix_idx in zip(utry.radixes, location):
+                if utry_radix != self.radixes[bldr_radix_idx]:
+                    raise ValueError('Unitary and location radix mismatch.')
+
+        location = cast(CircuitLocation, location)
+        qudits = list(range(self.num_qudits))
+        identity_action_perm = [
+            x
+            for x in qudits
+            if x not in location
+        ]
+        unitary_action_perm = list(location)
+
+        left_dim = int(
+            np.prod([
+                self.radixes[x]
+                for x in unitary_action_perm
+            ]),
+        )
+
+        utry = utry.dagger if inverse else utry
+
+        perm = unitary_action_perm + identity_action_perm
+        self._vec = self._vec.reshape(self.radixes)
+        self._vec = self._vec.transpose(perm)
+        self._vec = self._vec.reshape((left_dim, -1))
+        self._vec = utry @ self._vec
+
+        shape = list(self.radixes) * 2
+        shape = [shape[p] for p in perm]
+        self._vec = self._vec.reshape(shape)
+        inv_perm = list(np.argsort(perm))
+        self._vec = self._vec.transpose(inv_perm)
+        self._vec = self._vec.reshape(-1)
+
+    def get_distance_from(self, other: StateLike) -> float:
+        """
+        Return the distance between `self` and `other`.
+
+        The distance is given as the infidelity between the two states.
+
+        Args:
+            other (StateLike): The state to measure distance from.
+
+        Returns:
+            float: A value between 1 and 0, where 0 means the two states
+            are equal up to global phase and 1 means the two states are
+            very unsimilar or far apart.
+        """
+        other = StateVector(other)
+        dist = 1 - np.abs(np.conj(self) @ other) ** 2
+        return dist if dist > 0.0 else 0.0
 
     def __array__(
         self,
@@ -304,4 +433,4 @@ class StateVector(NDArrayOperatorsMixin):
         return repr(self._vec)
 
 
-StateLike = Union[StateVector, np.ndarray, Sequence[Any]]
+StateLike = Union[StateVector, np.ndarray, Sequence[Union[int, float, complex]]]

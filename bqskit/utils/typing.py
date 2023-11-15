@@ -142,11 +142,11 @@ def is_matrix(M: np.typing.ArrayLike) -> bool:
         M = np.array(M)
 
     if len(M.shape) != 2:
-        _logger.debug('M is not an 2-dimensional array.')
+        # _logger.debug('M is not an 2-dimensional array.')
         return False
 
     if M.dtype.kind not in 'biufc':
-        _logger.debug('M is not a numeric array.')
+        # _logger.debug('M is not a numeric array.')
         return False
 
     return True

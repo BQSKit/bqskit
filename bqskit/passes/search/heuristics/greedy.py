@@ -6,6 +6,7 @@ from bqskit.ir.opt.cost import CostFunctionGenerator
 from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
@@ -40,7 +41,7 @@ class GreedyHeuristic(HeuristicFunction):
     def get_value(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Return the heuristic's value, see HeuristicFunction for more info."""
         return self.cost_gen.calc_cost(circuit, target)

@@ -1,12 +1,12 @@
 """
 This test module verifies all circuit properties.
 
-The Circuit class defines multiple properties, but also inherits many
-from the Unitary base class.
+The Circuit class defines multiple properties, but also inherits many from the
+Unitary base class.
 
-This test is broken down into multiple parts. First, a few simple known
-circuits have their properties tested. Then, each property is tested
-in depth individually.
+This test is broken down into multiple parts. First, a few simple known circuits
+have their properties tested. Then, each property is tested in depth
+individually.
 """
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from typing import Any
 import numpy as np
 import pytest
 
+from bqskit.compiler.gateset import GateSet
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
@@ -88,7 +89,7 @@ class TestSimpleCircuit:
 
     def test_gate_set(self, simple_circuit: Circuit) -> None:
         gate_set = simple_circuit.gate_set
-        assert isinstance(gate_set, set)
+        assert isinstance(gate_set, GateSet)
         assert len(gate_set) == 2
         assert XGate() in gate_set
         assert CNOTGate() in gate_set
@@ -155,7 +156,7 @@ class TestSwapCircuit:
 
     def test_gate_set(self, swap_circuit: Circuit) -> None:
         gate_set = swap_circuit.gate_set
-        assert isinstance(gate_set, set)
+        assert isinstance(gate_set, GateSet)
         assert len(gate_set) == 1
         assert CNOTGate() in gate_set
 
@@ -223,7 +224,7 @@ class TestToffoliCircuit:
 
     def test_gate_set(self, toffoli_circuit: Circuit) -> None:
         gate_set = toffoli_circuit.gate_set
-        assert isinstance(gate_set, set)
+        assert isinstance(gate_set, GateSet)
         assert len(gate_set) == 4
         assert CNOTGate() in gate_set
         assert HGate() in gate_set
@@ -918,7 +919,7 @@ class TestGetGateSet:
     """This tests `circuit.gate_set`."""
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
-        assert isinstance(r6_qudit_circuit.gate_set, set)
+        assert isinstance(r6_qudit_circuit.gate_set, GateSet)
         assert all(
             isinstance(gate, Gate)
             for gate in r6_qudit_circuit.gate_set
@@ -927,7 +928,7 @@ class TestGetGateSet:
     def test_empty(self) -> None:
         circuit = Circuit(4)
         assert len(circuit.gate_set) == 0
-        assert isinstance(circuit.gate_set, set)
+        assert isinstance(circuit.gate_set, GateSet)
 
     def test_adding_gate(self) -> None:
         circuit = Circuit(1)
@@ -1006,6 +1007,45 @@ class TestGetGateSet:
         assert ZGate() in circuit.gate_set
         assert TGate() in circuit.gate_set
         assert CSUMGate() in circuit.gate_set
+
+
+def test_active_qudits() -> None:
+    # Create a circuit with 3 qudits and 3 gates
+    circuit1 = Circuit(3)
+    circuit1.append_gate(HGate(), 0)
+    circuit1.append_gate(CNOTGate(), [0, 1])
+    circuit1.append_gate(CNOTGate(), [1, 2])
+
+    # Check that the active qudits are correct
+    assert circuit1.active_qudits == [0, 1, 2]
+
+    # Create a circuit with 2 qudits and 2 gates
+    circuit2 = Circuit(2)
+    circuit2.append_gate(HGate(), 0)
+    circuit2.append_gate(CNOTGate(), [0, 1])
+
+    # Check that the active qudits are correct
+    assert circuit2.active_qudits == [0, 1]
+
+    # Create a circuit with 1 qudit and 1 gate
+    circuit3 = Circuit(1)
+    circuit3.append_gate(HGate(), 0)
+
+    # Check that the active qudits are correct
+    assert circuit3.active_qudits == [0]
+
+    # Create a circuit with 3 qudits and no gates
+    circuit4 = Circuit(3)
+
+    # Check that the active qudits are correct
+    assert circuit4.active_qudits == []
+
+    # Create a circuit with 3 qudits and a single-qudit gate
+    circuit5 = Circuit(3)
+    circuit5.append_gate(HGate(), 0)
+
+    # Check that the active qudits are correct
+    assert circuit5.active_qudits == [0]
 
 
 class TestIsDifferentiable:

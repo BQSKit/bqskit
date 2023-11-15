@@ -8,6 +8,7 @@ from bqskitrs import HilbertSchmidtResidualsFunction
 from bqskit.ir.opt.cost.differentiable import DifferentiableResidualsFunction
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.state.system import StateSystem
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -39,7 +40,7 @@ class HilbertSchmidtResidualsGenerator(CostFunctionGenerator):
     def gen_cost(
         self,
         circuit: Circuit,
-        target: UnitaryMatrix | StateVector,
+        target: UnitaryMatrix | StateVector | StateSystem,
     ) -> CostFunction:
         """Generate a CostFunction, see CostFunctionGenerator for more info."""
         return HilbertSchmidtResiduals(circuit, target)

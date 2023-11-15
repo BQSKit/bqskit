@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import logging
 
-from bqskit.compiler import CompilationTask
 from bqskit.compiler import Compiler
 from bqskit.exec.runners.quest import QuestRunner
 from bqskit.exec.runners.sim import SimulationRunner
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.passes import ForEachBlockPass
 from bqskit.passes import LEAPSynthesisPass
 from bqskit.passes import QFASTDecompositionPass
@@ -23,18 +22,15 @@ if __name__ == '__main__':
     # circuit.
     circuit = Circuit.from_unitary(UnitaryMatrix.random(4))
 
-    # We will now define the CompilationTask we want to run.
-    task = CompilationTask(
-        circuit, [
-            QFASTDecompositionPass(),
-            ForEachBlockPass([LEAPSynthesisPass(), ScanningGateRemovalPass()]),
-            UnfoldPass(),
-        ],
-    )
+    workflow = [
+        QFASTDecompositionPass(),
+        ForEachBlockPass([LEAPSynthesisPass(), ScanningGateRemovalPass()]),
+        UnfoldPass(),
+    ]
 
     # Finally let's create create the compiler and execute the CompilationTask.
     with Compiler() as compiler:
-        compiled_circuit = compiler.compile(task)
+        compiled_circuit = compiler.compile(circuit, workflow)
 
         # Execute the circuit with Quest
         quest_runner = QuestRunner(SimulationRunner(), compiler=compiler)

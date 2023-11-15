@@ -6,6 +6,7 @@ from typing import Any
 from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
@@ -24,7 +25,7 @@ class ScanningGateRemovalPass(BasePass):
     def __init__(
         self,
         start_from_left: bool = True,
-        success_threshold: float = 1e-10,
+        success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         instantiate_options: dict[str, Any] = {},
         collection_filter: Callable[[Operation], bool] | None = None,
@@ -40,7 +41,7 @@ class ScanningGateRemovalPass(BasePass):
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
                 described by the hilbert schmidt cost function.
-                (Default: 1e-10)
+                (Default: 1e-8)
 
             cost (CostFunction | None): The cost function that determines
                 successful removal of a gate.
@@ -90,11 +91,16 @@ class ScanningGateRemovalPass(BasePass):
         self.instantiate_options: dict[str, Any] = {
             'dist_tol': self.success_threshold,
             'min_iters': 100,
+            'cost_fn_gen': self.cost,
         }
         self.instantiate_options.update(instantiate_options)
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        instantiate_options = self.instantiate_options.copy()
+        if 'seed' not in instantiate_options:
+            instantiate_options['seed'] = data.seed
+
         start = 'left' if self.start_from_left else 'right'
         _logger.debug(f'Starting scanning gate removal on the {start}.')
 
@@ -120,13 +126,7 @@ class ScanningGateRemovalPass(BasePass):
                 cycle -= idx_shift
 
             working_copy.pop((cycle, op.location[0]))
-            working_copy = self.execute(
-                data,
-                Circuit.instantiate,
-                [working_copy],
-                target=target,
-                **self.instantiate_options,
-            )[0]
+            working_copy.instantiate(target, **instantiate_options)
 
             if self.cost(working_copy, target) < self.success_threshold:
                 _logger.debug('Successfully removed operation.')

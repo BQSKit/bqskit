@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import cast
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates import CircuitGate
+from bqskit.ir.gates.barrier import BarrierPlaceholder
+from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_integer
@@ -48,7 +49,7 @@ class QuickPartitioner(BasePass):
 
         self.block_size = block_size
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """
         Partition gates in a circuit into a series of CircuitGates.
 
@@ -59,20 +60,6 @@ class QuickPartitioner(BasePass):
         """
         # The partitioned circuit that will be built and returned
         partitioned_circuit = Circuit(circuit.num_qudits, circuit.radixes)
-
-        # If block size >= circuit size, return the circuit as a block
-        if self.block_size >= circuit.num_qudits:
-            _logger.debug(
-                'Configured block size is greater than or equal to'
-                'circuit size; blocking entire circuit.',
-            )
-            partitioned_circuit.append_circuit(
-                circuit,
-                list(range(circuit.num_qudits)),
-                True,
-            )
-            circuit.become(partitioned_circuit)
-            return
 
         # Tracks bins with at least one active_qudit
         active_bins: list[Bin | None] = [
@@ -125,11 +112,15 @@ class QuickPartitioner(BasePass):
                         loc = list(sorted(bin.qudits))
 
                         # Merge previously placed blocks if possible
-                        merging = True
+                        merging = not isinstance(bin, BarrierBin)
                         while merging:
                             merging = False
                             for p in partitioned_circuit.rear:
-                                qudits = list(partitioned_circuit[p].location)
+                                op = partitioned_circuit[p]
+                                if isinstance(op.gate, BarrierPlaceholder):
+                                    # Don't merge through barriers
+                                    continue
+                                qudits = list(op.location)
 
                                 # if qudits is subset of loc
                                 if all(q in loc for q in qudits):
@@ -161,11 +152,15 @@ class QuickPartitioner(BasePass):
                         partitioned_circuit.append_circuit(
                             subc,
                             loc,
-                            True,
+                            not isinstance(bin, BarrierBin),
                             True,
                         )
                         for qudit in bin.qudits:
-                            dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore  # noqa
+                            if bin.ends[qudit] is not None:
+                                dividing_line[qudit] = bin.ends[qudit] + 1  # type: ignore # noqa
+                            else:
+                                dividing_line[qudit] = circuit.num_cycles
+
                         need_to_reprocess = True
                         break
 
@@ -182,6 +177,19 @@ class QuickPartitioner(BasePass):
                 active_bins[q] for q in location  # type: ignore
                 if active_bins[q] is not None
             })
+
+            # Barriers close all overlapping bins
+            if isinstance(op.gate, BarrierPlaceholder):
+                for bin in overlapping_bins:
+                    if close_bin_qudits(bin, location, cycle):
+                        num_closed += 1
+                    else:
+                        extended = [q for q in location if q not in bin.qudits]
+                        bin.blocked_qudits.update(extended)
+
+                # Track the barrier to restore it in partitioned circuit
+                pending_bins.append(BarrierBin(point, location, circuit))
+                continue
 
             # Get all the currently active bins that can have op added to them
             admissible_bins = [
@@ -340,4 +348,33 @@ class Bin:
         return overlapping_qudits_are_active and not too_big
 
 
-1
+class BarrierBin(Bin):
+    """A special bin made to mark and preserve barrier location."""
+
+    def __init__(
+        self,
+        point: CircuitPoint,
+        location: CircuitLocation,
+        circuit: Circuit,
+    ) -> None:
+        """Initialize a BarrierBin with the point and location of a barrier."""
+        super().__init__()
+
+        # Add the barrier
+        self.add_op(point, location)
+
+        # Barriar bins fill the volume to the next gates
+
+        nexts = circuit.next(point)
+        ends: dict[int, int | None] = {q: None for q in location}
+        for p in nexts:
+            loc = circuit[p].location
+            for q in loc:
+                if q in ends and (ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
+                    ends[q] = p.cycle - 1
+
+        self.ends = ends
+
+        # Close the bin
+        for q in location:
+            self.active_qudits.remove(q)

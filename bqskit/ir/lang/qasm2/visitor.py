@@ -16,9 +16,11 @@ from lark import Visitor
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.composed.controlled import ControlledGate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
+from bqskit.ir.gates.constant.b import BGate
 from bqskit.ir.gates.constant.ccx import CCXGate
 from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.cs import CSGate
@@ -30,6 +32,8 @@ from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
 from bqskit.ir.gates.constant.itoffoli import IToffoliGate
+from bqskit.ir.gates.constant.rccx import RC3XGate
+from bqskit.ir.gates.constant.rccx import RCCXGate
 from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
@@ -46,10 +50,12 @@ from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cp import CPGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
 from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
+from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
 from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
 from bqskit.ir.gates.parameterized.rx import RXGate
@@ -187,6 +193,7 @@ class OPENQASMVisitor(Visitor):
         # Parameterized Gates
         self.gate_defs['p'] = GateDef('p', 1, 1, RZGate())
         self.gate_defs['cp'] = GateDef('cp', 1, 2, CPGate())
+        self.gate_defs['ccp'] = GateDef('ccp', 1, 3, CCPGate())
         self.gate_defs['crx'] = GateDef('crx', 1, 2, CRXGate())
         self.gate_defs['cry'] = GateDef('cry', 1, 2, CRYGate())
         self.gate_defs['crz'] = GateDef('crz', 1, 2, CRZGate())
@@ -199,8 +206,8 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['rz'] = GateDef('rz', 1, 1, RZGate())
         self.gate_defs['rzz'] = GateDef('rzz', 1, 2, RZZGate())
         self.gate_defs['u1'] = GateDef('u1', 1, 1, U1Gate())
-        self.gate_defs['u1q'] = GateDef('u1q', 1, 2, U1qGate())
-        self.gate_defs['U1q'] = GateDef('u1q', 1, 2, U1qGate())
+        self.gate_defs['u1q'] = GateDef('u1q', 2, 1, U1qGate())
+        self.gate_defs['U1q'] = GateDef('u1q', 2, 1, U1qGate())
         self.gate_defs['u2'] = GateDef('u2', 2, 1, U2Gate())
         self.gate_defs['u3'] = GateDef('u3', 3, 1, U3Gate())
         self.gate_defs['U'] = GateDef('U', 3, 1, U3Gate())
@@ -208,8 +215,10 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cu1'] = GateDef('cu1', 1, 2, ControlledGate(U1Gate()))
         self.gate_defs['cu2'] = GateDef('cu2', 2, 2, ControlledGate(U2Gate()))
         self.gate_defs['cu3'] = GateDef('cu3', 3, 2, ControlledGate(U3Gate()))
+        self.gate_defs['cu'] = GateDef('cu', 4, 2, CUGate())
 
         # Constant Gates
+        self.gate_defs['b'] = GateDef('b', 0, 2, BGate())
         self.gate_defs['ccx'] = GateDef('ccx', 0, 3, CCXGate())
         self.gate_defs['ch'] = GateDef('ch', 0, 2, CHGate())
         self.gate_defs['cs'] = GateDef('cs', 0, 2, CSGate())
@@ -220,6 +229,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cz'] = GateDef('cz', 0, 2, CZGate())
         self.gate_defs['h'] = GateDef('h', 0, 1, HGate())
         self.gate_defs['id'] = GateDef('id', 0, 1, IdentityGate(1))
+        self.gate_defs['u0'] = GateDef('u0', 0, 1, IdentityGate(1))
         self.gate_defs['iswap'] = GateDef('iswap', 0, 2, ISwapGate())
         self.gate_defs['iccx'] = GateDef('iccx', 0, 3, IToffoliGate())
         self.gate_defs['s'] = GateDef('s', 0, 1, SGate())
@@ -228,6 +238,9 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cv'] = GateDef('cv', 0, 2, SqrtCNOTGate())
         self.gate_defs['sqisw'] = GateDef('sqisw', 0, 2, SqrtISwapGate())
         self.gate_defs['swap'] = GateDef('swap', 0, 2, SwapGate())
+        self.gate_defs['cswap'] = GateDef(
+            'cswap', 0, 3, ControlledGate(SwapGate()),
+        )
         self.gate_defs['sx'] = GateDef('sx', 0, 1, SXGate())
         self.gate_defs['v'] = GateDef('v', 0, 1, SXGate())
         self.gate_defs['syc'] = GateDef('syc', 0, 2, SycamoreGate())
@@ -240,6 +253,13 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['z'] = GateDef('z', 0, 1, ZGate())
         self.gate_defs['zz'] = GateDef('zz', 0, 2, ZZGate())
         self.gate_defs['sxdg'] = GateDef('sxdg', 0, 1, DaggerGate(SXGate()))
+        self.gate_defs['c3x'] = GateDef('c3x', 0, 4, ControlledGate(XGate(), 3))
+        self.gate_defs['c4x'] = GateDef('c4x', 0, 5, ControlledGate(XGate(), 4))
+        self.gate_defs['c3sqrtx'] = GateDef(
+            'c3sqrtx', 0, 4, ControlledGate(SXGate(), 3),
+        )
+        self.gate_defs['rccx'] = GateDef('rccx', 0, 3, RCCXGate())
+        self.gate_defs['rc3x'] = GateDef('rc3x', 0, 4, RC3XGate())
 
     def qreg(self, tree: lark.Tree) -> None:
         """Qubit register node visitor."""
@@ -251,6 +271,19 @@ class OPENQASMVisitor(Visitor):
         _logger.debug('Qubit register %s declared with size %d.' % reg)
         self.qubit_regs.append(reg)
 
+    def barrier(self, tree: lark.Tree) -> None:
+        """Apply a barrier to the circuit."""
+        qlist = tree.children[-1]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+        gate = BarrierPlaceholder(len(location))
+        op = Operation(gate, location)
+        self.op_list.append(op)
+
+    def barrierp(self, tree: lark.Tree) -> None:
+        raise LangException(
+            'BQSKit currently does not support barriers in gate declarations.',
+        )
+
     def gate(self, tree: lark.Tree) -> None:
         """Apply a normal gate statement to the circuit."""
         # Parse parameters
@@ -261,15 +294,8 @@ class OPENQASMVisitor(Visitor):
             params = []
 
         # Parse location
-        location = []
-        for reg_name, reg_idx in qubits_from_list(tree.children[-1]):
-            outer_idx = 0
-            for reg in self.qubit_regs:
-                if reg.name == reg_name:
-                    location.append(outer_idx + reg_idx)
-                    break
-                outer_idx += reg.size
-        location = CircuitLocation(location)
+        qlist = tree.children[-1]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
 
         if any(q in self.measurements for q in location):
             raise LangException(
@@ -627,6 +653,68 @@ class OPENQASMVisitor(Visitor):
     def reset(self, tree: lark.Tree) -> None:
         """Reset statement node visitor."""
         raise LangException('BQSKit currently does not support resets.')
+
+    def convert_qubit_ids_to_indices(self, qlist: lark.Tree) -> list[int]:
+        if qlist.data == 'anylist':
+            # Anylist is either idlist or mixedlist
+            return self.convert_qubit_ids_to_indices(qlist.children[0])
+
+        if qlist.data == 'idlist':
+            # List of ids, e.g. q, r, but without indices
+            ids = []
+            tree_iter = qlist
+            while len(tree_iter.children) == 2:
+                ids.append(str(tree_iter.children[0]))
+                tree_iter = tree_iter.children[1]
+            ids.append(str(tree_iter.children[0]))
+
+            out_idxs = []
+            for qubit_id in ids:
+                out_idxs.extend(self.convert_qubit_id_to_indices(qubit_id))
+
+            return out_idxs
+
+        if qlist.data == 'argument':
+            # ID | ID "[" NNINTEGER "]"
+            qubit_id = qlist.children[0]
+            if len(qlist.children) == 2:
+                idx = self.convert_qubit_id_to_first_index(qubit_id)
+                return [idx + int(qlist.children[1])]
+
+            return self.convert_qubit_id_to_indices(qubit_id)
+
+        if qlist.data == 'mixedlist':
+            if isinstance(qlist.children[0], lark.Tree):
+                idxs = self.convert_qubit_ids_to_indices(qlist.children[0])
+
+                if len(qlist.children) == 2:
+                    qubit_id = qlist.children[1]
+                    return idxs + self.convert_qubit_id_to_indices(qubit_id)
+
+                idx = self.convert_qubit_id_to_first_index(qlist.children[1])
+                return idxs + [idx + int(qlist.children[2])]
+
+            else:
+                idx = self.convert_qubit_id_to_first_index(qlist.children[0])
+                return [idx + int(qlist.children[1])]
+
+        raise LangException('Incorrect qlist type.')
+
+    def convert_qubit_id_to_first_index(self, qubit_id: str) -> int:
+        outer_idx = 0
+        for reg in self.qubit_regs:
+            if reg.name == qubit_id:
+                return outer_idx
+            outer_idx += reg.size
+        raise LangException(f'Unable to find qubit register id: {qubit_id}.')
+
+    def convert_qubit_id_to_indices(self, qubit_id: str) -> list[int]:
+        outer_idx = 0
+        for reg in self.qubit_regs:
+            if reg.name == qubit_id:
+                return [i + outer_idx for i in range(reg.size)]
+            outer_idx += reg.size
+        raise LangException(f'Unable to find qubit register id: {qubit_id}.')
 
 
 eval_locals = {

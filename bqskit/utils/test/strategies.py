@@ -22,7 +22,7 @@ from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 
 import bqskit.ir.gates
-from bqskit.ir import Circuit
+from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate

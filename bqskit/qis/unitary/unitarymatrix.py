@@ -74,6 +74,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             ...         [1, 0],
             ...     ],
             ... )  # Creates a single-qubit Pauli X unitary matrix.
+            array([[0.+0.j, 1.+0.j],
+                   [1.+0.j, 0.+0.j]])
         """
 
         # Stop any actual logic when building documentation
@@ -383,6 +385,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if isinstance(U, UnitaryMatrix):
             return True
 
+        from bqskit.qis.state import StateSystem
+        if isinstance(U, StateSystem):
+            return False
+
         if not isinstance(U, np.ndarray):
             U = np.array(U)
 
@@ -486,4 +492,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         return hash((self._utry[0][0], self._utry[-1][-1], self.shape))
 
 
-UnitaryLike = Union[UnitaryMatrix, np.ndarray, Sequence[Sequence[Any]]]
+UnitaryLike = Union[
+    UnitaryMatrix,
+    np.ndarray,
+    Sequence[Sequence[Union[int, float, complex]]],
+]

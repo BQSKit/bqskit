@@ -7,9 +7,9 @@ from os import listdir
 from os import mkdir
 from os.path import exists
 from re import findall
-from typing import Any
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
@@ -71,7 +71,7 @@ class SaveIntermediatePass(BasePass):
 
         self.as_qasm = save_as_qasm
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see BasePass for more info."""
 
         # Gather and enumerate CircuitGates to save
@@ -102,7 +102,7 @@ class SaveIntermediatePass(BasePass):
                 block.params,
             )
             subcircuit.unfold((0, 0))
-            ToU3Pass().run(subcircuit, {})
+            await ToU3Pass().run(subcircuit, PassData(subcircuit))
             if self.as_qasm:
                 with open(block_skeleton + f'{enum}.qasm', 'w') as f:
                     f.write(OPENQASM2Language().encode(subcircuit))
@@ -171,7 +171,7 @@ class RestoreIntermediatePass(BasePass):
                 'More block files than indicies in `structure.pickle`',
             )
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """
         Perform the pass's operation, see BasePass for more info.
 

@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
@@ -19,30 +19,47 @@ _logger = logging.getLogger(__name__)
 class ExtendBlockSizePass(BasePass):
     """Ensure all blocks are at least a given size."""
 
-    def __init__(self, minimum_size: int) -> None:
+    def __init__(self, minimum_size: int | None = None) -> None:
         """
         Construct a ExtendBlockSizePass.
 
         Args:
-            minimum_size (int): Extend all blocks to at least this size.
+            minimum_size (int | None): Extend all blocks to at least this
+                size. If left as None, the minimum size will be the size of
+                the smallest multi-qudit gate in the model.
         """
-        if not is_integer(minimum_size):
-            raise TypeError('Expected an integer for minimum size.')
+        if not is_integer(minimum_size) and minimum_size is not None:
+            raise TypeError('Expected an integer or None for minimum size.')
 
         self.minimum_size = minimum_size
 
-    def run(self, circuit: Circuit, data: dict[str, Any] = {}) -> None:
+    async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-        if circuit.num_qudits < self.minimum_size:
+        if circuit.num_qudits == 1:
+            _logger.debug('Skipping extend pass for single-qudit circuit.')
+            return
+
+        minimum_size = self.minimum_size
+        if minimum_size is None:
+            minimum_size = min(
+                g.num_qudits for g in data.gate_set
+                if g.num_qudits != 1
+            )
+
+        if minimum_size is None:
+            _logger.warning('No multi-qudit gates in gate set.')
+            return
+
+        if circuit.num_qudits < minimum_size:
             raise RuntimeError('Cannot extend block larger than circuit.')
 
-        cg = self.get_connectivity(circuit, data)
+        cg = data.connectivity
 
         # Find all small blocks
         small_blocks: list[tuple[int, int]] = []
         for cycle, op in circuit.operations_with_cycles():
             if isinstance(op.gate, CircuitGate):
-                if op.gate.num_qudits < self.minimum_size:
+                if op.gate.num_qudits < minimum_size:
                     small_blocks.append((cycle, op.location[0]))
         small_blocks.sort()
 
@@ -52,7 +69,7 @@ class ExtendBlockSizePass(BasePass):
             cycle = block_point[0]
             op = circuit[block_point]
 
-            num_to_add = self.minimum_size - op.gate.num_qudits
+            num_to_add = minimum_size - op.gate.num_qudits
             qudits = list(op.location)
             added = []
             for _ in range(num_to_add):
