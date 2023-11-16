@@ -4,7 +4,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import math 
+
+
 from bqskit.compiler.passdata import PassData
+
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
@@ -137,6 +141,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
 
+
     async def synthesize(
         self,
         utry: UnitaryMatrix | StateVector | StateSystem,
@@ -144,6 +149,7 @@ class QSearchSynthesisPass(SynthesisPass):
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         # Initialize run-dependent options
+
         instantiate_options = self.instantiate_options.copy()
 
         # Seed the PRNG
@@ -154,13 +160,14 @@ class QSearchSynthesisPass(SynthesisPass):
         layer_gen = self._get_layer_gen(data)
 
         # Begin the search with an initial layer
+
         frontier = Frontier(utry, self.heuristic_function)
         initial_layer = layer_gen.gen_initial_layer(utry, data)
         initial_layer.instantiate(utry, **instantiate_options)
         frontier.add(initial_layer, 0)
 
         # Track best circuit, initially the initial layer
-        best_dist = self.cost.calc_cost(initial_layer, utry)
+        best_dist = self.cost.calc_cost(initial_layer, utry) # megnézni mit csinál mennyire hasonlít.
         best_circ = initial_layer
         best_layer = 0
 
@@ -196,7 +203,7 @@ class QSearchSynthesisPass(SynthesisPass):
             for circuit in circuits:
                 dist = self.cost.calc_cost(circuit, utry)
 
-                if dist < self.success_threshold:
+                if dist < self.success_threshold: #ifben átírni succes tressholdra
                     _logger.debug('Successful synthesis.')
                     if self.store_partial_solutions:
                         data['psols'] = psols
