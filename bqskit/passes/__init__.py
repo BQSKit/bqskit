@@ -231,6 +231,7 @@ from bqskit.passes.noop import NOOPPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
+from bqskit.passes.partitioning.depth import DepthPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
@@ -300,6 +301,7 @@ __all__ = [
     'GreedyPartitioner',
     'ScanPartitioner',
     'QuickPartitioner',
+    'DepthPartitioner'
     'SynthesisPass',
     'LEAPSynthesisPass',
     'QSearchSynthesisPass',

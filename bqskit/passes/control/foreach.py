@@ -202,6 +202,8 @@ class ForEachBlockPass(BasePass):
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
 
+
+        _logger.debug(f"Running workflow on {len(subcircuits)} blocks")
         # Do the work
         results = await get_runtime().map(
             _sub_do_work,

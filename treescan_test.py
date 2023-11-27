@@ -15,8 +15,8 @@ import numpy as np
 
 amount_of_workers = 8
 # circuit: Circuit = pickle.load(open("qft4noscan.pickle", "rb"))
-circuit = Circuit(5)
-for i in range(4):
+circuit = Circuit(4)
+for i in range(20):
     circuit.append_gate(U3Gate(), (1,), np.random.rand(3) * np.pi)
     circuit.append_gate(U3Gate(), (2,), np.random.rand(3) * np.pi)
     circuit.append_gate(U3Gate(), (3,), np.random.rand(3) * np.pi)
