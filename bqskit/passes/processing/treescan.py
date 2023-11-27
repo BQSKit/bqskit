@@ -167,7 +167,7 @@ class TreeScanningGateRemovalPass(BasePass):
                     all_circs,
                     target=target,
                     **instantiate_options,
-                )
+            )
             
             TreeScanningGateRemovalPass.instantiation_time += time.time() - start
             TreeScanningGateRemovalPass.num_instantiations += len(all_circs)

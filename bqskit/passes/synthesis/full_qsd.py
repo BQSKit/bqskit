@@ -12,6 +12,9 @@ from bqskit.passes.processing import ScanningGateRemovalPass, TreeScanningGateRe
 from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.passes.synthesis.mgdp import MGDPass
 from bqskit.ir.circuit import Circuit
+from bqskit.passes.partitioning import DepthPartitioner
+from bqskit.passes.control import ForEachBlockPass
+from bqskit.passes.util import UnfoldPass
 
 _logger = logging.getLogger(__name__)
 
@@ -43,6 +46,7 @@ class FullQSDPass(PassAlias):
             start_from_left: bool = True,
             min_qudit_size: int = 2,
             tree_depth: int = 1,
+            partition_depth = None, 
             instantiate_options = {},
         ) -> None:
             """
@@ -61,10 +65,14 @@ class FullQSDPass(PassAlias):
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
             instantiation_options.update(instantiate_options)
-            # self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
-            self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
+            self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
+            # self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
             self.qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.mgd = MGDPass()
+            if partition_depth:
+                self.depth_partition = DepthPartitioner(depth=partition_depth)
+            else:
+                self.depth_partition = None
 
     def get_passes(self) -> list[BasePass]:
           return super().get_passes()
@@ -75,10 +83,24 @@ class FullQSDPass(PassAlias):
         start_num = max(x.num_qudits for x in circuit.operations())
         for _ in range(self.min_qudit_size, start_num):
             passes.append(self.qsd)
-            passes.append(self.scan)
+            if self.depth_partition:
+                passes.append(self.depth_partition)
+                for_each_pass = ForEachBlockPass([self.scan])
+                passes.append(for_each_pass)
+                passes.append(UnfoldPass())
+            else:
+                passes.append(self.scan)
 
         for _ in range(1, start_num):
             passes.append(self.mgd)
-            passes.append(self.scan)
+            if self.depth_partition:
+                passes.append(self.depth_partition)
+                for_each_pass = ForEachBlockPass([self.scan])
+                passes.append(for_each_pass)
+                passes.append(UnfoldPass())
+            else:
+                passes.append(self.scan)
+
+        # print(passes)
 
         await Workflow(passes).run(circuit, data)
