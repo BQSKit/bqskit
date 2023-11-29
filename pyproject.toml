@@ -9,7 +9,7 @@ requires = [
 legacy_tox_ini = """
 [tox]
 minversion = 3.3.0
-envlist = pre-commit,py38,py39,py310,py311
+envlist = pre-commit,py38,py39,py310,py311,py312
 skip_missing_interpreters = true
 
 [testenv]
@@ -32,7 +32,7 @@ commands =
 skip_install = true
 deps = pre-commit
 commands = pre-commit run --all-files --show-diff-on-failure
-basepython=py311
+basepython=py312
 """
 
 [tool.pytest.ini_options]
