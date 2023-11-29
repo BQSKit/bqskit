@@ -14,7 +14,8 @@ from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
 from bqskit.ir.opt.multistartgens.random import RandomStartGenerator
-from bqskit.qis.state.state import StateLike, StateVector
+from bqskit.qis.state.state import StateLike
+from bqskit.qis.state.state import StateVector
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit

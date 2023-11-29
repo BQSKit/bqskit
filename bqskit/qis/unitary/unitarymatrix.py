@@ -151,7 +151,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def dagger(self) -> UnitaryMatrix:
         """The conjugate transpose of the unitary."""
         return self.conj().T
-    
+
     def to_special(self) -> UnitaryMatrix:
         """Return a special unitary matrix verson of this one."""
         determinant = np.linalg.det(self)
