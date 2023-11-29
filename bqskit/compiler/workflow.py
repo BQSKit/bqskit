@@ -90,7 +90,7 @@ class Workflow(BasePass, Sequence[BasePass]):
     def __str__(self) -> str:
         name_seq = f'Workflow: {self.name}\n\t'
         pass_strs = [
-            f'{i}. {"Workflow: " + p.name if isinstance(p, Workflow) else p}'
+            f'{i}. {'Workflow: ' + p.name if isinstance(p, Workflow) else p}'
             for i, p in enumerate(self._passes)
         ]
         return name_seq + '\n\t'.join(pass_strs)
