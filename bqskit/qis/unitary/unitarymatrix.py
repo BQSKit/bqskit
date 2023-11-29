@@ -152,6 +152,19 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """The conjugate transpose of the unitary."""
         return self.conj().T
 
+    def to_special(self) -> UnitaryMatrix:
+        """Return a special unitary matrix verson of this one."""
+        determinant = np.linalg.det(self)
+        dimension = len(self)
+        global_phase = np.angle(determinant) / dimension
+        global_phase = global_phase % (2 * np.pi / dimension)
+        global_phase_factor = np.exp(-1j * global_phase)
+        return global_phase_factor * self
+
+    def is_special(self) -> bool:
+        """Return true if this unitary is special."""
+        return 1 - np.abs(np.linalg.det(self)) < 1e-8
+
     def __len__(self) -> int:
         """The dimension of the square unitary matrix."""
         return self.shape[0]
