@@ -170,7 +170,7 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered manager {i} with {num_workers = }.')
+            self.logger.info(f'Registered manager {i} with {num_workers=}.')
             self.total_workers += num_workers
         self.num_idle_workers = self.total_workers
 
