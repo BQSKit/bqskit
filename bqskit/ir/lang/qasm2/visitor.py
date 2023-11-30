@@ -50,6 +50,7 @@ from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.gates.reset import Reset
 from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cp import CPGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
@@ -260,6 +261,9 @@ class OPENQASMVisitor(Visitor):
         )
         self.gate_defs['rccx'] = GateDef('rccx', 0, 3, RCCXGate())
         self.gate_defs['rc3x'] = GateDef('rc3x', 0, 4, RC3XGate())
+
+        # reset
+        self.gate_defs['reset'] = GateDef('reset', 0, 1, Reset())
 
     def qreg(self, tree: lark.Tree) -> None:
         """Qubit register node visitor."""
@@ -651,8 +655,33 @@ class OPENQASMVisitor(Visitor):
             )
 
     def reset(self, tree: lark.Tree) -> None:
-        """Reset statement node visitor."""
-        raise LangException('BQSKit currently does not support resets.')
+        """reset node visitor."""
+        params = []
+        qlist = tree.children[-1]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+        # Parse gate object
+        gate_name = tree.data
+        if gate_name in self.gate_defs:
+            gate_def: GateDef | CustomGateDef = self.gate_defs[gate_name]
+        elif gate_name in self.custom_gate_defs:
+            gate_def = self.custom_gate_defs[gate_name]
+        else:
+            raise LangException('Unrecognized gate: %s.' % gate_name)
+
+        if len(params) != gate_def.num_params:
+            raise LangException(
+                'Expected %d params got %d params for gate %s.'
+                % (gate_def.num_params, len(params), gate_name),
+            )
+
+        if len(location) != gate_def.num_vars:
+            raise LangException(
+                'Gate acts on %d qubits, got %d qubit variables.'
+                % (gate_def.num_vars, len(location)),
+            )
+
+        # Build operation and add to circuit
+        self.op_list.append(gate_def.build_op(location, params))
 
     def convert_qubit_ids_to_indices(self, qlist: lark.Tree) -> list[int]:
         if qlist.data == 'anylist':
