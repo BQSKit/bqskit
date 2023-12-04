@@ -13,6 +13,8 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_integer
+from bqskit.ir.gates import MeasurementPlaceholder
+from bqskit.ir.gates import Reset
 
 _logger = logging.getLogger(__name__)
 
@@ -112,12 +114,12 @@ class QuickPartitioner(BasePass):
                         loc = list(sorted(bin.qudits))
 
                         # Merge previously placed blocks if possible
-                        merging = not isinstance(bin, BarrierBin)
+                        merging = not isinstance(bin, (BarrierBin, MeasurementBin, ResetBin))
                         while merging:
                             merging = False
                             for p in partitioned_circuit.rear:
                                 op = partitioned_circuit[p]
-                                if isinstance(op.gate, BarrierPlaceholder):
+                                if isinstance(op.gate, (BarrierPlaceholder, MeasurementPlaceholder, Reset)):
                                     # Don't merge through barriers
                                     continue
                                 qudits = list(op.location)
@@ -152,7 +154,7 @@ class QuickPartitioner(BasePass):
                         partitioned_circuit.append_circuit(
                             subc,
                             loc,
-                            not isinstance(bin, BarrierBin),
+                            not isinstance(bin, (BarrierBin, MeasurementBin, ResetBin)),
                             True,
                         )
                         for qudit in bin.qudits:
@@ -189,6 +191,32 @@ class QuickPartitioner(BasePass):
 
                 # Track the barrier to restore it in partitioned circuit
                 pending_bins.append(BarrierBin(point, location, circuit))
+                continue
+
+            # Measurement close all overlapping bins
+            if isinstance(op.gate, MeasurementPlaceholder):
+                for bin in overlapping_bins:
+                    if close_bin_qudits(bin, location, cycle):
+                        num_closed += 1
+                    else:
+                        extended = [q for q in location if q not in bin.qudits]
+                        bin.blocked_qudits.update(extended)
+
+                # Track the measurement to restore it in partitioned circuit
+                pending_bins.append(MeasurementBin(point, location, circuit))
+                continue
+
+            # Reset close all overlapping bins
+            if isinstance(op.gate, Reset):
+                for bin in overlapping_bins:
+                    if close_bin_qudits(bin, location, cycle):
+                        num_closed += 1
+                    else:
+                        extended = [q for q in location if q not in bin.qudits]
+                        bin.blocked_qudits.update(extended)
+
+                # Track the reset to restore it in partitioned circuit
+                pending_bins.append(ResetBin(point, location, circuit))
                 continue
 
             # Get all the currently active bins that can have op added to them
@@ -378,3 +406,70 @@ class BarrierBin(Bin):
         # Close the bin
         for q in location:
             self.active_qudits.remove(q)
+
+
+class MeasurementBin(Bin):
+    """A special bin made to mark and preserve measurement location."""
+
+    def __init__(
+            self,
+            point: CircuitPoint,
+            location: CircuitLocation,
+            circuit: Circuit,
+    ) -> None:
+        """Initialize a MeasurementBin with the point and location of a measurement."""
+        super().__init__()
+
+        # Add the measurement
+        self.add_op(point, location)
+
+        # Barriar bins fill the volume to the next gates
+
+        nexts = circuit.next(point)
+        ends: dict[int, int | None] = {q: None for q in location}
+        for p in nexts:
+            loc = circuit[p].location
+            for q in loc:
+                if q in ends and (
+                        ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
+                    ends[q] = p.cycle - 1
+
+        self.ends = ends
+
+        # Close the bin
+        for q in location:
+            self.active_qudits.remove(q)
+
+
+class ResetBin(Bin):
+    """A special bin made to mark and preserve reset location."""
+
+    def __init__(
+            self,
+            point: CircuitPoint,
+            location: CircuitLocation,
+            circuit: Circuit,
+    ) -> None:
+        """Initialize a reset with the point and location of a reset."""
+        super().__init__()
+
+        # Add the reset
+        self.add_op(point, location)
+
+        # Barriar bins fill the volume to the next gates
+
+        nexts = circuit.next(point)
+        ends: dict[int, int | None] = {q: None for q in location}
+        for p in nexts:
+            loc = circuit[p].location
+            for q in loc:
+                if q in ends and (
+                        ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
+                    ends[q] = p.cycle - 1
+
+        self.ends = ends
+
+        # Close the bin
+        for q in location:
+            self.active_qudits.remove(q)
+
