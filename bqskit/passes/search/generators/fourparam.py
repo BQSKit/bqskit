@@ -79,7 +79,9 @@ class FourParamGenerator(LayerGenerator):
 
             if self.count_outer_cnots(circuit, edge) >= 3:
                 # No need to build circuits with more than 3 cnots in a row
-                continue
+                if circuit.num_qudits != 2:
+                    # Gaurd on >2 qubits to prevent high-error glitches in compile
+                    continue
 
             successor = circuit.copy()
             successor.append_gate(CNOTGate(), edge)
