@@ -6,6 +6,7 @@ import functools
 import logging
 import os
 import signal
+import subprocess
 import sys
 import time
 import uuid
@@ -183,26 +184,32 @@ class Compiler:
         # Shutdown server if attached
         if self.p is not None and self.p.pid is not None:
             try:
-                os.kill(self.p.pid, signal.SIGINT)
-                _logger.debug('Interrupted attached runtime server.')
-
+                self.p.send_signal(signal.SIGINT)
+                _logger.debug('Interrupting attached runtime server.')
                 self.p.communicate(timeout=1)
-                if self.p.returncode is None:
-                    if sys.platform == 'win32':
-                        self.p.terminate()
-                    else:
-                        os.kill(self.p.pid, signal.SIGKILL)
-                    _logger.debug('Killed attached runtime server.')
+            
+            except subprocess.TimeoutExpired:
+                self.p.kill()
+                _logger.debug('Killing attached runtime server.')
+                try:
+                    self.p.communicate(timeout=30)
+                except subprocess.TimeoutExpired:
+                    _logger.warning(
+                        "Failed to kill attached runtime server."
+                        " It may still be running as a zombie process."
+                    )
+                else:
+                    _logger.debug('Attached runtime server is down.')
 
             except Exception as e:
-                _logger.debug(
+                _logger.warning(
                     f'Error while shuting down attached runtime server: {e}.',
                 )
+
             else:
                 _logger.debug('Successfully shutdown attached runtime server.')
+
             finally:
-                self.p.communicate()
-                _logger.debug('Attached runtime server is down.')
                 self.p = None
 
         # Reset interrupt signal handler and remove exit handler
