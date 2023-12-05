@@ -131,7 +131,7 @@ class Compiler:
 
     def _connect_to_server(self, ip: str, port: int) -> None:
         """Connect to a runtime server at `ip` and `port`."""
-        max_retries = 7
+        max_retries = 8
         wait_time = .25
         for _ in range(max_retries):
             try:
