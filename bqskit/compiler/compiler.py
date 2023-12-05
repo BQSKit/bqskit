@@ -4,7 +4,6 @@ from __future__ import annotations
 import atexit
 import functools
 import logging
-import os
 import signal
 import subprocess
 import sys
@@ -187,7 +186,7 @@ class Compiler:
                 self.p.send_signal(signal.SIGINT)
                 _logger.debug('Interrupting attached runtime server.')
                 self.p.communicate(timeout=1)
-            
+
             except subprocess.TimeoutExpired:
                 self.p.kill()
                 _logger.debug('Killing attached runtime server.')
@@ -195,8 +194,8 @@ class Compiler:
                     self.p.communicate(timeout=30)
                 except subprocess.TimeoutExpired:
                     _logger.warning(
-                        "Failed to kill attached runtime server."
-                        " It may still be running as a zombie process."
+                        'Failed to kill attached runtime server.'
+                        ' It may still be running as a zombie process.',
                     )
                 else:
                     _logger.debug('Attached runtime server is down.')
