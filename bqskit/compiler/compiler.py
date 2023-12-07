@@ -125,7 +125,11 @@ class Compiler:
         params = f'{num_workers}, {runtime_log_level}, {worker_port=}'
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
-        self.p = Popen([sys.executable, '-c', launch_str])
+        if sys.platform == 'win32':
+            flags = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            flags = 0
+        self.p = Popen([sys.executable, '-c', launch_str], creationflags=flags)
         _logger.debug('Starting runtime server process.')
 
     def _connect_to_server(self, ip: str, port: int) -> None:
@@ -183,7 +187,10 @@ class Compiler:
         # Shutdown server if attached
         if self.p is not None and self.p.pid is not None:
             try:
-                self.p.send_signal(signal.SIGINT)
+                if sys.platform == 'win32':
+                    self.p.send_signal(signal.CTRL_C_EVENT)
+                else:
+                    self.p.send_signal(signal.SIGINT)
                 _logger.debug('Interrupting attached runtime server.')
                 self.p.communicate(timeout=1)
 

@@ -134,6 +134,8 @@ class ServerBase:
         # Safely and immediately exit on interrupt signals
         handle = functools.partial(sigint_handler, node=self)
         signal.signal(signal.SIGINT, handle)
+        if sys.platform == 'win32':
+            signal.signal(signal.CTRL_C_EVENT, handle)
 
         # Start outgoing thread
         self.outgoing: Queue[tuple[Connection, RuntimeMessage, Any]] = Queue()
