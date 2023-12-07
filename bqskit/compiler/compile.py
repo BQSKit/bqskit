@@ -1233,6 +1233,7 @@ def build_seqpam_mapping_optimization_workflow(
         IfThenElsePass(
             NotPredicate(WidthPredicate(2)),
             [
+                LogPass('Caching permutation-aware synthesis results.'),
                 ExtractModelConnectivityPass(),
                 QuickPartitioner(block_size),
                 ForEachBlockPass(
@@ -1252,11 +1253,13 @@ def build_seqpam_mapping_optimization_workflow(
                         ),
                     ),
                 ),
+                LogPass('Preoptimizing with permutation-aware mapping.'),
                 PAMRoutingPass(),
                 post_pam_seq,
                 UnfoldPass(),
                 RestoreModelConnevtivityPass(),
 
+                LogPass('Recaching permutation-aware synthesis results.'),
                 SubtopologySelectionPass(block_size),
                 QuickPartitioner(block_size),
                 ForEachBlockPass(
@@ -1276,6 +1279,7 @@ def build_seqpam_mapping_optimization_workflow(
                         ),
                     ),
                 ),
+                LogPass('Performing permutation-aware mapping.'),
                 ApplyPlacement(),
                 PAMLayoutPass(num_layout_passes),
                 PAMRoutingPass(0.1),
