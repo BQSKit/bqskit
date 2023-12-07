@@ -989,9 +989,41 @@ def build_multi_qudit_retarget_workflow(
     """
     Build standard workflow for circuit multi-qudit gate set retargeting.
 
-    This workflow assumes that SetModelPass will be run earlier in the full
-    workflow and doesn't add it in here.
+    Notes:
+        - This workflow assumes that SetModelPass will be run earlier in the
+          full workflow and doesn't add it in here.
+
+        - For the most part, circuit connectivity isn't a concern during
+          retargeting. However, if the circuit contains many-qudit (>= 3)
+          gates, then the workflow will not preserve connectivity during
+          the decomposition of those gates. If your input contains many-qudit
+          gates, consider following this with a mapping workflow.
     """
+
+    core_retarget_workflow = [
+        FillSingleQuditGatesPass(),
+        IfThenElsePass(
+            NotPredicate(MultiPhysicalPredicate()),
+            IfThenElsePass(
+                ManyQuditGatesPredicate(),
+                [
+                    ExtractModelConnectivityPass(),
+                    build_standard_search_synthesis_workflow(
+                        optimization_level,
+                        synthesis_epsilon,
+                    ),
+                    RestoreModelConnevtivityPass(),
+                ],
+                AutoRebase2QuditGatePass(3, 5),
+            ),
+            ScanningGateRemovalPass(
+                success_threshold=synthesis_epsilon,
+                collection_filter=_mq_gate_collection_filter,
+                instantiate_options=get_instantiate_options(optimization_level),
+            ),
+        ),
+    ]
+
     return Workflow(
         [
             IfThenElsePass(
@@ -999,27 +1031,7 @@ def build_multi_qudit_retarget_workflow(
                 [
                     LogPass('Retargeting multi-qudit gates.'),
                     build_partitioning_workflow(
-                        [
-                            FillSingleQuditGatesPass(),
-                            IfThenElsePass(
-                                NotPredicate(MultiPhysicalPredicate()),
-                                IfThenElsePass(
-                                    ManyQuditGatesPredicate(),
-                                    build_standard_search_synthesis_workflow(
-                                        optimization_level,
-                                        synthesis_epsilon,
-                                    ),
-                                    AutoRebase2QuditGatePass(3, 5),
-                                ),
-                                ScanningGateRemovalPass(
-                                    success_threshold=synthesis_epsilon,
-                                    collection_filter=_mq_gate_collection_filter,  # noqa: E501
-                                    instantiate_options=get_instantiate_options(
-                                        optimization_level,
-                                    ),
-                                ),
-                            ),
-                        ],
+                        core_retarget_workflow,
                         max_synthesis_size,
                         None if error_threshold is None else error_sim_size,
                     ),
