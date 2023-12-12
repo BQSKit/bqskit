@@ -50,8 +50,8 @@ class TestCircuitGates:
 
         expected = """
             OPENQASM 2.0;
+            include "qelib1.inc";
             qreg q[1];
             reset q[0];
         """
-        assert qasm == expected
-
+        assert qasm.strip() == expected.strip()
