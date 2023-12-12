@@ -11,6 +11,7 @@ from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.gates.reset import Reset
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u1q import U1qGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
@@ -294,6 +295,18 @@ class TestIncludeStatements:
         assert circuit.num_operations == 1
         gate_unitary = U1Gate().get_unitary([0.1])
         assert circuit.get_unitary().get_distance_from(gate_unitary) < 1e-7
+
+
+class TestReset:
+    def test_reset_single(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            reset q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        expected = Reset()
+        assert circuit[0, 0].gate == expected
 
 
 class TestMeasure:
