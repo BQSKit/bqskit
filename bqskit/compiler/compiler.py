@@ -4,8 +4,8 @@ from __future__ import annotations
 import atexit
 import functools
 import logging
-import os
 import signal
+import subprocess
 import sys
 import time
 import uuid
@@ -125,12 +125,16 @@ class Compiler:
         params = f'{num_workers}, {runtime_log_level}, {worker_port=}'
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
-        self.p = Popen([sys.executable, '-c', launch_str])
+        if sys.platform == 'win32':
+            flags = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            flags = 0
+        self.p = Popen([sys.executable, '-c', launch_str], creationflags=flags)
         _logger.debug('Starting runtime server process.')
 
     def _connect_to_server(self, ip: str, port: int) -> None:
         """Connect to a runtime server at `ip` and `port`."""
-        max_retries = 7
+        max_retries = 8
         wait_time = .25
         for _ in range(max_retries):
             try:
@@ -183,26 +187,35 @@ class Compiler:
         # Shutdown server if attached
         if self.p is not None and self.p.pid is not None:
             try:
-                os.kill(self.p.pid, signal.SIGINT)
-                _logger.debug('Interrupted attached runtime server.')
-
+                if sys.platform == 'win32':
+                    self.p.send_signal(signal.CTRL_C_EVENT)
+                else:
+                    self.p.send_signal(signal.SIGINT)
+                _logger.debug('Interrupting attached runtime server.')
                 self.p.communicate(timeout=1)
-                if self.p.returncode is None:
-                    if sys.platform == 'win32':
-                        self.p.terminate()
-                    else:
-                        os.kill(self.p.pid, signal.SIGKILL)
-                    _logger.debug('Killed attached runtime server.')
+
+            except subprocess.TimeoutExpired:
+                self.p.kill()
+                _logger.debug('Killing attached runtime server.')
+                try:
+                    self.p.communicate(timeout=30)
+                except subprocess.TimeoutExpired:
+                    _logger.warning(
+                        'Failed to kill attached runtime server.'
+                        ' It may still be running as a zombie process.',
+                    )
+                else:
+                    _logger.debug('Attached runtime server is down.')
 
             except Exception as e:
-                _logger.debug(
+                _logger.warning(
                     f'Error while shuting down attached runtime server: {e}.',
                 )
+
             else:
                 _logger.debug('Successfully shutdown attached runtime server.')
+
             finally:
-                self.p.communicate()
-                _logger.debug('Attached runtime server is down.')
                 self.p = None
 
         # Reset interrupt signal handler and remove exit handler
