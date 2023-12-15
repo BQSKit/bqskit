@@ -298,7 +298,7 @@ class TestIncludeStatements:
 
 
 class TestReset:
-    def test_reset_single(self) -> None:
+    def test_reset_single_qubit(self) -> None:
         input = """
             OPENQASM 2.0;
             qreg q[1];
@@ -307,6 +307,17 @@ class TestReset:
         circuit = OPENQASM2Language().decode(input)
         expected = Reset()
         assert circuit[0, 0].gate == expected
+
+    def test_reset_register(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[2];
+            reset q;
+        """
+        circuit = OPENQASM2Language().decode(input)
+        expected = Reset()
+        assert circuit[0, 0].gate == expected
+        assert circuit[0, 1].gate == expected
 
 
 class TestMeasure:

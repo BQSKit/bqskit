@@ -47,11 +47,11 @@ class TestCircuitGates:
         circuit = Circuit(1)
         circuit.append_gate(Reset(), 0)
         qasm = OPENQASM2Language().encode(circuit)
+        expected = (
+            'OPENQASM 2.0;\n'
+            'include "qelib1.inc";\n'
+            'qreg q[1];\n'
+            'reset q[0];\n'
+        )
+        assert qasm == expected
 
-        expected = """
-            OPENQASM 2.0;
-            include "qelib1.inc";
-            qreg q[1];
-            reset q[0];
-        """
-        assert qasm.strip() == expected.strip()
