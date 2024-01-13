@@ -162,6 +162,16 @@ class RuntimeHandle(Protocol):
         """
         ...
 
+    def get_cache(self) -> dict[str, Any]:
+        """
+        Retrieve worker's local cache.
+
+        A worker's local cache is implemented as a dictionary. This function
+        can be used to check the presence of data, or to place data directly
+        into, a worker's local cache.
+        """
+        ...
+
     async def next(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
         """
         Wait for and return the next batch of results from a map task.

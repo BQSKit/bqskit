@@ -205,6 +205,9 @@ class Worker:
         self._mailbox_counter = 0
         """This count ensures every mailbox has a unique id."""
 
+        self._cache: dict[str, Any] = {}
+        """Local worker cache."""
+
         # Send out every emitted log message upstream
         old_factory = logging.getLogRecordFactory()
 
@@ -492,7 +495,8 @@ class Worker:
             fnarg,
             RuntimeAddress(self._id, mailbox_id, 0),
             self._active_task.comp_task_id,
-            self._active_task.breadcrumbs + (self._active_task.return_address,),
+            self._active_task.breadcrumbs +
+            (self._active_task.return_address,),
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
         )
@@ -562,6 +566,16 @@ class Worker:
         ]
         msgs = [(RuntimeMessage.CANCEL, addr) for addr in addrs]
         self._outgoing.extend(msgs)
+
+    def get_cache(self) -> dict[str, Any]:
+        """
+        Retrieve worker's local cache.
+
+        Returns:
+            (dict[str, Any]): The worker's local cache implemented
+                with a dictionary.
+        """
+        return self._cache
 
     async def next(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
         """
