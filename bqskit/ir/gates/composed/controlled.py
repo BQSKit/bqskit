@@ -9,6 +9,7 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
+from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -285,6 +286,23 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
             U = self.gate.get_unitary()
             ctrl_U = np.kron(self.ctrl, U) + self.ihalf
             self._utry = UnitaryMatrix(ctrl_U, self.radixes)
+
+    def get_qasm(self, params: RealVector, location: CircuitLocation) -> str:
+        """
+        Override default `Gate.get_qasm` method.
+
+        If the target gate is a standard gate, this function will output
+        qasm in the form 'c+<gate_qasm>'. Otherwise an error will be raised.
+
+        Raises:
+            AttributeError: If the target gate is non-standard.
+        """
+        qasm_name = 'c' * self.num_controls + self.gate.qasm_name
+        return '{}({}) q[{}];\n'.format(
+            qasm_name,
+            ', '.join([str(p) for p in params]),
+            '], q['.join([str(q) for q in location]),
+        ).replace('()', '')
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
