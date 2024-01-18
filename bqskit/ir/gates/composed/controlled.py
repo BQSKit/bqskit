@@ -287,22 +287,32 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
             ctrl_U = np.kron(self.ctrl, U) + self.ihalf
             self._utry = UnitaryMatrix(ctrl_U, self.radixes)
 
-    def get_qasm(self, params: RealVector, location: CircuitLocation) -> str:
+    @property
+    def qasm_name(self) -> str:
         """
-        Override default `Gate.get_qasm` method.
+        Override default `Gate.qasm_name` method.
 
-        If the target gate is a standard gate, this function will output
+        If the core gate is a standard gate, this function will output
         qasm in the form 'c+<gate_qasm>'. Otherwise an error will be raised.
 
         Raises:
-            AttributeError: If the target gate is non-standard.
+            ValueError: If the core gate is non-standard in OpenQASM 2.0.
         """
-        qasm_name = 'c' * self.num_controls + self.gate.qasm_name
-        return '{}({}) q[{}];\n'.format(
-            qasm_name,
-            ', '.join([str(p) for p in params]),
-            '], q['.join([str(q) for q in location]),
-        ).replace('()', '')
+        _core_gate = self.gate.qasm_name
+        if self.num_controls <= 2:
+            _controls = 'c' * self.num_controls
+        else:
+            _controls = f'c{self.num_controls}'
+        qasm_name = _controls + _core_gate
+        supported_gates = ('cu1', 'cu2', 'cu3', 'cswap', 'c3x', 'c4x')
+        if qasm_name not in supported_gates:
+            raise ValueError(
+                f'Controlled gate {_core_gate} with {self.num_controls} '
+                'controls is not a standard OpenQASM 2.0 identifier. '
+                'To encode this gate, try decomposing it into gates with'
+                'standard identifiers.'
+            )
+        return qasm_name
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
