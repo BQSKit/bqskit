@@ -620,10 +620,6 @@ class OPENQASMVisitor(Visitor):
 
             for i in range(qubit_size):
                 self.measurements[outer_idx + i] = (class_reg_name, i)
-
-            # for key, item in enumerate(self.measurements.items()):
-            #
-            #     mph = MeasurementPlaceholder(cregs, {key: item[1]})
             mph = MeasurementPlaceholder(cregs, self.measurements)
             self.gate_defs['measure'] = GateDef('measure', 0, qubit_size, mph)
 
@@ -652,12 +648,7 @@ class OPENQASMVisitor(Visitor):
                 'measured to a single classical bit.',
             )
 
-        # for key, item in enumerate(self.measurements.items()):
-        #     cregs = cast(List[Tuple[str, int]], self.classical_regs)
-        #     mph = MeasurementPlaceholder(cregs, {key: item[1]})
-        #     self.gate_defs['measure'] = GateDef('measure', 0, 1, mph)
-
-        params = []
+        params: list[float] = []
         qlist = tree.children[0]
         location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
 
