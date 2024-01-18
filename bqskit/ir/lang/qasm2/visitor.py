@@ -181,12 +181,6 @@ class OPENQASMVisitor(Visitor):
         circuit = Circuit(num_qubits)
         circuit.extend(self.op_list)
 
-        # Add measurements
-        if len(self.measurements) > 0:
-            cregs = cast(List[Tuple[str, int]], self.classical_regs)
-            mph = MeasurementPlaceholder(cregs, self.measurements)
-            circuit.append_gate(mph, list(self.measurements.keys()))
-
         return circuit
 
     def fill_gate_defs(self) -> None:
@@ -300,13 +294,6 @@ class OPENQASMVisitor(Visitor):
         # Parse location
         qlist = tree.children[-1]
         location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
-
-        if any(q in self.measurements for q in location):
-            raise LangException(
-                'BQSKit currently does not support mid-circuit measurements.'
-                ' Unable to apply a gate on the same qubit where a measurement'
-                ' has been previously made.',
-            )
 
         # Parse gate object
         gate_name = str(tree.children[0])
@@ -653,6 +640,40 @@ class OPENQASMVisitor(Visitor):
                 'to a full classical register or a qubit register is being '
                 'measured to a single classical bit.',
             )
+
+
+        for key, item in enumerate(self.measurements.items()):
+            cregs = cast(List[Tuple[str, int]], self.classical_regs)
+            mph = MeasurementPlaceholder(cregs, {key: item})
+            self.gate_defs['measure'] = GateDef('measure', 0, 1, mph)
+
+        params = []
+        qlist = tree.children[0]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+
+        # Parse gate object
+        gate_name = tree.data
+        if gate_name in self.gate_defs:
+            gate_def: GateDef | CustomGateDef = self.gate_defs[gate_name]
+        elif gate_name in self.custom_gate_defs:
+            gate_def = self.custom_gate_defs[gate_name]
+        else:
+            raise LangException('Unrecognized gate: %s.' % gate_name)
+
+        if len(params) != gate_def.num_params:
+            raise LangException(
+                'Expected %d params got %d params for gate %s.'
+                % (gate_def.num_params, len(params), gate_name),
+            )
+
+        if len(location) != gate_def.num_vars:
+            raise LangException(
+                'Gate acts on %d qubits, got %d qubit variables.'
+                % (gate_def.num_vars, len(location)),
+            )
+
+        # Build operation and add to circuit
+        self.op_list.append(gate_def.build_op(location, params))
 
     def reset(self, tree: lark.Tree) -> None:
         """reset node visitor."""

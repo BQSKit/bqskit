@@ -6,7 +6,8 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.region import CircuitRegion
-
+from bqskit.ir.gates import MeasurementPlaceholder
+from bqskit.ir.gates import Reset
 
 class GroupSingleQuditGatePass(BasePass):
     """
@@ -31,7 +32,7 @@ class GroupSingleQuditGatePass(BasePass):
                 op = circuit[c, q]
                 if (
                     op.num_qudits == 1
-                    and not isinstance(op.gate, BarrierPlaceholder)
+                    and not isinstance(op.gate, (BarrierPlaceholder, MeasurementPlaceholder, Reset))
                 ):
                     if region_start is None:
                         region_start = c
