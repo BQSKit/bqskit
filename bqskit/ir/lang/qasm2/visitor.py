@@ -656,7 +656,7 @@ class OPENQASMVisitor(Visitor):
 
     def reset(self, tree: lark.Tree) -> None:
         """reset node visitor."""
-        params = []
+        params: list[float] = []
         qlist = tree.children[-1]
         gate_name = tree.data
         if gate_name in self.gate_defs:
