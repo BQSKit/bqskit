@@ -9,7 +9,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -310,7 +309,7 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
                 f'Controlled gate {_core_gate} with {self.num_controls} '
                 'controls is not a standard OpenQASM 2.0 identifier. '
                 'To encode this gate, try decomposing it into gates with'
-                'standard identifiers.'
+                'standard identifiers.',
             )
         return qasm_name
 
