@@ -33,7 +33,13 @@ class GroupSingleQuditGatePass(BasePass):
                 op = circuit[c, q]
                 if (
                     op.num_qudits == 1
-                    and not isinstance(op.gate, (BarrierPlaceholder, MeasurementPlaceholder, Reset))
+                    and not isinstance(
+                        op.gate, (
+                            BarrierPlaceholder,
+                            MeasurementPlaceholder,
+                            Reset,
+                        ),
+                    )
                 ):
                     if region_start is None:
                         region_start = c

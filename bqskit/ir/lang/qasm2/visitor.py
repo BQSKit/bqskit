@@ -586,6 +586,7 @@ class OPENQASMVisitor(Visitor):
         class_childs = tree.children[1].children
         qubit_reg_name = str(qubit_childs[0])
         class_reg_name = str(class_childs[0])
+        cregs = cast(List[Tuple[str, int]], self.classical_regs)
         if not any(r.name == qubit_reg_name for r in self.qubit_regs):
             raise LangException(
                 f'Measuring undefined qubit register: {qubit_reg_name}',
@@ -596,7 +597,7 @@ class OPENQASMVisitor(Visitor):
                 f'Measuring undefined classical register: {class_reg_name}',
             )
 
-        if len(qubit_childs) == 1 and len(class_childs) == 1:
+        if len(qubit_childs) == 1 and len(class_childs) == 1:  # for measure all
             for name, size in self.qubit_regs:
                 if qubit_reg_name == name:
                     qubit_size = size
@@ -619,6 +620,8 @@ class OPENQASMVisitor(Visitor):
 
             for i in range(qubit_size):
                 self.measurements[outer_idx + i] = (class_reg_name, i)
+            mph = MeasurementPlaceholder(cregs, self.measurements)
+            self.gate_defs['measure'] = GateDef('measure', 0, qubit_size, mph)
 
         elif len(qubit_childs) == 2 and len(class_childs) == 2:
             qubit_index = int(qubit_childs[1])
@@ -633,6 +636,8 @@ class OPENQASMVisitor(Visitor):
                 outer_idx += size
 
             self.measurements[qubit_index] = (class_reg_name, class_index)
+            mph = MeasurementPlaceholder(cregs, self.measurements)
+            self.gate_defs['measure'] = GateDef('measure', 0, 1, mph)
 
         else:
             raise LangException(
@@ -641,12 +646,7 @@ class OPENQASMVisitor(Visitor):
                 'measured to a single classical bit.',
             )
 
-        for key, item in enumerate(self.measurements.items()):
-            cregs = cast(List[Tuple[str, int]], self.classical_regs)
-            mph = MeasurementPlaceholder(cregs, {key: item})
-            self.gate_defs['measure'] = GateDef('measure', 0, 1, mph)
-
-        params = []
+        params: list[float] = []
         qlist = tree.children[0]
         location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
 
