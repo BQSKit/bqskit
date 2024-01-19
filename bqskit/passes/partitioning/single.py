@@ -4,10 +4,11 @@ from __future__ import annotations
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.gates.barrier import BarrierPlaceholder
-from bqskit.ir.region import CircuitRegion
 from bqskit.ir.gates import MeasurementPlaceholder
 from bqskit.ir.gates import Reset
+from bqskit.ir.gates.barrier import BarrierPlaceholder
+from bqskit.ir.region import CircuitRegion
+
 
 class GroupSingleQuditGatePass(BasePass):
     """

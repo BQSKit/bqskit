@@ -8,13 +8,13 @@ from typing import Sequence
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import MeasurementPlaceholder
+from bqskit.ir.gates import Reset
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.utils.typing import is_integer
-from bqskit.ir.gates import MeasurementPlaceholder
-from bqskit.ir.gates import Reset
 
 _logger = logging.getLogger(__name__)
 
@@ -114,7 +114,9 @@ class QuickPartitioner(BasePass):
                         loc = list(sorted(bin.qudits))
 
                         # Merge previously placed blocks if possible
-                        merging = not isinstance(bin, (BarrierBin, MeasurementBin, ResetBin))
+                        merging = not isinstance(
+                            bin, (BarrierBin, MeasurementBin, ResetBin),
+                        )
                         while merging:
                             merging = False
                             for p in partitioned_circuit.rear:
@@ -154,7 +156,9 @@ class QuickPartitioner(BasePass):
                         partitioned_circuit.append_circuit(
                             subc,
                             loc,
-                            not isinstance(bin, (BarrierBin, MeasurementBin, ResetBin)),
+                            not isinstance(
+                                bin, (BarrierBin, MeasurementBin, ResetBin),
+                            ),
                             True,
                         )
                         for qudit in bin.qudits:
@@ -417,7 +421,8 @@ class MeasurementBin(Bin):
             location: CircuitLocation,
             circuit: Circuit,
     ) -> None:
-        """Initialize a MeasurementBin with the point and location of a measurement."""
+        """Initialize a MeasurementBin with the point and location of a
+        measurement."""
         super().__init__()
 
         # Add the measurement
@@ -431,7 +436,8 @@ class MeasurementBin(Bin):
             loc = circuit[p].location
             for q in loc:
                 if q in ends and (
-                        ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
+                        ends[q] is None or ends[q] >= p.cycle
+                ):  # type: ignore # noqa # short-circuit safety for >=
                     ends[q] = p.cycle - 1
 
         self.ends = ends
@@ -464,7 +470,8 @@ class ResetBin(Bin):
             loc = circuit[p].location
             for q in loc:
                 if q in ends and (
-                        ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
+                        ends[q] is None or ends[q] >= p.cycle
+                ):  # type: ignore # noqa # short-circuit safety for >=
                     ends[q] = p.cycle - 1
 
         self.ends = ends
@@ -472,4 +479,3 @@ class ResetBin(Bin):
         # Close the bin
         for q in location:
             self.active_qudits.remove(q)
-

@@ -11,11 +11,11 @@ from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
-from bqskit.ir.gates.reset import Reset
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u1q import U1qGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.reset import Reset
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix

@@ -50,7 +50,6 @@ from bqskit.ir.gates.constant.yy import YYGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
-from bqskit.ir.gates.reset import Reset
 from bqskit.ir.gates.parameterized.ccp import CCPGate
 from bqskit.ir.gates.parameterized.cp import CPGate
 from bqskit.ir.gates.parameterized.crx import CRXGate
@@ -69,6 +68,7 @@ from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u1q import U1qGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.reset import Reset
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.location import CircuitLocation
@@ -641,7 +641,6 @@ class OPENQASMVisitor(Visitor):
                 'measured to a single classical bit.',
             )
 
-
         for key, item in enumerate(self.measurements.items()):
             cregs = cast(List[Tuple[str, int]], self.classical_regs)
             mph = MeasurementPlaceholder(cregs, {key: item})
@@ -676,7 +675,7 @@ class OPENQASMVisitor(Visitor):
         self.op_list.append(gate_def.build_op(location, params))
 
     def reset(self, tree: lark.Tree) -> None:
-        """reset node visitor."""
+        """Reset node visitor."""
         params: list[float] = []
         qlist = tree.children[-1]
         gate_name = tree.data
@@ -705,7 +704,10 @@ class OPENQASMVisitor(Visitor):
             # Build operation and add to circuit
             self.op_list.append(gate_def.build_op(location, params))
         else:
-            locations = [CircuitLocation(i) for i in range(self.qubit_regs[0][1])]
+            locations = [
+                CircuitLocation(i)
+                for i in range(self.qubit_regs[0][1])
+            ]
             for location in locations:
                 if len(location) != gate_def.num_vars:
                     raise LangException(
@@ -715,7 +717,6 @@ class OPENQASMVisitor(Visitor):
 
                     # Build operation and add to circuit
                 self.op_list.append(gate_def.build_op(location, params))
-
 
     def convert_qubit_ids_to_indices(self, qlist: lark.Tree) -> list[int]:
         if qlist.data == 'anylist':

@@ -5,6 +5,7 @@ from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
+
 class Reset(ConstantGate):
     """Pseudogate to initialize the qudit to |0>."""
 
@@ -24,5 +25,3 @@ class Reset(ConstantGate):
         raise RuntimeError(
             'Cannot compute unitary for a reset.',
         )
-
-

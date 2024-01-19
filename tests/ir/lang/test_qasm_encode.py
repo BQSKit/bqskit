@@ -55,4 +55,3 @@ class TestCircuitGates:
             'reset q[0];\n'
         )
         assert qasm == expected
-
