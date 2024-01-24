@@ -115,14 +115,25 @@ class QuickPartitioner(BasePass):
 
                         # Merge previously placed blocks if possible
                         merging = not isinstance(
-                            bin, (BarrierBin, MeasurementBin, ResetBin),
+                            bin, (
+                                BarrierBin,
+                                MeasurementBin,
+                                ResetBin,
+                            ),
                         )
                         while merging:
                             merging = False
                             for p in partitioned_circuit.rear:
                                 op = partitioned_circuit[p]
-                                if isinstance(op.gate, (BarrierPlaceholder, MeasurementPlaceholder, Reset)):
-                                    # Don't merge through barriers
+                                if isinstance(
+                                    op.gate, (
+                                        BarrierPlaceholder,
+                                        MeasurementPlaceholder,
+                                        Reset,
+                                    ),
+                                ):
+                                    # Don't merge through barriers,
+                                    # measurement, or reset
                                     continue
                                 qudits = list(op.location)
 
@@ -157,7 +168,11 @@ class QuickPartitioner(BasePass):
                             subc,
                             loc,
                             not isinstance(
-                                bin, (BarrierBin, MeasurementBin, ResetBin),
+                                bin, (
+                                    BarrierBin,
+                                    MeasurementBin,
+                                    ResetBin,
+                                ),
                             ),
                             True,
                         )
@@ -428,18 +443,15 @@ class MeasurementBin(Bin):
         # Add the measurement
         self.add_op(point, location)
 
-        # Barriar bins fill the volume to the next gates
+        # Measurement bins fill the volume to the next gates
 
         nexts = circuit.next(point)
         ends: dict[int, int | None] = {q: None for q in location}
         for p in nexts:
             loc = circuit[p].location
             for q in loc:
-                if q in ends and (
-                        ends[q] is None or ends[q] >= p.cycle
-                ):  # type: ignore # noqa # short-circuit safety for >=
+                if q in ends and (ends[q] is None or ends[q] >= p.cycle):  # type: ignore # noqa # short-circuit safety for >=
                     ends[q] = p.cycle - 1
-
         self.ends = ends
 
         # Close the bin
@@ -462,7 +474,7 @@ class ResetBin(Bin):
         # Add the reset
         self.add_op(point, location)
 
-        # Barriar bins fill the volume to the next gates
+        # Reset bins fill the volume to the next gates
 
         nexts = circuit.next(point)
         ends: dict[int, int | None] = {q: None for q in location}
@@ -470,10 +482,9 @@ class ResetBin(Bin):
             loc = circuit[p].location
             for q in loc:
                 if q in ends and (
-                        ends[q] is None or ends[q] >= p.cycle
-                ):  # type: ignore # noqa # short-circuit safety for >=
+                        ends[q] is None or ends[q] >= p.cycle  # type: ignore # noqa # short-circuit safety for >=
+                ):
                     ends[q] = p.cycle - 1
-
         self.ends = ends
 
         # Close the bin

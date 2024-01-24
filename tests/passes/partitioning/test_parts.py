@@ -30,7 +30,8 @@ def big_qasm_file(request: Any) -> str:
 
 
 def test_parters(big_qasm_file: str, compiler: Compiler) -> None:
-    if 'barrier' not in big_qasm_file:
+    keywords = ['barrier', 'reset', 'measure']
+    if all(keyword not in big_qasm_file for keyword in keywords):
         return  # TODO: REMOVE THIS WHEN BARRIER IS FIXED
     c = Circuit.from_file(big_qasm_file)
     for block_size in [2, 3, 4, 5]:
