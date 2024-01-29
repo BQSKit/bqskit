@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import numpy as np
+from numpy import float64
+from numpy.random import randn
+from numpy.typing import NDArray
 
 from bqskit.compiler import BasePass
 from bqskit.compiler import Compiler
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-from bqskit.runtime import get_runtime
 from bqskit.passes.util.update import UpdateDataPass
+from bqskit.runtime import get_runtime
 
 
-def random_np_array() -> np.ndarray:
-    return np.random.randn(4, 4, 4)
+def random_np_array() -> NDArray[float64]:
+    return randn(4, 4, 4)
 
 
 class TestWorkerCachePut(BasePass):
