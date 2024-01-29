@@ -168,6 +168,8 @@ class SeedLayerGenerator(LayerGenerator):
     def hash_structure(circuit: Circuit) -> int:
         hashes = []
         for cycle, op in circuit.operations_with_cycles():
+            if op.num_qudits <= 1:
+                continue
             hashes.append(hash((cycle, str(op))))
             if len(hashes) > 100:
                 hashes = [sum(hashes)]
