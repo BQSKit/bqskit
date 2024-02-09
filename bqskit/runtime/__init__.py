@@ -166,9 +166,9 @@ class RuntimeHandle(Protocol):
         """
         Retrieve worker's local cache.
 
-        A worker's local cache is implemented as a dictionary. This function
-        can be used to check the presence of data, or to place data directly
-        into, a worker's local cache.
+        A worker's local cache is implemented as a dictionary. This function can
+        be used to check the presence of data, or to place data directly into, a
+        worker's local cache.
         """
         ...
 
