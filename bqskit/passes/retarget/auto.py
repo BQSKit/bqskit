@@ -6,6 +6,7 @@ from typing import Any
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.passes.retarget.two import Rebase2QuditGatePass
@@ -111,6 +112,12 @@ class AutoRebase2QuditGatePass(Rebase2QuditGatePass):
         _logger.debug(f'Rebasing gates from {old_gates} to {new_gates}.')
 
         target = self.get_target(circuit, data)
+
+        identity = UnitaryMatrix.identity(target.dim, target.radixes)
+        if target.get_distance_from(identity) < self.success_threshold:
+            _logger.debug('Target is identity, returning empty circuit.')
+            circuit.clear()
+            return
 
         for g in old_gates:
             # Track retries to check for no progress

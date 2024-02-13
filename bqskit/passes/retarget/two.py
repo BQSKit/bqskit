@@ -13,6 +13,7 @@ from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.point import CircuitPoint as Point
+from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -164,6 +165,12 @@ class Rebase2QuditGatePass(BasePass):
 
         target = self.get_target(circuit, data)
 
+        identity = UnitaryMatrix.identity(target.dim, target.radixes)
+        if target.get_distance_from(identity) < self.success_threshold:
+            _logger.debug('Target is identity, returning empty circuit.')
+            circuit.clear()
+            return
+
         for g in self.gates:
             # Track retries to check for no progress
             num_retries = 0
@@ -188,6 +195,7 @@ class Rebase2QuditGatePass(BasePass):
                     circuit.point(g),
                     self.gates,
                 )
+
                 circuits_with_new_gate = []
                 for circ in self.circs:
                     circuit_copy = circuit.copy()
