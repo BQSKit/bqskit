@@ -165,11 +165,12 @@ class Rebase2QuditGatePass(BasePass):
 
         target = self.get_target(circuit, data)
 
-        identity = UnitaryMatrix.identity(target.dim, target.radixes)
-        if target.get_distance_from(identity) < self.success_threshold:
-            _logger.debug('Target is identity, returning empty circuit.')
-            circuit.clear()
-            return
+        if isinstance(target, UnitaryMatrix):
+            identity = UnitaryMatrix.identity(target.dim, target.radixes)
+            if target.get_distance_from(identity) < self.success_threshold:
+                _logger.debug('Target is identity, returning empty circuit.')
+                circuit.clear()
+                return
 
         for g in self.gates:
             # Track retries to check for no progress
