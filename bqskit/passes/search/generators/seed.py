@@ -27,6 +27,7 @@ class SeedLayerGenerator(LayerGenerator):
         seed: Circuit | Sequence[Circuit],
         forward_generator: LayerGenerator = SimpleLayerGenerator(),
         num_removed: int = 1,
+        hash_on_1q_gate: bool = True,
     ) -> None:
         """
         Construct a SeedLayerGenerator.
@@ -43,6 +44,13 @@ class SeedLayerGenerator(LayerGenerator):
                 backwards traversal of the synthesis tree will be done.
                 (Default: 1)
 
+            hash_on_1q_gate (bool): If True, 1 qubit gates that appear
+                in circuit templates will be used in circuit hash
+                calculations. Otherwise only multi-qubit gates will be
+                used. Setting this value to False can help stability
+                when using more complex LayerGenerators for the
+                forward_generator. (Default: False)
+
         Raises:
             ValueError: If 'num_removed' is negative.
         """
@@ -56,6 +64,11 @@ class SeedLayerGenerator(LayerGenerator):
             raise TypeError(
                 'Expected integer for num_removed, '
                 f'got {type(num_removed)}.',
+            )
+        if not isinstance(hash_on_1q_gate, bool):
+            raise TypeError(
+                'Expected bool for hash_on_1q_gate, '
+                f'got {type(hash_on_1q_gate)}.',
             )
 
         if num_removed < 0:
@@ -83,6 +96,7 @@ class SeedLayerGenerator(LayerGenerator):
         self.seeds = list(cast(Sequence[Circuit], seed))
         self.forward_generator = forward_generator
         self.num_removed = num_removed
+        self.hash_on_1q_gate = hash_on_1q_gate
 
     def gen_initial_layer(
         self,
@@ -122,7 +136,7 @@ class SeedLayerGenerator(LayerGenerator):
 
         # If circuit is empty Circuit, successors are the seeds
         if circuit.is_empty:
-            circ_hash = self.hash_structure(circuit)
+            circ_hash = self.hash_structure(circuit, self.hash_on_1q_gate)
             # Do not return seeds if empty circuit already visited
             if circ_hash in data['seed_seen_before']:
                 return []
@@ -134,7 +148,8 @@ class SeedLayerGenerator(LayerGenerator):
                 if circuit.radixes == seed.radixes
             ]
             for seed in usable_seeds:
-                data['seed_seen_before'].add(self.hash_structure(seed))
+                h = self.hash_structure(seed, self.hash_on_1q_gate)
+                data['seed_seen_before'].add(h)
 
             if len(usable_seeds) == 0:
                 _logger.warning(
@@ -157,7 +172,7 @@ class SeedLayerGenerator(LayerGenerator):
         # Filter out successors that have already been visited
         filtered_successors = []
         for s in successors:
-            h = self.hash_structure(s)
+            h = self.hash_structure(s, self.hash_on_1q_gate)
             if h not in data['seed_seen_before']:
                 data['seed_seen_before'].add(h)
                 filtered_successors.append(s)
@@ -165,10 +180,19 @@ class SeedLayerGenerator(LayerGenerator):
         return filtered_successors
 
     @staticmethod
-    def hash_structure(circuit: Circuit) -> int:
+    def hash_structure(circuit: Circuit, hash_on_1q_gate: bool = True) -> int:
+        """
+        Compute a hash of the Circuit's structure.
+
+        Args:
+            circuit (Circuit): Circuit to be hashed.
+
+            hash_on_1q_gate (bool): Whether or not to include 1 qubit
+                gates in the hash computation. (Default: True)
+        """
         hashes = []
         for cycle, op in circuit.operations_with_cycles():
-            if op.num_qudits <= 1:
+            if not hash_on_1q_gate and op.num_qudits <= 1:
                 continue
             hashes.append(hash((cycle, str(op))))
             if len(hashes) > 100:
