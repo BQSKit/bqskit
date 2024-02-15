@@ -571,8 +571,13 @@ class Worker:
         Retrieve worker's local cache.
 
         Returns:
-            (dict[str, Any]): The worker's local cache implemented
-                with a dictionary.
+            (dict[str, Any]): The worker's local cache. This cache can be
+                used to store large or unserializable objects within a
+                worker process' memory. Passes on the same worker that use
+                the same object can load the object from this cache. If
+                there are multiple workers, those workers will load their
+                own copies of the object into their own cache. This happens
+                because all workers are assumed to be identical.
         """
         return self._cache
 

@@ -166,9 +166,32 @@ class RuntimeHandle(Protocol):
         """
         Retrieve worker's local cache.
 
-        A worker's local cache is implemented as a dictionary. This function can
-        be used to check the presence of data, or to place data directly into, a
-        worker's local cache.
+        In situations where an large or non-easily serializable object is
+        needed during the execution of a custom pass, `get_cache` can be used
+        to load and store data. Objects placed in cache will last from when
+        they are  loaded until the end of a Compiler's Workflow execution.
+        Things placed  in cache are loaded once, then can be reused by
+        subsequent passes.
+
+        For example, say some CustomPassA needs a SomeBigScaryObject. Within
+        its run() method, the object is constructed, then placed into cache.
+        A later pass, CustomPassB, also needs to use SomeBigScaryObject. It
+        checks that the object has been loaded by CustomPassA, then uses it.
+
+        ```
+            # In CustomPassA's .run() definition...
+            unpicklable_object = SomeBigScaryObject(...)
+            worker_cache = get_runtime().get_cache()
+            worker_cache['big_scary_object'] = unpicklable_object
+            unpicklable_object.use(...)
+
+            # In CustomPassB's .run() definition...
+            worker_cache = get_runtime().get_cache()
+            if 'big_scary_object' not in worker_cache:
+                raise RuntimeError('big_scary_object not found')
+            unpicklable_object = worker_cache['big_scary_object']
+            unpicklable_object.use(...)
+        ```
         """
         ...
 
