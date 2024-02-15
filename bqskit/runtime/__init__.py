@@ -166,12 +166,11 @@ class RuntimeHandle(Protocol):
         """
         Retrieve worker's local cache.
 
-        In situations where an large or non-easily serializable object is
+        In situations where a large or non-easily serializable object is
         needed during the execution of a custom pass, `get_cache` can be used
-        to load and store data. Objects placed in cache will last from when
-        they are  loaded until the end of a Compiler's Workflow execution.
-        Things placed  in cache are loaded once, then can be reused by
-        subsequent passes.
+        to load and store data. Objects placed in cache are transient. Objects
+        can be placed in cache to reduce reloading, but should not be expected
+        to remain in cache forever.
 
         For example, say some CustomPassA needs a SomeBigScaryObject. Within
         its run() method, the object is constructed, then placed into cache.
@@ -179,17 +178,25 @@ class RuntimeHandle(Protocol):
         checks that the object has been loaded by CustomPassA, then uses it.
 
         ```
+            # Load helper method
+            def load_or_retrieve_big_scary_object(file):
+                worker_cache = get_runtime().get_cache()
+                if 'big_scary_object' not in worker_cache:
+                    # Expensive io operation...
+                    big_scary_object = load_big_scary_object(file)
+                    worker_cache['big_scary_object'] = big_scary_object
+                big_scary_object = worker_cache['big_scary_object']
+                return big_scary_object
+
             # In CustomPassA's .run() definition...
-            unpicklable_object = SomeBigScaryObject(...)
-            worker_cache = get_runtime().get_cache()
-            worker_cache['big_scary_object'] = unpicklable_object
-            unpicklable_object.use(...)
+            # CustomPassA performs the load.
+            big_scary_object = load_or_retrieve_big_scary_object(file)
+            big_scary_object.use(...)
 
             # In CustomPassB's .run() definition...
-            worker_cache = get_runtime().get_cache()
-            if 'big_scary_object' not in worker_cache:
-                raise RuntimeError('big_scary_object not found')
-            unpicklable_object = worker_cache['big_scary_object']
+            # CustomPassB saves time by retrieving big_scary_object from
+            # cache after CustomPassA has loaded it.
+            big_scary_object = load_or_retrieve_big_scary_object(file)
             unpicklable_object.use(...)
         ```
         """

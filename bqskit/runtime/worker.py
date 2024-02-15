@@ -576,8 +576,7 @@ class Worker:
                 worker process' memory. Passes on the same worker that use
                 the same object can load the object from this cache. If
                 there are multiple workers, those workers will load their
-                own copies of the object into their own cache. This happens
-                because all workers are assumed to be identical.
+                own copies of the object into their own cache.
         """
         return self._cache
 
