@@ -27,7 +27,7 @@ class SeedLayerGenerator(LayerGenerator):
         seed: Circuit | Sequence[Circuit],
         forward_generator: LayerGenerator = SimpleLayerGenerator(),
         num_removed: int = 1,
-        hash_on_1q_gate: bool = True,
+        hash_on_1q_gate: bool = False,
     ) -> None:
         """
         Construct a SeedLayerGenerator.
