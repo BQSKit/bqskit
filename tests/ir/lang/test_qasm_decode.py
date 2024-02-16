@@ -319,6 +319,20 @@ class TestReset:
         assert circuit[0, 0].gate == expected
         assert circuit[0, 1].gate == expected
 
+    def test_mid_reset(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            u1(0.1) q[0];
+            reset q[0];
+            u1(0.1) q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        reset = Reset()
+        assert circuit[0, 0].gate == U1Gate()
+        assert circuit[1, 0].gate == reset
+        assert circuit[2, 0].gate == U1Gate()
+
 
 class TestMeasure:
     def test_measure_single_bit(self) -> None:
@@ -331,6 +345,54 @@ class TestMeasure:
         circuit = OPENQASM2Language().decode(input)
         expected = MeasurementPlaceholder([('c', 1)], {0: ('c', 0)})
         assert circuit[0, 0].gate == expected
+
+    def test_mid_measure_single_bit(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            creg c[1];
+            u1(0.1) q[0];
+            measure q[0] -> c[0];
+            u1(0.1) q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        measurements = {0: ('c', 0)}
+        measure = MeasurementPlaceholder([('c', 1)], measurements)
+        assert circuit[0, 0].gate == U1Gate()
+        assert circuit[1, 0].gate == measure
+        assert circuit[2, 0].gate == U1Gate()
+
+    def test_mid_measure_register_1(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[1];
+            creg c[1];
+            u1(0.1) q[0];
+            measure q -> c;
+            u1(0.1) q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        measurements = {0: ('c', 0)}
+        measure = MeasurementPlaceholder([('c', 1)], measurements)
+        assert circuit[0, 0].gate == U1Gate()
+        assert circuit[1, 0].gate == measure
+        assert circuit[2, 0].gate == U1Gate()
+
+    def test_mid_measure_register_2(self) -> None:
+        input = """
+            OPENQASM 2.0;
+            qreg q[2];
+            creg c[2];
+            u1(0.1) q[0];
+            measure q -> c;
+            u1(0.1) q[0];
+        """
+        circuit = OPENQASM2Language().decode(input)
+        measurements = {0: ('c', 0), 1: ('c', 1)}
+        measure = MeasurementPlaceholder([('c', 2)], measurements)
+        assert circuit[0, 0].gate == U1Gate()
+        assert circuit[1, 0].gate == measure
+        assert circuit[2, 0].gate == U1Gate()
 
     def test_measure_register_1(self) -> None:
         input = """

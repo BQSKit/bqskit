@@ -256,9 +256,6 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['rccx'] = GateDef('rccx', 0, 3, RCCXGate())
         self.gate_defs['rc3x'] = GateDef('rc3x', 0, 4, RC3XGate())
 
-        # reset
-        self.gate_defs['reset'] = GateDef('reset', 0, 1, Reset())
-
     def qreg(self, tree: lark.Tree) -> None:
         """Qubit register node visitor."""
         reg_name = tree.children[0]
@@ -587,6 +584,9 @@ class OPENQASMVisitor(Visitor):
         qubit_reg_name = str(qubit_childs[0])
         class_reg_name = str(class_childs[0])
         cregs = cast(List[Tuple[str, int]], self.classical_regs)
+        qlist = tree.children[0]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+
         if not any(r.name == qubit_reg_name for r in self.qubit_regs):
             raise LangException(
                 f'Measuring undefined qubit register: {qubit_reg_name}',
@@ -621,9 +621,9 @@ class OPENQASMVisitor(Visitor):
             for i in range(qubit_size):
                 self.measurements[outer_idx + i] = (class_reg_name, i)
             mph = MeasurementPlaceholder(cregs, self.measurements)
-            self.gate_defs['measure'] = GateDef('measure', 0, qubit_size, mph)
 
         elif len(qubit_childs) == 2 and len(class_childs) == 2:
+            # measure qubits to clbits
             qubit_index = int(qubit_childs[1])
             class_index = int(class_childs[1])
 
@@ -637,7 +637,6 @@ class OPENQASMVisitor(Visitor):
 
             self.measurements[qubit_index] = (class_reg_name, class_index)
             mph = MeasurementPlaceholder(cregs, self.measurements)
-            self.gate_defs['measure'] = GateDef('measure', 0, 1, mph)
 
         else:
             raise LangException(
@@ -645,78 +644,25 @@ class OPENQASMVisitor(Visitor):
                 'to a full classical register or a qubit register is being '
                 'measured to a single classical bit.',
             )
-
-        params: list[float] = []
-        qlist = tree.children[0]
-        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
-
-        # Parse gate object
-        gate_name = tree.data
-        if gate_name in self.gate_defs:
-            gate_def: GateDef | CustomGateDef = self.gate_defs[gate_name]
-        elif gate_name in self.custom_gate_defs:
-            gate_def = self.custom_gate_defs[gate_name]
-        else:
-            raise LangException('Unrecognized gate: %s.' % gate_name)
-
-        if len(params) != gate_def.num_params:
-            raise LangException(
-                'Expected %d params got %d params for gate %s.'
-                % (gate_def.num_params, len(params), gate_name),
-            )
-
-        if len(location) != gate_def.num_vars:
-            raise LangException(
-                'Gate acts on %d qubits, got %d qubit variables.'
-                % (gate_def.num_vars, len(location)),
-            )
-
-        # Build operation and add to circuit
-        self.op_list.append(gate_def.build_op(location, params))
+        op = Operation(mph, location)
+        self.op_list.append(op)
 
     def reset(self, tree: lark.Tree) -> None:
         """Reset node visitor."""
         params: list[float] = []
         qlist = tree.children[-1]
-        gate_name = tree.data
-        if gate_name in self.gate_defs:
-            gate_def: GateDef | CustomGateDef = self.gate_defs[gate_name]
-        elif gate_name in self.custom_gate_defs:
-            gate_def = self.custom_gate_defs[gate_name]
-        else:
-            raise LangException('Unrecognized gate: %s.' % gate_name)
-
-        if len(params) != gate_def.num_params:
-            raise LangException(
-                'Expected %d params got %d params for gate %s.'
-                % (gate_def.num_params, len(params), gate_name),
-            )
-
         if len(qlist.children) == 2:
             location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
-            # Parse gate object
-            if len(location) != gate_def.num_vars:
-                raise LangException(
-                    'Gate acts on %d qubits, got %d qubit variables.'
-                    % (gate_def.num_vars, len(location)),
-                )
-
-            # Build operation and add to circuit
-            self.op_list.append(gate_def.build_op(location, params))
+            op = Operation(Reset(), location, params)
+            self.op_list.append(op)
         else:
             locations = [
                 CircuitLocation(i)
                 for i in range(self.qubit_regs[0][1])
             ]
             for location in locations:
-                if len(location) != gate_def.num_vars:
-                    raise LangException(
-                        'Gate acts on %d qubits, got %d qubit variables.'
-                        % (gate_def.num_vars, len(location)),
-                    )
-
-                    # Build operation and add to circuit
-                self.op_list.append(gate_def.build_op(location, params))
+                op = Operation(Reset(), location, params)
+                self.op_list.append(op)
 
     def convert_qubit_ids_to_indices(self, qlist: lark.Tree) -> list[int]:
         if qlist.data == 'anylist':

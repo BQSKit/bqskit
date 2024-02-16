@@ -7,7 +7,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class Reset(ConstantGate):
-    """Pseudogate to initialize the qudit to |0>."""
+    """Pseudogate to reset/initialize the qudit to |0>."""
 
     def __init__(self, radix: int = 2) -> None:
         """
@@ -22,6 +22,4 @@ class Reset(ConstantGate):
         self._num_params = 0
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        raise RuntimeError(
-            'Cannot compute unitary for a reset.',
-        )
+        raise RuntimeError('Cannot compute unitary for a reset.')
