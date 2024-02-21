@@ -170,7 +170,6 @@ class OPENQASMVisitor(Visitor):
         self.classical_regs: list[ClassicalReg] = []
         self.gate_def_parsing_obj: Any = None
         self.custom_gate_defs: dict[str, CustomGateDef] = {}
-        self.measurements: dict[int, tuple[str, int]] = {}
         self.fill_gate_defs()
 
     def get_circuit(self) -> Circuit:
@@ -579,6 +578,8 @@ class OPENQASMVisitor(Visitor):
 
     def measure(self, tree: lark.Tree) -> None:
         """Measure statement node visitor."""
+        params: list[float] = []
+        measurements: dict[int, tuple[str, int]] = {}
         qubit_childs = tree.children[0].children
         class_childs = tree.children[1].children
         qubit_reg_name = str(qubit_childs[0])
@@ -617,26 +618,16 @@ class OPENQASMVisitor(Visitor):
                 if name == qubit_reg_name:
                     break
                 outer_idx += size
-
             for i in range(qubit_size):
-                self.measurements[outer_idx + i] = (class_reg_name, i)
-            mph = MeasurementPlaceholder(cregs, self.measurements)
+                measurements[outer_idx + i] = (class_reg_name, i)
+            mph = MeasurementPlaceholder(cregs, measurements)
 
         elif len(qubit_childs) == 2 and len(class_childs) == 2:
             # measure qubits to clbits
             qubit_index = int(qubit_childs[1])
             class_index = int(class_childs[1])
-
-            # Convert qubit_index to global index
-            outer_idx = 0
-            for name, size in self.qubit_regs:
-                if name == qubit_reg_name:
-                    qubit_index = outer_idx + qubit_index
-                    break
-                outer_idx += size
-
-            self.measurements[qubit_index] = (class_reg_name, class_index)
-            mph = MeasurementPlaceholder(cregs, self.measurements)
+            measurements[qubit_index] = (class_reg_name, class_index)
+            mph = MeasurementPlaceholder(cregs, measurements)
 
         else:
             raise LangException(
@@ -644,7 +635,7 @@ class OPENQASMVisitor(Visitor):
                 'to a full classical register or a qubit register is being '
                 'measured to a single classical bit.',
             )
-        op = Operation(mph, location)
+        op = Operation(mph, location, params)
         self.op_list.append(op)
 
     def reset(self, tree: lark.Tree) -> None:
