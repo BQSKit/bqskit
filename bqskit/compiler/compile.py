@@ -1014,7 +1014,7 @@ def build_multi_qudit_retarget_workflow(
                     ),
                     RestoreModelConnevtivityPass(),
                 ],
-                AutoRebase2QuditGatePass(3, 5),
+                AutoRebase2QuditGatePass(3, 5, synthesis_epsilon),
             ),
             ScanningGateRemovalPass(
                 success_threshold=synthesis_epsilon,
