@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from bqskit.compiler.compile import compile
 from bqskit.compiler.compiler import Compiler
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
 
 
-def test_cry_identity_corner_case(compiler: Compiler):
+def test_cry_identity_corner_case(compiler: Compiler) -> None:
     qasm = """
         OPENQASM 2.0;
         include "qelib1.inc";
@@ -15,4 +17,3 @@ def test_cry_identity_corner_case(compiler: Compiler):
     circuit = OPENQASM2Language().decode(qasm)
     _ = compile(circuit, optimization_level=1, seed=10)
     # Should finish
-
