@@ -211,7 +211,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         .. math::
 
-            \\sqrt[D]{1 - \\frac{|Tr(U_1^\\dagger U_2)|}{N}^D}
+            \\sqrt[D]{1 - \\frac{|Tr(U_1^\\dagger U_2)|^D}{N^D}}
 
         where D is the degree, by default is 2.
 
