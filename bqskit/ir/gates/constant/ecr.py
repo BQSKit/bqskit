@@ -5,6 +5,21 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 import math
 
 class ECRGate(ConstantGate, QubitGate):
+    """
+    The echoed cross-resonance gate (ECR).
+
+    The ECR gate is given by the following unitary:
+    
+    .. math::
+
+        \\frac{1}{\\sqrt{2}}
+        \\begin{pmatrix}
+        0  & 1 & 0  & i \\\\
+        1  & 0 & -i & 0 \\\\
+        0  & i & 0  & 1 \\\\
+        -i & 0 & 1  & 0
+        \\end{pmatrix}
+    """
     _name = 'ecr'
     _num_qudits = 2
     _qasm_name = 'ecr'
