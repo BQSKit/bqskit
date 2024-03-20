@@ -50,6 +50,13 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
 
     This concept can be generalized to multiple qudits and even
     mixed-radix systems.
+
+    Note:
+        - Global phase inconsistencies in gates will become local phase
+            inconsistencies in the embedded gate. For example, if the
+            global phase difference between the U1Gate and the RZGate
+            will become local phase differences in the corresponding
+            subspaces when embedded into a higher-dimensional qudit.
     """
 
     def __init__(
@@ -201,7 +208,7 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
         self.gate = gate
         self.level_maps = tuple([tuple(list(lmap)) for lmap in level_maps])
         self._num_qudits = gate._num_qudits
-        self._name = 'Embedded(%s)' % self.gate.name  # TODO: include radixes and level maps  # noqa: E501
+        self._name = f'Embedded({self.gate.name}){self.level_maps}'
         self._num_params = self.gate._num_params
         self._radixes = tuple(radixes)
         self._dim = int(np.prod(self.radixes))

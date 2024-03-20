@@ -162,6 +162,46 @@ class RuntimeHandle(Protocol):
         """
         ...
 
+    def get_cache(self) -> dict[str, Any]:
+        """
+        Retrieve worker's local cache.
+
+        In situations where a large or non-easily serializable object is
+        needed during the execution of a custom pass, `get_cache` can be used
+        to load and store data. Objects placed in cache are transient. Objects
+        can be placed in cache to reduce reloading, but should not be expected
+        to remain in cache forever.
+
+        For example, say some CustomPassA needs a SomeBigScaryObject. Within
+        its run() method, the object is constructed, then placed into cache.
+        A later pass, CustomPassB, also needs to use SomeBigScaryObject. It
+        checks that the object has been loaded by CustomPassA, then uses it.
+
+        ```
+            # Load helper method
+            def load_or_retrieve_big_scary_object(file):
+                worker_cache = get_runtime().get_cache()
+                if 'big_scary_object' not in worker_cache:
+                    # Expensive io operation...
+                    big_scary_object = load_big_scary_object(file)
+                    worker_cache['big_scary_object'] = big_scary_object
+                big_scary_object = worker_cache['big_scary_object']
+                return big_scary_object
+
+            # In CustomPassA's .run() definition...
+            # CustomPassA performs the load.
+            big_scary_object = load_or_retrieve_big_scary_object(file)
+            big_scary_object.use(...)
+
+            # In CustomPassB's .run() definition...
+            # CustomPassB saves time by retrieving big_scary_object from
+            # cache after CustomPassA has loaded it.
+            big_scary_object = load_or_retrieve_big_scary_object(file)
+            unpicklable_object.use(...)
+        ```
+        """
+        ...
+
     async def next(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
         """
         Wait for and return the next batch of results from a map task.
