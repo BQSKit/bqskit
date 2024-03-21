@@ -71,6 +71,7 @@ class Compiler:
         num_workers: int = -1,
         runtime_log_level: int = logging.WARNING,
         worker_port: int = default_worker_port,
+        run_profiler: bool = False
     ) -> None:
         """
         Construct a Compiler object.
@@ -100,6 +101,7 @@ class Compiler:
                 runtime. See :obj:`~bqskit.runtime.attached.AttachedServer`
                 for more info.
         """
+        self.profile = run_profiler
         self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
 
@@ -115,14 +117,14 @@ class Compiler:
         self,
         num_workers: int,
         runtime_log_level: int,
-        worker_port: int,
+        worker_port: int
     ) -> None:
         """
         Start an attached serer with `num_workers` workers.
 
         See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
         """
-        params = f'{num_workers}, {runtime_log_level}, {worker_port=}'
+        params = f'{num_workers}, {runtime_log_level}, {worker_port=}, {self.profile=}'
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
         if sys.platform == 'win32':

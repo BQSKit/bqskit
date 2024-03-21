@@ -165,7 +165,7 @@ class Worker:
     tasks, which usually require much more memory than delayed ones.
     """
 
-    def __init__(self, id: int, conn: Connection) -> None:
+    def __init__(self, id: int, conn: Connection, profile: bool = False) -> None:
         """
         Initialize a worker with no tasks.
 
@@ -177,6 +177,12 @@ class Worker:
         """
         self._id = id
         self._conn = conn
+        self.profile = profile
+        self.profiles = {}
+        self.messages_out = {}
+        self.messages_in = []
+
+        self.prev_time = time.time()
 
         self._outgoing: list[tuple[RuntimeMessage, Any]] = []
         """Stores outgoing messages to be handled by the event loop."""
@@ -223,6 +229,7 @@ class Worker:
 
         logging.setLogRecordFactory(record_factory)
 
+        self.profiles["Start up time"] = time.time() - self.prev_time
         # Communicate that this worker is ready
         self._conn.send((RuntimeMessage.STARTED, self._id))
 
@@ -236,6 +243,8 @@ class Worker:
 
     def _try_idle(self) -> None:
         """If there is nothing to do, wait until we receive a message."""
+        self.profiles["run_time"] = self.profiles.get("run_time", 0) + time.time() - self.prev_time
+        self.prev_time = time.time()
         empty_outgoing = len(self._outgoing) == 0
         no_ready_tasks = self._ready_task_ids.empty()
         no_delayed_tasks = len(self._delayed_tasks) == 0
@@ -247,6 +256,8 @@ class Worker:
     def _handle_comms(self) -> None:
         """Handle all incoming and outgoing messages."""
 
+        self.profiles["idle_time"] = self.profiles.get("idle_time", 0) + time.time() - self.prev_time
+        self.prev_time = time.time()
         # Handle outgoing communication
         for out_msg in self._outgoing:
             self._conn.send(out_msg)
@@ -258,6 +269,9 @@ class Worker:
 
             # Process message
             if msg == RuntimeMessage.SHUTDOWN:
+                if self.profile:
+                    out_msg = (RuntimeMessage.PROFILE, (self.profiles))
+                    self._conn.send(out_msg)
                 self._running = False
                 return
 
@@ -368,6 +382,8 @@ class Worker:
 
     def _try_step_next_ready_task(self) -> None:
         """Select a task to run, and advance it one step."""
+        self.profiles["comms_time"] = self.profiles.get("comms_time", 0) + time.time() - self.prev_time
+        self.prev_time = time.time()
         task = self._get_next_ready_task()
 
         if task is None:
@@ -604,7 +620,7 @@ class Worker:
 _worker = None
 
 
-def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
+def start_worker(w_id: int | None, port: int, profile: bool = False, cpu: int | None = None) -> None:
     """Start this process's worker."""
     if w_id is not None:
         # Ignore interrupt signals on workers, boss will handle it for us
@@ -644,7 +660,7 @@ def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
         assert msg == RuntimeMessage.STARTED
 
     global _worker
-    _worker = Worker(w_id, conn)
+    _worker = Worker(w_id, conn, profile)
     _worker._loop()
 
 
