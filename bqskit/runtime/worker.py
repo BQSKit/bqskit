@@ -272,6 +272,7 @@ class Worker:
                 if self.profile:
                     out_msg = (RuntimeMessage.PROFILE, (self.profiles))
                     self._conn.send(out_msg)
+                    print("Worker", self._id, self.profiles)
                 self._running = False
                 return
 

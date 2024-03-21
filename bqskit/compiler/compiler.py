@@ -124,7 +124,8 @@ class Compiler:
 
         See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
         """
-        params = f'{num_workers}, {runtime_log_level}, {worker_port=}, {self.profile=}'
+        profile = self.profile
+        params = f'{num_workers}, {runtime_log_level}, {worker_port=}, {profile=}'
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
         if sys.platform == 'win32':
