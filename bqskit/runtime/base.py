@@ -216,6 +216,7 @@ class ServerBase:
         self,
         num_workers: int = -1,
         port: int = default_worker_port,
+        profile: bool = False
     ) -> None:
         """
         Spawn worker processes.
@@ -240,7 +241,7 @@ class ServerBase:
         procs = {}
         for i in range(num_workers):
             w_id = self.lower_id_bound + i
-            procs[w_id] = Process(target=start_worker, args=(w_id, port))
+            procs[w_id] = Process(target=start_worker, args=(w_id, port, profile))
             procs[w_id].start()
             self.logger.debug(f'Stated worker process {i}.')
 
@@ -417,6 +418,8 @@ class ServerBase:
         # Stop running
         self.logger.info('Shutting down node.')
         self.running = False
+
+        self.all_profiles = {}
 
         # Instruct employees to shutdown
         for employee in self.employees:

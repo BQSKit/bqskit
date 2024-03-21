@@ -23,3 +23,7 @@ scratch/
 **/*.sh 
 **/*.qasm
 
+slurm_logs/*
+**/*.png
+**/*.pickle
+ensemble_approx_circuits/*
