@@ -5,7 +5,7 @@ from bqskit import compile, Circuit
 from bqskit.compiler import Compiler
 
 # Construct the unitary as an NumPy array
-circ = Circuit.from_file("/pscratch/sd/j/jkalloor/bqskit/ensemble_benchmarks/TFXY_5_timesteps/TFXY_5_18.qasm")
+circ = Circuit.from_file("tfxy_5.qasm")
 
 print(circ.gate_counts)
 # The compile function will perform synthesis
