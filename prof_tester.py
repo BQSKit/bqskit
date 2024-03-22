@@ -12,5 +12,5 @@ print(circ.gate_counts)
 
 compiler = Compiler(num_workers=4, run_profiler=True)
 
-synthesized_circuit = compile(circ, max_synthesis_size=3, optimization_level=3)
+synthesized_circuit = compile(circ, max_synthesis_size=3, optimization_level=3, compiler=compiler)
 print(synthesized_circuit.gate_counts)

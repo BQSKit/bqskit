@@ -251,6 +251,7 @@ class Worker:
         no_delayed_tasks = len(self._delayed_tasks) == 0
 
         if empty_outgoing and no_ready_tasks and no_delayed_tasks:
+            print(f"Worker {self._id}: Starting to IDLE, waiting for next task", time.process_time())
             self.idle_time_start = time.process_time()
             self._conn.send((RuntimeMessage.WAITING, 1))
             wait([self._conn])
@@ -270,25 +271,29 @@ class Worker:
             msg, payload = self._conn.recv()
 
             if self.idle_time_start:
+                print(f"Worker {self._id}: Message RCVD, stopping idling", time.process_time())
                 self.profiles["idle_time"] = self.profiles.get("idle_time", 0) + time.process_time() - self.idle_time_start
                 self.idle_time_start = None
 
 
             # Process message
             if msg == RuntimeMessage.SHUTDOWN:
+                print(f"Worker {self._id}: Received Shutdown", time.process_time())
                 if self.profile:
                     out_msg = (RuntimeMessage.PROFILE, (self.profiles))
                     self._conn.send(out_msg)
-                    print("Worker", self._id, self.profiles)
+                    # print("Worker", self._id, self.profiles)
                 self._running = False
                 return
 
             elif msg == RuntimeMessage.SUBMIT:
+                print(f"Worker {self._id}: Receiving 1 task, adding to queue, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.process_time())
                 task = cast(RuntimeTask, payload)
                 self._add_task(task)
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 tasks = cast(List[RuntimeTask], payload)
+                print(f"Worker {self._id}: Receiving {len(tasks)} tasks, adding 1 to ready queue and rest to delayed tasks, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.process_time())
                 self._add_task(tasks.pop())  # Submit one task
                 self._delayed_tasks.extend(tasks)  # Delay rest
                 # Delayed tasks have no context and are stored (more-or-less)
@@ -297,10 +302,12 @@ class Worker:
                 # so we delay the task start until necessary (at no cost)
 
             elif msg == RuntimeMessage.RESULT:
+                print(f"Worker {self._id}: Receiving result, handling the result", time.process_time())
                 result = cast(RuntimeResult, payload)
                 self._handle_result(result)
 
             elif msg == RuntimeMessage.CANCEL:
+                print(f"Worker {self._id}: Received cancel", time.process_time())
                 addr = cast(RuntimeAddress, payload)
                 self._handle_cancel(addr)
 
@@ -392,10 +399,12 @@ class Worker:
         """Select a task to run, and advance it one step."""
         # self.profiles["comms_time"] = self.profiles.get("comms_time", 0) + time.process_time() - self.prev_time
         # self.prev_time = time.process_time()
+        print(f"Worker {self._id}: Getting task", time.process_time())
         task = self._get_next_ready_task()
 
         if task is None:
             # Nothing to do
+            print(f"Worker {self._id}: No tasks to do", time.process_time())
             return
 
         try:
@@ -420,6 +429,8 @@ class Worker:
 
         finally:
             self._active_task = None
+        
+        print(f"Worker {self._id}: Finished Task", time.process_time())
 
     def _process_await(self, task: RuntimeTask, future: RuntimeFuture) -> None:
         """Process a task's await request."""
