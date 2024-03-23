@@ -128,6 +128,18 @@ are involved the qubit mapping process.
     PAMLayoutPass
     PAMRoutingPass
     EmbedAllPermutationsPass
+    ExtractModelConnectivityPass
+    RestoreModelConnevtivityPass
+
+
+.. rubric:: PAM Verification Passes
+
+These passes either perform upper-bound error analysis of the PAM process.
+
+    TagPAMBlockDataPass
+    CalculatePAMErrorsPass
+    UnTagPAMBlockDataPass
+    PAMVerificationSequence
 
 .. rubric:: Utility Passes
 
@@ -148,6 +160,7 @@ are involved the qubit mapping process.
     LogErrorPass
     FillSingleQuditGatesPass
     StructureAnalysisPass
+    ClearAllBlockData
 
 .. rubric:: IO Passes
 
@@ -193,6 +206,7 @@ from __future__ import annotations
 from bqskit.passes.alias import PassAlias
 from bqskit.passes.control.dothendecide import DoThenDecide
 from bqskit.passes.control.dowhileloop import DoWhileLoopPass
+from bqskit.passes.control.foreach import ClearAllBlockData
 from bqskit.passes.control.foreach import ForEachBlockPass
 from bqskit.passes.control.ifthenelse import IfThenElsePass
 from bqskit.passes.control.paralleldo import ParallelDo
@@ -223,8 +237,14 @@ from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
+from bqskit.passes.mapping.setmodel import ExtractModelConnectivityPass
+from bqskit.passes.mapping.setmodel import RestoreModelConnevtivityPass
 from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
+from bqskit.passes.mapping.verify import CalculatePAMErrorsPass
+from bqskit.passes.mapping.verify import PAMVerificationSequence
+from bqskit.passes.mapping.verify import TagPAMBlockDataPass
+from bqskit.passes.mapping.verify import UnTagPAMBlockDataPass
 from bqskit.passes.measure import ExtractMeasurements
 from bqskit.passes.measure import RestoreMeasurements
 from bqskit.passes.noop import NOOPPass
@@ -290,6 +310,7 @@ from bqskit.passes.util.update import UpdateDataPass
 
 __all__ = [
     'DoWhileLoopPass',
+    'ClearAllBlockData',
     'ForEachBlockPass',
     'IfThenElsePass',
     'PassPredicate',
@@ -386,4 +407,10 @@ __all__ = [
     'AllConstantSingleQuditGates',
     'GeneralSQDecomposition',
     'StructureAnalysisPass',
+    'ExtractModelConnectivityPass',
+    'RestoreModelConnevtivityPass',
+    'TagPAMBlockDataPass',
+    'CalculatePAMErrorsPass',
+    'UnTagPAMBlockDataPass',
+    'PAMVerificationSequence',
 ]

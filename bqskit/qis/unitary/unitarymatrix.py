@@ -152,6 +152,19 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """The conjugate transpose of the unitary."""
         return self.conj().T
 
+    def to_special(self) -> UnitaryMatrix:
+        """Return a special unitary matrix verson of this one."""
+        determinant = np.linalg.det(self)
+        dimension = len(self)
+        global_phase = np.angle(determinant) / dimension
+        global_phase = global_phase % (2 * np.pi / dimension)
+        global_phase_factor = np.exp(-1j * global_phase)
+        return global_phase_factor * self
+
+    def is_special(self) -> bool:
+        """Return true if this unitary is special."""
+        return 1 - np.abs(np.linalg.det(self)) < 1e-8
+
     def __len__(self) -> int:
         """The dimension of the square unitary matrix."""
         return self.shape[0]
@@ -198,7 +211,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
 
         .. math::
 
-            \\sqrt[D]{1 - \\frac{|Tr(U_1^\\dagger U_2)|}{N}^D}
+            \\sqrt[D]{1 - \\frac{|Tr(U_1^\\dagger U_2)|^D}{N^D}}
 
         where D is the degree, by default is 2.
 
@@ -212,7 +225,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             are equal up to global phase and 1 means the two unitaries are
             very unsimilar or far apart.
         """
-        other = UnitaryMatrix(other)
+        other = UnitaryMatrix(other, check_arguments=False)
         num = np.abs(np.trace(self.conj().T @ other))
         dem = self.dim
         frac = min(num / dem, 1)
@@ -475,7 +488,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         )
 
         if convert_back:
-            return UnitaryMatrix(out, self.radixes)
+            return UnitaryMatrix(out, self.radixes, False)
 
         return out
 

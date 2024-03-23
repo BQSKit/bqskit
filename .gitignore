@@ -16,9 +16,16 @@ dist
 build
 scratch/
 
-**/*.txt
-**/*.qasm
 **/*.data
 **/*.pickle
 **/job*.sh
 **/test.log
+**/*.pkl 
+**/*.log
+**/*.txt
+**/*.sh 
+**/*.qasm
+
+slurm_logs/*
+**/*.png
+ensemble_approx_circuits/*

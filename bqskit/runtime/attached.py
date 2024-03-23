@@ -33,6 +33,7 @@ class AttachedServer(DetachedServer):
         num_workers: int = -1,
         port: int = default_server_port,
         worker_port: int = default_worker_port,
+        profile: bool = False,
     ) -> None:
         """
         Create a server with `num_workers` workers.
@@ -58,9 +59,10 @@ class AttachedServer(DetachedServer):
         self.mailbox_to_task_dict: dict[int, uuid.UUID] = {}
         self.mailboxes: dict[int, ServerMailbox] = {}
         self.mailbox_counter = 0
+        self.profile = profile
 
         # Start workers
-        self.spawn_workers(num_workers, worker_port)
+        self.spawn_workers(num_workers, worker_port, self.profile)
 
         # Connect to client
         client_conn = self.listen_once('localhost', port)

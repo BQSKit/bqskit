@@ -28,14 +28,12 @@ class HGate(ConstantGate, QuditGate):
     However, generally it is given by the following formula:
 
     .. math::
-        \\begin{equation}
-            H = 1/\\sqrt(d) \\sum_{ij} \\omega_d^{ij} |i >< j|
-        \\end{equation}
+        H = \\frac{1}{\\sqrt(d)} \\sum_{ij} \\omega_d^{ij} |i\\rangle\\langle j|
 
     where
 
     .. math::
-        \\omega = \\exp(2\\pi*i/d)
+        \\omega = \\exp(\\frac{2\\pi i}{d})
 
     and `d` is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)

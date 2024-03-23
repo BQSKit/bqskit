@@ -50,13 +50,20 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
 
     This concept can be generalized to multiple qudits and even
     mixed-radix systems.
+
+    Note:
+        - Global phase inconsistencies in gates will become local phase
+            inconsistencies in the embedded gate. For example, if the
+            global phase difference between the U1Gate and the RZGate
+            will become local phase differences in the corresponding
+            subspaces when embedded into a higher-dimensional qudit.
     """
 
     def __init__(
         self,
         gate: Gate,
         radixes: Sequence[int] | int,
-        level_maps: Sequence[int] | Sequence[Sequence[int]],
+        level_maps: None | Sequence[int] | Sequence[Sequence[int]] = None,
     ) -> None:
         """
         Construct an EmbeddedGate.
@@ -71,21 +78,24 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
                 if `radixes = 3`, then the gate will be embedded into a
                 qutrit gate.
 
-            level_maps (Sequence[int] | Sequence[Sequence[int]]): The level
-                map for the embedding for each qudit. If a sequence of
-                integers is given, then the level map is assumed to be
-                the same for all qudits. For example, if `radixes = 3`
-                and `level_maps = [0, 2]`, then the gate will be
-                embedded into a qutrit gate by mapping the qubit levels
-                0 and 1 to the qutrit levels 0 and 2, respectively. If a
-                sequence of sequences is given, then the level map is
-                assumed to be different for each qudit. For example, if
-                `radixes = [3, 3]` and `level_maps = [[0, 2], [1, 2]]`,
-                then the gate will be embedded into a two-qudit gate by
-                mapping the first qubit's 0 and 1 levels to the first
-                qutrit's 0 and 2 levels, respectively, and by mapping
-                the second qubit's 0 and 1 levels to the second qutrit's
-                1 and 2 levels, respectively.
+             level_maps (None | Sequence[int] | Sequence[Sequence[int]]):
+                 The level map for the embedding for each qudit. If a
+                 sequence of integers is given, then the level map is
+                 assumed to be the same for all qudits. For example, if
+                 `radixes = 3` and `level_maps = [0, 2]`, then the gate
+                 will be embedded into a qutrit gate by mapping the qubit
+                 levels 0 and 1 to the qutrit levels 0 and 2,
+                 respectively. If a sequence of sequences is given, then
+                 the level map is assumed to be different for each qudit.
+                 For example, if `radixes = [3, 3]` and `level_maps =
+                 [[0, 2], [1, 2]]`, then the gate will be embedded into a
+                 two-qudit gate by mapping the first qubit's 0 and 1
+                 levels to the first qutrit's 0 and 2 levels,
+                 respectively, and by mapping the second qubit's 0 and 1
+                 levels to the second qutrit's 1 and 2 levels,
+                 respectively. This can also be set to `None`, which will
+                 embed the lower dimension gate in the lowest levels of
+                 the new radixes.
 
         Raises:
 
@@ -137,6 +147,9 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
                 f' equal to {gate.num_qudits=}. Also expected every radix'
                 f' to be greater than 2, got {radixes=}.',
             )
+
+        if level_maps is None:
+            level_maps = [list(range(levels)) for levels in gate.radixes]
 
         if not is_sequence(level_maps):
             raise TypeError(
@@ -193,9 +206,9 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
             )
 
         self.gate = gate
-        self.level_maps = [list(lmap) for lmap in level_maps]
+        self.level_maps = tuple([tuple(list(lmap)) for lmap in level_maps])
         self._num_qudits = gate._num_qudits
-        self._name = 'Embedded(%s)' % self.gate.name  # TODO: include radixes and level maps  # noqa: E501
+        self._name = f'Embedded({self.gate.name}){self.level_maps}'
         self._num_params = self.gate._num_params
         self._radixes = tuple(radixes)
         self._dim = int(np.prod(self.radixes))

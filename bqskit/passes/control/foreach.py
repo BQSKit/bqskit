@@ -38,6 +38,24 @@ class ForEachBlockPass(BasePass):
     pass_down_key_prefix = 'ForEachBlockPass_pass_down_'
     """If a key exists in the pass data with this prefix, pass it to blocks."""
 
+    pass_down_block_specific_key_prefix = (
+        'ForEachBlockPass_specific_pass_down_'
+    )
+    """
+    Data specific to the processing of individual blocks in a partitioned
+    circuit can be injected into the `PassData` in `run` by using this prefix.
+
+    The expected type of the associated value is `dict[int, Any]`, where
+    integer (sub-)keys correspond to block numbers in a partitioned quantum
+    circuit.
+
+    Pseudocode example for seed circuits:
+        seeds = {block_id: [seed_circuit_a, seed_circuit_b, ...], ...}
+        key = self.pass_down_block_specific_key_prefix + 'seed_circuits'
+        seed_updater = UpdateDataPass(key, seeds)
+        workflow = Workflow([..., seed_updater, ForEachBlockPass(...), ...])
+    """
+
     def __init__(
         self,
         loop_body: WorkflowLike,
@@ -197,6 +215,10 @@ class ForEachBlockPass(BasePass):
             for key in data:
                 if key.startswith(self.pass_down_key_prefix):
                     block_data[key] = data[key]
+                elif key.startswith(
+                    self.pass_down_block_specific_key_prefix,
+                ) and i in data[key]:
+                    block_data[key] = data[key][i]
             block_data.seed = data.seed
 
             subcircuits.append(subcircuit)
@@ -237,8 +259,7 @@ class ForEachBlockPass(BasePass):
                 block_data['replaced'] = True
 
                 # Calculate Error
-                if self.calculate_error_bound:
-                    error_sum += block_data.error
+                error_sum += block_data.error
             else:
                 block_data['replaced'] = False
 
@@ -249,8 +270,8 @@ class ForEachBlockPass(BasePass):
         data[self.key].append(completed_block_datas)
 
         # Record error
+        data.update_error_mul(error_sum)
         if self.calculate_error_bound:
-            data.error = (1 - ((1 - data.error) * (1 - error_sum)))
             _logger.debug(f'New circuit error is {data.error}.')
 
 
@@ -508,3 +529,15 @@ def gen_replace_filter(method: str, model: MachineModel) -> ReplaceFilterFn:
 
 
 ReplaceFilterFn = Callable[[Circuit, Operation], bool]
+
+
+class ClearAllBlockData(BasePass):
+    """Clear all block data and passed down data from the pass data."""
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """Perform the pass's operation, see :class:`BasePass` for more."""
+        for key in list(data.keys()):
+            if key.startswith(ForEachBlockPass.key):
+                del data[key]
+            elif key.startswith(ForEachBlockPass.pass_down_key_prefix):
+                del data[key]

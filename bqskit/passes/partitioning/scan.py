@@ -82,7 +82,7 @@ class ScanPartitioner(BasePass):
                 'blocking entire circuit.',
             )
             circuit.fold({
-                qudit_index: (0, circuit.num_cycles)
+                qudit_index: (0, circuit.num_cycles - 1)
                 for qudit_index in range(circuit.num_qudits)
             })
             return

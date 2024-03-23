@@ -16,14 +16,12 @@ class PDGate(ConstantGate, QuditGate):
     The clock gate is given by the following formula:
 
     .. math::
-        \\begin{equation}
-            P[i]_d = \\sum_{j} (-\\omega^2)^{\\delta_{ij}} |j><j|
-        \\end{equation}
+        P[i]_d = \\sum_{j} (-\\omega^2)^{\\delta_{ij}} |j\\rangle\\langle j|
 
     where
 
     .. math::
-        \\omega = \\exp(2\\pi*i/d)
+        \\omega = \\exp(\\frac{2\\pi i}{d})
 
     and d is the number of levels (2 levels is a qubit,
     3 levels is a qutrit, etc.)

@@ -6,7 +6,50 @@ BQSKit Extensions (:mod:`bqskit.ext`)
 .. currentmodule:: bqskit.ext
 
 This subpackage provides integrations with other popular frameworks
-and pre-built MachineModels for many QPUs.
+and pre-built MachineModels for many QPUs. For some, you will need to
+manually install the dependencies. For example, to use the Pytket translators
+you will need to install the `pytket` package.
+
+.. rubric:: Pre-Built Machine Models
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    Aspen11Model
+    AspenM2Model
+    H1_1Model
+    H1_2Model
+    Sycamore23Model
+    SycamoreModel
+    model_from_backend
+
+.. rubric:: Translators
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    bqskit_to_cirq
+    cirq_to_bqskit
+    bqskit_to_pytket
+    pytket_to_bqskit
+    bqskit_to_qiskit
+    qiskit_to_bqskit
+    bqskit_to_qutip
+    qutip_to_bqskit
+
+.. rubric:: SupermarQ Metrics
+
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
+    supermarq_program_communication
+    supermarq_critical_depth
+    supermarq_entanglement_ratio
+    supermarq_parallelism
+    supermarq_liveness
 """
 from __future__ import annotations
 
