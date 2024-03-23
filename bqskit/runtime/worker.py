@@ -251,7 +251,7 @@ class Worker:
         no_delayed_tasks = len(self._delayed_tasks) == 0
 
         if empty_outgoing and no_ready_tasks and no_delayed_tasks:
-            print(f"Worker {self._id}: Starting to IDLE, waiting for next task", time.time())
+            print(f"Worker {self._id} | start idle | idle | {time.time()}")
             self.idle_time_start = time.time()
             self._conn.send((RuntimeMessage.WAITING, 1))
             wait([self._conn])
@@ -274,7 +274,7 @@ class Worker:
             msg, payload = self._conn.recv()
 
             if self.idle_time_start:
-                print(f"Worker {self._id}: Message RCVD, stopping idling", time.time())
+                print(f"Worker {self._id} | finish idle | idle | {time.time()}")
                 self.profiles["idle_time"] = self.profiles.get("idle_time", 0) + time.time() - self.idle_time_start
                 self.idle_time_start = None
 
@@ -282,7 +282,7 @@ class Worker:
 
             # Process message
             if msg == RuntimeMessage.SHUTDOWN:
-                print(f"Worker {self._id}: Received Shutdown", time.time())
+                # print(f"Worker {self._id}: Received Shutdown", time.time())
                 if self.profile:
                     out_msg = (RuntimeMessage.PROFILE, (self.profiles))
                     self._conn.send(out_msg)
@@ -291,13 +291,13 @@ class Worker:
                 return
 
             elif msg == RuntimeMessage.SUBMIT:
-                print(f"Worker {self._id}: Receiving 1 task, adding to queue, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.time())
+                # print(f"Worker {self._id}: Receiving 1 task, adding to queue, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.time())
                 task = cast(RuntimeTask, payload)
                 self._add_task(task)
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 tasks = cast(List[RuntimeTask], payload)
-                print(f"Worker {self._id}: Receiving {len(tasks)} tasks, adding 1 to ready queue and rest to delayed tasks, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.time())
+                # print(f"Worker {self._id}: Receiving {len(tasks)} tasks, adding 1 to ready queue and rest to delayed tasks, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.time())
                 self._add_task(tasks.pop())  # Submit one task
                 self._delayed_tasks.extend(tasks)  # Delay rest
                 # Delayed tasks have no context and are stored (more-or-less)
@@ -306,12 +306,12 @@ class Worker:
                 # so we delay the task start until necessary (at no cost)
 
             elif msg == RuntimeMessage.RESULT:
-                print(f"Worker {self._id}: Receiving result, handling the result", time.time())
+                # print(f"Worker {self._id}: Receiving result, handling the result", time.time())
                 result = cast(RuntimeResult, payload)
                 self._handle_result(result)
 
             elif msg == RuntimeMessage.CANCEL:
-                print(f"Worker {self._id}: Received cancel", time.time())
+                # print(f"Worker {self._id}: Received cancel", time.time())
                 addr = cast(RuntimeAddress, payload)
                 self._handle_cancel(addr)
 
@@ -405,12 +405,11 @@ class Worker:
         """Select a task to run, and advance it one step."""
         # self.profiles["comms_time"] = self.profiles.get("comms_time", 0) + time.time() - self.prev_time
         # self.prev_time = time.time()
-        print(f"Worker {self._id}: Getting task", time.time())
         task = self._get_next_ready_task()
 
         if task is None:
             # Nothing to do
-            print(f"Worker {self._id}: No tasks to do", time.time())
+            # print(f"Worker {self._id}: No tasks to do", time.time())
             return
 
         try:
@@ -419,14 +418,18 @@ class Worker:
             # Just time this for run time
 
             # Perform a step of the task and get the future it awaits on
+            print(f"Worker {self._id} | start step | some task | {time.time()}")
             future = task.step(self._get_desired_result(task))
+            print(f"Worker {self._id} | finish step | some task| {time.time()}")
 
             self._process_await(task, future)
 
         except StopIteration as e:
+            print(f"Worker {self._id} | finish step | some task| {time.time()}")
             self._process_task_completion(task, e.value)
 
         except Exception:
+            print(f"Worker {self._id} | finish step | error | {time.time()}")
             assert self._active_task is not None  # for type checker
 
             # Bubble up errors
@@ -438,7 +441,7 @@ class Worker:
         finally:
             self._active_task = None
         
-        print(f"Worker {self._id}: Finished Task", time.time())
+        # print(f"Worker {self._id}: Finished Task", time.time())
 
     def _process_await(self, task: RuntimeTask, future: RuntimeFuture) -> None:
         """Process a task's await request."""
