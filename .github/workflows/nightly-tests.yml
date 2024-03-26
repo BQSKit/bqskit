@@ -1,0 +1,31 @@
+# Runs slow tests every night
+name: nightly tests
+
+on:
+  schedule:
+    - cron: "21 2 * * *
+
+jobs: 
+  tests:
+    runs-on: ubuntu-latest 
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.12 
+
+    - name: Upgrade python environment
+      run: python -m pip install --upgrade virtualenv setuptools pip
+
+    - name: Upgrade test dependencies
+      run: python -m pip install psutil pytest 'hypothesis[zoneinfo]' qiskit
+
+    - name: Install BQSKit
+      env:
+        SYSTEM_VERSION_COMPAT: 0
+      run: pip install .
+
+    - name: Run tests
+      env:
+        NUMBER_RANDOM_CIRCUITS: 100
+      run: pytest 
