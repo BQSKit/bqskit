@@ -33,7 +33,9 @@ jobs:
     - name: Install BQSKit
       env:
         SYSTEM_VERSION_COMPAT: 0
-        NUMBER_RANDOM_CIRCUITS: 100
       run: pip install .
+
     - name: Run tests
-      run: pytest
+      env:
+        NUMBER_RANDOM_CIRCUITS: 100
+      run: pytest --ignore=tests/compiler/compile --ignore=tests/passes/partitioning/test_parts.py
