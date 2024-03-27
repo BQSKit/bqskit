@@ -23,6 +23,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CXGate
     CYGate
     CZGate
+    ECRGate
     HGate
     IdentityGate
     ISwapGate
