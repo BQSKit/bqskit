@@ -71,6 +71,7 @@ class RuntimeEmployee:
 def send_outgoing(node: ServerBase) -> None:
     """Outgoing thread forwards messages as they are created."""
     while True:
+        node.logger.debug('Waiting to send outgoing message...')
         outgoing = node.outgoing.get()
 
         if not node.running:
@@ -80,9 +81,16 @@ def send_outgoing(node: ServerBase) -> None:
             # while condition.
             break
 
+        node.logger.debug(f'Sending message {outgoing[1].name}...')
         outgoing[0].send((outgoing[1], outgoing[2]))
         node.logger.debug(f'Sent message {outgoing[1].name}.')
-        node.logger.log(1, f'{outgoing[2]}\n')
+
+        if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
+            node.logger.log(1, f'{len(outgoing[2])}\n')
+        else:
+            node.logger.log(1, f'{outgoing[2]}\n')
+
+        node.outgoing.task_done()
 
 
 def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
@@ -347,6 +355,7 @@ class ServerBase:
         try:
             while self.running:
                 # Wait for messages
+                self.logger.debug('Waiting for messages...')
                 events = self.sel.select()  # Say that 5 times fast
 
                 for key, _ in events:
@@ -368,7 +377,10 @@ class ServerBase:
                         continue
                     log = f'Received message {msg.name} from {direction.name}.'
                     self.logger.debug(log)
-                    self.logger.log(1, f'{payload}\n')
+                    if msg == RuntimeMessage.SUBMIT_BATCH:
+                        self.logger.log(1, f'{len(payload)}\n')
+                    else:
+                        self.logger.log(1, f'{payload}\n')
 
                     # Handle message
                     self.handle_message(msg, direction, conn, payload)
@@ -513,9 +525,10 @@ class ServerBase:
         """Schedule tasks between this node's employees."""
         if len(tasks) == 0:
             return
-
+        self.logger.info(f'Scheduling {len(tasks)} tasks with {self.num_idle_workers} idle workers.')
         assignments = self.assign_tasks(tasks)
 
+        # for e, assignment in sorted(zip(self.employees, assignments), key=lambda x: x[0].num_idle_workers, reverse=True):
         for e, assignment in zip(self.employees, assignments):
             num_tasks = len(assignment)
 
@@ -528,6 +541,7 @@ class ServerBase:
             e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
 
         self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
+        self.logger.info(f'Finished scheduling {len(tasks)} tasks with now {self.num_idle_workers} idle workers.')
 
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""

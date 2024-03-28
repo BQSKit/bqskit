@@ -28,7 +28,7 @@ class RuntimeTask:
 
     def __init__(
         self,
-        fnargs: tuple[Any, Any, Any],
+        fnargs: tuple[Any, Any, Any],  # TODO: Look into retyping this
         return_address: RuntimeAddress,
         comp_task_id: int,
         breadcrumbs: tuple[RuntimeAddress, ...],
@@ -110,3 +110,11 @@ class RuntimeTask:
     def is_descendant_of(self, addr: RuntimeAddress) -> bool:
         """Return true if `addr` identifies a parent (or this) task."""
         return addr == self.return_address or addr in self.breadcrumbs
+
+    def __str__(self) -> str:
+        """Return a string representation of the task."""
+        return f'{self.fnargs[0].__name__}'
+
+    def __repr__(self) -> str:
+        """Return a string representation of the task."""
+        return f'<RuntimeTask {self.task_id} {self.fnargs[0].__name__}>'

@@ -111,7 +111,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['NUMEXPR_NUM_THREADS'] = '1'
 os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
 os.environ['RUST_BACKTRACE'] = '1'
-
+print("SETTING THREADS TO 1")
 
 if TYPE_CHECKING:
     from bqskit.runtime.future import RuntimeFuture

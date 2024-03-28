@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from sys import stdout as _stdout
 
+import bqskit.runtime
 from .version import __version__  # noqa: F401
 from .version import __version_info__  # noqa: F401
 from bqskit.compiler.compile import compile

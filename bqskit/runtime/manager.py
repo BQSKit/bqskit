@@ -95,14 +95,16 @@ class Manager(ServerBase):
             MessageDirection.ABOVE,
         )
 
-        # Case 1: spawn and manage workers
+        # Case 1: spawn and/or manage workers
         if ipports is None:
             if only_connect:
                 self.connect_to_workers(num_workers, worker_port)
             else:
+                print('Spawning workers...')
+                print(f'Number of workers: {num_workers}')
                 self.spawn_workers(num_workers, worker_port)
 
-        # Case 2: Connect to managers at ipports
+        # Case 2: Connect to detached managers at ipports
         else:
             self.connect_to_managers(ipports)
 
@@ -122,6 +124,7 @@ class Manager(ServerBase):
         payload: Any,
     ) -> None:
         """Process the message coming from `direction`."""
+        self.logger.debug(f'Manager handling message {msg.name} from {direction.name}.')
         if direction == MessageDirection.ABOVE:
 
             if msg == RuntimeMessage.SUBMIT:
@@ -133,6 +136,7 @@ class Manager(ServerBase):
                 rtasks = cast(List[RuntimeTask], payload)
                 self.schedule_tasks(rtasks)
                 self.update_upstream_idle_workers()
+                self.logger.debug(f'Finished handling submit batch from above.')
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)

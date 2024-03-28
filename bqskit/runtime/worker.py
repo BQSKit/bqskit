@@ -14,6 +14,9 @@ from multiprocessing import Process
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
+from threading import Thread
+from queue import Queue
+from queue import Empty
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -122,15 +125,50 @@ class WorkerMailbox:
             self.result[slot_id] = result.result
 
 
+def handle_incoming_comms(worker: Worker) -> None:
+    """Handle all incoming messages."""
+    while True:
+        # Handle incomming communication
+        msg, payload = worker._conn.recv()
+
+        # Process message
+        if msg == RuntimeMessage.SHUTDOWN:
+            worker._running = False
+            return
+
+        elif msg == RuntimeMessage.SUBMIT:
+            task = cast(RuntimeTask, payload)
+            worker._add_task(task)
+
+        elif msg == RuntimeMessage.SUBMIT_BATCH:
+            tasks = cast(List[RuntimeTask], payload)
+            worker._add_task(tasks.pop())  # Submit one task
+            worker._delayed_tasks.extend(tasks)  # Delay rest
+            # Delayed tasks have no context and are stored (more-or-less)
+            # as a function pointer together with the arguments.
+            # When it gets started, it consumes much more memory,
+            # so we delay the task start until necessary (at no cost)
+
+        elif msg == RuntimeMessage.RESULT:
+            result = cast(RuntimeResult, payload)
+            worker._handle_result(result)
+
+        elif msg == RuntimeMessage.CANCEL:
+            addr = cast(RuntimeAddress, payload)
+            worker._handle_cancel(addr)
+
+
 class Worker:
     """
     BQSKit Runtime's Worker.
 
-    BQSKit Runtime utilizes a single-threaded worker to accept, execute,
+    BQSKit Runtime utilizes a dual-threaded worker to accept, execute,
     pause, spawn, resume, and complete tasks in a custom event loop built
     with python's async await mechanisms. Each worker receives and sends
     tasks and results to the greater system through a single duplex
-    connection with a runtime server or manager.
+    connection with a runtime server or manager. One thread performs
+    work and sends outgoing messages, while the other thread handles
+    incoming messages.
 
     At start-up, the worker receives an ID and waits for its first task.
     An executing task may use the `submit` and `map` methods to spawn child
@@ -178,8 +216,9 @@ class Worker:
         self._id = id
         self._conn = conn
 
-        self._outgoing: list[tuple[RuntimeMessage, Any]] = []
-        """Stores outgoing messages to be handled by the event loop."""
+        # self._outgoing: list[tuple[RuntimeMessage, Any]] = []
+        # self._outgoing: Queue[tuple[RuntimeMessage, Any]] = Queue()
+        # """Stores outgoing messages to be handled by the event loop."""
 
         self._tasks: dict[RuntimeAddress, RuntimeTask] = {}
         """Tracks all started, unfinished tasks on this worker."""
@@ -187,7 +226,8 @@ class Worker:
         self._delayed_tasks: list[RuntimeTask] = []
         """Store all delayed tasks in LIFO order."""
 
-        self._ready_task_ids: WorkerQueue = WorkerQueue()
+        # self._ready_task_ids: WorkerQueue = WorkerQueue()
+        self._ready_task_ids: Queue[RuntimeAddress] = Queue()
         """Tasks queued up for execution."""
 
         self._cancelled_task_ids: set[RuntimeAddress] = set()
@@ -208,7 +248,7 @@ class Worker:
         self._cache: dict[str, Any] = {}
         """Local worker cache."""
 
-        # Send out every emitted log message upstream
+        # Send out every client emitted log message upstream
         old_factory = logging.getLogRecordFactory()
 
         def record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
@@ -218,10 +258,18 @@ class Worker:
                 lvl = active_task.logging_level
                 if lvl is None or lvl <= record.levelno:
                     tid = active_task.comp_task_id
-                    self._outgoing.append((RuntimeMessage.LOG, (tid, record)))
+                    self._conn.send((RuntimeMessage.LOG, (tid, record)))
             return record
 
         logging.setLogRecordFactory(record_factory)
+
+        # Start incoming thread
+        self.incomming_thread = Thread(
+            target=handle_incoming_comms,
+            args=(self,),
+        )
+        self.incomming_thread.start()
+        # self.logger.info('Started incoming thread.')
 
         # Communicate that this worker is ready
         self._conn.send((RuntimeMessage.STARTED, self._id))
@@ -231,8 +279,8 @@ class Worker:
         self._running = True
         while self._running:
             self._try_step_next_ready_task()
-            self._try_idle()
-            self._handle_comms()
+            # self._try_idle()
+            # self._handle_comms()
 
     def _try_idle(self) -> None:
         """If there is nothing to do, wait until we receive a message."""
@@ -244,43 +292,11 @@ class Worker:
             self._conn.send((RuntimeMessage.WAITING, 1))
             wait([self._conn])
 
-    def _handle_comms(self) -> None:
-        """Handle all incoming and outgoing messages."""
-
-        # Handle outgoing communication
+    def _flush_outgoing_comms(self) -> None:
+        """Handle all outgoing messages."""
         for out_msg in self._outgoing:
             self._conn.send(out_msg)
         self._outgoing.clear()
-
-        # Handle incomming communication
-        while self._conn.poll():
-            msg, payload = self._conn.recv()
-
-            # Process message
-            if msg == RuntimeMessage.SHUTDOWN:
-                self._running = False
-                return
-
-            elif msg == RuntimeMessage.SUBMIT:
-                task = cast(RuntimeTask, payload)
-                self._add_task(task)
-
-            elif msg == RuntimeMessage.SUBMIT_BATCH:
-                tasks = cast(List[RuntimeTask], payload)
-                self._add_task(tasks.pop())  # Submit one task
-                self._delayed_tasks.extend(tasks)  # Delay rest
-                # Delayed tasks have no context and are stored (more-or-less)
-                # as a function pointer together with the arguments.
-                # When it gets started, it consumes much more memory,
-                # so we delay the task start until necessary (at no cost)
-
-            elif msg == RuntimeMessage.RESULT:
-                result = cast(RuntimeResult, payload)
-                self._handle_result(result)
-
-            elif msg == RuntimeMessage.CANCEL:
-                addr = cast(RuntimeAddress, payload)
-                self._handle_cancel(addr)
 
     def _add_task(self, task: RuntimeTask) -> None:
         """Start a task and add it to the loop."""
@@ -290,8 +306,9 @@ class Worker:
 
     def _handle_result(self, result: RuntimeResult) -> None:
         """Insert result into appropriate mailbox and wake waiting task."""
-        mailbox_id = result.return_address.mailbox_index
         assert result.return_address.worker_id == self._id
+
+        mailbox_id = result.return_address.mailbox_index
         if mailbox_id not in self._mailboxes:
             # If the mailbox has been dropped due to a cancel, ignore result
             return
@@ -338,16 +355,23 @@ class Worker:
             if not t.is_descendant_of(addr)
         ]
 
-    def _get_next_ready_task(self) -> RuntimeTask | None:
-        """Return the next ready task if one exists, otherwise None."""
+    def _get_next_ready_task(self) -> RuntimeTask:
+        """Return the next ready task if one exists, otherwise block."""
         while True:
-            if self._ready_task_ids.empty():
-                if len(self._delayed_tasks) > 0:
-                    self._add_task(self._delayed_tasks.pop())
-                    continue
-                return None
+            if self._ready_task_ids.empty() and len(self._delayed_tasks) > 0:
+                self._add_task(self._delayed_tasks.pop())
+                continue
 
-            addr = self._ready_task_ids.get()
+            try:
+                addr = self._ready_task_ids.get_nowait()
+            except Empty:
+                # TODO: evaluate race condition here:
+                # If the incoming comms thread adds a task to the ready queue
+                # after this check, then the worker will have incorrectly
+                # sent a waiting message to the manager.
+                # TODO: consider some lock mechanism to prevent this?
+                self._conn.send((RuntimeMessage.WAITING, 1))
+                addr = self._ready_task_ids.get()
 
             if addr in self._cancelled_task_ids or addr not in self._tasks:
                 # When a task is cancelled on the worker it is not removed
@@ -362,6 +386,7 @@ class Worker:
                 # then discard this one too. Each breadcrumb (bcb) is a
                 # task address (unique system-wide task id) of an ancestor
                 # task.
+                # TODO: do I need to manually remove addr from self._tasks?
                 continue
 
             return task
@@ -369,10 +394,6 @@ class Worker:
     def _try_step_next_ready_task(self) -> None:
         """Select a task to run, and advance it one step."""
         task = self._get_next_ready_task()
-
-        if task is None:
-            # Nothing to do
-            return
 
         try:
             self._active_task = task
@@ -392,7 +413,7 @@ class Worker:
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
             error_payload = (self._active_task.comp_task_id, error_str)
-            self._outgoing.append((RuntimeMessage.ERROR, error_payload))
+            self._conn.send((RuntimeMessage.ERROR, error_payload))
 
         finally:
             self._active_task = None
@@ -428,11 +449,11 @@ class Worker:
 
         if task.return_address.worker_id == self._id:
             self._handle_result(packaged_result)
-            self._outgoing.append((RuntimeMessage.UPDATE, -1))
+            self._conn.send((RuntimeMessage.UPDATE, -1))
             # Let manager know this worker has one less task
             # without sending a result
         else:
-            self._outgoing.append((RuntimeMessage.RESULT, packaged_result))
+            self._conn.send((RuntimeMessage.RESULT, packaged_result))
 
         # Remove task
         self._tasks.pop(task.return_address)
@@ -447,10 +468,6 @@ class Worker:
 
             # Otherwise send a cancel message
             self.cancel(RuntimeFuture(mailbox_id))
-
-        # Start delayed task
-        if self._ready_task_ids.empty() and len(self._delayed_tasks) > 0:
-            self._add_task(self._delayed_tasks.pop())
 
     def _get_desired_result(self, task: RuntimeTask) -> Any:
         """Retrieve the task's desired result from the mailboxes."""
@@ -501,7 +518,7 @@ class Worker:
         )
 
         # Submit the task (on the next cycle)
-        self._outgoing.append((RuntimeMessage.SUBMIT, task))
+        self._conn.send((RuntimeMessage.SUBMIT, task))
 
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
@@ -548,7 +565,7 @@ class Worker:
         ]
 
         # Submit the tasks
-        self._outgoing.append((RuntimeMessage.SUBMIT_BATCH, tasks))
+        self._conn.send((RuntimeMessage.SUBMIT_BATCH, tasks))
 
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
@@ -563,8 +580,8 @@ class Worker:
             RuntimeAddress(self._id, future.mailbox_id, slot_id)
             for slot_id in range(num_slots)
         ]
-        msgs = [(RuntimeMessage.CANCEL, addr) for addr in addrs]
-        self._outgoing.extend(msgs)
+        for addr in addrs:
+            self._conn.send((RuntimeMessage.CANCEL, addr))
 
     def get_cache(self) -> dict[str, Any]:
         """
@@ -618,11 +635,13 @@ def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
         logger.handlers.clear()
     logging.Logger.manager.loggerDict = {}
 
+    # Pin worker to cpu
     if cpu is not None:
         if sys.platform == 'win32':
             raise RuntimeError('Cannot pin worker to cpu on windows.')
         os.sched_setaffinity(0, [cpu])
 
+    # Connect to manager
     max_retries = 7
     wait_time = .1
     conn: Connection | None = None
@@ -639,10 +658,12 @@ def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
     if conn is None:
         raise RuntimeError('Unable to establish connection with manager.')
 
+    # If id isn't provided, wait for assignment
     if w_id is None:
         msg, w_id = conn.recv()
         assert msg == RuntimeMessage.STARTED
 
+    # Build and start worker
     global _worker
     _worker = Worker(w_id, conn)
     _worker._loop()
