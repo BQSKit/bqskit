@@ -15,6 +15,7 @@ from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from multiprocessing.connection import wait
 from threading import Thread
+from threading import Lock
 from queue import Queue
 from queue import Empty
 from typing import Any
@@ -137,17 +138,23 @@ def handle_incoming_comms(worker: Worker) -> None:
             return
 
         elif msg == RuntimeMessage.SUBMIT:
+            worker.read_receipt_mutex.acquire()
             task = cast(RuntimeTask, payload)
+            worker._most_recent_read_submit = task.unique_id
             worker._add_task(task)
+            worker.read_receipt_mutex.release()
 
         elif msg == RuntimeMessage.SUBMIT_BATCH:
+            worker.read_receipt_mutex.acquire()
             tasks = cast(List[RuntimeTask], payload)
+            worker._most_recent_read_submit = tasks[0].unique_id
             worker._add_task(tasks.pop())  # Submit one task
             worker._delayed_tasks.extend(tasks)  # Delay rest
             # Delayed tasks have no context and are stored (more-or-less)
             # as a function pointer together with the arguments.
             # When it gets started, it consumes much more memory,
             # so we delay the task start until necessary (at no cost)
+            worker.read_receipt_mutex.release()
 
         elif msg == RuntimeMessage.RESULT:
             result = cast(RuntimeResult, payload)
@@ -247,6 +254,12 @@ class Worker:
 
         self._cache: dict[str, Any] = {}
         """Local worker cache."""
+
+        self.most_recent_read_submit: RuntimeAddress | None = None
+        """Tracks the most recently processed submit message from above."""
+
+        self.read_receipt_mutex = Lock()
+        """A lock to ensure waiting messages's read receipt is correct."""
 
         # Send out every client emitted log message upstream
         old_factory = logging.getLogRecordFactory()
@@ -362,16 +375,17 @@ class Worker:
                 self._add_task(self._delayed_tasks.pop())
                 continue
 
+            self.read_receipt_mutex.acquire()
             try:
                 addr = self._ready_task_ids.get_nowait()
             except Empty:
-                # TODO: evaluate race condition here:
-                # If the incoming comms thread adds a task to the ready queue
-                # after this check, then the worker will have incorrectly
-                # sent a waiting message to the manager.
-                # TODO: consider some lock mechanism to prevent this?
-                self._conn.send((RuntimeMessage.WAITING, 1))
+                payload = (1, self.most_recent_read_submit)
+                self._conn.send((RuntimeMessage.WAITING, payload))
+                self.read_receipt_mutex.release()
                 addr = self._ready_task_ids.get()
+
+            if self.read_receipt_mutex.locked():
+                self.read_receipt_mutex.release()
 
             if addr in self._cancelled_task_ids or addr not in self._tasks:
                 # When a task is cancelled on the worker it is not removed

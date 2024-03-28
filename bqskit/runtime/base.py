@@ -41,14 +41,20 @@ class RuntimeEmployee:
         conn: Connection,
         total_workers: int,
         process: Process | None = None,
-        num_tasks: int = 0,
     ) -> None:
         """Construct an employee with all resources idle."""
         self.conn: Connection = conn
         self.total_workers = total_workers
         self.process = process
-        self.num_tasks = num_tasks
+        self.num_tasks = 0
         self.num_idle_workers = total_workers
+
+        self.submit_cache: list[tuple[RuntimeAddress, int]] = []
+        """
+        Tracks recently submitted tasks by id and count.
+        This is used to adjust the idle worker count when
+        the employee sends a waiting message.
+        """
 
     def shutdown(self) -> None:
         """Shutdown the employee."""
@@ -67,11 +73,25 @@ class RuntimeEmployee:
     def has_idle_resources(self) -> bool:
         return self.num_idle_workers > 0
 
+    def get_num_of_tasks_sent_since(
+        self,
+        read_receipt: RuntimeAddress | None,
+    ) -> int:
+        """Return the number of tasks sent since the read receipt."""
+        if read_receipt is None:
+            return sum(count for _, count in self.submit_cache)
+
+        for i, (addr, _) in enumerate(self.submit_cache):
+            if addr == read_receipt:
+                self.submit_cache = self.submit_cache[:i]
+                return sum(count for _, count in self.submit_cache[1:])
+
+        raise RuntimeError('Read receipt not found in submit cache.')
+
 
 def send_outgoing(node: ServerBase) -> None:
     """Outgoing thread forwards messages as they are created."""
     while True:
-        node.logger.debug('Waiting to send outgoing message...')
         outgoing = node.outgoing.get()
 
         if not node.running:
@@ -81,7 +101,6 @@ def send_outgoing(node: ServerBase) -> None:
             # while condition.
             break
 
-        node.logger.debug(f'Sending message {outgoing[1].name}...')
         outgoing[0].send((outgoing[1], outgoing[2]))
         node.logger.debug(f'Sent message {outgoing[1].name}.')
 
@@ -525,7 +544,6 @@ class ServerBase:
         """Schedule tasks between this node's employees."""
         if len(tasks) == 0:
             return
-        self.logger.info(f'Scheduling {len(tasks)} tasks with {self.num_idle_workers} idle workers.')
         assignments = self.assign_tasks(tasks)
 
         # for e, assignment in sorted(zip(self.employees, assignments), key=lambda x: x[0].num_idle_workers, reverse=True):
@@ -539,9 +557,9 @@ class ServerBase:
 
             e.num_tasks += num_tasks
             e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
+            e.submit_cache.append((assignment[0].unique_id, num_tasks))
 
         self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
-        self.logger.info(f'Finished scheduling {len(tasks)} tasks with now {self.num_idle_workers} idle workers.')
 
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""
@@ -568,23 +586,30 @@ class ServerBase:
         for employee in self.employees:
             self.outgoing.put((employee.conn, RuntimeMessage.CANCEL, addr))
 
-    def handle_waiting(self, conn: Connection, new_idle_count: int) -> None:
+    def handle_waiting(
+        self,
+        conn: Connection,
+        new_idle_count: int,
+        read_receipt: RuntimeAddress | None,
+    ) -> None:
         """
         Record that an employee is idle with nothing to do.
 
-        There is a race condition here that is allowed. If an employee
-        sends a waiting message at the same time that this sends it a
-        task, it will still be marked waiting even though it is running
-        a task. We allow this for two reasons. First, the consequences are
-        minimal: this situation can only lead to one extra task assigned
-        to the worker that could otherwise go to a truly idle worker.
-        Second, it is unlikely in the common BQSKit workflows, which have
-        wide and shallow task graphs and each leaf task can require seconds
-        of runtime.
+        There is a race condition that is corrected here. If an employee
+        sends a waiting message at the same time that its boss sends it a
+        task, the boss's idle count will eventually be incorrect. To fix
+        this, every waiting message sent by an employee is accompanied by
+        a read receipt of the latest batch of tasks it has processed. The
+        boss can then adjust the idle count by the number of tasks sent
+        since the read receipt.
         """
-        old_count = self.conn_to_employee_dict[conn].num_idle_workers
-        self.conn_to_employee_dict[conn].num_idle_workers = new_idle_count
-        self.num_idle_workers += (new_idle_count - old_count)
+        employee = self.conn_to_employee_dict[conn]
+        unaccounted_task = employee.get_num_of_tasks_sent_since(read_receipt)
+        adjusted_idle_count = max(new_idle_count - unaccounted_task, 0)
+
+        old_count = employee.num_idle_workers
+        employee.num_idle_workers = adjusted_idle_count
+        self.num_idle_workers += (adjusted_idle_count - old_count)
         assert 0 <= self.num_idle_workers <= self.total_workers
 
 

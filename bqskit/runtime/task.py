@@ -43,7 +43,10 @@ class RuntimeTask:
         """Tuple of function pointer, arguments, and keyword arguments."""
 
         self.return_address = return_address
-        """Where the result of this task should be sent."""
+        """
+        Where the result of this task should be sent.
+        This doubles as a unique system-wide id for the task.
+        """
 
         self.logging_level = logging_level
         """Logs with levels >= to this get emitted, if None always emit."""
@@ -96,6 +99,11 @@ class RuntimeTask:
         logging.getLogger().setLevel(old_level)
 
         return to_return
+
+    @property
+    def unique_id(self) -> RuntimeAddress:
+        """Return the task's system-wide unique id."""
+        return self.return_address
 
     def start(self) -> None:
         """Initialize the task."""

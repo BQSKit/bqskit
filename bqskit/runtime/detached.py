@@ -182,8 +182,8 @@ class DetachedServer(ServerBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                num_idle = cast(int, payload)
-                self.handle_waiting(conn, num_idle)
+                num_idle, read_receipt = cast(int, payload)
+                self.handle_waiting(conn, num_idle, read_receipt)
 
             elif msg == RuntimeMessage.UPDATE:
                 task_diff = cast(int, payload)

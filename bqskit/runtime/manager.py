@@ -100,8 +100,6 @@ class Manager(ServerBase):
             if only_connect:
                 self.connect_to_workers(num_workers, worker_port)
             else:
-                print('Spawning workers...')
-                print(f'Number of workers: {num_workers}')
                 self.spawn_workers(num_workers, worker_port)
 
         # Case 2: Connect to detached managers at ipports
@@ -110,6 +108,9 @@ class Manager(ServerBase):
 
         # Track info on sent messages to reduce redundant messages:
         self.last_num_idle_sent_up = self.total_workers
+
+        # Track info on received messages to report read receipts:
+        self.most_recent_read_submit: RuntimeAddress | None = None
 
         # Inform upstream we are starting
         msg = (self.upstream, RuntimeMessage.STARTED, self.total_workers)
@@ -124,19 +125,19 @@ class Manager(ServerBase):
         payload: Any,
     ) -> None:
         """Process the message coming from `direction`."""
-        self.logger.debug(f'Manager handling message {msg.name} from {direction.name}.')
         if direction == MessageDirection.ABOVE:
 
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
+                self.most_recent_read_submit = rtask.unique_id
                 self.schedule_tasks([rtask])
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
+                self.most_recent_read_submit = rtasks[0].unique_id
                 self.schedule_tasks(rtasks)
-                self.update_upstream_idle_workers()
-                self.logger.debug(f'Finished handling submit batch from above.')
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
@@ -157,20 +158,20 @@ class Manager(ServerBase):
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.send_up_or_schedule_tasks([rtask])
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
                 self.send_up_or_schedule_tasks(rtasks)
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                num_idle = cast(int, payload)
-                self.handle_waiting(conn, num_idle)
+                num_idle, read_receipt = cast(int, payload)
+                self.handle_waiting(conn, num_idle, read_receipt)
                 self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.UPDATE:
@@ -221,6 +222,7 @@ class Manager(ServerBase):
         if num_idle != 0:
             self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, num_idle))
             self.schedule_tasks(tasks[:num_idle])
+            self.update_upstream_idle_workers()
 
         if len(tasks) > num_idle:
             self.outgoing.put((
@@ -248,7 +250,8 @@ class Manager(ServerBase):
         """Update the total number of idle workers upstream."""
         if self.num_idle_workers != self.last_num_idle_sent_up:
             self.last_num_idle_sent_up = self.num_idle_workers
-            m = (self.upstream, RuntimeMessage.WAITING, self.num_idle_workers)
+            payload = (self.num_idle_workers, self.most_recent_read_submit)
+            m = (self.upstream, RuntimeMessage.WAITING, payload)
             self.outgoing.put(m)
 
     def handle_update(self, conn: Connection, task_diff: int) -> None:
