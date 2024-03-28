@@ -15,6 +15,7 @@ from threading import Thread
 from typing import Any
 from typing import cast
 from typing import List
+from typing import Optional
 from typing import Sequence
 
 from bqskit.compiler.status import CompilationStatus
@@ -182,7 +183,8 @@ class DetachedServer(ServerBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                num_idle, read_receipt = cast(int, payload)
+                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
+                num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
 
             elif msg == RuntimeMessage.UPDATE:

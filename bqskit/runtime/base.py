@@ -52,8 +52,9 @@ class RuntimeEmployee:
         self.submit_cache: list[tuple[RuntimeAddress, int]] = []
         """
         Tracks recently submitted tasks by id and count.
-        This is used to adjust the idle worker count when
-        the employee sends a waiting message.
+
+        This is used to adjust the idle worker count when the employee sends a
+        waiting message.
         """
 
     def shutdown(self) -> None:
@@ -595,13 +596,12 @@ class ServerBase:
         """
         Record that an employee is idle with nothing to do.
 
-        There is a race condition that is corrected here. If an employee
-        sends a waiting message at the same time that its boss sends it a
-        task, the boss's idle count will eventually be incorrect. To fix
-        this, every waiting message sent by an employee is accompanied by
-        a read receipt of the latest batch of tasks it has processed. The
-        boss can then adjust the idle count by the number of tasks sent
-        since the read receipt.
+        There is a race condition that is corrected here. If an employee sends a
+        waiting message at the same time that its boss sends it a task, the
+        boss's idle count will eventually be incorrect. To fix this, every
+        waiting message sent by an employee is accompanied by a read receipt of
+        the latest batch of tasks it has processed. The boss can then adjust the
+        idle count by the number of tasks sent since the read receipt.
         """
         employee = self.conn_to_employee_dict[conn]
         unaccounted_task = employee.get_num_of_tasks_sent_since(read_receipt)

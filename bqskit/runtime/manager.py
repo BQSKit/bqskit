@@ -9,6 +9,7 @@ from multiprocessing.connection import Connection
 from typing import Any
 from typing import cast
 from typing import List
+from typing import Optional
 from typing import Sequence
 
 from bqskit.runtime import default_manager_port
@@ -170,7 +171,8 @@ class Manager(ServerBase):
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                num_idle, read_receipt = cast(int, payload)
+                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
+                num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
                 self.update_upstream_idle_workers()
 

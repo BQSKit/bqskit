@@ -13,11 +13,10 @@ from dataclasses import dataclass
 from multiprocessing import Process
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
-from multiprocessing.connection import wait
-from threading import Thread
-from threading import Lock
-from queue import Queue
 from queue import Empty
+from queue import Queue
+from threading import Lock
+from threading import Thread
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -140,14 +139,14 @@ def handle_incoming_comms(worker: Worker) -> None:
         elif msg == RuntimeMessage.SUBMIT:
             worker.read_receipt_mutex.acquire()
             task = cast(RuntimeTask, payload)
-            worker._most_recent_read_submit = task.unique_id
+            worker.most_recent_read_submit = task.unique_id
             worker._add_task(task)
             worker.read_receipt_mutex.release()
 
         elif msg == RuntimeMessage.SUBMIT_BATCH:
             worker.read_receipt_mutex.acquire()
             tasks = cast(List[RuntimeTask], payload)
-            worker._most_recent_read_submit = tasks[0].unique_id
+            worker.most_recent_read_submit = tasks[0].unique_id
             worker._add_task(tasks.pop())  # Submit one task
             worker._delayed_tasks.extend(tasks)  # Delay rest
             # Delayed tasks have no context and are stored (more-or-less)
@@ -295,21 +294,21 @@ class Worker:
             # self._try_idle()
             # self._handle_comms()
 
-    def _try_idle(self) -> None:
-        """If there is nothing to do, wait until we receive a message."""
-        empty_outgoing = len(self._outgoing) == 0
-        no_ready_tasks = self._ready_task_ids.empty()
-        no_delayed_tasks = len(self._delayed_tasks) == 0
+    # def _try_idle(self) -> None:
+    #     """If there is nothing to do, wait until we receive a message."""
+    #     empty_outgoing = len(self._outgoing) == 0
+    #     no_ready_tasks = self._ready_task_ids.empty()
+    #     no_delayed_tasks = len(self._delayed_tasks) == 0
 
-        if empty_outgoing and no_ready_tasks and no_delayed_tasks:
-            self._conn.send((RuntimeMessage.WAITING, 1))
-            wait([self._conn])
+    #     if empty_outgoing and no_ready_tasks and no_delayed_tasks:
+    #         self._conn.send((RuntimeMessage.WAITING, 1))
+    #         wait([self._conn])
 
-    def _flush_outgoing_comms(self) -> None:
-        """Handle all outgoing messages."""
-        for out_msg in self._outgoing:
-            self._conn.send(out_msg)
-        self._outgoing.clear()
+    # def _flush_outgoing_comms(self) -> None:
+    #     """Handle all outgoing messages."""
+    #     for out_msg in self._outgoing:
+    #         self._conn.send(out_msg)
+    #     self._outgoing.clear()
 
     def _add_task(self, task: RuntimeTask) -> None:
         """Start a task and add it to the loop."""
