@@ -29,7 +29,7 @@ class TestNoDuplicateResult(BasePass):
 
 class TestNoDuplicateResultsInTwoNexts(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        future = get_runtime().map(sleepi, [0.3, 0.4, 0.1, 0.2])
+        future = get_runtime().map(sleepi, [0.3, 0.4, 0.1, 0.2, 5])
         seen = [0]
         int_ids = await get_runtime().next(future)
 

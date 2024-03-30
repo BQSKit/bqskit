@@ -84,7 +84,7 @@ class RuntimeEmployee:
 
         for i, (addr, _) in enumerate(self.submit_cache):
             if addr == read_receipt:
-                self.submit_cache = self.submit_cache[:i]
+                self.submit_cache = self.submit_cache[i:]
                 return sum(count for _, count in self.submit_cache[1:])
 
         raise RuntimeError('Read receipt not found in submit cache.')
@@ -375,7 +375,6 @@ class ServerBase:
         try:
             while self.running:
                 # Wait for messages
-                self.logger.debug('Waiting for messages...')
                 events = self.sel.select()  # Say that 5 times fast
 
                 for key, _ in events:

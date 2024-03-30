@@ -134,6 +134,8 @@ def handle_incoming_comms(worker: Worker) -> None:
         # Process message
         if msg == RuntimeMessage.SHUTDOWN:
             worker._running = False
+            worker._ready_task_ids.put(RuntimeAddress(-1, -1, -1))
+            # TODO: Interupt main, maybe even kill it
             return
 
         elif msg == RuntimeMessage.SUBMIT:
@@ -162,6 +164,7 @@ def handle_incoming_comms(worker: Worker) -> None:
         elif msg == RuntimeMessage.CANCEL:
             addr = cast(RuntimeAddress, payload)
             worker._handle_cancel(addr)
+            # TODO: preempt?
 
 
 class Worker:
@@ -280,6 +283,7 @@ class Worker:
             target=handle_incoming_comms,
             args=(self,),
         )
+        self.incomming_thread.daemon = True
         self.incomming_thread.start()
         # self.logger.info('Started incoming thread.')
 
@@ -334,6 +338,7 @@ class Worker:
 
             if task.wake_on_next or box.ready:
                 self._ready_task_ids.put(box.dest_addr)  # Wake it
+                box.dest_addr = None # Prevent double wake
 
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """
@@ -349,6 +354,7 @@ class Worker:
             for themselves using breadcrumbs and the original `addr` cancel
             message.
         """
+        # TODO: Send update message?
         self._cancelled_task_ids.add(addr)
 
         # Remove all tasks that are children of `addr` from initialized tasks
@@ -382,6 +388,8 @@ class Worker:
                 self._conn.send((RuntimeMessage.WAITING, payload))
                 self.read_receipt_mutex.release()
                 addr = self._ready_task_ids.get()
+                if addr == RuntimeAddress(-1, -1, -1):
+                    return None
 
             if self.read_receipt_mutex.locked():
                 self.read_receipt_mutex.release()
@@ -407,6 +415,9 @@ class Worker:
     def _try_step_next_ready_task(self) -> None:
         """Select a task to run, and advance it one step."""
         task = self._get_next_ready_task()
+
+        if task is None:
+            return
 
         try:
             self._active_task = task
@@ -451,14 +462,25 @@ class Worker:
                 m = 'Cannot wait for next results on a complete task.'
                 raise RuntimeError(m)
             task.wake_on_next = True
+        # if future._next_flag:
+        #     # Set from Worker.next, implies the task wants the next result
+        #     # if box.ready:
+        #     #     m = 'Cannot wait for next results on a complete task.'
+        #     #     raise RuntimeError(m)
+        #     task.wake_on_next = True
+        task.wake_on_next = future._next_flag
 
-        elif box.ready:
+        if box.ready:
             self._ready_task_ids.put(task.return_address)
 
     def _process_task_completion(self, task: RuntimeTask, result: Any) -> None:
         """Package and send out task result."""
         assert task is self._active_task
         packaged_result = RuntimeResult(task.return_address, result, self._id)
+
+        if task.return_address not in self._tasks:
+            print(f'Task was cancelled: {task.return_address}, {task.fnargs[0].__name__}')
+            return
 
         if task.return_address.worker_id == self._id:
             self._handle_result(packaged_result)
@@ -491,7 +513,7 @@ class Worker:
 
         if task.wake_on_next:
             fresh_results = box.get_new_results()
-            assert len(fresh_results) > 0
+            # assert len(fresh_results) > 0
             return fresh_results
 
         assert box.ready
@@ -621,7 +643,8 @@ class Worker:
                 returned. Each result is paired with the index of its
                 arguments in the original map call.
         """
-        if future._done:
+        # if future._done:
+        if future.mailbox_id not in self._mailboxes:
             raise RuntimeError('Cannot wait on an already completed result.')
 
         future._next_flag = True

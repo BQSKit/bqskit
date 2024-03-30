@@ -369,6 +369,7 @@ class DetachedServer(ServerBase):
         tid = error_payload[0]
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.ERROR, error_payload[1]))
+        # TODO: Broadcast cancel to all tasks with compilation task id tid
 
     def handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
         """Forward logs to appropriate client."""
