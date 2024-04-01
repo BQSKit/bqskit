@@ -174,6 +174,10 @@ def handle_incoming_comms(worker: Worker) -> None:
             worker._handle_cancel(addr)
             # TODO: preempt?
 
+        elif msg == RuntimeMessage.IMPORTPATH:
+            import_path = cast(str, payload)
+            sys.path.append(import_path)
+
 
 class Worker:
     """

@@ -151,6 +151,13 @@ class Manager(ServerBase):
             elif msg == RuntimeMessage.SHUTDOWN:
                 self.handle_shutdown()
 
+            elif msg == RuntimeMessage.IMPORTPATH:
+                import_path = cast(str, payload)
+                import sys
+                sys.path.append(import_path)
+                for employee in self.employees:
+                    employee.conn.send((RuntimeMessage.IMPORTPATH, import_path))
+
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 

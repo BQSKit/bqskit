@@ -9,7 +9,6 @@ import subprocess
 import sys
 import time
 import uuid
-import warnings
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from subprocess import Popen
@@ -149,7 +148,7 @@ class Compiler:
                 self.old_signal = signal.signal(signal.SIGINT, handle)
                 if self.conn is None:
                     raise RuntimeError('Connection unexpectedly none.')
-                self.conn.send((RuntimeMessage.CONNECT, None))
+                self.conn.send((RuntimeMessage.CONNECT, sys.path))
                 _logger.debug('Successfully connected to runtime server.')
                 return
         raise RuntimeError('Client connection refused')

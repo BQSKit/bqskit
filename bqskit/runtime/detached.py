@@ -30,7 +30,6 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
-
 def listen(server: DetachedServer, port: int) -> None:
     """Listening thread listens for client connections."""
     listener = Listener(('0.0.0.0', port))
@@ -131,7 +130,15 @@ class DetachedServer(ServerBase):
         if direction == MessageDirection.CLIENT:
 
             if msg == RuntimeMessage.CONNECT:
-                pass
+                # paths, serialized_defintions = cast(List[str], payload)
+                paths = cast(List[str], payload)
+                import sys
+                for path in paths:
+                    if path not in sys.path:
+                        sys.path.append(path)
+                        for employee in self.employees:
+                            employee.conn.send((RuntimeMessage.IMPORTPATH, path))
+
 
             elif msg == RuntimeMessage.DISCONNECT:
                 self.handle_disconnect(conn)
@@ -370,6 +377,11 @@ class DetachedServer(ServerBase):
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.ERROR, error_payload[1]))
         # TODO: Broadcast cancel to all tasks with compilation task id tid
+        # But avoid double broadcasting it. If the client crashes due to
+        # this error, which it may not, then we will quickly process
+        # a handle_disconnect and call the cancel anyways. We should
+        # still cancel here incase the client catches the error and
+        # resubmits a job.
 
     def handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
         """Forward logs to appropriate client."""
