@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import dill
 from typing import Any
 from typing import Coroutine
 
@@ -39,7 +40,9 @@ class RuntimeTask:
         RuntimeTask.task_counter += 1
         self.task_id = RuntimeTask.task_counter
 
-        self.fnargs = fnargs
+        self.serialized_fnargs = dill.dumps(fnargs)
+        self._fnargs = None
+        self._name = fnargs[0].__name__
         """Tuple of function pointer, arguments, and keyword arguments."""
 
         self.return_address = return_address
@@ -75,6 +78,13 @@ class RuntimeTask:
 
         self.wake_on_next: bool = False
         """Set to true if this task should wake immediately on a result."""
+
+    @property
+    def fnargs(self) -> tuple[Any, Any, Any]:
+        """Return the function pointer, arguments, and keyword arguments."""
+        if self._fnargs is None:
+            self._fnargs = dill.loads(self.serialized_fnargs)
+        return self._fnargs
 
     def step(self, send_val: Any = None) -> Any:
         """Execute one step of the task."""
@@ -122,8 +132,8 @@ class RuntimeTask:
 
     def __str__(self) -> str:
         """Return a string representation of the task."""
-        return f'{self.fnargs[0].__name__}'
+        return f'{self._name}'
 
     def __repr__(self) -> str:
         """Return a string representation of the task."""
-        return f'<RuntimeTask {self.task_id} {self.fnargs[0].__name__}>'
+        return f'<RuntimeTask {self.unique_id} {self._name}>'
