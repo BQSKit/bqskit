@@ -229,20 +229,18 @@ class Compiler:
 
     def submit(
         self,
-        task_or_circuit: CompilationTask | Circuit,
-        workflow: WorkflowLike | None = None,
+        circuit: Circuit,
+        workflow: WorkflowLike,
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
+        data: dict[str, Any] | None = None,
     ) -> uuid.UUID:
         """
         Submit a compilation job to the Compiler.
 
         Args:
-            task_or_circuit (CompilationTask | Circuit): The task to compile,
-                or the input circuit. If a task is specified, no other
-                argument should be specified. If a task is not specified,
-                the circuit must be paired with a workflow argument.
+            circuit (Circuit): The input circuit to be compiled.
 
             workflow (WorkflowLike): The compilation job submitted
                 is defined by executing this workflow on the input circuit.
@@ -267,86 +265,35 @@ class Compiler:
                 the result of the task.
         """
         # Build CompilationTask
-        if isinstance(task_or_circuit, CompilationTask):
-            if workflow is not None:
-                raise ValueError(
-                    'Cannot specify workflow and task.'
-                    ' Either specify a workflow and circuit or a task alone.',
-                )
-
-            task = task_or_circuit
-
-        else:
-            if workflow is None:
-                m = 'Must specify workflow when providing a circuit to submit.'
-                raise TypeError(m)
-
-            task = CompilationTask(task_or_circuit, Workflow(workflow))
+        task = CompilationTask(circuit, Workflow(workflow))
 
         # Set task configuration
         task.request_data = request_data
         task.logging_level = logging_level or self._discover_lowest_log_level()
         task.max_logging_depth = max_logging_depth
+        if data is not None:
+            task.data = data
 
         # Submit task to runtime
         self._send(RuntimeMessage.SUBMIT, task)
         return task.task_id
 
-    def status(self, task_id: CompilationTask | uuid.UUID) -> CompilationStatus:
+    def status(self, task_id: uuid.UUID) -> CompilationStatus:
         """Retrieve the status of the specified task."""
-        if isinstance(task_id, CompilationTask):
-            warnings.warn(
-                'Request a status from a CompilationTask is deprecated.\n'
-                ' Instead, pass a task ID to request a status.\n'
-                ' `compiler.submit` returns a task id, and you can get an\n'
-                ' ID from a task via `task.task_id`.\n'
-                ' This warning will turn into an error in a future update.',
-                DeprecationWarning,
-            )
-            task_id = task_id.task_id
-        assert isinstance(task_id, uuid.UUID)
-
         msg, payload = self._send_recv(RuntimeMessage.STATUS, task_id)
         if msg != RuntimeMessage.STATUS:
             raise RuntimeError(f'Unexpected message type: {msg}.')
         return payload
 
-    def result(
-        self,
-        task_id: CompilationTask | uuid.UUID,
-    ) -> Circuit | tuple[Circuit, PassData]:
+    def result(self, task_id: uuid.UUID) -> Circuit | tuple[Circuit, PassData]:
         """Block until the task is finished, return its result."""
-        if isinstance(task_id, CompilationTask):
-            warnings.warn(
-                'Request a result from a CompilationTask is deprecated.'
-                ' Instead, pass a task ID to request a result.\n'
-                ' `compiler.submit` returns a task id, and you can get an\n'
-                ' ID from a task via `task.task_id`.\n'
-                ' This warning will turn into an error in a future update.',
-                DeprecationWarning,
-            )
-            task_id = task_id.task_id
-        assert isinstance(task_id, uuid.UUID)
-
         msg, payload = self._send_recv(RuntimeMessage.REQUEST, task_id)
         if msg != RuntimeMessage.RESULT:
             raise RuntimeError(f'Unexpected message type: {msg}.')
         return payload
 
-    def cancel(self, task_id: CompilationTask | uuid.UUID) -> bool:
+    def cancel(self, task_id: uuid.UUID) -> bool:
         """Cancel the execution of a task in the system."""
-        if isinstance(task_id, CompilationTask):
-            warnings.warn(
-                'Cancelling a CompilationTask is deprecated. Instead,'
-                ' Instead, pass a task ID to cancel a task.\n'
-                ' `compiler.submit` returns a task id, and you can get an\n'
-                ' ID from a task via `task.task_id`.\n'
-                ' This warning will turn into an error in a future update.',
-                DeprecationWarning,
-            )
-            task_id = task_id.task_id
-        assert isinstance(task_id, uuid.UUID)
-
         msg, _ = self._send_recv(RuntimeMessage.CANCEL, task_id)
         if msg != RuntimeMessage.CANCEL:
             raise RuntimeError(f'Unexpected message type: {msg}.')
@@ -355,63 +302,51 @@ class Compiler:
     @overload
     def compile(
         self,
-        task_or_circuit: CompilationTask,
-    ) -> Circuit | tuple[Circuit, PassData]:
-        ...
-
-    @overload
-    def compile(
-        self,
-        task_or_circuit: Circuit,
+        circuit: Circuit,
         workflow: WorkflowLike,
         request_data: Literal[False] = ...,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
+        data: dict[str, Any] | None = ...,
     ) -> Circuit:
         ...
 
     @overload
     def compile(
         self,
-        task_or_circuit: Circuit,
+        circuit: Circuit,
         workflow: WorkflowLike,
         request_data: Literal[True],
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
+        data: dict[str, Any] | None = ...,
     ) -> tuple[Circuit, PassData]:
         ...
 
     @overload
     def compile(
         self,
-        task_or_circuit: Circuit,
+        circuit: Circuit,
         workflow: WorkflowLike,
         request_data: bool,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
+        data: dict[str, Any] | None = ...,
     ) -> Circuit | tuple[Circuit, PassData]:
         ...
 
     def compile(
         self,
-        task_or_circuit: CompilationTask | Circuit,
-        workflow: WorkflowLike | None = None,
+        circuit: Circuit,
+        workflow: WorkflowLike,
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
+        data: dict[str, Any] | None = None,
     ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
-        if isinstance(task_or_circuit, CompilationTask):
-            warnings.warn(
-                'Manually constructing and compiling CompilationTasks'
-                ' is deprecated. Instead, call compile directly with'
-                ' your input circuit and workflow. This warning will'
-                ' turn into an error in a future update.',
-                DeprecationWarning,
-            )
-
         task_id = self.submit(
-            task_or_circuit,
+            circuit,
             workflow,
             request_data,
             logging_level,

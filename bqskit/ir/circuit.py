@@ -2718,16 +2718,13 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         from bqskit.compiler.compiler import Compiler
         from bqskit.compiler.passdata import PassData
-        from bqskit.compiler.task import CompilationTask
 
         pass_data = PassData(self)
         if data is not None:
             pass_data.update(data)
 
         with Compiler() as compiler:
-            task = CompilationTask(self, [compiler_pass])
-            task.data = pass_data
-            task_id = compiler.submit(task)
+            task_id = compiler.submit(self, [compiler_pass], data=pass_data)
             self.become(compiler.result(task_id))  # type: ignore
 
     def instantiate(
