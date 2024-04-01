@@ -129,16 +129,24 @@ def handle_incoming_comms(worker: Worker) -> None:
     """Handle all incoming messages."""
     while True:
         # Handle incomming communication
-        msg, payload = worker._conn.recv()
+        try:
+            msg, payload = worker._conn.recv()
+        except Exception:
+            print(f'Worker {worker._id} crashed due to lost connection')
+            worker._running = False
+            worker._ready_task_ids.put(RuntimeAddress(-1, -1, -1))
+            break
 
         # Process message
         if msg == RuntimeMessage.SHUTDOWN:
+            print(f'Worker {worker._id} received shutdown message')
             worker._running = False
             worker._ready_task_ids.put(RuntimeAddress(-1, -1, -1))
             # TODO: Interupt main, maybe even kill it
-            return
+            break
 
         elif msg == RuntimeMessage.SUBMIT:
+            # print('Worker received submit message')
             worker.read_receipt_mutex.acquire()
             task = cast(RuntimeTask, payload)
             worker.most_recent_read_submit = task.unique_id
@@ -294,7 +302,16 @@ class Worker:
         """Main worker event loop."""
         self._running = True
         while self._running:
-            self._try_step_next_ready_task()
+            try:
+                self._try_step_next_ready_task()
+            except Exception:
+                self._running = False
+                exc_info = sys.exc_info()
+                error_str = ''.join(traceback.format_exception(*exc_info))
+                try:
+                    self._conn.send((RuntimeMessage.ERROR, error_str))
+                except Exception:
+                    pass
             # self._try_idle()
             # self._handle_comms()
 
@@ -383,16 +400,19 @@ class Worker:
             self.read_receipt_mutex.acquire()
             try:
                 addr = self._ready_task_ids.get_nowait()
+
             except Empty:
                 payload = (1, self.most_recent_read_submit)
                 self._conn.send((RuntimeMessage.WAITING, payload))
                 self.read_receipt_mutex.release()
                 addr = self._ready_task_ids.get()
-                if addr == RuntimeAddress(-1, -1, -1):
-                    return None
 
-            if self.read_receipt_mutex.locked():
+            else:
                 self.read_receipt_mutex.release()
+
+            # Handle a shutdown request that occured while waiting
+            if not self._running:
+                return None
 
             if addr in self._cancelled_task_ids or addr not in self._tasks:
                 # When a task is cancelled on the worker it is not removed
@@ -456,12 +476,6 @@ class Worker:
         box.dest_addr = task.return_address
         task.desired_box_id = future.mailbox_id
 
-        if future._next_flag:
-            # Set from Worker.next, implies the task wants the next result
-            if box.ready:
-                m = 'Cannot wait for next results on a complete task.'
-                raise RuntimeError(m)
-            task.wake_on_next = True
         # if future._next_flag:
         #     # Set from Worker.next, implies the task wants the next result
         #     # if box.ready:
