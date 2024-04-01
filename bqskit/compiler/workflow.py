@@ -39,6 +39,7 @@ class Workflow(BasePass, Sequence[BasePass]):
         """
         if isinstance(passes, Workflow):
             self._passes: list[BasePass] = copy.deepcopy(passes._passes)
+            self._name = copy.deepcopy(passes._name) if name == '' else name
             return
 
         if isinstance(passes, BasePass):
