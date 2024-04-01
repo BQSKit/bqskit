@@ -57,18 +57,25 @@ class RuntimeEmployee:
         waiting message.
         """
 
-    def shutdown(self) -> None:
-        """Shutdown the employee."""
+    def initiate_shutdown(self) -> None:
+        """Instruct employee to shutdown."""
         try:
             self.conn.send((RuntimeMessage.SHUTDOWN, None))
         except Exception:
             pass
 
+    def complete_shutdown(self) -> None:
+        """Ensure employee is shutdown and clean up resources."""
         if self.process is not None:
             self.process.join()
 
         self.process = None
         self.conn.close()
+
+    def shutdown(self) -> None:
+        """Initiate and complete shutdown."""
+        self.initiate_shutdown()
+        self.complete_shutdown()
 
     @property
     def has_idle_resources(self) -> bool:
@@ -269,6 +276,7 @@ class ServerBase:
         for i in range(num_workers):
             w_id = self.lower_id_bound + i
             procs[w_id] = Process(target=start_worker, args=(w_id, port))
+            procs[w_id].daemon = True
             procs[w_id].start()
             self.logger.debug(f'Stated worker process {i}.')
 
@@ -451,7 +459,11 @@ class ServerBase:
 
         # Instruct employees to shutdown
         for employee in self.employees:
-            employee.shutdown()
+            employee.initiate_shutdown()
+
+        for employee in self.employees:
+            employee.complete_shutdown()
+
         self.employees.clear()
         self.logger.debug('Shutdown employees.')
 
