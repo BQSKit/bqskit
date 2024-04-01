@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import dill
 from typing import Iterable
 from typing import Iterator
 from typing import overload
@@ -118,6 +119,12 @@ class Workflow(BasePass, Sequence[BasePass]):
 
     def __getitem__(self, _key: int | slice) -> BasePass | list[BasePass]:
         return self._passes.__getitem__(_key)
+
+    def __getstate__(self) -> bytes:
+        return dill.dumps(self.__dict__, recurse=True)
+
+    def __setstate__(self, state: bytes) -> None:
+        self.__dict__.update(dill.loads(state))
 
 
 WorkflowLike = Union[Workflow, Iterable[BasePass], BasePass]
