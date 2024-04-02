@@ -11,6 +11,7 @@ from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
@@ -178,7 +179,7 @@ class Manager(ServerBase):
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
+                p = cast(Tuple[int, Optional[RuntimeAddress]], payload)
                 num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
                 self.update_upstream_idle_workers()
