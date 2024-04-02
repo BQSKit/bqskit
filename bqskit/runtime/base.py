@@ -556,10 +556,13 @@ class ServerBase:
         """Schedule tasks between this node's employees."""
         if len(tasks) == 0:
             return
-        assignments = self.assign_tasks(tasks)
-
-        # for e, assignment in sorted(zip(self.employees, assignments), key=lambda x: x[0].num_idle_workers, reverse=True):
-        for e, assignment in zip(self.employees, assignments):
+        assignments = zip(self.employees, self.assign_tasks(tasks))
+        sorted_assignments = sorted(
+            assignments,
+            key=lambda x: x[0].num_idle_workers,
+            reverse=True,
+        )
+        for e, assignment in sorted_assignments:
             num_tasks = len(assignment)
 
             if num_tasks == 0:

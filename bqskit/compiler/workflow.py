@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import copy
 import logging
-import dill
 from typing import Iterable
 from typing import Iterator
 from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
+
+import dill
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.utils.random import seed_random_sources
@@ -40,7 +41,7 @@ class Workflow(BasePass, Sequence[BasePass]):
         """
         if isinstance(passes, Workflow):
             self._passes: list[BasePass] = copy.deepcopy(passes._passes)
-            self._name = copy.deepcopy(passes._name) if name == '' else name
+            self._name: str = name if name else copy.deepcopy(passes._name)
             return
 
         if isinstance(passes, BasePass):

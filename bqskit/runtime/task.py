@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import inspect
 import logging
-import dill
 from typing import Any
 from typing import Coroutine
+
+import dill
 
 from bqskit.runtime.address import RuntimeAddress
 
@@ -41,7 +42,7 @@ class RuntimeTask:
         self.task_id = RuntimeTask.task_counter
 
         self.serialized_fnargs = dill.dumps(fnargs)
-        self._fnargs = None
+        self._fnargs: tuple[Any, Any, Any] | None = None
         self._name = fnargs[0].__name__
         """Tuple of function pointer, arguments, and keyword arguments."""
 
@@ -84,6 +85,7 @@ class RuntimeTask:
         """Return the function pointer, arguments, and keyword arguments."""
         if self._fnargs is None:
             self._fnargs = dill.loads(self.serialized_fnargs)
+        assert self._fnargs is not None  # for type checker
         return self._fnargs
 
     def step(self, send_val: Any = None) -> Any:

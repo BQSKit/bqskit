@@ -71,7 +71,7 @@ setup(
         'numpy>=1.22.0',
         'scipy>=1.8.0',
         'typing-extensions>=4.0.0',
-        'dill>=0.3.8'
+        'dill>=0.3.8',
     ],
     python_requires='>=3.8, <4',
     entry_points={

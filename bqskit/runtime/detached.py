@@ -30,6 +30,7 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
+
 def listen(server: DetachedServer, port: int) -> None:
     """Listening thread listens for client connections."""
     listener = Listener(('0.0.0.0', port))
@@ -137,8 +138,9 @@ class DetachedServer(ServerBase):
                     if path not in sys.path:
                         sys.path.append(path)
                         for employee in self.employees:
-                            employee.conn.send((RuntimeMessage.IMPORTPATH, path))
-
+                            employee.conn.send(
+                                (RuntimeMessage.IMPORTPATH, path),
+                            )
 
             elif msg == RuntimeMessage.DISCONNECT:
                 self.handle_disconnect(conn)

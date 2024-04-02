@@ -14,6 +14,7 @@ from multiprocessing.connection import Connection
 from subprocess import Popen
 from types import FrameType
 from typing import Literal
+from typing import MutableMapping
 from typing import overload
 from typing import TYPE_CHECKING
 
@@ -233,7 +234,7 @@ class Compiler:
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
-        data: dict[str, Any] | None = None,
+        data: MutableMapping[str, Any] | None = None,
     ) -> uuid.UUID:
         """
         Submit a compilation job to the Compiler.
@@ -271,7 +272,7 @@ class Compiler:
         task.logging_level = logging_level or self._discover_lowest_log_level()
         task.max_logging_depth = max_logging_depth
         if data is not None:
-            task.data = data
+            task.data.update(data)
 
         # Submit task to runtime
         self._send(RuntimeMessage.SUBMIT, task)
@@ -306,7 +307,7 @@ class Compiler:
         request_data: Literal[False] = ...,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
-        data: dict[str, Any] | None = ...,
+        data: MutableMapping[str, Any] | None = ...,
     ) -> Circuit:
         ...
 
@@ -318,7 +319,7 @@ class Compiler:
         request_data: Literal[True],
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
-        data: dict[str, Any] | None = ...,
+        data: MutableMapping[str, Any] | None = ...,
     ) -> tuple[Circuit, PassData]:
         ...
 
@@ -330,7 +331,7 @@ class Compiler:
         request_data: bool,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
-        data: dict[str, Any] | None = ...,
+        data: MutableMapping[str, Any] | None = ...,
     ) -> Circuit | tuple[Circuit, PassData]:
         ...
 
@@ -341,7 +342,7 @@ class Compiler:
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
-        data: dict[str, Any] | None = None,
+        data: MutableMapping[str, Any] | None = None,
     ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
         task_id = self.submit(

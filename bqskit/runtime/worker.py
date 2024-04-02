@@ -358,8 +358,11 @@ class Worker:
             task = self._tasks[box.dest_addr]
 
             if task.wake_on_next or box.ready:
+                # print(f'Worker {self._id} is waking task
+                # {task.return_address}, with {task.wake_on_next=},
+                # {box.ready=}')
                 self._ready_task_ids.put(box.dest_addr)  # Wake it
-                box.dest_addr = None # Prevent double wake
+                box.dest_addr = None  # Prevent double wake
 
     def _handle_cancel(self, addr: RuntimeAddress) -> None:
         """
@@ -394,7 +397,7 @@ class Worker:
             if not t.is_descendant_of(addr)
         ]
 
-    def _get_next_ready_task(self) -> RuntimeTask:
+    def _get_next_ready_task(self) -> RuntimeTask | None:
         """Return the next ready task if one exists, otherwise block."""
         while True:
             if self._ready_task_ids.empty() and len(self._delayed_tasks) > 0:
@@ -487,6 +490,8 @@ class Worker:
         #     #     raise RuntimeError(m)
         #     task.wake_on_next = True
         task.wake_on_next = future._next_flag
+        # print(f'Worker {self._id} is waiting on task
+        # {task.return_address}, with {task.wake_on_next=}')
 
         if box.ready:
             self._ready_task_ids.put(task.return_address)
@@ -497,7 +502,8 @@ class Worker:
         packaged_result = RuntimeResult(task.return_address, result, self._id)
 
         if task.return_address not in self._tasks:
-            print(f'Task was cancelled: {task.return_address}, {task.fnargs[0].__name__}')
+            # print(f'Task was cancelled: {task.return_address},
+            # {task.fnargs[0].__name__}')
             return
 
         if task.return_address.worker_id == self._id:

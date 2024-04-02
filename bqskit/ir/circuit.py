@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import copy
 import logging
-import warnings
 import pickle
-import dill
+import warnings
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Collection
 from typing import Dict
@@ -20,6 +20,7 @@ from typing import Set
 from typing import Tuple
 from typing import TYPE_CHECKING
 
+import dill
 import numpy as np
 import numpy.typing as npt
 
@@ -3243,9 +3244,15 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit.append_gate(op.gate, list(range(circuit.num_qudits)), op.params)
         return circuit
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[
+        Callable[
+            [int, tuple[int, ...], list[tuple[bool, bytes]], bytes],
+            Circuit,
+        ],
+        tuple[int, tuple[int, ...], list[tuple[bool, bytes]], bytes],
+    ]:
         """Return the pickle state of the circuit."""
-        serialized_gates = []
+        serialized_gates: list[tuple[bool, bytes]] = []
         gate_table = {}
         for gate in self.gate_set:
             gate_table[gate] = len(serialized_gates)
@@ -3254,7 +3261,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             else:
                 serialized_gates.append((True, dill.dumps(gate, recurse=True)))
 
-        cycles = []
+        cycles: list[list[tuple[int, tuple[int, ...], list[float]]]] = []
         last_cycle = -1
         for cycle, op in self.operations_with_cycles():
 
@@ -3265,7 +3272,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             marshalled_op = (
                 gate_table[op.gate],
                 op.location._location,
-                op.params
+                op.params,
             )
             cycles[-1].append(marshalled_op)
 
@@ -3280,7 +3287,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
     # endregion
 
 
-def rebuild_circuit(num_qudits, radixes, serialized_gates, serialized_cycles) -> Circuit:
+def rebuild_circuit(
+    num_qudits: int,
+    radixes: tuple[int, ...],
+    serialized_gates: list[tuple[bool, bytes]],
+    serialized_cycles: bytes,
+) -> Circuit:
     """Rebuild a circuit from a pickle state."""
     circuit = Circuit(num_qudits, radixes)
 
