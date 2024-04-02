@@ -2723,14 +2723,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             :class:`~bqskit.compiler.compiler.Compiler` directly.
         """
         from bqskit.compiler.compiler import Compiler
-        from bqskit.compiler.passdata import PassData
-
-        pass_data = PassData(self)
-        if data is not None:
-            pass_data.update(data)
 
         with Compiler() as compiler:
-            task_id = compiler.submit(self, [compiler_pass], data=pass_data)
+            task_id = compiler.submit(self, [compiler_pass], data=data)
             self.become(compiler.result(task_id))  # type: ignore
 
     def instantiate(
