@@ -1,4 +1,6 @@
 """This module contains the logging configuration and methods for BQSKit."""
+from __future__ import annotations
+
 import logging
 from sys import stdout as _stdout
 
