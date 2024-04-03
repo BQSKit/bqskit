@@ -9,7 +9,7 @@ from setuptools import setup
 root_dir_path = os.path.abspath(os.path.dirname(__file__))
 pkg_dir_path = os.path.join(root_dir_path, 'bqskit')
 readme_path = os.path.join(root_dir_path, 'README.md')
-version_path = os.path.join(pkg_dir_path, 'version.py')
+version_path = os.path.join(pkg_dir_path, '_version.py')
 
 # Load Version Number
 with open(version_path) as version_file:

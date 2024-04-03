@@ -1,92 +1,29 @@
 """The Berkeley Quantum Synthesis Toolkit Python Package."""
 from __future__ import annotations
 
-import logging
-from sys import stdout as _stdout
+from typing import Any
 
-import bqskit.runtime
-from .version import __version__  # noqa: F401
-from .version import __version_info__  # noqa: F401
-from bqskit.compiler.compile import compile
-from bqskit.compiler.machine import MachineModel
-from bqskit.ir.circuit import Circuit
-from bqskit.ir.lang import register_language as _register_language
-from bqskit.ir.lang.qasm2 import OPENQASM2Language as _qasm
-
-# Initialize Logging
-_logging_initialized = False
+from bqskit._logging import disable_logging
+from bqskit._logging import enable_logging
+from bqskit._version import __version__  # noqa: F401
+from bqskit._version import __version_info__  # noqa: F401
 
 
-def enable_logging(verbose: bool = False) -> None:
-    """
-    Enable logging for BQSKit.
+def __getattr__(name: str) -> Any:
+    # Lazy imports
+    if name == 'compile':
+        from bqskit.compiler.compile import compile
+        return compile
 
-    Args:
-        verbose (bool): If set to True, will print more verbose messages.
-            Defaults to False.
-    """
-    global _logging_initialized
-    if not _logging_initialized:
-        _logger = logging.getLogger('bqskit')
-        _handler = logging.StreamHandler(_stdout)
-        _handler.setLevel(0)
-        _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
-        _fmt_message = ' %(name)s: %(message)s'
-        _fmt = _fmt_header + _fmt_message
-        _formatter = logging.Formatter(_fmt, '%H:%M:%S')
-        _handler.setFormatter(_formatter)
-        _logger.addHandler(_handler)
-        _logging_initialized = True
+    if name == 'Circuit':
+        from bqskit.ir.circuit import Circuit
+        return Circuit
 
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.getLogger('bqskit').setLevel(level)
+    if name == 'MachineModel':
+        from bqskit.compiler.machine import MachineModel
+        return MachineModel
 
-
-def disable_logging() -> None:
-    """Disable logging for BQSKit."""
-    logging.getLogger('bqskit').setLevel(logging.CRITICAL)
-
-
-def enable_dashboard() -> None:
-    import warnings
-    warnings.warn(
-        'Dask has been removed from BQSKit. As a result, the'
-        ' enable_dashboard method has been removed.'
-        'This warning will turn into an error in a future update.',
-        DeprecationWarning,
-    )
-
-
-def disable_dashboard() -> None:
-    import warnings
-    warnings.warn(
-        'Dask has been removed from BQSKit. As a result, the'
-        ' disable_dashboard method has been removed.'
-        'This warning will turn into an error in a future update.',
-        DeprecationWarning,
-    )
-
-
-def disable_parallelism() -> None:
-    import warnings
-    warnings.warn(
-        'The disable_parallelism method has been removed.'
-        ' Instead, set the "num_workers" parameter to 1 during '
-        'Compiler construction. This warning will turn into'
-        'an error in a future update.',
-        DeprecationWarning,
-    )
-
-
-def enable_parallelism() -> None:
-    import warnings
-    warnings.warn(
-        'The enable_parallelism method has been removed.'
-        ' Instead, set the "num_workers" parameter to 1 during '
-        'Compiler construction. This warning will turn into'
-        'an error in a future update.',
-        DeprecationWarning,
-    )
+    raise AttributeError(f'module {__name__} has no attribute {name}')
 
 
 __all__ = [
@@ -96,6 +33,3 @@ __all__ = [
     'enable_logging',
     'disable_logging',
 ]
-
-# Register supported languages
-_register_language('qasm', _qasm())
