@@ -487,10 +487,6 @@ class ServerBase:
         if conn in self.conn_to_employee_dict:
             self.handle_shutdown()
 
-    def __del__(self) -> None:
-        """Ensure resources are cleaned up."""
-        self.handle_shutdown()
-
     def assign_tasks(
         self,
         tasks: Sequence[RuntimeTask],
