@@ -109,7 +109,7 @@ class Compiler:
             ip = 'localhost'
             self._start_server(num_workers, runtime_log_level, worker_port)
 
-        self._connect_to_server(ip, port)
+        self._connect_to_server(ip, port, self.p is not None)
 
     def _start_server(
         self,
@@ -132,17 +132,36 @@ class Compiler:
         self.p = Popen([sys.executable, '-c', launch_str], creationflags=flags)
         _logger.debug('Starting runtime server process.')
 
-    def _connect_to_server(self, ip: str, port: int) -> None:
+    def _connect_to_server(self, ip: str, port: int, attached: bool) -> None:
         """Connect to a runtime server at `ip` and `port`."""
         max_retries = 8
         wait_time = .25
-        for _ in range(max_retries):
+        current_retry = 0
+        while current_retry < max_retries or attached:
             try:
                 family = 'AF_INET' if sys.platform == 'win32' else None
                 conn = Client((ip, port), family)
             except ConnectionRefusedError:
+                if wait_time > 4:
+                    _logger.warning(
+                        'Connection refused by runtime server.'
+                        ' Retrying in %s seconds.', wait_time,
+                    )
+                if wait_time > 16 and attached:
+                    _logger.warning(
+                        'Connection is still refused by runtime server.'
+                        ' This may be due to the server not being started.'
+                        ' You may want to check the server logs, by starting'
+                        ' the compiler with "runtime_log_level" set. You'
+                        ' can also try launching the bqskit runtime in'
+                        ' detached mode. See the bqskit runtime documentation'
+                        ' for more information:'
+                        ' https://bqskit.readthedocs.io/en/latest/guides/'
+                        'distributing.html',
+                    )
                 time.sleep(wait_time)
                 wait_time *= 2
+                current_retry += 1
             else:
                 self.conn = conn
                 handle = functools.partial(sigint_handler, compiler=self)
