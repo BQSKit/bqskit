@@ -103,7 +103,7 @@ class Compiler:
         self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
 
-        atexit.register(self.close)
+        _compiler_instances.add(self)
 
         if ip is None:
             ip = 'localhost'
@@ -240,11 +240,10 @@ class Compiler:
         # Reset interrupt signal handler and remove exit handler
         if hasattr(self, 'old_signal'):
             signal.signal(signal.SIGINT, self.old_signal)
+            del self.old_signal
 
-    def __del__(self) -> None:
-        self.close()
-        atexit.unregister(self.close)
-        _logger.debug('Compiler successfully shutdown.')
+        _compiler_instances.discard(self)
+        _logger.debug('Compiler has been closed.')
 
     def submit(
         self,
@@ -484,3 +483,12 @@ def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
     _logger.critical('Compiler interrupted.')
     compiler.close()
     raise KeyboardInterrupt
+
+
+_compiler_instances: set[Compiler] = set()
+
+
+@atexit.register
+def _cleanup_compiler_instances() -> None:
+    for compiler in list(_compiler_instances):
+        compiler.close()

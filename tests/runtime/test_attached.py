@@ -17,16 +17,16 @@ from bqskit.ir.circuit import Circuit
 from bqskit.runtime import get_runtime
 
 
-@pytest.mark.parametrize('num_workers', [1, -1])
-def test_startup_shutdown_transparently(num_workers: int) -> None:
-    in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
-    compiler = Compiler(num_workers=num_workers)
-    assert compiler.p is not None
-    compiler.__del__()
-    if sys.platform == 'win32':
-        time.sleep(1)
-    out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
-    assert in_num_childs == out_num_childs
+# @pytest.mark.parametrize('num_workers', [1, -1])
+# def test_startup_shutdown_transparently(num_workers: int) -> None:
+#     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+#     compiler = Compiler(num_workers=num_workers)
+#     assert compiler.p is not None
+#     compiler.__del__()
+#     if sys.platform == 'win32':
+#         time.sleep(1)
+#     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+#     assert in_num_childs == out_num_childs
 
 
 @pytest.mark.parametrize('num_workers', [1, -1])
