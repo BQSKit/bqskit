@@ -1,7 +1,6 @@
 """This module implements the DetachedServer runtime."""
 from __future__ import annotations
 
-import sys
 import argparse
 import logging
 import selectors

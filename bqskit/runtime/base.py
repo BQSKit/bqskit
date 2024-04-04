@@ -256,7 +256,7 @@ class ServerBase:
             procs[w_id] = Process(
                 target=start_worker,
                 args=(w_id, port),
-                kwargs={'logging_level': logging_level}
+                kwargs={'logging_level': logging_level},
             )
             procs[w_id].daemon = True
             procs[w_id].start()

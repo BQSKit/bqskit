@@ -53,7 +53,7 @@ class RuntimeTask:
         This doubles as a unique system-wide id for the task.
         """
 
-        self.logging_level = logging_level
+        self.logging_level = logging_level or 0
         """Logs with levels >= to this get emitted, if None always emit."""
 
         self.comp_task_id = comp_task_id

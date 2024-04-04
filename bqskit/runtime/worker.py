@@ -8,7 +8,6 @@ import signal
 import sys
 import time
 import traceback
-from collections import OrderedDict
 from dataclasses import dataclass
 from multiprocessing import Process
 from multiprocessing.connection import Client
@@ -99,7 +98,6 @@ class WorkerMailbox:
             self.result = result.result
         else:
             self.result[slot_id] = result.result
-
 
 
 class Worker:
@@ -765,8 +763,8 @@ def start_worker_rank() -> None:
     # Spawn worker process
     procs = []
     for cpu in cpus:
-        args = (None, args.port, cpu, logging_level)
-        procs.append(Process(target=start_worker, args=args))
+        pargs = (None, args.port, cpu, logging_level)
+        procs.append(Process(target=start_worker, args=pargs))
         procs[-1].start()
 
     # Join them
