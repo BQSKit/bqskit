@@ -30,31 +30,6 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-class WorkerQueue():
-    """The worker's task FIFO queue."""
-
-    def __init__(self) -> None:
-        """
-        Initialize the worker queue.
-
-        An OrderedDict is used to internally store the task. This prevents the
-        same task appearing multiple times in the queue, while also ensuring
-        O(1) operations.
-        """
-        self._queue: OrderedDict[RuntimeAddress, None] = OrderedDict()
-
-    def put(self, addr: RuntimeAddress) -> None:
-        """Enqueue a task by its address."""
-        if addr not in self._queue:
-            self._queue[addr] = None
-
-    def get(self) -> RuntimeAddress:
-        """Get the next task to run."""
-        return self._queue.popitem(last=False)[0]
-
-    def empty(self) -> bool:
-        """Check if the queue is empty."""
-        return len(self._queue) == 0
 
 
 @dataclass
@@ -125,59 +100,6 @@ class WorkerMailbox:
             self.result[slot_id] = result.result
 
 
-def handle_incoming_comms(worker: Worker) -> None:
-    """Handle all incoming messages."""
-    while True:
-        # Handle incomming communication
-        try:
-            msg, payload = worker._conn.recv()
-        except Exception:
-            print(f'Worker {worker._id} crashed due to lost connection')
-            worker._running = False
-            worker._ready_task_ids.put(RuntimeAddress(-1, -1, -1))
-            break
-
-        # Process message
-        if msg == RuntimeMessage.SHUTDOWN:
-            print(f'Worker {worker._id} received shutdown message')
-            worker._running = False
-            worker._ready_task_ids.put(RuntimeAddress(-1, -1, -1))
-            # TODO: Interupt main, maybe even kill it
-            break
-
-        elif msg == RuntimeMessage.SUBMIT:
-            # print('Worker received submit message')
-            worker.read_receipt_mutex.acquire()
-            task = cast(RuntimeTask, payload)
-            worker.most_recent_read_submit = task.unique_id
-            worker._add_task(task)
-            worker.read_receipt_mutex.release()
-
-        elif msg == RuntimeMessage.SUBMIT_BATCH:
-            worker.read_receipt_mutex.acquire()
-            tasks = cast(List[RuntimeTask], payload)
-            worker.most_recent_read_submit = tasks[0].unique_id
-            worker._add_task(tasks.pop())  # Submit one task
-            worker._delayed_tasks.extend(tasks)  # Delay rest
-            # Delayed tasks have no context and are stored (more-or-less)
-            # as a function pointer together with the arguments.
-            # When it gets started, it consumes much more memory,
-            # so we delay the task start until necessary (at no cost)
-            worker.read_receipt_mutex.release()
-
-        elif msg == RuntimeMessage.RESULT:
-            result = cast(RuntimeResult, payload)
-            worker._handle_result(result)
-
-        elif msg == RuntimeMessage.CANCEL:
-            addr = cast(RuntimeAddress, payload)
-            worker._handle_cancel(addr)
-            # TODO: preempt?
-
-        elif msg == RuntimeMessage.IMPORTPATH:
-            import_path = cast(str, payload)
-            sys.path.append(import_path)
-
 
 class Worker:
     """
@@ -237,17 +159,12 @@ class Worker:
         self._id = id
         self._conn = conn
 
-        # self._outgoing: list[tuple[RuntimeMessage, Any]] = []
-        # self._outgoing: Queue[tuple[RuntimeMessage, Any]] = Queue()
-        # """Stores outgoing messages to be handled by the event loop."""
-
         self._tasks: dict[RuntimeAddress, RuntimeTask] = {}
         """Tracks all started, unfinished tasks on this worker."""
 
         self._delayed_tasks: list[RuntimeTask] = []
         """Store all delayed tasks in LIFO order."""
 
-        # self._ready_task_ids: WorkerQueue = WorkerQueue()
         self._ready_task_ids: Queue[RuntimeAddress] = Queue()
         """Tasks queued up for execution."""
 
@@ -257,7 +174,7 @@ class Worker:
         self._active_task: RuntimeTask | None = None
         """The currently executing task if one is running."""
 
-        self._running = False
+        self._running = True
         """Controls if the event loop is running."""
 
         self._mailboxes: dict[int, WorkerMailbox] = {}
@@ -291,20 +208,15 @@ class Worker:
         logging.setLogRecordFactory(record_factory)
 
         # Start incoming thread
-        self.incomming_thread = Thread(
-            target=handle_incoming_comms,
-            args=(self,),
-        )
+        self.incomming_thread = Thread(target=self.recv_incoming)
         self.incomming_thread.daemon = True
         self.incomming_thread.start()
-        # self.logger.info('Started incoming thread.')
 
         # Communicate that this worker is ready
         self._conn.send((RuntimeMessage.STARTED, self._id))
 
     def _loop(self) -> None:
         """Main worker event loop."""
-        self._running = True
         while self._running:
             try:
                 self._try_step_next_ready_task()
@@ -316,24 +228,57 @@ class Worker:
                     self._conn.send((RuntimeMessage.ERROR, error_str))
                 except Exception:
                     pass
-            # self._try_idle()
-            # self._handle_comms()
 
-    # def _try_idle(self) -> None:
-    #     """If there is nothing to do, wait until we receive a message."""
-    #     empty_outgoing = len(self._outgoing) == 0
-    #     no_ready_tasks = self._ready_task_ids.empty()
-    #     no_delayed_tasks = len(self._delayed_tasks) == 0
+    def recv_incoming(self) -> None:
+        """Continuously receive all incoming messages."""
+        while self._running:
+            # Receive message
+            try:
+                msg, payload = self._conn.recv()
+            except Exception:
+                _logger.debug('Crashed due to lost connection')
+                os.kill(os.getpid(), signal.SIGKILL)
 
-    #     if empty_outgoing and no_ready_tasks and no_delayed_tasks:
-    #         self._conn.send((RuntimeMessage.WAITING, 1))
-    #         wait([self._conn])
+            _logger.debug(f'Received message {msg.name}.')
+            _logger.log(1, f'Payload: {payload}')
 
-    # def _flush_outgoing_comms(self) -> None:
-    #     """Handle all outgoing messages."""
-    #     for out_msg in self._outgoing:
-    #         self._conn.send(out_msg)
-    #     self._outgoing.clear()
+            # Process message
+            if msg == RuntimeMessage.SHUTDOWN:
+                os.kill(os.getpid(), signal.SIGKILL)
+
+            elif msg == RuntimeMessage.SUBMIT:
+                self.read_receipt_mutex.acquire()
+                task = cast(RuntimeTask, payload)
+                self.most_recent_read_submit = task.unique_id
+                self._add_task(task)
+                self.read_receipt_mutex.release()
+
+            elif msg == RuntimeMessage.SUBMIT_BATCH:
+                self.read_receipt_mutex.acquire()
+                tasks = cast(List[RuntimeTask], payload)
+                self.most_recent_read_submit = tasks[0].unique_id
+                self._add_task(tasks.pop())  # Submit one task
+                self._delayed_tasks.extend(tasks)  # Delay rest
+                # Delayed tasks have no context and are stored (more-or-less)
+                # as a function pointer together with the arguments.
+                # When it gets started, it consumes much more memory,
+                # so we delay the task start until necessary (at no cost)
+                self.read_receipt_mutex.release()
+
+            elif msg == RuntimeMessage.RESULT:
+                result = cast(RuntimeResult, payload)
+                self._handle_result(result)
+
+            elif msg == RuntimeMessage.CANCEL:
+                addr = cast(RuntimeAddress, payload)
+                self._handle_cancel(addr)
+                # TODO: preempt?
+
+            elif msg == RuntimeMessage.IMPORTPATH:
+                paths = cast(List[str], payload)
+                for path in paths:
+                    if path not in sys.path:
+                        sys.path.append(path)
 
     def _add_task(self, task: RuntimeTask) -> None:
         """Start a task and add it to the loop."""

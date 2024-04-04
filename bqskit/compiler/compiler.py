@@ -168,7 +168,9 @@ class Compiler:
                 self.old_signal = signal.signal(signal.SIGINT, handle)
                 if self.conn is None:
                     raise RuntimeError('Connection unexpectedly none.')
-                self.conn.send((RuntimeMessage.CONNECT, sys.path))
+                msg, payload = self._send_recv(RuntimeMessage.CONNECT, sys.path)
+                if msg != RuntimeMessage.READY:
+                    raise RuntimeError(f'Unexpected message type: {msg}.')
                 _logger.debug('Successfully connected to runtime server.')
                 return
         raise RuntimeError('Client connection refused')

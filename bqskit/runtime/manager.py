@@ -146,18 +146,14 @@ class Manager(ServerBase):
                 self.send_result_down(result)
 
             elif msg == RuntimeMessage.CANCEL:
-                addr = cast(RuntimeAddress, payload)
-                self.broadcast_cancel(addr)
+                self.broadcast(RuntimeMessage.CANCEL, payload)
 
             elif msg == RuntimeMessage.SHUTDOWN:
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.IMPORTPATH:
-                import_path = cast(str, payload)
-                import sys
-                sys.path.append(import_path)
-                for employee in self.employees:
-                    employee.conn.send((RuntimeMessage.IMPORTPATH, import_path))
+                paths = cast(List[str], payload)
+                self.handle_importpath(paths)
 
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')

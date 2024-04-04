@@ -59,9 +59,6 @@ class AttachedServer(DetachedServer):
         self.mailboxes: dict[int, ServerMailbox] = {}
         self.mailbox_counter = 0
 
-        # Start workers
-        self.spawn_workers(num_workers, worker_port)
-
         # Connect to client
         client_conn = self.listen_once('localhost', port)
         self.clients[client_conn] = set()
@@ -71,6 +68,9 @@ class AttachedServer(DetachedServer):
             MessageDirection.CLIENT,
         )
         self.logger.info('Connected to client.')
+
+        # Start workers
+        self.spawn_workers(num_workers, worker_port, log_level)
 
     def handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""

@@ -1,6 +1,7 @@
 """This module implements the DetachedServer runtime."""
 from __future__ import annotations
 
+import sys
 import argparse
 import logging
 import selectors
@@ -32,25 +33,6 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-def listen(server: DetachedServer, port: int) -> None:
-    """Listening thread listens for client connections."""
-    listener = Listener(('0.0.0.0', port))
-    while server.running:
-        client = listener.accept()
-
-        if server.running:
-            # We check again that the server is running before registering
-            # the client because dummy data is sent to unblock
-            # listener.accept() during server shutdown
-            server.clients[client] = set()
-            server.sel.register(
-                client,
-                selectors.EVENT_READ,
-                MessageDirection.CLIENT,
-            )
-            server.logger.debug('Connected and registered new client.')
-
-    listener.close()
 
 
 @dataclass
@@ -117,9 +99,29 @@ class DetachedServer(ServerBase):
 
         # Start client listener
         self.port = port
-        self.listen_thread = Thread(target=listen, args=(self, port))
+        self.listen_thread = Thread(target=self.listen, args=(port,))
+        self.listen_thread.daemon = True
         self.listen_thread.start()
         self.logger.info(f'Started client listener on port {self.port}.')
+    def listen(self, port: int) -> None:
+        """Listening thread listens for client connections."""
+        listener = Listener(('0.0.0.0', port))
+        while self.running:
+            client = listener.accept()
+
+            if self.running:
+                # We check again that the server is running before registering
+                # the client because dummy data is sent to unblock
+                # listener.accept() during server shutdown
+                self.clients[client] = set()
+                self.sel.register(
+                    client,
+                    selectors.EVENT_READ,
+                    MessageDirection.CLIENT,
+                )
+                _logger.debug('Connected and registered new client.')
+
+        listener.close()
 
     def handle_message(
         self,
@@ -132,16 +134,8 @@ class DetachedServer(ServerBase):
         if direction == MessageDirection.CLIENT:
 
             if msg == RuntimeMessage.CONNECT:
-                # paths, serialized_defintions = cast(List[str], payload)
                 paths = cast(List[str], payload)
-                import sys
-                for path in paths:
-                    if path not in sys.path:
-                        sys.path.append(path)
-                        for employee in self.employees:
-                            employee.conn.send(
-                                (RuntimeMessage.IMPORTPATH, path),
-                            )
+                self.handle_connect(conn, paths)
 
             elif msg == RuntimeMessage.DISCONNECT:
                 self.handle_disconnect(conn)
@@ -187,7 +181,7 @@ class DetachedServer(ServerBase):
                 self.handle_log(payload)
 
             elif msg == RuntimeMessage.CANCEL:
-                self.broadcast_cancel(payload)
+                self.broadcast(msg, payload)
 
             elif msg == RuntimeMessage.SHUTDOWN:
                 self.handle_shutdown()
@@ -206,6 +200,11 @@ class DetachedServer(ServerBase):
 
         else:
             raise RuntimeError(f'Unexpected message from {direction.name}.')
+
+    def handle_connect(self, conn: Connection, paths: list[str]) -> None:
+        """Handle a client connection request."""
+        self.handle_importpath(paths)
+        self.outgoing.put((conn, RuntimeMessage.READY, None))
 
     def handle_system_error(self, error_str: str) -> None:
         """
@@ -331,7 +330,7 @@ class DetachedServer(ServerBase):
 
         # Forward internal cancel messages
         addr = RuntimeAddress(-1, mailbox_id, 0)
-        self.broadcast_cancel(addr)
+        self.broadcast(RuntimeMessage.CANCEL, addr)
 
         # Acknowledge the client's cancel request
         if not client_conn.closed:

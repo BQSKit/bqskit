@@ -97,29 +97,6 @@ class RuntimeEmployee:
         raise RuntimeError('Read receipt not found in submit cache.')
 
 
-def send_outgoing(node: ServerBase) -> None:
-    """Outgoing thread forwards messages as they are created."""
-    while True:
-        outgoing = node.outgoing.get()
-
-        if not node.running:
-            # NodeBase's handle_shutdown will put a dummy value in the
-            # queue to wake the thread up so it can exit safely.
-            # Hence the node.running check now rather than in the
-            # while condition.
-            break
-
-        outgoing[0].send((outgoing[1], outgoing[2]))
-        node.logger.debug(f'Sent message {outgoing[1].name}.')
-
-        if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
-            node.logger.log(1, f'{len(outgoing[2])}\n')
-        else:
-            node.logger.log(1, f'{outgoing[2]}\n')
-
-        node.outgoing.task_done()
-
-
 def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
     """Interrupt the node."""
     if not node.running:
@@ -172,7 +149,7 @@ class ServerBase:
 
         # Start outgoing thread
         self.outgoing: Queue[tuple[Connection, RuntimeMessage, Any]] = Queue()
-        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread = Thread(target=self.send_outgoing, daemon=True)
         self.outgoing_thread.start()
         self.logger.info('Started outgoing thread.')
 
@@ -376,9 +353,34 @@ class ServerBase:
         listener.close()
         return conn
 
+    def send_outgoing(self) -> None:
+        """Outgoing thread forwards messages as they are created."""
+        while True:
+            outgoing = self.outgoing.get()
+
+            if not self.running:
+                # NodeBase's handle_shutdown will put a dummy value in the
+                # queue to wake the thread up so it can exit safely.
+                # Hence the node.running check now rather than in the
+                # while condition.
+                break
+
+            if outgoing[0].closed:
+                continue
+
+            outgoing[0].send((outgoing[1], outgoing[2]))
+            _logger.debug(f'Sent message {outgoing[1].name}.')
+
+            if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
+                _logger.log(1, f'[{outgoing[2][0]}] * {len(outgoing[2])}\n')
+            else:
+                _logger.log(1, f'{outgoing[2]}\n')
+
+            self.outgoing.task_done()
+
     def run(self) -> None:
         """Main loop."""
-        self.logger.info(f'{self.__class__.__name__} running...')
+        _logger.info(f'{self.__class__.__name__} running...')
 
         try:
             while self.running:
@@ -592,10 +594,17 @@ class ServerBase:
         employee_id = (worker_id - self.lower_id_bound) // self.step_size
         return self.employees[employee_id]
 
-    def broadcast_cancel(self, addr: RuntimeAddress) -> None:
+    def broadcast(self, msg: RuntimeMessage, payload: Any) -> None:
         """Broadcast a cancel message to my employees."""
         for employee in self.employees:
-            self.outgoing.put((employee.conn, RuntimeMessage.CANCEL, addr))
+            self.outgoing.put((employee.conn, msg, payload))
+
+    def handle_importpath(self, paths: list[str]) -> None:
+        """Update the system path with the given paths."""
+        for path in paths:
+            if path not in sys.path:
+                sys.path.append(path)
+        self.broadcast(RuntimeMessage.IMPORTPATH, paths)
 
     def handle_waiting(
         self,
