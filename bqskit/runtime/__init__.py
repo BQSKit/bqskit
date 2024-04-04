@@ -100,21 +100,27 @@ from typing import Callable
 from typing import Protocol
 from typing import TYPE_CHECKING
 
-# Enable low-level fault handling: system crashes print a minimal trace.
-faulthandler.enable()
-
-
-# Disable multi-threading in BLAS libraries.
-os.environ['OMP_NUM_THREADS'] = '1'
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
-os.environ['MKL_NUM_THREADS'] = '1'
-os.environ['NUMEXPR_NUM_THREADS'] = '1'
-os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
-os.environ['RUST_BACKTRACE'] = '1'
-print('SETTING THREADS TO 1')
-
 if TYPE_CHECKING:
     from bqskit.runtime.future import RuntimeFuture
+
+
+# Enable low-level fault handling: system crashes print a minimal trace.
+faulthandler.enable()
+os.environ['RUST_BACKTRACE'] = '1'
+
+
+# Control multi-threading in BLAS libraries.
+def set_blas_thread_counts(i: int = 1) -> None:
+    """
+    Control number of threads used by numpy and others.
+
+    Must be called before any numpy or other BLAS libraries are loaded.
+    """
+    os.environ['OMP_NUM_THREADS'] = str(i)
+    os.environ['OPENBLAS_NUM_THREADS'] = str(i)
+    os.environ['MKL_NUM_THREADS'] = str(i)
+    os.environ['NUMEXPR_NUM_THREADS'] = str(i)
+    os.environ['VECLIB_MAXIMUM_THREADS'] = str(i)
 
 
 class RuntimeHandle(Protocol):

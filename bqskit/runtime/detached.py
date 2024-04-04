@@ -19,8 +19,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-from bqskit.compiler.status import CompilationStatus
-from bqskit.compiler.task import CompilationTask
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.base import import_tests_package
@@ -142,8 +140,7 @@ class DetachedServer(ServerBase):
                 self.handle_disconnect(conn)
 
             elif msg == RuntimeMessage.SUBMIT:
-                ctask = cast(CompilationTask, payload)
-                self.handle_new_comp_task(conn, ctask)
+                self.handle_new_comp_task(conn, payload)
 
             elif msg == RuntimeMessage.REQUEST:
                 request = cast(uuid.UUID, payload)
@@ -256,9 +253,10 @@ class DetachedServer(ServerBase):
     def handle_new_comp_task(
         self,
         conn: Connection,
-        task: CompilationTask,
+        task: Any,  # Explicitly not CompilationTask to avoid early import
     ) -> None:
         """Convert a :class:`CompilationTask` into an internal one."""
+        from bqskit.compiler.task import CompilationTask
         mailbox_id = self._get_new_mailbox_id()
         self.tasks[task.task_id] = (mailbox_id, conn)
         self.mailbox_to_task_dict[mailbox_id] = task.task_id
@@ -306,6 +304,7 @@ class DetachedServer(ServerBase):
 
     def handle_status(self, conn: Connection, request: uuid.UUID) -> None:
         """Inform the client if the task is finished or not."""
+        from bqskit.compiler.status import CompilationStatus
         if request not in self.clients[conn] or request not in self.tasks:
             # This task is unknown to the system
             m = (conn, RuntimeMessage.STATUS, CompilationStatus.UNKNOWN)

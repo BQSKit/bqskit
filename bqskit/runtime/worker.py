@@ -22,6 +22,7 @@ from typing import cast
 from typing import List
 
 from bqskit.runtime import default_worker_port
+from bqskit.runtime import set_blas_thread_counts
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.future import RuntimeFuture
 from bqskit.runtime.message import RuntimeMessage
@@ -633,6 +634,7 @@ def start_worker(
     port: int,
     cpu: int | None = None,
     logging_level: int = logging.WARNING,
+    num_blas_threads: int = 1,
 ) -> None:
     """Start this process's worker."""
     if w_id is not None:
@@ -640,9 +642,12 @@ def start_worker(
         # If w_id is None, then we are being spawned separately.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
+    # Set number of BLAS threads
+    set_blas_thread_counts(num_blas_threads)
+
     # Enforce no default logging
-    # logging.lastResort.setLevel(100)
-    # logging.getLogger().handlers.clear()
+    logging.lastResort = logging.NullHandler()  # type: ignore  # TODO: should I report this as a type bug?  # noqa: E501
+    logging.getLogger().handlers.clear()
 
     # Pin worker to cpu
     if cpu is not None:
@@ -739,6 +744,12 @@ def start_worker_rank() -> None:
         default=0,
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
+    parser.add_argument(
+        '-t', '--num_blas_threads',
+        type=int,
+        default=1,
+        help='The number of threads to use in BLAS libraries.',
+    )
     args = parser.parse_args()
 
     if args.cpus is not None:
@@ -763,7 +774,7 @@ def start_worker_rank() -> None:
     # Spawn worker process
     procs = []
     for cpu in cpus:
-        pargs = (None, args.port, cpu, logging_level)
+        pargs = (None, args.port, cpu, logging_level, args.num_blas_threads)
         procs.append(Process(target=start_worker, args=pargs))
         procs[-1].start()
 

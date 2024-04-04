@@ -25,6 +25,7 @@ from typing import Sequence
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
+from bqskit.runtime import set_blas_thread_counts
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
@@ -143,6 +144,9 @@ class ServerBase:
         self.conn_to_employee_dict: dict[Connection, RuntimeEmployee] = {}
         """Used to find the employee associated with a message."""
 
+        # Servers do not need blas threads
+        set_blas_thread_counts(1)
+
         # Safely and immediately exit on interrupt signals
         handle = functools.partial(sigint_handler, node=self)
         signal.signal(signal.SIGINT, handle)
@@ -229,6 +233,7 @@ class ServerBase:
         num_workers: int = -1,
         port: int = default_worker_port,
         logging_level: int = logging.WARNING,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Spawn worker processes.
@@ -241,6 +246,11 @@ class ServerBase:
             port (int): The port this server will listen for workers on.
                 Default can be found in the
                 :obj:`~bqskit.runtime.default_worker_port` global variable.
+
+            logging_level (int): The logging level for the workers.
+
+            num_blas_threads (int): The number of threads to use in BLAS
+                libraries. (Default: 1).
         """
         if num_workers == -1:
             oscount = os.cpu_count()
@@ -256,7 +266,10 @@ class ServerBase:
             procs[w_id] = Process(
                 target=start_worker,
                 args=(w_id, port),
-                kwargs={'logging_level': logging_level},
+                kwargs={
+                    'logging_level': logging_level,
+                    'num_blas_threads': num_blas_threads,
+                },
             )
             procs[w_id].daemon = True
             procs[w_id].start()

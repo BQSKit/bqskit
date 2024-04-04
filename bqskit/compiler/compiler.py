@@ -71,6 +71,7 @@ class Compiler:
         num_workers: int = -1,
         runtime_log_level: int = logging.WARNING,
         worker_port: int = default_worker_port,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Construct a Compiler object.
@@ -99,6 +100,9 @@ class Compiler:
             worker_port (int): The optional port to pass to an attached
                 runtime. See :obj:`~bqskit.runtime.attached.AttachedServer`
                 for more info.
+
+            num_blas_threads (int): The number of threads to use in the
+                BLAS libraries on the worker nodes. (Defaults to 1)
         """
         self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
@@ -107,7 +111,12 @@ class Compiler:
 
         if ip is None:
             ip = 'localhost'
-            self._start_server(num_workers, runtime_log_level, worker_port)
+            self._start_server(
+                num_workers,
+                runtime_log_level,
+                worker_port,
+                num_blas_threads,
+            )
 
         self._connect_to_server(ip, port, self.p is not None)
 
@@ -116,13 +125,17 @@ class Compiler:
         num_workers: int,
         runtime_log_level: int,
         worker_port: int,
+        num_blas_threads: int,
     ) -> None:
         """
         Start an attached serer with `num_workers` workers.
 
         See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
         """
-        params = f'{num_workers}, log_level={runtime_log_level}, {worker_port=}'
+        params = f'{num_workers}, '
+        params += f'log_level={runtime_log_level}, '
+        params += f'{worker_port=}, '
+        params += f'{num_blas_threads=}, '
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
         if sys.platform == 'win32':

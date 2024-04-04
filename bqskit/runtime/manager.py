@@ -47,6 +47,8 @@ class Manager(ServerBase):
         ipports: list[tuple[str, int]] | None = None,
         worker_port: int = default_worker_port,
         only_connect: bool = False,
+        log_level: int = logging.WARNING,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Create a manager instance in one of two ways:
@@ -83,6 +85,16 @@ class Manager(ServerBase):
 
             only_connect (bool): If true, do not spawn workers, only connect
                 to already spawned workers.
+
+            log_level (int): The logging level for the manager and workers.
+                If `only_connect` is True, doesn't set worker's log level.
+                In that case, set the worker's log level when spawning them.
+                (Default: logging.WARNING).
+
+            num_blas_threads (int): The number of threads to use in BLAS
+                libraries. If `only_connect` is True this is ignored. In
+                that case, set the thread count when spawning workers.
+                (Default: 1).
         """
         super().__init__()
 
@@ -105,7 +117,12 @@ class Manager(ServerBase):
             if only_connect:
                 self.connect_to_workers(num_workers, worker_port)
             else:
-                self.spawn_workers(num_workers, worker_port)
+                self.spawn_workers(
+                    num_workers,
+                    worker_port,
+                    log_level,
+                    num_blas_threads,
+                )
 
         # Case 2: Connect to detached managers at ipports
         else:

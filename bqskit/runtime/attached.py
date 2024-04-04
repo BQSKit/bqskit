@@ -37,6 +37,7 @@ class AttachedServer(DetachedServer):
         port: int = default_server_port,
         worker_port: int = default_worker_port,
         log_level: int = logging.WARNING,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Create a server with `num_workers` workers.
@@ -53,6 +54,12 @@ class AttachedServer(DetachedServer):
             worker_port (int): The port this server will listen for workers
                 on. Default can be found in the
                 :obj:`~bqskit.runtime.default_worker_port` global variable.
+
+            log_level (int): The logging level for the server and workers.
+                (Default: logging.WARNING).
+
+            num_blas_threads (int): The number of threads to use in BLAS
+                libraries. (Default: 1).
         """
         # Initialize runtime logging
         logging.getLogger().setLevel(log_level)
@@ -85,7 +92,12 @@ class AttachedServer(DetachedServer):
         _logger.info('Connected to client.')
 
         # Start workers
-        self.spawn_workers(num_workers, worker_port, log_level)
+        self.spawn_workers(
+            num_workers,
+            worker_port,
+            log_level,
+            num_blas_threads,
+        )
 
     def handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""
