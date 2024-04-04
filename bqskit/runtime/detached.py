@@ -33,6 +33,7 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -102,7 +103,8 @@ class DetachedServer(ServerBase):
         self.listen_thread = Thread(target=self.listen, args=(port,))
         self.listen_thread.daemon = True
         self.listen_thread.start()
-        self.logger.info(f'Started client listener on port {self.port}.')
+        _logger.info(f'Started client listener on port {self.port}.')
+
     def listen(self, port: int) -> None:
         """Listening thread listens for client connections."""
         listener = Listener(('0.0.0.0', port))
@@ -230,7 +232,7 @@ class DetachedServer(ServerBase):
             except Exception:
                 pass
         self.clients.clear()
-        self.logger.debug('Cleared clients.')
+        _logger.debug('Cleared clients.')
 
         # Close listener (hasattr checked for attachedserver shutdown)
         if hasattr(self, 'listen_thread') and self.listen_thread.is_alive():
@@ -242,7 +244,7 @@ class DetachedServer(ServerBase):
             dummy_socket.connect(('localhost', self.port))
             dummy_socket.close()
             self.listen_thread.join()
-            self.logger.debug('Joined listening thread.')
+            _logger.debug('Joined listening thread.')
 
     def handle_disconnect(self, conn: Connection) -> None:
         """Disconnect a client connection from the runtime."""
@@ -250,7 +252,7 @@ class DetachedServer(ServerBase):
         tasks = self.clients.pop(conn)
         for task_id in tasks:
             self.handle_cancel_comp_task(task_id)
-        self.logger.info('Unregistered client.')
+        _logger.info('Unregistered client.')
 
     def handle_new_comp_task(
         self,
@@ -262,7 +264,7 @@ class DetachedServer(ServerBase):
         self.tasks[task.task_id] = (mailbox_id, conn)
         self.mailbox_to_task_dict[mailbox_id] = task.task_id
         self.mailboxes[mailbox_id] = ServerMailbox()
-        self.logger.info(f'New CompilationTask: {task.task_id}.')
+        _logger.info(f'New CompilationTask: {task.task_id}.')
 
         self.clients[conn].add(task.task_id)
 
@@ -290,7 +292,7 @@ class DetachedServer(ServerBase):
 
         if box.ready:
             # If the result has already arrived, ship it to the client.
-            self.logger.info(f'Responding to request for task {request}.')
+            _logger.info(f'Responding to request for task {request}.')
             self.outgoing.put((conn, RuntimeMessage.RESULT, box.result))
             self.mailboxes.pop(mailbox_id)
             self.clients[conn].remove(request)
@@ -320,7 +322,7 @@ class DetachedServer(ServerBase):
 
     def handle_cancel_comp_task(self, request: uuid.UUID) -> None:
         """Cancel a compilation task in the system."""
-        self.logger.info(f'Cancelling: {request}.')
+        _logger.info(f'Cancelling: {request}.')
 
         # Remove task from server data
         mailbox_id, client_conn = self.tasks[request]
@@ -351,10 +353,10 @@ class DetachedServer(ServerBase):
             box = self.mailboxes[mailbox_id]
             box.result = result.result
             t_id = self.mailbox_to_task_dict[mailbox_id]
-            self.logger.info(f'Finished: {t_id}.')
+            _logger.info(f'Finished: {t_id}.')
 
             if box.client_waiting:
-                self.logger.info(f'Responding to request for task {t_id}.')
+                _logger.info(f'Responding to request for task {t_id}.')
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box.result)
                 self.outgoing.put(m)
                 self.clients[self.tasks[t_id][1]].remove(t_id)
@@ -430,9 +432,16 @@ def start_server() -> None:
     ipports = parse_ipports(args.managers)
 
     # Set up logging
-    _logger = logging.getLogger('bqskit-runtime')
-    _logger.setLevel([30, 20, 10, 1][min(args.verbose, 3)])
-    _logger.addHandler(logging.StreamHandler())
+    log_level = [30, 20, 10, 1][min(args.verbose, 3)]
+    logging.getLogger().setLevel(log_level)
+    _handler = logging.StreamHandler()
+    _handler.setLevel(0)
+    _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
+    _fmt_message = ' %(module)s: %(message)s'
+    _fmt = _fmt_header + _fmt_message
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S')
+    _handler.setFormatter(_formatter)
+    logging.getLogger().addHandler(_handler)
 
     # Import tests package recursively
     if args.import_tests:

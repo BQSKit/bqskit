@@ -25,6 +25,9 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
+_logger = logging.getLogger(__name__)
+
+
 class Manager(ServerBase):
     """
     BQSKit Runtime Manager.
@@ -117,7 +120,7 @@ class Manager(ServerBase):
         # Inform upstream we are starting
         msg = (self.upstream, RuntimeMessage.STARTED, self.total_workers)
         self.outgoing.put(msg)
-        self.logger.info('Sent start message upstream.')
+        _logger.info('Sent start message upstream.')
 
     def handle_message(
         self,
@@ -318,9 +321,16 @@ def start_manager() -> None:
     ipports = None if args.managers is None else parse_ipports(args.managers)
 
     # Set up logging
-    _logger = logging.getLogger('bqskit-runtime')
-    _logger.setLevel([30, 20, 10, 1][min(args.verbose, 3)])
-    _logger.addHandler(logging.StreamHandler())
+    log_level = [30, 20, 10, 1][min(args.verbose, 3)]
+    logging.getLogger().setLevel(log_level)
+    _handler = logging.StreamHandler()
+    _handler.setLevel(0)
+    _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
+    _fmt_message = ' %(module)s: %(message)s'
+    _fmt = _fmt_header + _fmt_message
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S')
+    _handler.setFormatter(_formatter)
+    logging.getLogger().addHandler(_handler)
 
     # Import tests package recursively
     if args.import_tests:

@@ -30,6 +30,7 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -197,12 +198,13 @@ class Worker:
 
         def record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
             record = old_factory(*args, **kwargs)
-            active_task = get_worker()._active_task
-            if active_task is not None:
-                lvl = active_task.logging_level
-                if lvl is None or lvl <= record.levelno:
-                    tid = active_task.comp_task_id
-                    self._conn.send((RuntimeMessage.LOG, (tid, record)))
+            active_task = self._active_task
+            if not record.name.startswith('bqskit.runtime'):
+                if active_task is not None:
+                    lvl = active_task.logging_level
+                    if lvl is None or lvl <= record.levelno:
+                        tid = active_task.comp_task_id
+                        self._conn.send((RuntimeMessage.LOG, (tid, record)))
             return record
 
         logging.setLogRecordFactory(record_factory)
@@ -211,6 +213,7 @@ class Worker:
         self.incomming_thread = Thread(target=self.recv_incoming)
         self.incomming_thread.daemon = True
         self.incomming_thread.start()
+        _logger.debug('Started incoming thread.')
 
         # Communicate that this worker is ready
         self._conn.send((RuntimeMessage.STARTED, self._id))
@@ -224,6 +227,7 @@ class Worker:
                 self._running = False
                 exc_info = sys.exc_info()
                 error_str = ''.join(traceback.format_exception(*exc_info))
+                _logger.error(error_str)
                 try:
                     self._conn.send((RuntimeMessage.ERROR, error_str))
                 except Exception:
@@ -626,19 +630,21 @@ class Worker:
 _worker = None
 
 
-def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
+def start_worker(
+    w_id: int | None,
+    port: int,
+    cpu: int | None = None,
+    logging_level: int = logging.WARNING,
+) -> None:
     """Start this process's worker."""
     if w_id is not None:
         # Ignore interrupt signals on workers, boss will handle it for us
         # If w_id is None, then we are being spawned separately.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    # Purge all standard python logging configurations
-    for _, logger in logging.Logger.manager.loggerDict.items():
-        if isinstance(logger, logging.PlaceHolder):
-            continue
-        logger.handlers.clear()
-    logging.Logger.manager.loggerDict = {}
+    # Enforce no default logging
+    # logging.lastResort.setLevel(100)
+    # logging.getLogger().handlers.clear()
 
     # Pin worker to cpu
     if cpu is not None:
@@ -667,6 +673,19 @@ def start_worker(w_id: int | None, port: int, cpu: int | None = None) -> None:
     if w_id is None:
         msg, w_id = conn.recv()
         assert msg == RuntimeMessage.STARTED
+
+    # Set up runtime logging
+    _runtime_logger = logging.getLogger('bqskit.runtime')
+    _runtime_logger.propagate = False
+    _runtime_logger.setLevel(logging_level)
+    _handler = logging.StreamHandler()
+    _handler.setLevel(0)
+    _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
+    _fmt_message = ' [wid=%(wid)s]: %(message)s'
+    _fmt = _fmt_header + _fmt_message
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S', defaults={'wid': w_id})
+    _handler.setFormatter(_formatter)
+    _runtime_logger.addHandler(_handler)
 
     # Build and start worker
     global _worker
@@ -716,6 +735,12 @@ def start_worker_rank() -> None:
         default=default_worker_port,
         help='The port the workers will try to connect to a manager on.',
     )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='count',
+        default=0,
+        help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
+    )
     args = parser.parse_args()
 
     if args.cpus is not None:
@@ -735,10 +760,13 @@ def start_worker_rank() -> None:
     else:
         cpus = [None for _ in range(args.num_workers)]
 
+    logging_level = [30, 20, 10, 1][min(args.verbose, 3)]
+
     # Spawn worker process
     procs = []
     for cpu in cpus:
-        procs.append(Process(target=start_worker, args=(None, args.port, cpu)))
+        args = (None, args.port, cpu, logging_level)
+        procs.append(Process(target=start_worker, args=args))
         procs[-1].start()
 
     # Join them

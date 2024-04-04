@@ -33,6 +33,9 @@ from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
 
 
+_logger = logging.getLogger(__name__)
+
+
 class RuntimeEmployee:
     """Data structure for a boss's view of an employee."""
 
@@ -104,7 +107,7 @@ def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
 
     node.running = False
     node.terminate_hotline.send(b'\0')
-    node.logger.info('Server interrupted.')
+    _logger.info('Server interrupted.')
 
 
 class ServerBase:
@@ -134,9 +137,6 @@ class ServerBase:
         self.sel.register(p, selectors.EVENT_READ, MessageDirection.SIGNAL)
         """Terminate hotline is used to unblock select while running."""
 
-        self.logger = logging.getLogger('bqskit-runtime')
-        """Logger used to print operational log messages."""
-
         self.employees: list[RuntimeEmployee] = []
         """Tracks this node's employees, which are managers or workers."""
 
@@ -151,7 +151,7 @@ class ServerBase:
         self.outgoing: Queue[tuple[Connection, RuntimeMessage, Any]] = Queue()
         self.outgoing_thread = Thread(target=self.send_outgoing, daemon=True)
         self.outgoing_thread.start()
-        self.logger.info('Started outgoing thread.')
+        _logger.info('Started outgoing thread.')
 
     def connect_to_managers(self, ipports: Sequence[tuple[str, int]]) -> None:
         """Connect to all managers given by endpoints in `ipports`."""
@@ -167,8 +167,8 @@ class ServerBase:
                 self.upper_id_bound,
             )
             manager_conns.append(self.connect_to_manager(ip, port, lb, ub))
-            self.logger.info(f'Connected to manager {i} at {ip}:{port}.')
-            self.logger.debug(f'Gave bounds {lb=} and {ub=} to manager {i}.')
+            _logger.info(f'Connected to manager {i} at {ip}:{port}.')
+            _logger.debug(f'Gave bounds {lb=} and {ub=} to manager {i}.')
 
         # Wait for started messages from all managers and register them
         self.total_workers = 0
@@ -182,11 +182,11 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered manager {i} with {num_workers=}.')
+            _logger.info(f'Registered manager {i} with {num_workers=}.')
             self.total_workers += num_workers
         self.num_idle_workers = self.total_workers
 
-        self.logger.info(f'Node has {self.total_workers} total workers.')
+        _logger.info(f'Node has {self.total_workers} total workers.')
 
     def connect_to_manager(
         self,
@@ -228,6 +228,7 @@ class ServerBase:
         self,
         num_workers: int = -1,
         port: int = default_worker_port,
+        logging_level: int = logging.WARNING,
     ) -> None:
         """
         Spawn worker processes.
@@ -252,10 +253,14 @@ class ServerBase:
         procs = {}
         for i in range(num_workers):
             w_id = self.lower_id_bound + i
-            procs[w_id] = Process(target=start_worker, args=(w_id, port))
+            procs[w_id] = Process(
+                target=start_worker,
+                args=(w_id, port),
+                kwargs={'logging_level': logging_level}
+            )
             procs[w_id].daemon = True
             procs[w_id].start()
-            self.logger.debug(f'Stated worker process {i}.')
+            _logger.debug(f'Stated worker process {i}.')
 
         # Listen for the worker connections
         family = 'AF_INET' if sys.platform == 'win32' else None
@@ -283,12 +288,12 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered worker {i}.')
+            _logger.debug(f'Registered worker {i}.')
 
         self.step_size = 1
         self.total_workers = num_workers
         self.num_idle_workers = num_workers
-        self.logger.info(f'Node has spawned {num_workers} workers.')
+        _logger.info(f'Node has spawned {num_workers} workers.')
 
     def connect_to_workers(
         self,
@@ -311,7 +316,7 @@ class ServerBase:
             oscount = os.cpu_count()
             num_workers = oscount if oscount else 1
 
-        self.logger.info(f'Expecting {num_workers} worker connections.')
+        _logger.info(f'Expecting {num_workers} worker connections.')
 
         if self.lower_id_bound + num_workers >= self.upper_id_bound:
             raise RuntimeError('Insufficient id range for workers.')
@@ -338,12 +343,12 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered worker {i}.')
+            _logger.info(f'Registered worker {i}.')
 
         self.step_size = 1
         self.total_workers = num_workers
         self.num_idle_workers = num_workers
-        self.logger.info(f'Node has connected to {num_workers} workers.')
+        _logger.info(f'Node has connected to {num_workers} workers.')
 
     def listen_once(self, ip: str, port: int) -> Connection:
         """Listen on `ip`:`port` for a connection and return on first one."""
@@ -394,7 +399,7 @@ class ServerBase:
 
                     # If interrupted by signal, shutdown and exit
                     if direction == MessageDirection.SIGNAL:
-                        self.logger.debug('Received interrupt signal.')
+                        _logger.debug('Received interrupt signal.')
                         self.handle_shutdown()
                         return
 
@@ -405,11 +410,11 @@ class ServerBase:
                         self.handle_disconnect(conn)
                         continue
                     log = f'Received message {msg.name} from {direction.name}.'
-                    self.logger.debug(log)
+                    _logger.debug(log)
                     if msg == RuntimeMessage.SUBMIT_BATCH:
-                        self.logger.log(1, f'{len(payload)}\n')
+                        _logger.log(1, f'[{payload[0]}] * {len(payload)}\n')
                     else:
-                        self.logger.log(1, f'{payload}\n')
+                        _logger.log(1, f'{payload}\n')
 
                     # Handle message
                     self.handle_message(msg, direction, conn, payload)
@@ -417,7 +422,7 @@ class ServerBase:
         except Exception:
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
-            self.logger.error(error_str)
+            _logger.error(error_str)
             self.handle_system_error(error_str)
 
         finally:
@@ -456,7 +461,7 @@ class ServerBase:
     def handle_shutdown(self) -> None:
         """Shutdown the node and release resources."""
         # Stop running
-        self.logger.info('Shutting down node.')
+        _logger.info('Shutting down node.')
         self.running = False
 
         # Instruct employees to shutdown
@@ -467,17 +472,17 @@ class ServerBase:
             employee.complete_shutdown()
 
         self.employees.clear()
-        self.logger.debug('Shutdown employees.')
+        _logger.debug('Shutdown employees.')
 
         # Close selector
         self.sel.close()
-        self.logger.debug('Cleared selector.')
+        _logger.debug('Cleared selector.')
 
         # Close outgoing thread
         if self.outgoing_thread.is_alive():
             self.outgoing.put(b'\0')  # type: ignore
             self.outgoing_thread.join()
-            self.logger.debug('Joined outgoing thread.')
+            _logger.debug('Joined outgoing thread.')
             assert not self.outgoing_thread.is_alive()
 
     def handle_disconnect(self, conn: Connection) -> None:

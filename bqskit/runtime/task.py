@@ -103,7 +103,9 @@ class RuntimeTask:
             self.max_logging_depth < 0
             or len(self.breadcrumbs) <= self.max_logging_depth
         ):
-            logging.getLogger().setLevel(0)
+            logging.getLogger().setLevel(self.logging_level)
+        else:
+            logging.getLogger().setLevel(100)
 
         # Execute a task step
         to_return = self.coro.send(send_val)
