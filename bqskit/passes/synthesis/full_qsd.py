@@ -7,7 +7,7 @@ from bqskit.compiler.basepass import BasePass
 
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
-from bqskit.passes.alias import PassAlias
+# from bqskit.passes.alias import PassAlias
 from bqskit.passes.processing import ScanningGateRemovalPass, TreeScanningGateRemovalPass
 from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.passes.synthesis.mgdp import MGDPass
@@ -19,7 +19,7 @@ from bqskit.passes.util import UnfoldPass
 _logger = logging.getLogger(__name__)
 
 
-class FullQSDPass(PassAlias):
+class FullQSDPass(BasePass):
     """
     A pass performing one round of decomposition from the QSD algorithm.
 
@@ -74,8 +74,8 @@ class FullQSDPass(PassAlias):
             else:
                 self.depth_partition = None
 
-    def get_passes(self) -> list[BasePass]:
-          return super().get_passes()
+    # def get_passes(self) -> list[BasePass]:
+    #       return super().get_passes()
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
