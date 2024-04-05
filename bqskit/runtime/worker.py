@@ -282,7 +282,6 @@ class Worker:
 
             # Process message
             if msg == RuntimeMessage.SHUTDOWN:
-                # print(f"Worker {self._id}: Received Shutdown", time.time())
                 if self.profile:
                     out_msg = (RuntimeMessage.PROFILE, (self.profiles))
                     self._conn.send(out_msg)
@@ -291,13 +290,11 @@ class Worker:
                 return
 
             elif msg == RuntimeMessage.SUBMIT:
-                # print(f"Worker {self._id}: Receiving 1 task, adding to queue, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.time())
                 task = cast(RuntimeTask, payload)
                 self._add_task(task)
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 tasks = cast(List[RuntimeTask], payload)
-                # print(f"Worker {self._id}: Receiving {len(tasks)} tasks, adding 1 to ready queue and rest to delayed tasks, now have {len(self._tasks) + len(self._delayed_tasks)} tasks", time.time())
                 self._add_task(tasks.pop())  # Submit one task
                 self._delayed_tasks.extend(tasks)  # Delay rest
                 # Delayed tasks have no context and are stored (more-or-less)
@@ -418,14 +415,14 @@ class Worker:
             # Just time this for run time
 
             # Perform a step of the task and get the future it awaits on
-            print(f"Worker {self._id} | start step | some task | {time.time()}")
+            print(f"Worker {self._id} | start step | {task.task_name} | {time.time()}")
             future = task.step(self._get_desired_result(task))
-            print(f"Worker {self._id} | finish step | some task| {time.time()}")
+            print(f"Worker {self._id} | finish step | {task.task_name} | {time.time()}")
 
             self._process_await(task, future)
 
         except StopIteration as e:
-            print(f"Worker {self._id} | finish step | some task| {time.time()}")
+            print(f"Worker {self._id} | finish step | {task.task_name} | {time.time()}")
             self._process_task_completion(task, e.value)
 
         except Exception:

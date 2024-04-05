@@ -2,6 +2,8 @@ import multiprocessing as mp
 import sys
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from os import path
+
 
 class LogData:
 
@@ -18,12 +20,15 @@ class LogData:
     def plot_timeline(self, axes: plt.Axes, y_height:float, width):
         x = 0
         for item in self.timeline:
-            if item[0] == "step":
-                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="b", facecolor="b")
+            if item[0] == "idle":
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="b", facecolor="r")
                 axes.add_patch(rect)
-            elif item[0] == "idle":
-                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="r", facecolor="r")
+            elif item[0] == "instantiate":
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="r", facecolor="g")
                 axes.add_patch(rect)
+            else:
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="r", facecolor="b")
+                axes.add_patch(rect)    
             
             x += item[1]
         return x
@@ -67,7 +72,7 @@ class Parser:
         if task_type == "finish step": # Actually performing a step
             self.run_time += time - self.prev_run_time
             self.prev_misc_time = time
-            self.timeline.append(("step", time - self.prev_run_time))
+            self.timeline.append((task_name, time - self.prev_run_time))
         elif task_type == "start step": # Starting a step
             self.prev_run_time = time
             self.misc_time = time - self.prev_misc_time
@@ -94,26 +99,37 @@ def parse_worker(worker_id: int) -> LogData:
 if __name__ == '__main__':
     global file_name
     # file_name = sys.argv[1]
-    method = sys.argv[1]
-    block_size = sys.argv[2]
-    fig = plt.figure(figsize=(40, 15))
-    axes = fig.subplots(1,6)
+    circ = sys.argv[1]
+    num_qubits = sys.argv[2]
+    min_qubits = int(sys.argv[3])
 
-    for i,num_workers in enumerate([2,4,8,16,32,64]):
-        file_name = f"/pscratch/sd/j/jkalloor/profiler/bqskit/{method}/{block_size}/{num_workers}/log.txt"
-        with mp.Pool(processes=num_workers) as pool:
-            log_data = pool.map(parse_worker, range(num_workers))
+    tree_scan_depths = [4, 8, 12]
 
-        max_x = 20
-        for j, data in enumerate(log_data):
-            x = data.plot_timeline(axes[i], j*5 + 1, 4)
-            if x > max_x:
-                max_x = x
+    fig = plt.figure(figsize=(20, 20))
+    axes: list[list[plt.Axes]] = fig.subplots(3,3)
 
-        axes[i].set_ybound(0, num_workers*5 + 2)
-        axes[i].set_xbound(0, x)
 
-    fig.savefig(f"{method}_{block_size}.png")
+    for ii, tree_scan_depth in enumerate(tree_scan_depths):
+        for jj ,num_workers in enumerate([4, 8, 64]):
+            file_name = f"/pscratch/sd/j/jkalloor/profiler/bqskit/{circ}/{num_qubits}/{min_qubits}/{tree_scan_depth}/{num_workers}/log.txt"
+            if path.exists(file_name):
+                with mp.Pool(processes=num_workers) as pool:
+                    log_data = pool.map(parse_worker, range(num_workers))
+
+                max_x = 20
+                for j, data in enumerate(log_data):
+                    x = data.plot_timeline(axes[ii][jj], j+ 1, 0.8)
+                    if x > max_x:
+                        max_x = x
+
+                axes[ii][jj].set_ybound(0, num_workers + 1)
+                axes[ii][jj].set_xbound(0, x)
+                axes[0][jj].set_title(f"Num Workers: {num_workers}")
+
+        axes[ii][0].set_ylabel(f"Tree Depth: {tree_scan_depth}")
+
+
+    fig.savefig(f"{circ}_{num_qubits}_{min_qubits}_no_scan.png")
 
 
 

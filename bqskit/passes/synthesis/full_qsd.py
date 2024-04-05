@@ -90,16 +90,17 @@ class FullQSDPass(PassAlias):
                 passes.append(UnfoldPass())
             else:
                 passes.append(self.scan)
-
-        for _ in range(1, start_num):
             passes.append(self.mgd)
-            if self.depth_partition:
-                passes.append(self.depth_partition)
-                for_each_pass = ForEachBlockPass([self.scan])
-                passes.append(for_each_pass)
-                passes.append(UnfoldPass())
-            else:
-                passes.append(self.scan)
+
+        # for _ in range(1, start_num):
+        #     passes.append(self.mgd)
+        #     # if self.depth_partition:
+        #     #     passes.append(self.depth_partition)
+        #     #     for_each_pass = ForEachBlockPass([self.scan])
+        #     #     passes.append(for_each_pass)
+        #     #     passes.append(UnfoldPass())
+        #     # else:
+        #     passes.append(self.scan)
 
         # print(passes)
 

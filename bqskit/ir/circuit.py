@@ -18,6 +18,8 @@ from typing import Set
 from typing import Tuple
 from typing import TYPE_CHECKING
 
+import time
+
 import numpy as np
 import numpy.typing as npt
 
@@ -2808,6 +2810,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 DeprecationWarning,
             )
 
+
+        start_time = time.time()
+
         # Set seed if specified
         if seed is not None:
             if not isinstance(seed, int):
@@ -2864,8 +2869,18 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         instantiater = cast(Instantiater, instantiater)
 
+        # orig_gates = self.gate_counts
+
         # Instantiate
         instantiater.multi_start_instantiate_inplace(self, target, multistarts)
+
+        # finish_time = time.time() - start_time
+
+        # final_gates = self.gate_counts
+
+        # if finish_time > 5:
+        #     print(f"LONG INSTANTIATION {finish_time}", orig_gates, final_gates)
+
         return self
 
     def minimize(self, cost: CostFunction, **kwargs: Any) -> None:

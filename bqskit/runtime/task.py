@@ -71,6 +71,8 @@ class RuntimeTask:
 
         self.wake_on_next: bool = False
         """Set to true if this task should wake immediately on a result."""
+        func_name = getattr(self.fnargs[0], '__name__', 'Unknown')
+        self.task_name = func_name
 
     def step(self, send_val: Any = None) -> Any:
         """Execute one step of the task."""

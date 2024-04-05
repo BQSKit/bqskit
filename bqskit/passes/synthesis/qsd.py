@@ -184,6 +184,7 @@ class QSDPass(BasePass):
         start = time.time()
         if len(unitaries) > 0:
             # Do a bulk QSDs -> circs
+            # TODO: Combine mod_unitaries and qsd
             unitaries = await get_runtime().map(QSDPass.mod_unitaries, unitaries)
             circs = await get_runtime().map(QSDPass.qsd, unitaries)
             # Do bulk replace (single threaded)

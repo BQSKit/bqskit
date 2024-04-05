@@ -146,6 +146,7 @@ class TreeScanningGateRemovalPass(BasePass):
         reverse_iter = not self.start_from_left
 
         ops_left = list(circuit.operations_with_cycles(reverse=reverse_iter))
+        print(f"Starting Scan with tree depth {self.tree_depth} on circuit with {len(ops_left)} gates")
 
         while ops_left:
             chunk, ops_left = ops_left[:self.tree_depth], ops_left[self.tree_depth:]
