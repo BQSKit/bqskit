@@ -159,10 +159,7 @@ class Worker:
         self._id = id
         self._conn = conn
         self.profile = profile
-        self.profiles = {}
-        self.messages_out = {}
-        self.messages_in = []
-        self.idle_time_start = None
+        self.idle_time_start = False
 
         self.prev_time = time.time()
 
@@ -276,15 +273,12 @@ class Worker:
             #     self.read_receipt_mutex.release()
 
             elif msg == RuntimeMessage.RESULT:
-                # print(f"Worker {self._id}: Receiving result, handling the result", time.time())
                 result = cast(RuntimeResult, payload)
                 self._handle_result(result)
 
             elif msg == RuntimeMessage.CANCEL:
-                # print(f"Worker {self._id}: Received cancel", time.time())
                 addr = cast(RuntimeAddress, payload)
                 self._handle_cancel(addr)
-                # TODO: preempt?
 
             elif msg == RuntimeMessage.IMPORTPATH:
                 paths = cast(List[str], payload)
@@ -415,8 +409,6 @@ class Worker:
 
             self._active_task = task
 
-            # Just time this for run time
-
             # Perform a step of the task and get the future it awaits on
             print(f"Worker {self._id} | start step | {task.task_name} | {time.time()}")
             future = task.step(self._get_desired_result(task))
@@ -440,8 +432,6 @@ class Worker:
 
         finally:
             self._active_task = None
-        
-        # print(f"Worker {self._id}: Finished Task", time.time())
 
     def _process_await(self, task: RuntimeTask, future: RuntimeFuture) -> None:
         """Process a task's await request."""
