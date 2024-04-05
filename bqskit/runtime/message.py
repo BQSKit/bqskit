@@ -20,4 +20,6 @@ class RuntimeMessage(IntEnum):
     CANCEL = 11
     WAITING = 12
     UPDATE = 13
-    PROFILE = 14
+    IMPORTPATH = 14
+    READY = 15
+    PROFILE = 16
