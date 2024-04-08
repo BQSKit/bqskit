@@ -45,6 +45,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Scientific/Engineering :: Physics',
@@ -65,8 +66,8 @@ setup(
     },
     packages=find_packages(exclude=['examples*', 'test*']),
     install_requires=[
-        'bqskitrs>=0.4.0',
-        'lark-parser',
+        'bqskitrs>=0.4.1',
+        'lark',
         'numpy>=1.22.0',
         'scipy>=1.8.0',
         'typing-extensions>=4.0.0',

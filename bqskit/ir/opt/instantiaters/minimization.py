@@ -13,12 +13,16 @@ from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
+from bqskit.ir.opt.multistartgens.random import RandomStartGenerator
+from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
-from bqskit.qis.state.system import StateSystem
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
+    from bqskit.qis.state.system import StateSystem
+    from bqskit.qis.state.system import StateSystemLike
+    from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 class Minimization(Instantiater):
@@ -61,7 +65,6 @@ class Minimization(Instantiater):
     ) -> npt.NDArray[np.float64]:
         """Instantiate `circuit`, see Instantiater for more info."""
         cost = self.cost_fn_gen.gen_cost(circuit, target)
-        # print(x0, circuit.num_params, circuit.gate_counts)
         return self.minimizer.minimize(cost, x0)
 
     @staticmethod
@@ -88,3 +91,48 @@ class Minimization(Instantiater):
     def get_method_name() -> str:
         """Return the name of this method."""
         return 'minimization'
+
+    def multi_start_instantiate_inplace(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> None:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        See Instantiater for more info.
+        """
+        target = self.check_target(target)
+        start_gen = RandomStartGenerator()
+        starts = start_gen.gen_starting_points(num_starts, circuit, target)
+        cost_fn = self.cost_fn_gen.gen_cost(circuit, target)
+        params_list = [self.instantiate(circuit, target, x0) for x0 in starts]
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        circuit.set_params(params)
+
+    async def multi_start_instantiate_async(
+        self,
+        circuit: Circuit,
+        target: UnitaryLike | StateLike | StateSystemLike,
+        num_starts: int,
+    ) -> Circuit:
+        """
+        Instantiate `circuit` to best implement `target` with multiple starts.
+
+        See Instantiater for more info.
+        """
+        from bqskit.runtime import get_runtime
+        target = self.check_target(target)
+        start_gen = RandomStartGenerator()
+        starts = start_gen.gen_starting_points(num_starts, circuit, target)
+        cost_fn = self.cost_fn_gen.gen_cost(circuit, target)
+        params_list = await get_runtime().map(
+            self.instantiate,
+            [circuit] * num_starts,
+            [target] * num_starts,
+            starts,
+        )
+        params = sorted(params_list, key=lambda x: cost_fn(x))[0]
+        circuit.set_params(params)
+        return circuit

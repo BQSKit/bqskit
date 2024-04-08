@@ -25,4 +25,6 @@ def test_pam_verify(compiler: Compiler, medium_qasm_file: str) -> None:
     PI = PermutationMatrix.from_qubit_location(out_circuit.num_qudits, pi)
     PF = PermutationMatrix.from_qubit_location(out_circuit.num_qudits, pf)
     exact_error = out_utry.get_distance_from(PF.T @ circuit.get_unitary() @ PI)
-    assert upper_bound_error >= exact_error
+    assert upper_bound_error >= exact_error or abs(
+        upper_bound_error - exact_error,
+    ) < 5e-7

@@ -8,6 +8,8 @@ from typing import Sequence
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
+from bqskit.ir.gates import MeasurementPlaceholder
+from bqskit.ir.gates import Reset
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.location import CircuitLocation
@@ -117,8 +119,15 @@ class QuickPartitioner(BasePass):
                             merging = False
                             for p in partitioned_circuit.rear:
                                 op = partitioned_circuit[p]
-                                if isinstance(op.gate, BarrierPlaceholder):
-                                    # Don't merge through barriers
+                                if isinstance(
+                                    op.gate, (
+                                        BarrierPlaceholder,
+                                        MeasurementPlaceholder,
+                                        Reset,
+                                    ),
+                                ):
+                                    # Don't merge through barriers,
+                                    # measurement, or reset
                                     continue
                                 qudits = list(op.location)
 
@@ -179,7 +188,13 @@ class QuickPartitioner(BasePass):
             })
 
             # Barriers close all overlapping bins
-            if isinstance(op.gate, BarrierPlaceholder):
+            if isinstance(
+                op.gate, (
+                    BarrierPlaceholder,
+                    MeasurementPlaceholder,
+                    Reset,
+                ),
+            ):
                 for bin in overlapping_bins:
                     if close_bin_qudits(bin, location, cycle):
                         num_closed += 1
@@ -349,7 +364,11 @@ class Bin:
 
 
 class BarrierBin(Bin):
-    """A special bin made to mark and preserve barrier location."""
+    """
+    A special bin made to mark and preserve barrier location.
+
+    For simplicity, the rest and measurement are treated as barrier as well.
+    """
 
     def __init__(
         self,

@@ -68,6 +68,7 @@ from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u1q import U1qGate
 from bqskit.ir.gates.parameterized.u2 import U2Gate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.gates.reset import Reset
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.location import CircuitLocation
@@ -169,7 +170,6 @@ class OPENQASMVisitor(Visitor):
         self.classical_regs: list[ClassicalReg] = []
         self.gate_def_parsing_obj: Any = None
         self.custom_gate_defs: dict[str, CustomGateDef] = {}
-        self.measurements: dict[int, tuple[str, int]] = {}
         self.fill_gate_defs()
 
     def get_circuit(self) -> Circuit:
@@ -179,12 +179,6 @@ class OPENQASMVisitor(Visitor):
             raise LangException('No qubit registers defined.')
         circuit = Circuit(num_qubits)
         circuit.extend(self.op_list)
-
-        # Add measurements
-        if len(self.measurements) > 0:
-            cregs = cast(List[Tuple[str, int]], self.classical_regs)
-            mph = MeasurementPlaceholder(cregs, self.measurements)
-            circuit.append_gate(mph, list(self.measurements.keys()))
 
         return circuit
 
@@ -296,13 +290,6 @@ class OPENQASMVisitor(Visitor):
         # Parse location
         qlist = tree.children[-1]
         location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
-
-        if any(q in self.measurements for q in location):
-            raise LangException(
-                'BQSKit currently does not support mid-circuit measurements.'
-                ' Unable to apply a gate on the same qubit where a measurement'
-                ' has been previously made.',
-            )
 
         # Parse gate object
         gate_name = str(tree.children[0])
@@ -591,10 +578,16 @@ class OPENQASMVisitor(Visitor):
 
     def measure(self, tree: lark.Tree) -> None:
         """Measure statement node visitor."""
+        params: list[float] = []
+        measurements: dict[int, tuple[str, int]] = {}
         qubit_childs = tree.children[0].children
         class_childs = tree.children[1].children
         qubit_reg_name = str(qubit_childs[0])
         class_reg_name = str(class_childs[0])
+        cregs = cast(List[Tuple[str, int]], self.classical_regs)
+        qlist = tree.children[0]
+        location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+
         if not any(r.name == qubit_reg_name for r in self.qubit_regs):
             raise LangException(
                 f'Measuring undefined qubit register: {qubit_reg_name}',
@@ -605,7 +598,7 @@ class OPENQASMVisitor(Visitor):
                 f'Measuring undefined classical register: {class_reg_name}',
             )
 
-        if len(qubit_childs) == 1 and len(class_childs) == 1:
+        if len(qubit_childs) == 1 and len(class_childs) == 1:  # for measure all
             for name, size in self.qubit_regs:
                 if qubit_reg_name == name:
                     qubit_size = size
@@ -625,23 +618,16 @@ class OPENQASMVisitor(Visitor):
                 if name == qubit_reg_name:
                     break
                 outer_idx += size
-
             for i in range(qubit_size):
-                self.measurements[outer_idx + i] = (class_reg_name, i)
+                measurements[outer_idx + i] = (class_reg_name, i)
+            mph = MeasurementPlaceholder(cregs, measurements)
 
         elif len(qubit_childs) == 2 and len(class_childs) == 2:
+            # measure qubits to clbits
             qubit_index = int(qubit_childs[1])
             class_index = int(class_childs[1])
-
-            # Convert qubit_index to global index
-            outer_idx = 0
-            for name, size in self.qubit_regs:
-                if name == qubit_reg_name:
-                    qubit_index = outer_idx + qubit_index
-                    break
-                outer_idx += size
-
-            self.measurements[qubit_index] = (class_reg_name, class_index)
+            measurements[qubit_index] = (class_reg_name, class_index)
+            mph = MeasurementPlaceholder(cregs, measurements)
 
         else:
             raise LangException(
@@ -649,10 +635,25 @@ class OPENQASMVisitor(Visitor):
                 'to a full classical register or a qubit register is being '
                 'measured to a single classical bit.',
             )
+        op = Operation(mph, location, params)
+        self.op_list.append(op)
 
     def reset(self, tree: lark.Tree) -> None:
-        """Reset statement node visitor."""
-        raise LangException('BQSKit currently does not support resets.')
+        """Reset node visitor."""
+        params: list[float] = []
+        qlist = tree.children[-1]
+        if len(qlist.children) == 2:
+            location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
+            op = Operation(Reset(), location, params)
+            self.op_list.append(op)
+        else:
+            locations = [
+                CircuitLocation(i)
+                for i in range(self.qubit_regs[0][1])
+            ]
+            for location in locations:
+                op = Operation(Reset(), location, params)
+                self.op_list.append(op)
 
     def convert_qubit_ids_to_indices(self, qlist: lark.Tree) -> list[int]:
         if qlist.data == 'anylist':

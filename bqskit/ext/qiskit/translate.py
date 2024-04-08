@@ -5,13 +5,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
+from qiskit import qasm2
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
 
 
 def qiskit_to_bqskit(qc: QuantumCircuit) -> Circuit:
     """Convert Qiskit's QuantumCircuit `qc` to a BQSKit Circuit."""
-    circuit = OPENQASM2Language().decode(qc.qasm())
+    circuit = OPENQASM2Language().decode(qasm2.dumps(qc))
     # circuit.renumber_qudits(list(reversed(range(circuit.num_qudits))))
     return circuit
     # TODO: support gates not captured by qasm
