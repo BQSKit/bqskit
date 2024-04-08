@@ -134,11 +134,12 @@ class Compiler:
 
         See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
         """
+        profile = self.profile
         params = f'{num_workers}, '
         params += f'log_level={runtime_log_level}, '
         params += f'{worker_port=}, '
         params += f'{num_blas_threads=}, '
-        params += f'{self.profile=}, '
+        params += f'{profile=}, '
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
         if sys.platform == 'win32':
@@ -323,6 +324,7 @@ class Compiler:
 
     def result(self, task_id: uuid.UUID) -> Circuit | tuple[Circuit, PassData]:
         """Block until the task is finished, return its result."""
+        print(task_id)
         msg, payload = self._send_recv(RuntimeMessage.REQUEST, task_id)
         if msg != RuntimeMessage.RESULT:
             raise RuntimeError(f'Unexpected message type: {msg}.')
@@ -421,6 +423,8 @@ class Compiler:
             raise RuntimeError('Connection unexpectedly none.')
 
         try:
+            print(msg)
+            print(payload)
             self._recv_log_error_until_empty()
 
             self.conn.send((msg, payload))

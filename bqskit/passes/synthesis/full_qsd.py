@@ -7,7 +7,7 @@ from bqskit.compiler.basepass import BasePass
 
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
-# from bqskit.passes.alias import PassAlias
+from bqskit.passes.alias import PassAlias
 from bqskit.passes.processing import ScanningGateRemovalPass, TreeScanningGateRemovalPass
 from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.passes.synthesis.mgdp import MGDPass
@@ -19,7 +19,7 @@ from bqskit.passes.util import UnfoldPass
 _logger = logging.getLogger(__name__)
 
 
-class FullQSDPass(BasePass):
+class FullQSDPass(PassAlias):
     """
     A pass performing one round of decomposition from the QSD algorithm.
 
@@ -45,7 +45,7 @@ class FullQSDPass(BasePass):
             self,
             start_from_left: bool = True,
             min_qudit_size: int = 2,
-            tree_depth: int = 1,
+            tree_depth: int = -1,
             partition_depth = None, 
             instantiate_options = {},
         ) -> None:
@@ -65,8 +65,10 @@ class FullQSDPass(BasePass):
             self.min_qudit_size = min_qudit_size
             instantiation_options = {"method":"qfactor"}
             instantiation_options.update(instantiate_options)
-            self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
-            # self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
+            if tree_depth > 0:
+                self.scan = TreeScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options, tree_depth=tree_depth)
+            else:
+                self.scan = ScanningGateRemovalPass(start_from_left=start_from_left, instantiate_options=instantiation_options)
             self.qsd = QSDPass(min_qudit_size=min_qudit_size)
             self.mgd = MGDPass()
             if partition_depth:
@@ -74,8 +76,8 @@ class FullQSDPass(BasePass):
             else:
                 self.depth_partition = None
 
-    # def get_passes(self) -> list[BasePass]:
-    #       return super().get_passes()
+    def get_passes(self) -> list[BasePass]:
+          return super().get_passes()
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
@@ -103,5 +105,7 @@ class FullQSDPass(BasePass):
         #     passes.append(self.scan)
 
         # print(passes)
+
+        print("Num Passes", len(passes))
 
         await Workflow(passes).run(circuit, data)

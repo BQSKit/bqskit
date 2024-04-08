@@ -412,12 +412,12 @@ class Worker:
             # Perform a step of the task and get the future it awaits on
             print(f"Worker {self._id} | start step | {task.task_name} | {time.time()}")
             future = task.step(self._get_desired_result(task))
-            print(f"Worker {self._id} | finish step | {task.task_name} | {time.time()}")
+            print(f"Worker {self._id} | finish step | {task.task_name} stepped | {time.time()}")
 
             self._process_await(task, future)
 
         except StopIteration as e:
-            print(f"Worker {self._id} | finish step | {task.task_name} | {time.time()}")
+            print(f"Worker {self._id} | finish step | {task.task_name} finished | {time.time()}")
             self._process_task_completion(task, e.value)
 
         except Exception:
@@ -454,14 +454,14 @@ class Worker:
         #     #     raise RuntimeError(m)
         #     task.wake_on_next = True
         task.wake_on_next = future._next_flag
-        # print(f'Worker {self._id} is waiting on task
-        # {task.return_address}, with {task.wake_on_next=}')
+        print(f'Worker {self._id} is waiting on task {task.return_address}, with {task.wake_on_next=}')
 
         if box.ready:
             self._ready_task_ids.put(task.return_address)
 
     def _process_task_completion(self, task: RuntimeTask, result: Any) -> None:
         """Package and send out task result."""
+        print(self._active_task == task)
         assert task is self._active_task
         packaged_result = RuntimeResult(task.return_address, result, self._id)
 
@@ -476,6 +476,7 @@ class Worker:
             # Let manager know this worker has one less task
             # without sending a result
         else:
+            print("Sending")
             self._send(RuntimeMessage.RESULT, packaged_result)
 
         # Remove task

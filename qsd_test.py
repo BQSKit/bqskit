@@ -1,23 +1,11 @@
-from bqskit.passes import FullQSDPass #, QSDPass, MGDPass
-from bqskit.ir.circuit import Circuit
-# from bqskit.ir.operation import Operation
-# from bqskit.ir.gates import *
-# from bqskit.ir.gates.parameterized.ry import RYGate as RyGate
-# from bqskit.ir.gates.parameterized.rz import RZGate as RzGate
-# import numpy.random as rand
-import numpy as np
-# from bqskit.passes import UnfoldPass
-from bqskit.qis import UnitaryMatrix
 from bqskit.compiler import Compiler #, compile
+from bqskit.passes import FullQSDPass
+from bqskit.ir.circuit import Circuit
+import numpy as np
+from bqskit.qis import UnitaryMatrix
 import time
-# from bqskit import enable_logging
-# from bqskitqfactorjax.qfactor_jax import QFactor_jax
-# import logging
-# from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
-# import jax.config as config
 from sys import argv
 import pickle
-# from bqskit import compile
 
 # config.update("jax_enable_x64",True)
 
@@ -94,16 +82,6 @@ for _ in range(1):
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
     FullQSDPass(start_from_left=True, min_qudit_size=min_qudits, instantiate_options=instantiate_options, tree_depth=tree_depth,partition_depth=partition_depth),
-    # QSDPass(2),
-    # QSDPass(2),
-    # QSDPass(2),
-    # QSDPass(2),
-    # QSDPass(2),
-    # MGDPass(),
-    # MGDPass(),
-    # MGDPass(),
-    # # MGDPass(),
-    # # MGDPass(),
 ]
 
 start = time.time()
