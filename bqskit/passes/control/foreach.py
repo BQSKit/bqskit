@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import Callable
+from typing import Callable, List
 
 from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
@@ -63,6 +63,7 @@ class ForEachBlockPass(BasePass):
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: ReplaceFilterFn | str = 'always',
         batch_size: int | None = None,
+        blocks_to_run: List[int] = [],
     ) -> None:
         """
         Construct a ForEachBlockPass.
@@ -127,6 +128,11 @@ class ForEachBlockPass(BasePass):
                 Defaults to 'always'.  #TODO: address importability
 
             batch_size (int): (Deprecated).
+
+            blocks_to_run (List[int]):
+                A list of blocks to run the ForEachBlockPass body on. By default
+                you run on all blocks. This is mainly used with checkpointing, 
+                where some blocks have already finished while others have not.
         """
         if batch_size is not None:
             import warnings
@@ -140,7 +146,7 @@ class ForEachBlockPass(BasePass):
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
         self.workflow = Workflow(loop_body)
-
+        self.blocks_to_run = sorted(blocks_to_run)
         if not callable(self.collection_filter):
             raise TypeError(
                 'Expected callable method that maps Operations to booleans for'
@@ -171,9 +177,20 @@ class ForEachBlockPass(BasePass):
 
         # Collect blocks
         blocks: list[tuple[int, Operation]] = []
-        for cycle, op in circuit.operations_with_cycles():
-            if self.collection_filter(op):
+        if (len(self.blocks_to_run) == 0):
+            # TODO: This is buggy, need to fix to work with collection filter
+            self.blocks_to_run = list(range(circuit.num_operations))
+
+        block_ids = self.blocks_to_run.copy()
+        next_id = block_ids.pop(0)
+        for i, (cycle, op) in enumerate(circuit.operations_with_cycles()):
+            if self.collection_filter(op) and i == next_id:
                 blocks.append((cycle, op))
+                try:
+                    next_id = block_ids.pop(0)
+                except IndexError:
+                    # No more blocks to run on
+                    break
 
         # No blocks, no work
         if len(blocks) == 0:
@@ -212,6 +229,9 @@ class ForEachBlockPass(BasePass):
             block_data['model'] = submodel
             block_data['point'] = CircuitPoint(cycle, op.location[0])
             block_data['calculate_error_bound'] = self.calculate_error_bound
+            # Need to zero pad block ids for consistency
+            num_digits = len(str(circuit.num_operations))
+            block_data['block_num'] = str(self.blocks_to_run[i]).zfill(num_digits)
             for key in data:
                 if key.startswith(self.pass_down_key_prefix):
                     block_data[key] = data[key]

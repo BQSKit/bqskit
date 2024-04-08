@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
+from bqskit.ir.gates import Reset
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
 
@@ -41,3 +42,16 @@ class TestCircuitGates:
         qasm = OPENQASM2Language().encode(circuit)
         parsed_circuit = OPENQASM2Language().decode(qasm)
         assert parsed_circuit.get_unitary().get_distance_from(in_utry) < 1e-7
+
+    def test_reset(self) -> None:
+        circuit = Circuit(1)
+        circuit.append_gate(Reset(), 0)
+
+        qasm = OPENQASM2Language().encode(circuit)
+        expected = (
+            'OPENQASM 2.0;\n'
+            'include "qelib1.inc";\n'
+            'qreg q[1];\n'
+            'reset q[0];\n'
+        )
+        assert qasm == expected

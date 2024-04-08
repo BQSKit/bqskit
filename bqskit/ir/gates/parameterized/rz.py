@@ -20,8 +20,8 @@ class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
     .. math::
 
         \\begin{pmatrix}
-        \\exp({i\\frac{\\theta}{2}}) & 0 \\\\
-        0 & \\exp({-i\\frac{\\theta}{2}}) \\\\
+        \\exp({-i\\frac{\\theta}{2}}) & 0 \\\\
+        0 & \\exp({i\\frac{\\theta}{2}}) \\\\
         \\end{pmatrix}
     """
 

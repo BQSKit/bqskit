@@ -205,6 +205,9 @@ class Worker:
         self._mailbox_counter = 0
         """This count ensures every mailbox has a unique id."""
 
+        self._cache: dict[str, Any] = {}
+        """Local worker cache."""
+
         # Send out every emitted log message upstream
         old_factory = logging.getLogRecordFactory()
 
@@ -562,6 +565,20 @@ class Worker:
         ]
         msgs = [(RuntimeMessage.CANCEL, addr) for addr in addrs]
         self._outgoing.extend(msgs)
+
+    def get_cache(self) -> dict[str, Any]:
+        """
+        Retrieve worker's local cache.
+
+        Returns:
+            (dict[str, Any]): The worker's local cache. This cache can be
+                used to store large or unserializable objects within a
+                worker process' memory. Passes on the same worker that use
+                the same object can load the object from this cache. If
+                there are multiple workers, those workers will load their
+                own copies of the object into their own cache.
+        """
+        return self._cache
 
     async def next(self, future: RuntimeFuture) -> list[tuple[int, Any]]:
         """

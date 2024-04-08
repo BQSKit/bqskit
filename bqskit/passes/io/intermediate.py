@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import logging
 import pickle
-from os import listdir
-from os import mkdir
-from os.path import exists
+from os import listdir, mkdir
+from os.path import exists, join
 from re import findall
 
 from bqskit.compiler.basepass import BasePass
@@ -117,7 +116,7 @@ class SaveIntermediatePass(BasePass):
 
 
 class RestoreIntermediatePass(BasePass):
-    def __init__(self, project_directory: str, load_blocks: bool = True):
+    def __init__(self, project_directory: str, load_blocks: bool = True, as_circuit_gate: bool = False):
         """
         Constructor for the RestoreIntermediatePass.
 
@@ -129,6 +128,9 @@ class RestoreIntermediatePass(BasePass):
                 be loaded to the block_list during the constructor. Otherwise
                 the user must explicitly call load_blocks() themselves. Defaults
                 to True.
+
+            as_circuit_gate (bool): If True, blocks are reloaded as a circuit 
+            gate rather than a circuit.
 
         Raises:
             ValueError: If `project_directory` does not exist or if
@@ -152,6 +154,9 @@ class RestoreIntermediatePass(BasePass):
             raise TypeError('The provided `structure.pickle` is not a list.')
 
         self.block_list: list[str] = []
+        self.as_circuit_gate = as_circuit_gate
+        # We will detect automatically if blocks are saved as qasm or pickle
+        self.saved_as_qasm = False
         if load_blocks:
             self.reload_blocks()
 
@@ -164,11 +169,18 @@ class RestoreIntermediatePass(BasePass):
             ValueError: if there are more block files than indices in the
             `structure.pickle`.
         """
-        files = listdir(self.proj_dir)
+        files = sorted(listdir(self.proj_dir))
+        # Files are of the form block_*.pickle or block_*.qasm
         self.block_list = [f for f in files if 'block_' in f]
+        pickle_list = [f for f in self.block_list if ".pickle" in f]
+        if len(pickle_list) == 0:
+            self.saved_as_qasm = True
+            self.block_list = [f for f in self.block_list if ".qasm" in f]
+        else:
+            self.block_list = pickle_list
         if len(self.block_list) > len(self.structure):
             raise ValueError(
-                'More block files than indicies in `structure.pickle`',
+                'More block files than indices in `structure.pickle`',
             )
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
@@ -184,8 +196,12 @@ class RestoreIntermediatePass(BasePass):
             for block in self.block_list:
                 # Get block
                 block_num = int(findall(r'\d+', block)[0])
-                with open(self.proj_dir + '/' + block) as f:
-                    block_circ = OPENQASM2Language().decode(f.read())
+                if self.saved_as_qasm:
+                    with open(join(self.proj_dir, block)) as f:
+                        block_circ = OPENQASM2Language().decode(f.read())
+                else:
+                    with open(join(self.proj_dir, block), "rb") as f:
+                        block_circ = pickle.load(f)
                 # Get location
                 block_location = self.structure[block_num]
                 if block_circ.num_qudits != len(block_location):
@@ -194,6 +210,6 @@ class RestoreIntermediatePass(BasePass):
                         'different sizes.',
                     )
                 # Append to circuit
-                circuit.append_circuit(block_circ, block_location)
+                circuit.append_circuit(block_circ, block_location, as_circuit_gate=self.as_circuit_gate)
         # Check if the circuit has been partitioned, if so, try to replace
         # blocks
