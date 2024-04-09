@@ -109,8 +109,8 @@ class SaveIntermediatePass(BasePass):
                 block.params,
             )
             subcircuit.unfold((0, 0))
-            await ToU3Pass().run(subcircuit, PassData(subcircuit))
             if self.as_qasm:
+                await ToU3Pass().run(subcircuit, PassData(subcircuit))
                 with open(block_skeleton + f'{enum}.qasm', 'w') as f:
                     f.write(OPENQASM2Language().encode(subcircuit))
             else:
@@ -244,14 +244,14 @@ class CheckpointRestartPass(PassAlias):
         
         # Check if checkpoint files exist
         if not exists(join(full_checkpoint_dir, "structure.pickle")):
-            _logger.debug("Checkpoint does not exist!")
+            _logger.info("Checkpoint does not exist!")
             save_pass = SaveIntermediatePass(base_checkpoint_dir, project_name, 
                                              save_as_qasm=save_as_qasm, overwrite=True)
             default_passes.append(save_pass)
             self.passes = default_passes
         else:
             # Already checkpointed, restore
-            _logger.debug("Restoring from Checkpoint!")
+            _logger.info("Restoring from Checkpoint!")
             self.passes = [
                 RestoreIntermediatePass(full_checkpoint_dir, as_circuit_gate=True)
             ]
