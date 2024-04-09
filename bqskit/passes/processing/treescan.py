@@ -11,8 +11,8 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.utils.typing import is_real_number
 from bqskit.runtime import get_runtime
+from bqskit.utils.typing import is_real_number
 
 _logger = logging.getLogger(__name__)
 
@@ -54,9 +54,9 @@ class TreeScanningGateRemovalPass(BasePass):
                 to circuit.instantiate when instantiating circuit
                 templates. (Default: {})
 
-            tree_depth (int): The depth of the tree of potential 
-                solutions to instantiate. Note that 2^(tree_depth) - 1 
-                circuits will be instantiated in parallel. 
+            tree_depth (int): The depth of the tree of potential
+                solutions to instantiate. Note that 2^(tree_depth) - 1
+                circuits will be instantiated in parallel.
 
             collection_filter (Callable[[Operation], bool] | None):
                 A predicate that determines which operations should be
@@ -103,8 +103,12 @@ class TreeScanningGateRemovalPass(BasePass):
         }
         self.instantiate_options.update(instantiate_options)
 
-    # Implement recursively for now, if slow then fix
-    def get_tree_circs(orig_num_cycles, circuit_copy: Circuit, cycle_and_ops: list[tuple[int, Operation]]) -> list[Circuit]:
+    @staticmethod
+    def get_tree_circs(
+        orig_num_cycles: int, circuit_copy: Circuit,
+        cycle_and_ops: list[tuple[int, Operation]],
+    ) -> list[Circuit]:
+        # Implement recursively for now, if slow then fix
         all_circs = [circuit_copy.copy()]
         for cycle, op in cycle_and_ops:
             new_circs = []
@@ -118,11 +122,9 @@ class TreeScanningGateRemovalPass(BasePass):
 
             all_circs = new_circs
 
-        all_circs = sorted(all_circs, key= lambda x: x.num_operations)
+        all_circs = sorted(all_circs, key=lambda x: x.num_operations)
 
         return all_circs
-
-
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
@@ -140,33 +142,44 @@ class TreeScanningGateRemovalPass(BasePass):
         reverse_iter = not self.start_from_left
 
         ops_left = list(circuit.operations_with_cycles(reverse=reverse_iter))
-        print(f"Starting Scan with tree depth {self.tree_depth} on circuit with {len(ops_left)} gates")
+        print(
+            f'Starting Scan with tree depth {self.tree_depth}'
+            ' on circuit with {len(ops_left)} gates',
+        )
 
         while ops_left:
-            chunk, ops_left = ops_left[:self.tree_depth], ops_left[self.tree_depth:]
+            chunk = ops_left[:self.tree_depth]
+            ops_left = ops_left[self.tree_depth:]
 
-            # Circuits of size 2 ** tree_depth - 1, 
+            # Circuits of size 2 ** tree_depth - 1,
             # ranked in order of most to fewest deletions
-            all_circs = TreeScanningGateRemovalPass.get_tree_circs(circuit.num_cycles, circuit_copy, chunk)
+            all_circs = TreeScanningGateRemovalPass.get_tree_circs(
+                circuit.num_cycles, circuit_copy, chunk,
+            )
             # Remove circuit with no gates deleted
             all_circs = all_circs[:-1]
 
-            _logger.debug(f'Attempting removal of operation of {self.tree_depth} operations.')
+            _logger.debug(
+                'Attempting removal of operation of'
+                f' {self.tree_depth} operations.',
+            )
 
             instantiated_circuits = await get_runtime().map(
-                    Circuit.instantiate,
-                    all_circs,
-                    target=target,
-                    **instantiate_options,
+                Circuit.instantiate,
+                all_circs,
+                target=target,
+                **instantiate_options,
             )
-            
+
             dists = [self.cost(c, target) for c in instantiated_circuits]
-            _logger.debug(f'Circuit distances: {dists}')
 
             # Pick least count with least dist
             for i, dist in enumerate(dists):
                 if dist < self.success_threshold:
-                    _logger.debug(f"Successfully switched to circuit {i} of {2 ** self.tree_depth}.")
+                    _logger.debug(
+                        f'Successfully switched to circuit {i}'
+                        ' of {2 ** self.tree_depth}.',
+                    )
                     circuit_copy = instantiated_circuits[i]
                     break
 

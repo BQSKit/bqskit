@@ -330,7 +330,7 @@ __all__ = [
     'UpdateDataPass',
     'ToU3Pass',
     'ScanningGateRemovalPass',
-    'TreeScanningGateRemovalPass'
+    'TreeScanningGateRemovalPass',
     'SimpleLayerGenerator',
     'AStarHeuristic',
     'GreedyHeuristic',
