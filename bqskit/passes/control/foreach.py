@@ -178,7 +178,6 @@ class ForEachBlockPass(BasePass):
         # Collect blocks
         blocks: list[tuple[int, Operation]] = []
         if (len(self.blocks_to_run) == 0):
-            # TODO: This is buggy, need to fix to work with collection filter
             self.blocks_to_run = list(range(circuit.num_operations))
 
         block_ids = self.blocks_to_run.copy()
@@ -186,9 +185,9 @@ class ForEachBlockPass(BasePass):
         for i, (cycle, op) in enumerate(circuit.operations_with_cycles()):
             if self.collection_filter(op) and i == next_id:
                 blocks.append((cycle, op))
-                try:
+                if len(block_ids) > 0:
                     next_id = block_ids.pop(0)
-                except IndexError:
+                else:
                     # No more blocks to run on
                     break
 
