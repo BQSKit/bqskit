@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import Callable, List
+from typing import Callable
 
 from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
@@ -63,7 +63,7 @@ class ForEachBlockPass(BasePass):
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: ReplaceFilterFn | str = 'always',
         batch_size: int | None = None,
-        blocks_to_run: List[int] = [],
+        blocks_to_run: list[int] = [],
     ) -> None:
         """
         Construct a ForEachBlockPass.
@@ -131,7 +131,7 @@ class ForEachBlockPass(BasePass):
 
             blocks_to_run (List[int]):
                 A list of blocks to run the ForEachBlockPass body on. By default
-                you run on all blocks. This is mainly used with checkpointing, 
+                you run on all blocks. This is mainly used with checkpointing,
                 where some blocks have already finished while others have not.
         """
         if batch_size is not None:
@@ -231,7 +231,9 @@ class ForEachBlockPass(BasePass):
             block_data['calculate_error_bound'] = self.calculate_error_bound
             # Need to zero pad block ids for consistency
             num_digits = len(str(circuit.num_operations))
-            block_data['block_num'] = str(self.blocks_to_run[i]).zfill(num_digits)
+            block_data['block_num'] = str(
+                self.blocks_to_run[i],
+            ).zfill(num_digits)
             for key in data:
                 if key.startswith(self.pass_down_key_prefix):
                     block_data[key] = data[key]

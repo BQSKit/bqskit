@@ -3,19 +3,22 @@ from __future__ import annotations
 
 import logging
 import pickle
-from os import listdir, mkdir
-from os.path import exists, join
 import shutil
+from os import listdir
+from os import mkdir
+from os.path import exists
+from os.path import join
 from re import findall
-from typing import cast, Sequence
+from typing import cast
+from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
-from bqskit.passes.alias import PassAlias
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
+from bqskit.passes.alias import PassAlias
 from bqskit.passes.util.converttou3 import ToU3Pass
 from bqskit.utils.typing import is_sequence
 
@@ -35,7 +38,7 @@ class SaveIntermediatePass(BasePass):
         path_to_save_dir: str,
         project_name: str | None = None,
         save_as_qasm: bool = True,
-        overwrite: bool = False
+        overwrite: bool = False,
     ) -> None:
         """
         Constructor for the SaveIntermediatePass.
@@ -61,9 +64,9 @@ class SaveIntermediatePass(BasePass):
             else 'unnamed_project'
 
         enum = 1
-        if exists(join(self.pathdir,self.projname)):
+        if exists(join(self.pathdir, self.projname)):
             if overwrite:
-                shutil.rmtree(join(self.pathdir,self.projname))
+                shutil.rmtree(join(self.pathdir, self.projname))
             else:
                 while exists(join(self.pathdir, self.projname + f'_{enum}')):
                     enum += 1
@@ -124,7 +127,10 @@ class SaveIntermediatePass(BasePass):
 
 
 class RestoreIntermediatePass(BasePass):
-    def __init__(self, project_directory: str, load_blocks: bool = True, as_circuit_gate: bool = False):
+    def __init__(
+        self, project_directory: str, load_blocks: bool = True,
+        as_circuit_gate: bool = False,
+    ):
         """
         Constructor for the RestoreIntermediatePass.
 
@@ -137,7 +143,7 @@ class RestoreIntermediatePass(BasePass):
                 the user must explicitly call load_blocks() themselves. Defaults
                 to True.
 
-            as_circuit_gate (bool): If True, blocks are reloaded as a circuit 
+            as_circuit_gate (bool): If True, blocks are reloaded as a circuit
             gate rather than a circuit.
 
         Raises:
@@ -164,10 +170,10 @@ class RestoreIntermediatePass(BasePass):
         files = sorted(listdir(self.proj_dir))
         # Files are of the form block_*.pickle or block_*.qasm
         self.block_list = [f for f in files if 'block_' in f]
-        pickle_list = [f for f in self.block_list if ".pickle" in f]
+        pickle_list = [f for f in self.block_list if '.pickle' in f]
         if len(pickle_list) == 0:
             self.saved_as_qasm = True
-            self.block_list = [f for f in self.block_list if ".qasm" in f]
+            self.block_list = [f for f in self.block_list if '.qasm' in f]
         else:
             self.block_list = pickle_list
         if len(self.block_list) > len(self.structure):
@@ -199,7 +205,7 @@ class RestoreIntermediatePass(BasePass):
 
         if not isinstance(self.structure, list):
             raise TypeError('The provided `structure.pickle` is not a list.')
-        
+
         if self.load_blocks:
             self.reload_blocks()
 
@@ -212,7 +218,7 @@ class RestoreIntermediatePass(BasePass):
                 with open(join(self.proj_dir, block)) as f:
                     block_circ = OPENQASM2Language().decode(f.read())
             else:
-                with open(join(self.proj_dir, block), "rb") as f:
+                with open(join(self.proj_dir, block), 'rb') as f:
                     block_circ = pickle.load(f)
             # Get location
             block_location = self.structure[block_num]
@@ -222,17 +228,23 @@ class RestoreIntermediatePass(BasePass):
                     'different sizes.',
                 )
             # Append to circuit
-            new_circuit.append_circuit(block_circ, block_location, as_circuit_gate=self.as_circuit_gate)
-        
+            new_circuit.append_circuit(
+                block_circ, block_location,
+                as_circuit_gate=self.as_circuit_gate,
+            )
+
         circuit.become(new_circuit)
         # Check if the circuit has been partitioned, if so, try to replace
         # blocks
 
+
 class CheckpointRestartPass(PassAlias):
-    def __init__(self, base_checkpoint_dir: str, 
-                 project_name: str,
-                 default_passes: BasePass | Sequence[BasePass],
-                 save_as_qasm: bool = True) -> None:
+    def __init__(
+        self, base_checkpoint_dir: str,
+        project_name: str,
+        default_passes: BasePass | Sequence[BasePass],
+        save_as_qasm: bool = True,
+    ) -> None:
         """Group together one or more `passes`."""
         if not is_sequence(default_passes):
             default_passes = [cast(BasePass, default_passes)]
@@ -241,19 +253,23 @@ class CheckpointRestartPass(PassAlias):
             default_passes = list(default_passes)
 
         full_checkpoint_dir = join(base_checkpoint_dir, project_name)
-        
+
         # Check if checkpoint files exist
-        if not exists(join(full_checkpoint_dir, "structure.pickle")):
-            _logger.info("Checkpoint does not exist!")
-            save_pass = SaveIntermediatePass(base_checkpoint_dir, project_name, 
-                                             save_as_qasm=save_as_qasm, overwrite=True)
+        if not exists(join(full_checkpoint_dir, 'structure.pickle')):
+            _logger.info('Checkpoint does not exist!')
+            save_pass = SaveIntermediatePass(
+                base_checkpoint_dir, project_name,
+                save_as_qasm=save_as_qasm, overwrite=True,
+            )
             default_passes.append(save_pass)
             self.passes = default_passes
         else:
             # Already checkpointed, restore
-            _logger.info("Restoring from Checkpoint!")
+            _logger.info('Restoring from Checkpoint!')
             self.passes = [
-                RestoreIntermediatePass(full_checkpoint_dir, as_circuit_gate=True)
+                RestoreIntermediatePass(
+                    full_checkpoint_dir, as_circuit_gate=True,
+                ),
             ]
 
     def get_passes(self) -> list[BasePass]:
