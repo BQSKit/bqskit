@@ -15,6 +15,9 @@ from bqskit.runtime.detached import ServerMailbox
 from bqskit.runtime.direction import MessageDirection
 
 
+_logger = logging.getLogger(__name__)
+
+
 class AttachedServer(DetachedServer):
     """
     BQSKit Runtime Server in attached mode.
@@ -33,6 +36,8 @@ class AttachedServer(DetachedServer):
         num_workers: int = -1,
         port: int = default_server_port,
         worker_port: int = default_worker_port,
+        log_level: int = logging.WARNING,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Create a server with `num_workers` workers.
@@ -49,7 +54,24 @@ class AttachedServer(DetachedServer):
             worker_port (int): The port this server will listen for workers
                 on. Default can be found in the
                 :obj:`~bqskit.runtime.default_worker_port` global variable.
+
+            log_level (int): The logging level for the server and workers.
+                (Default: logging.WARNING).
+
+            num_blas_threads (int): The number of threads to use in BLAS
+                libraries. (Default: 1).
         """
+        # Initialize runtime logging
+        logging.getLogger().setLevel(log_level)
+        _handler = logging.StreamHandler()
+        _handler.setLevel(0)
+        _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
+        _fmt_message = ' %(module)s: %(message)s'
+        _fmt = _fmt_header + _fmt_message
+        _formatter = logging.Formatter(_fmt, '%H:%M:%S')
+        _handler.setFormatter(_formatter)
+        logging.getLogger().addHandler(_handler)
+
         ServerBase.__init__(self)
 
         # See DetachedServer for more info on the following fields:
@@ -59,9 +81,6 @@ class AttachedServer(DetachedServer):
         self.mailboxes: dict[int, ServerMailbox] = {}
         self.mailbox_counter = 0
 
-        # Start workers
-        self.spawn_workers(num_workers, worker_port)
-
         # Connect to client
         client_conn = self.listen_once('localhost', port)
         self.clients[client_conn] = set()
@@ -70,24 +89,26 @@ class AttachedServer(DetachedServer):
             selectors.EVENT_READ,
             MessageDirection.CLIENT,
         )
-        self.logger.info('Connected to client.')
+        _logger.info('Connected to client.')
+
+        # Start workers
+        self.spawn_workers(
+            num_workers,
+            worker_port,
+            log_level,
+            num_blas_threads,
+        )
+
+        self.schedule_tasks = self.schedule_for_workers  # type: ignore
+        self.handle_waiting = self.handle_direct_worker_waiting  # type: ignore
 
     def handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""
         self.handle_shutdown()
 
 
-def start_attached_server(
-    num_workers: int,
-    log_level: int,
-    **kwargs: Any,
-) -> None:
+def start_attached_server(num_workers: int, **kwargs: Any) -> None:
     """Start a runtime server in attached mode."""
-    # Initialize runtime logging
-    _logger = logging.getLogger('bqskit-runtime')
-    _logger.setLevel(log_level)
-    _logger.addHandler(logging.StreamHandler())
-
     # Initialize the server
     server = AttachedServer(num_workers, **kwargs)
 

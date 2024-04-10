@@ -25,12 +25,16 @@ from typing import Sequence
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
+from bqskit.runtime import set_blas_thread_counts
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
+
+
+_logger = logging.getLogger(__name__)
 
 
 class RuntimeEmployee:
@@ -41,48 +45,103 @@ class RuntimeEmployee:
         conn: Connection,
         total_workers: int,
         process: Process | None = None,
-        num_tasks: int = 0,
     ) -> None:
         """Construct an employee with all resources idle."""
         self.conn: Connection = conn
         self.total_workers = total_workers
         self.process = process
-        self.num_tasks = num_tasks
+        self.num_tasks = 0
         self.num_idle_workers = total_workers
 
-    def shutdown(self) -> None:
-        """Shutdown the employee."""
+        self.submit_cache: list[tuple[RuntimeAddress, int]] = []
+        """
+        Tracks recently submitted tasks by id and count.
+
+        This is used to adjust the idle worker count when the employee sends a
+        waiting message.
+        """
+
+    def initiate_shutdown(self) -> None:
+        """Instruct employee to shutdown."""
         try:
             self.conn.send((RuntimeMessage.SHUTDOWN, None))
         except Exception:
             pass
 
+    def complete_shutdown(self) -> None:
+        """Ensure employee is shutdown and clean up resources."""
         if self.process is not None:
             self.process.join()
 
         self.process = None
         self.conn.close()
 
+    def shutdown(self) -> None:
+        """Initiate and complete shutdown."""
+        self.initiate_shutdown()
+        self.complete_shutdown()
+
     @property
     def has_idle_resources(self) -> bool:
         return self.num_idle_workers > 0
 
+    def get_num_of_tasks_sent_since(
+        self,
+        read_receipt: RuntimeAddress | None,
+    ) -> int:
+        """Return the number of tasks sent since the read receipt."""
+        if read_receipt is None:
+            return sum(count for _, count in self.submit_cache)
 
-def send_outgoing(node: ServerBase) -> None:
-    """Outgoing thread forwards messages as they are created."""
-    while True:
-        outgoing = node.outgoing.get()
+        for i, (addr, _) in enumerate(self.submit_cache):
+            if addr == read_receipt:
+                self.submit_cache = self.submit_cache[i:]
+                return sum(count for _, count in self.submit_cache[1:])
 
-        if not node.running:
-            # NodeBase's handle_shutdown will put a dummy value in the
-            # queue to wake the thread up so it can exit safely.
-            # Hence the node.running check now rather than in the
-            # while condition.
-            break
+        raise RuntimeError('Read receipt not found in submit cache.')
 
-        outgoing[0].send((outgoing[1], outgoing[2]))
-        node.logger.debug(f'Sent message {outgoing[1].name}.')
-        node.logger.log(1, f'{outgoing[2]}\n')
+
+class MultiLevelQueue:
+    """A multi-level queue for delaying submitted tasks."""
+
+    def __init__(self) -> None:
+        """Initialize the multi-level queue."""
+        self.queue: dict[int, list[RuntimeTask]] = {}
+        self.levels: int | None = None
+
+    def delay(self, tasks: Sequence[RuntimeTask]) -> None:
+        """Update the multi-level queue with tasks."""
+        for task in tasks:
+            task_depth = len(task.breadcrumbs)
+
+            if task_depth not in self.queue:
+                if self.levels is None or task_depth > self.levels:
+                    self.levels = task_depth
+                self.queue[task_depth] = []
+
+            self.queue[task_depth].append(task)
+
+    def empty(self) -> bool:
+        """Return True if the multi-level queue is empty."""
+        return self.levels is None
+
+    def pop(self) -> RuntimeTask:
+        """Pop the next task from the multi-level queue."""
+        if self.empty():
+            raise RuntimeError('Cannot pop from an empty multi-level queue.')
+
+        task = self.queue[self.levels].pop()  # type: ignore  # checked above
+
+        while self.levels is not None:
+            if self.levels in self.queue:
+                if len(self.queue[self.levels]) != 0:
+                    break
+                self.queue.pop(self.levels)
+            self.levels -= 1
+            if self.levels < 0:
+                self.levels = None
+
+        return task
 
 
 def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
@@ -92,7 +151,7 @@ def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
 
     node.running = False
     node.terminate_hotline.send(b'\0')
-    node.logger.info('Server interrupted.')
+    _logger.info('Server interrupted.')
 
 
 class ServerBase:
@@ -122,14 +181,17 @@ class ServerBase:
         self.sel.register(p, selectors.EVENT_READ, MessageDirection.SIGNAL)
         """Terminate hotline is used to unblock select while running."""
 
-        self.logger = logging.getLogger('bqskit-runtime')
-        """Logger used to print operational log messages."""
-
         self.employees: list[RuntimeEmployee] = []
         """Tracks this node's employees, which are managers or workers."""
 
         self.conn_to_employee_dict: dict[Connection, RuntimeEmployee] = {}
         """Used to find the employee associated with a message."""
+
+        self.multi_level_queue = MultiLevelQueue()
+        """Used to delay tasks until they can be scheduled."""
+
+        # Servers do not need blas threads
+        set_blas_thread_counts(1)
 
         # Safely and immediately exit on interrupt signals
         handle = functools.partial(sigint_handler, node=self)
@@ -137,9 +199,9 @@ class ServerBase:
 
         # Start outgoing thread
         self.outgoing: Queue[tuple[Connection, RuntimeMessage, Any]] = Queue()
-        self.outgoing_thread = Thread(target=send_outgoing, args=(self,))
+        self.outgoing_thread = Thread(target=self.send_outgoing, daemon=True)
         self.outgoing_thread.start()
-        self.logger.info('Started outgoing thread.')
+        _logger.info('Started outgoing thread.')
 
     def connect_to_managers(self, ipports: Sequence[tuple[str, int]]) -> None:
         """Connect to all managers given by endpoints in `ipports`."""
@@ -155,8 +217,8 @@ class ServerBase:
                 self.upper_id_bound,
             )
             manager_conns.append(self.connect_to_manager(ip, port, lb, ub))
-            self.logger.info(f'Connected to manager {i} at {ip}:{port}.')
-            self.logger.debug(f'Gave bounds {lb=} and {ub=} to manager {i}.')
+            _logger.info(f'Connected to manager {i} at {ip}:{port}.')
+            _logger.debug(f'Gave bounds {lb=} and {ub=} to manager {i}.')
 
         # Wait for started messages from all managers and register them
         self.total_workers = 0
@@ -170,11 +232,11 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered manager {i} with {num_workers=}.')
+            _logger.info(f'Registered manager {i} with {num_workers=}.')
             self.total_workers += num_workers
         self.num_idle_workers = self.total_workers
 
-        self.logger.info(f'Node has {self.total_workers} total workers.')
+        _logger.info(f'Node has {self.total_workers} total workers.')
 
     def connect_to_manager(
         self,
@@ -216,6 +278,8 @@ class ServerBase:
         self,
         num_workers: int = -1,
         port: int = default_worker_port,
+        logging_level: int = logging.WARNING,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Spawn worker processes.
@@ -228,6 +292,11 @@ class ServerBase:
             port (int): The port this server will listen for workers on.
                 Default can be found in the
                 :obj:`~bqskit.runtime.default_worker_port` global variable.
+
+            logging_level (int): The logging level for the workers.
+
+            num_blas_threads (int): The number of threads to use in BLAS
+                libraries. (Default: 1).
         """
         if num_workers == -1:
             oscount = os.cpu_count()
@@ -240,9 +309,17 @@ class ServerBase:
         procs = {}
         for i in range(num_workers):
             w_id = self.lower_id_bound + i
-            procs[w_id] = Process(target=start_worker, args=(w_id, port))
+            procs[w_id] = Process(
+                target=start_worker,
+                args=(w_id, port),
+                kwargs={
+                    'logging_level': logging_level,
+                    'num_blas_threads': num_blas_threads,
+                },
+            )
+            procs[w_id].daemon = True
             procs[w_id].start()
-            self.logger.debug(f'Stated worker process {i}.')
+            _logger.debug(f'Stated worker process {i}.')
 
         # Listen for the worker connections
         family = 'AF_INET' if sys.platform == 'win32' else None
@@ -270,12 +347,12 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered worker {i}.')
+            _logger.debug(f'Registered worker {i}.')
 
         self.step_size = 1
         self.total_workers = num_workers
         self.num_idle_workers = num_workers
-        self.logger.info(f'Node has spawned {num_workers} workers.')
+        _logger.info(f'Node has spawned {num_workers} workers.')
 
     def connect_to_workers(
         self,
@@ -298,7 +375,7 @@ class ServerBase:
             oscount = os.cpu_count()
             num_workers = oscount if oscount else 1
 
-        self.logger.info(f'Expecting {num_workers} worker connections.')
+        _logger.info(f'Expecting {num_workers} worker connections.')
 
         if self.lower_id_bound + num_workers >= self.upper_id_bound:
             raise RuntimeError('Insufficient id range for workers.')
@@ -325,12 +402,12 @@ class ServerBase:
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            self.logger.info(f'Registered worker {i}.')
+            _logger.info(f'Registered worker {i}.')
 
         self.step_size = 1
         self.total_workers = num_workers
         self.num_idle_workers = num_workers
-        self.logger.info(f'Node has connected to {num_workers} workers.')
+        _logger.info(f'Node has connected to {num_workers} workers.')
 
     def listen_once(self, ip: str, port: int) -> Connection:
         """Listen on `ip`:`port` for a connection and return on first one."""
@@ -340,9 +417,34 @@ class ServerBase:
         listener.close()
         return conn
 
+    def send_outgoing(self) -> None:
+        """Outgoing thread forwards messages as they are created."""
+        while True:
+            outgoing = self.outgoing.get()
+
+            if not self.running:
+                # NodeBase's handle_shutdown will put a dummy value in the
+                # queue to wake the thread up so it can exit safely.
+                # Hence the node.running check now rather than in the
+                # while condition.
+                break
+
+            if outgoing[0].closed:
+                continue
+
+            outgoing[0].send((outgoing[1], outgoing[2]))
+            _logger.debug(f'Sent message {outgoing[1].name}.')
+
+            if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
+                _logger.log(1, f'[{outgoing[2][0]}] * {len(outgoing[2])}\n')
+            else:
+                _logger.log(1, f'{outgoing[2]}\n')
+
+            self.outgoing.task_done()
+
     def run(self) -> None:
         """Main loop."""
-        self.logger.info(f'{self.__class__.__name__} running...')
+        _logger.info(f'{self.__class__.__name__} running...')
 
         try:
             while self.running:
@@ -356,7 +458,7 @@ class ServerBase:
 
                     # If interrupted by signal, shutdown and exit
                     if direction == MessageDirection.SIGNAL:
-                        self.logger.debug('Received interrupt signal.')
+                        _logger.debug('Received interrupt signal.')
                         self.handle_shutdown()
                         return
 
@@ -367,8 +469,11 @@ class ServerBase:
                         self.handle_disconnect(conn)
                         continue
                     log = f'Received message {msg.name} from {direction.name}.'
-                    self.logger.debug(log)
-                    self.logger.log(1, f'{payload}\n')
+                    _logger.debug(log)
+                    if msg == RuntimeMessage.SUBMIT_BATCH:
+                        _logger.log(1, f'[{payload[0]}] * {len(payload)}\n')
+                    else:
+                        _logger.log(1, f'{payload}\n')
 
                     # Handle message
                     self.handle_message(msg, direction, conn, payload)
@@ -376,7 +481,7 @@ class ServerBase:
         except Exception:
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
-            self.logger.error(error_str)
+            _logger.error(error_str)
             self.handle_system_error(error_str)
 
         finally:
@@ -415,24 +520,28 @@ class ServerBase:
     def handle_shutdown(self) -> None:
         """Shutdown the node and release resources."""
         # Stop running
-        self.logger.info('Shutting down node.')
+        _logger.info('Shutting down node.')
         self.running = False
 
         # Instruct employees to shutdown
         for employee in self.employees:
-            employee.shutdown()
+            employee.initiate_shutdown()
+
+        for employee in self.employees:
+            employee.complete_shutdown()
+
         self.employees.clear()
-        self.logger.debug('Shutdown employees.')
+        _logger.debug('Shutdown employees.')
 
         # Close selector
         self.sel.close()
-        self.logger.debug('Cleared selector.')
+        _logger.debug('Cleared selector.')
 
         # Close outgoing thread
         if self.outgoing_thread.is_alive():
             self.outgoing.put(b'\0')  # type: ignore
             self.outgoing_thread.join()
-            self.logger.debug('Joined outgoing thread.')
+            _logger.debug('Joined outgoing thread.')
             assert not self.outgoing_thread.is_alive()
 
     def handle_disconnect(self, conn: Connection) -> None:
@@ -443,10 +552,6 @@ class ServerBase:
         # If one of my employees crashed/shutdown/disconnected, I shutdown
         if conn in self.conn_to_employee_dict:
             self.handle_shutdown()
-
-    def __del__(self) -> None:
-        """Ensure resources are cleaned up."""
-        self.handle_shutdown()
 
     def assign_tasks(
         self,
@@ -513,21 +618,54 @@ class ServerBase:
         """Schedule tasks between this node's employees."""
         if len(tasks) == 0:
             return
-
-        assignments = self.assign_tasks(tasks)
-
-        for e, assignment in zip(self.employees, assignments):
-            num_tasks = len(assignment)
-
-            if num_tasks == 0:
-                continue
-
-            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, assignment))
-
-            e.num_tasks += num_tasks
-            e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
+        assignments = zip(self.employees, self.assign_tasks(tasks))
+        sorted_assignments = sorted(
+            assignments,
+            key=lambda x: x[0].num_idle_workers,
+            reverse=True,
+        )
+        for e, assignment in sorted_assignments:
+            self.send_tasks_to_employee(e, assignment)
 
         self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
+
+    def schedule_for_workers(self, tasks: Sequence[RuntimeTask]) -> None:
+        """Schedule tasks for workers, return the amount assigned."""
+        if len(tasks) == 0:
+            return
+
+        num_assigned_tasks = 0
+        for e in self.employees:
+            # TODO: randomize? prioritize workers idle but with less tasks?
+            if num_assigned_tasks >= len(tasks):
+                break
+
+            if e.num_idle_workers > 0:
+                task = tasks[num_assigned_tasks]
+                self.send_tasks_to_employee(e, [task])
+                num_assigned_tasks += 1
+
+        self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
+        self.multi_level_queue.delay(tasks[num_assigned_tasks:])
+
+    def send_tasks_to_employee(
+        self,
+        e: RuntimeEmployee,
+        tasks: Sequence[RuntimeTask],
+    ) -> None:
+        """Send the `task` to the employee responsible for `worker_id`."""
+        num_tasks = len(tasks)
+
+        if num_tasks == 0:
+            return
+
+        e.num_tasks += num_tasks
+        e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
+        e.submit_cache.append((tasks[0].unique_id, num_tasks))
+        if num_tasks == 1:
+            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT, tasks[0]))
+        else:
+            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, tasks))
 
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""
@@ -549,29 +687,64 @@ class ServerBase:
         employee_id = (worker_id - self.lower_id_bound) // self.step_size
         return self.employees[employee_id]
 
-    def broadcast_cancel(self, addr: RuntimeAddress) -> None:
+    def broadcast(self, msg: RuntimeMessage, payload: Any) -> None:
         """Broadcast a cancel message to my employees."""
         for employee in self.employees:
-            self.outgoing.put((employee.conn, RuntimeMessage.CANCEL, addr))
+            self.outgoing.put((employee.conn, msg, payload))
 
-    def handle_waiting(self, conn: Connection, new_idle_count: int) -> None:
+    def handle_importpath(self, paths: list[str]) -> None:
+        """Update the system path with the given paths."""
+        for path in paths:
+            if path not in sys.path:
+                sys.path.append(path)
+        self.broadcast(RuntimeMessage.IMPORTPATH, paths)
+
+    def handle_waiting(
+        self,
+        conn: Connection,
+        new_idle_count: int,
+        read_receipt: RuntimeAddress | None,
+    ) -> None:
         """
         Record that an employee is idle with nothing to do.
 
-        There is a race condition here that is allowed. If an employee
-        sends a waiting message at the same time that this sends it a
-        task, it will still be marked waiting even though it is running
-        a task. We allow this for two reasons. First, the consequences are
-        minimal: this situation can only lead to one extra task assigned
-        to the worker that could otherwise go to a truly idle worker.
-        Second, it is unlikely in the common BQSKit workflows, which have
-        wide and shallow task graphs and each leaf task can require seconds
-        of runtime.
+        There is a race condition that is corrected here. If an employee sends a
+        waiting message at the same time that its boss sends it a task, the
+        boss's idle count will eventually be incorrect. To fix this, every
+        waiting message sent by an employee is accompanied by a read receipt of
+        the latest batch of tasks it has processed. The boss can then adjust the
+        idle count by the number of tasks sent since the read receipt.
         """
-        old_count = self.conn_to_employee_dict[conn].num_idle_workers
-        self.conn_to_employee_dict[conn].num_idle_workers = new_idle_count
-        self.num_idle_workers += (new_idle_count - old_count)
+        employee = self.conn_to_employee_dict[conn]
+        unaccounted_tasks = employee.get_num_of_tasks_sent_since(read_receipt)
+        adjusted_idle_count = max(new_idle_count - unaccounted_tasks, 0)
+
+        old_count = employee.num_idle_workers
+        employee.num_idle_workers = adjusted_idle_count
+        self.num_idle_workers += (adjusted_idle_count - old_count)
         assert 0 <= self.num_idle_workers <= self.total_workers
+
+    def handle_direct_worker_waiting(
+        self,
+        conn: Connection,
+        new_idle_count: int,
+        read_receipt: RuntimeAddress | None,
+    ) -> None:
+        """
+        Record that a worker is idle with nothing to do.
+
+        Schedule tasks from the multi-level queue to the worker.
+        """
+        ServerBase.handle_waiting(self, conn, new_idle_count, read_receipt)
+
+        if self.multi_level_queue.empty():
+            return
+
+        employee = self.conn_to_employee_dict[conn]
+        if employee.num_idle_workers > 0:
+            task = self.multi_level_queue.pop()
+            self.send_tasks_to_employee(employee, [task])
+            self.num_idle_workers -= 1
 
 
 def parse_ipports(ipports_str: Sequence[str]) -> list[tuple[str, int]]:

@@ -9,7 +9,9 @@ from multiprocessing.connection import Connection
 from typing import Any
 from typing import cast
 from typing import List
+from typing import Optional
 from typing import Sequence
+from typing import Tuple
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
@@ -21,6 +23,9 @@ from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Manager(ServerBase):
@@ -42,6 +47,8 @@ class Manager(ServerBase):
         ipports: list[tuple[str, int]] | None = None,
         worker_port: int = default_worker_port,
         only_connect: bool = False,
+        log_level: int = logging.WARNING,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Create a manager instance in one of two ways:
@@ -78,6 +85,16 @@ class Manager(ServerBase):
 
             only_connect (bool): If true, do not spawn workers, only connect
                 to already spawned workers.
+
+            log_level (int): The logging level for the manager and workers.
+                If `only_connect` is True, doesn't set worker's log level.
+                In that case, set the worker's log level when spawning them.
+                (Default: logging.WARNING).
+
+            num_blas_threads (int): The number of threads to use in BLAS
+                libraries. If `only_connect` is True this is ignored. In
+                that case, set the thread count when spawning workers.
+                (Default: 1).
         """
         super().__init__()
 
@@ -95,24 +112,35 @@ class Manager(ServerBase):
             MessageDirection.ABOVE,
         )
 
-        # Case 1: spawn and manage workers
+        # Case 1: spawn and/or manage workers
         if ipports is None:
             if only_connect:
                 self.connect_to_workers(num_workers, worker_port)
             else:
-                self.spawn_workers(num_workers, worker_port)
+                self.spawn_workers(
+                    num_workers,
+                    worker_port,
+                    log_level,
+                    num_blas_threads,
+                )
 
-        # Case 2: Connect to managers at ipports
+            self.schedule_tasks = self.schedule_for_workers  # type: ignore
+            self.handle_waiting = self.handle_direct_worker_waiting  # type: ignore  # noqa: E501
+
+        # Case 2: Connect to detached managers at ipports
         else:
             self.connect_to_managers(ipports)
 
         # Track info on sent messages to reduce redundant messages:
         self.last_num_idle_sent_up = self.total_workers
 
+        # Track info on received messages to report read receipts:
+        self.most_recent_read_submit: RuntimeAddress | None = None
+
         # Inform upstream we are starting
         msg = (self.upstream, RuntimeMessage.STARTED, self.total_workers)
         self.outgoing.put(msg)
-        self.logger.info('Sent start message upstream.')
+        _logger.info('Sent start message upstream.')
 
     def handle_message(
         self,
@@ -126,24 +154,29 @@ class Manager(ServerBase):
 
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
+                self.most_recent_read_submit = rtask.unique_id
                 self.schedule_tasks([rtask])
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
+                self.most_recent_read_submit = rtasks[0].unique_id
                 self.schedule_tasks(rtasks)
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
                 self.send_result_down(result)
 
             elif msg == RuntimeMessage.CANCEL:
-                addr = cast(RuntimeAddress, payload)
-                self.broadcast_cancel(addr)
+                self.broadcast(RuntimeMessage.CANCEL, payload)
 
             elif msg == RuntimeMessage.SHUTDOWN:
                 self.handle_shutdown()
+
+            elif msg == RuntimeMessage.IMPORTPATH:
+                paths = cast(List[str], payload)
+                self.handle_importpath(paths)
 
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
@@ -153,20 +186,21 @@ class Manager(ServerBase):
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.send_up_or_schedule_tasks([rtask])
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
                 self.send_up_or_schedule_tasks(rtasks)
-                self.update_upstream_idle_workers()
+                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                num_idle = cast(int, payload)
-                self.handle_waiting(conn, num_idle)
+                p = cast(Tuple[int, Optional[RuntimeAddress]], payload)
+                num_idle, read_receipt = p
+                self.handle_waiting(conn, num_idle, read_receipt)
                 self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.UPDATE:
@@ -217,6 +251,7 @@ class Manager(ServerBase):
         if num_idle != 0:
             self.outgoing.put((self.upstream, RuntimeMessage.UPDATE, num_idle))
             self.schedule_tasks(tasks[:num_idle])
+            self.update_upstream_idle_workers()
 
         if len(tasks) > num_idle:
             self.outgoing.put((
@@ -244,7 +279,8 @@ class Manager(ServerBase):
         """Update the total number of idle workers upstream."""
         if self.num_idle_workers != self.last_num_idle_sent_up:
             self.last_num_idle_sent_up = self.num_idle_workers
-            m = (self.upstream, RuntimeMessage.WAITING, self.num_idle_workers)
+            payload = (self.num_idle_workers, self.most_recent_read_submit)
+            m = (self.upstream, RuntimeMessage.WAITING, payload)
             self.outgoing.put(m)
 
     def handle_update(self, conn: Connection, task_diff: int) -> None:
@@ -305,9 +341,16 @@ def start_manager() -> None:
     ipports = None if args.managers is None else parse_ipports(args.managers)
 
     # Set up logging
-    _logger = logging.getLogger('bqskit-runtime')
-    _logger.setLevel([30, 20, 10, 1][min(args.verbose, 3)])
-    _logger.addHandler(logging.StreamHandler())
+    log_level = [30, 20, 10, 1][min(args.verbose, 3)]
+    logging.getLogger().setLevel(log_level)
+    _handler = logging.StreamHandler()
+    _handler.setLevel(0)
+    _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
+    _fmt_message = ' %(module)s: %(message)s'
+    _fmt = _fmt_header + _fmt_message
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S')
+    _handler.setFormatter(_formatter)
+    logging.getLogger().addHandler(_handler)
 
     # Import tests package recursively
     if args.import_tests:
