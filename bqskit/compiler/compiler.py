@@ -324,7 +324,6 @@ class Compiler:
 
     def result(self, task_id: uuid.UUID) -> Circuit | tuple[Circuit, PassData]:
         """Block until the task is finished, return its result."""
-        print(task_id)
         msg, payload = self._send_recv(RuntimeMessage.REQUEST, task_id)
         if msg != RuntimeMessage.RESULT:
             raise RuntimeError(f'Unexpected message type: {msg}.')
@@ -423,8 +422,6 @@ class Compiler:
             raise RuntimeError('Connection unexpectedly none.')
 
         try:
-            print(msg)
-            print(payload)
             self._recv_log_error_until_empty()
 
             self.conn.send((msg, payload))

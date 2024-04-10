@@ -106,6 +106,4 @@ class FullQSDPass(PassAlias):
 
         # print(passes)
 
-        print("Num Passes", len(passes))
-
         await Workflow(passes).run(circuit, data)

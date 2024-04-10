@@ -19,15 +19,22 @@ class LogData:
     
     def plot_timeline(self, axes: plt.Axes, y_height:float, width):
         x = 0
+        color_map = {
+            "idle": "r",
+            "instantiate": "g",
+            "qsd": "",
+            "decompose": "o",
+        }
         for item in self.timeline:
+            # color = color_map.get(item[0], "b")
             if item[0] == "idle":
-                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="b", facecolor="r")
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="r", facecolor="r")
                 axes.add_patch(rect)
-            elif item[0] == "instantiate":
-                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="r", facecolor="g")
+            elif item[0].startswith("instantiate"):
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="g", facecolor="g")
                 axes.add_patch(rect)
             else:
-                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="r", facecolor="b")
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="b", facecolor="b")
                 axes.add_patch(rect)    
             
             x += item[1]
@@ -111,7 +118,7 @@ if __name__ == '__main__':
 
     for ii, tree_scan_depth in enumerate(tree_scan_depths):
         for jj ,num_workers in enumerate([4, 8, 64]):
-            file_name = f"/pscratch/sd/j/jkalloor/profiler/bqskit/{circ}/{num_qubits}/{min_qubits}/{tree_scan_depth}/{num_workers}/log.txt"
+            file_name = f"/pscratch/sd/j/jkalloor/profiler/bqskit/new_queue/{circ}/{num_qubits}/{min_qubits}/{tree_scan_depth}/{num_workers}/log.txt"
             if path.exists(file_name):
                 with mp.Pool(processes=num_workers) as pool:
                     log_data = pool.map(parse_worker, range(num_workers))

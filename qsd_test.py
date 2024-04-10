@@ -98,14 +98,14 @@ gates = sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)
 
 print(dict(gates))
 
-gates = [x[1] for x in gates]
+# gates = [x[1] for x in gates]
 
 
 # print([type(x) for x in compiled_circuit.gate_counts.keys()])
 
 
-scan_type = f"treescan{tree_depth}"
-pickle.dump(compiled_circuit, open(f"{circ_type}_{num_qudits}_{scan_type}_{partition_depth}.pickle", "wb"))
+# scan_type = f"treescan{tree_depth}"
+# pickle.dump(compiled_circuit, open(f"{circ_type}_{num_qudits}_{scan_type}_{partition_depth}.pickle", "wb"))
 
 
 # utry_1 = compiled_circuit.get_unitary()
@@ -114,7 +114,7 @@ pickle.dump(compiled_circuit, open(f"{circ_type}_{num_qudits}_{scan_type}_{parti
 # cost_function = HilbertSchmidtResidualsGenerator()
 # print(cost_function(compiled_circuit, circuit.get_unitary()))
 
-print(f"{circ_type}_{scan_type}, {num_qudits}, {partition_depth}, {total_time}, {gates[0]}, {gates[1]}, {gates[2]}, {gates[3]}")
+# print(f"{circ_type}_{scan_type}, {num_qudits}, {partition_depth}, {total_time}, {gates[0]}, {gates[1]}, {gates[2]}, {gates[3]}")
 
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)

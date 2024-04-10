@@ -309,9 +309,6 @@ class Worker:
             task = self._tasks[box.dest_addr]
 
             if task.wake_on_next or box.ready:
-                # print(f'Worker {self._id} is waking task
-                # {task.return_address}, with {task.wake_on_next=},
-                # {box.ready=}')
                 self._ready_task_ids.put(box.dest_addr)  # Wake it
                 box.dest_addr = None  # Prevent double wake
 
@@ -362,10 +359,10 @@ class Worker:
             except Empty:
                 payload = (1, self.most_recent_read_submit)
                 self._send(RuntimeMessage.WAITING, payload)
-                self.read_receipt_mutex.release()
                 if not self.idle_time_start:
                     print(f"Worker {self._id} | start idle | idle | {time.time()}")
                     self.idle_time_start = True
+                self.read_receipt_mutex.release()
                 addr = self._ready_task_ids.get()
 
             else:
@@ -402,7 +399,7 @@ class Worker:
         if task is None:
             return
 
-        if not self.idle_time_start:
+        if self.idle_time_start:
             print(f"Worker {self._id} | stop idle | idle | {time.time()}")
             self.idle_time_start = False
         try:
@@ -454,14 +451,12 @@ class Worker:
         #     #     raise RuntimeError(m)
         #     task.wake_on_next = True
         task.wake_on_next = future._next_flag
-        print(f'Worker {self._id} is waiting on task {task.return_address}, with {task.wake_on_next=}')
 
         if box.ready:
             self._ready_task_ids.put(task.return_address)
 
     def _process_task_completion(self, task: RuntimeTask, result: Any) -> None:
         """Package and send out task result."""
-        print(self._active_task == task)
         assert task is self._active_task
         packaged_result = RuntimeResult(task.return_address, result, self._id)
 
@@ -476,7 +471,6 @@ class Worker:
             # Let manager know this worker has one less task
             # without sending a result
         else:
-            print("Sending")
             self._send(RuntimeMessage.RESULT, packaged_result)
 
         # Remove task

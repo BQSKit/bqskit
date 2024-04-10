@@ -185,12 +185,15 @@ class QSDPass(BasePass):
         if len(unitaries) > 0:
             # Do a bulk QSDs -> circs
             # TODO: Combine mod_unitaries and qsd
-            unitaries = await get_runtime().map(QSDPass.mod_unitaries, unitaries)
-            circs = await get_runtime().map(QSDPass.qsd, unitaries)
+            # unitaries = await get_runtime().map(QSDPass.mod_unitaries, unitaries)
+            # circs = await get_runtime().map(QSDPass.qsd, unitaries)
+            circs = [QSDPass.qsd(QSDPass.mod_unitaries(u)) for u in unitaries]
             # Do bulk replace (single threaded)
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [Operation(x, locations[i], x._circuit.params) for i,x in enumerate(circ_gates)]
+            # print("About to batch replace", len(circ_ops))
             circuit.batch_replace(pts, circ_ops)
+            # print("Finished batch replacement")
             # circuit.replace_with_circuit(pts[0], circ_ops[0])
             circuit.unfold_all()
 
