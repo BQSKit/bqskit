@@ -124,9 +124,6 @@ class Manager(ServerBase):
                     num_blas_threads,
                 )
 
-            self.schedule_tasks = self.schedule_for_workers  # type: ignore
-            self.handle_waiting = self.handle_direct_worker_waiting  # type: ignore  # noqa: E501
-
         # Case 2: Connect to detached managers at ipports
         else:
             self.connect_to_managers(ipports)

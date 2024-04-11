@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import inspect
 import logging
-import pickle
 from typing import Any
 from typing import Coroutine
 
@@ -42,13 +41,7 @@ class RuntimeTask:
         RuntimeTask.task_counter += 1
         self.task_id = RuntimeTask.task_counter
 
-        try:
-            self.serialized_fnargs = pickle.dumps(fnargs)
-            self.serialized_with_pickle = True
-        except Exception:
-            self.serialized_fnargs = dill.dumps(fnargs)
-            self.serialized_with_pickle = False
-
+        self.serialized_fnargs = dill.dumps(fnargs)
         self._fnargs: tuple[Any, Any, Any] | None = None
         self._name = fnargs[0].__name__
         """Tuple of function pointer, arguments, and keyword arguments."""
@@ -91,10 +84,7 @@ class RuntimeTask:
     def fnargs(self) -> tuple[Any, Any, Any]:
         """Return the function pointer, arguments, and keyword arguments."""
         if self._fnargs is None:
-            if self.serialized_with_pickle:
-                self._fnargs = pickle.loads(self.serialized_fnargs)
-            else:
-                self._fnargs = dill.loads(self.serialized_fnargs)
+            self._fnargs = dill.loads(self.serialized_fnargs)
         assert self._fnargs is not None  # for type checker
         return self._fnargs
 

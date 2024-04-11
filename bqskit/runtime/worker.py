@@ -162,8 +162,8 @@ class Worker:
         self._tasks: dict[RuntimeAddress, RuntimeTask] = {}
         """Tracks all started, unfinished tasks on this worker."""
 
-        # self._delayed_tasks: list[RuntimeTask] = []
-        # """Store all delayed tasks in LIFO order."""
+        self._delayed_tasks: list[RuntimeTask] = []
+        """Store all delayed tasks in LIFO order."""
 
         self._ready_task_ids: Queue[RuntimeAddress] = Queue()
         """Tasks queued up for execution."""
@@ -203,7 +203,7 @@ class Worker:
                     lvl = active_task.logging_level
                     if lvl is None or lvl <= record.levelno:
                         tid = active_task.comp_task_id
-                        self._send(RuntimeMessage.LOG, (tid, record))
+                        self._conn.send((RuntimeMessage.LOG, (tid, record)))
             return record
 
         logging.setLogRecordFactory(record_factory)
@@ -215,7 +215,7 @@ class Worker:
         _logger.debug('Started incoming thread.')
 
         # Communicate that this worker is ready
-        self._send(RuntimeMessage.STARTED, self._id)
+        self._conn.send((RuntimeMessage.STARTED, self._id))
 
     def _loop(self) -> None:
         """Main worker event loop."""
@@ -228,7 +228,7 @@ class Worker:
                 error_str = ''.join(traceback.format_exception(*exc_info))
                 _logger.error(error_str)
                 try:
-                    self._send(RuntimeMessage.ERROR, error_str)
+                    self._conn.send((RuntimeMessage.ERROR, error_str))
                 except Exception:
                     pass
 
@@ -256,17 +256,17 @@ class Worker:
                 self._add_task(task)
                 self.read_receipt_mutex.release()
 
-            # elif msg == RuntimeMessage.SUBMIT_BATCH:
-            #     self.read_receipt_mutex.acquire()
-            #     tasks = cast(List[RuntimeTask], payload)
-            #     self.most_recent_read_submit = tasks[0].unique_id
-            #     self._add_task(tasks.pop())  # Submit one task
-            #     self._delayed_tasks.extend(tasks)  # Delay rest
-            #     # Delayed tasks have no context and are stored (more-or-less)
-            #     # as a function pointer together with the arguments.
-            #     # When it gets started, it consumes much more memory,
-            #     # so we delay the task start until necessary (at no cost)
-            #     self.read_receipt_mutex.release()
+            elif msg == RuntimeMessage.SUBMIT_BATCH:
+                self.read_receipt_mutex.acquire()
+                tasks = cast(List[RuntimeTask], payload)
+                self.most_recent_read_submit = tasks[0].unique_id
+                self._add_task(tasks.pop())  # Submit one task
+                self._delayed_tasks.extend(tasks)  # Delay rest
+                # Delayed tasks have no context and are stored (more-or-less)
+                # as a function pointer together with the arguments.
+                # When it gets started, it consumes much more memory,
+                # so we delay the task start until necessary (at no cost)
+                self.read_receipt_mutex.release()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
@@ -340,17 +340,17 @@ class Worker:
         }
 
         # Remove all tasks that are children of `addr` from delayed tasks
-        # self._delayed_tasks = [
-        #     t for t in self._delayed_tasks
-        #     if not t.is_descendant_of(addr)
-        # ]
+        self._delayed_tasks = [
+            t for t in self._delayed_tasks
+            if not t.is_descendant_of(addr)
+        ]
 
     def _get_next_ready_task(self) -> RuntimeTask | None:
         """Return the next ready task if one exists, otherwise block."""
         while True:
-            # if self._ready_task_ids.empty() and len(self._delayed_tasks) > 0:
-            #     self._add_task(self._delayed_tasks.pop())
-            #     continue
+            if self._ready_task_ids.empty() and len(self._delayed_tasks) > 0:
+                self._add_task(self._delayed_tasks.pop())
+                continue
 
             self.read_receipt_mutex.acquire()
             try:
@@ -358,7 +358,7 @@ class Worker:
 
             except Empty:
                 payload = (1, self.most_recent_read_submit)
-                self._send(RuntimeMessage.WAITING, payload)
+                self._conn.send((RuntimeMessage.WAITING, payload))
                 self.read_receipt_mutex.release()
                 addr = self._ready_task_ids.get()
 
@@ -412,7 +412,7 @@ class Worker:
             exc_info = sys.exc_info()
             error_str = ''.join(traceback.format_exception(*exc_info))
             error_payload = (self._active_task.comp_task_id, error_str)
-            self._send(RuntimeMessage.ERROR, error_payload)
+            self._conn.send((RuntimeMessage.ERROR, error_payload))
 
         finally:
             self._active_task = None
@@ -456,11 +456,11 @@ class Worker:
 
         if task.return_address.worker_id == self._id:
             self._handle_result(packaged_result)
-            self._send(RuntimeMessage.UPDATE, -1)
+            self._conn.send((RuntimeMessage.UPDATE, -1))
             # Let manager know this worker has one less task
             # without sending a result
         else:
-            self._send(RuntimeMessage.RESULT, packaged_result)
+            self._conn.send((RuntimeMessage.RESULT, packaged_result))
 
         # Remove task
         self._tasks.pop(task.return_address)
@@ -498,12 +498,6 @@ class Worker:
         self._mailbox_counter += 1
         return new_id
 
-    def _send(self, msg: RuntimeMessage, payload: Any) -> None:
-        """Send a message to the boss."""
-        _logger.debug(f'Sending message {msg.name}.')
-        _logger.log(1, f'Payload: {payload}')
-        self._conn.send((msg, payload))
-
     def submit(
         self,
         fn: Callable[..., Any],
@@ -531,7 +525,7 @@ class Worker:
         )
 
         # Submit the task (on the next cycle)
-        self._send(RuntimeMessage.SUBMIT, task)
+        self._conn.send((RuntimeMessage.SUBMIT, task))
 
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
@@ -578,7 +572,7 @@ class Worker:
         ]
 
         # Submit the tasks
-        self._send(RuntimeMessage.SUBMIT_BATCH, tasks)
+        self._conn.send((RuntimeMessage.SUBMIT_BATCH, tasks))
 
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
@@ -594,7 +588,7 @@ class Worker:
             for slot_id in range(num_slots)
         ]
         for addr in addrs:
-            self._send(RuntimeMessage.CANCEL, addr)
+            self._conn.send((RuntimeMessage.CANCEL, addr))
 
     def get_cache(self) -> dict[str, Any]:
         """
