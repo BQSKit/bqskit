@@ -20,6 +20,7 @@ from typing import Any
 from typing import Callable
 from typing import cast
 from typing import List
+from typing import Sequence
 
 from bqskit.runtime import default_worker_port
 from bqskit.runtime import set_blas_thread_counts
@@ -202,6 +203,14 @@ class Worker:
                 if active_task is not None:
                     lvl = active_task.logging_level
                     if lvl is None or lvl <= record.levelno:
+                        if lvl <= logging.DEBUG:
+                            record.msg += f' [wid={self._id}'
+                            items = active_task.log_context.items()
+                            if len(items) > 0:
+                                record.msg += ', '
+                            con_str = ', '.join(f'{k}={v}' for k, v in items)
+                            record.msg += con_str
+                            record.msg += ']'
                         tid = active_task.comp_task_id
                         self._conn.send((RuntimeMessage.LOG, (tid, record)))
             return record
@@ -503,10 +512,25 @@ class Worker:
         self,
         fn: Callable[..., Any],
         *args: Any,
+        task_name: str | None = None,
+        log_context: dict[str, str] = {},
         **kwargs: Any,
     ) -> RuntimeFuture:
         """Submit `fn` as a task to the runtime."""
         assert self._active_task is not None
+
+        if task_name is not None and not isinstance(task_name, str):
+            raise RuntimeError('task_name must be a string.')
+
+        if not isinstance(log_context, dict):
+            raise RuntimeError('log_context must be a dictionary.')
+
+        for k, v in log_context.items():
+            if not isinstance(k, str) or not isinstance(v, str):
+                raise RuntimeError(
+                    'log_context must be a map from strings to strings.',
+                )
+
         # Group fnargs together
         fnarg = (fn, args, kwargs)
 
@@ -523,6 +547,8 @@ class Worker:
             self._active_task.breadcrumbs + (self._active_task.return_address,),
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
+            task_name,
+            self._active_task.log_context | log_context,
         )
 
         # Submit the task (on the next cycle)
@@ -535,10 +561,38 @@ class Worker:
         self,
         fn: Callable[..., Any],
         *args: Any,
+        task_name: Sequence[str | None] | str | None = None,
+        log_context: Sequence[dict[str, str]] | dict[str, str] = {},
         **kwargs: Any,
     ) -> RuntimeFuture:
         """Map `fn` over the input arguments distributed across the runtime."""
         assert self._active_task is not None
+
+        if task_name is None or isinstance(task_name, str):
+            task_name = [task_name] * len(args[0])
+
+        if len(task_name) != len(args[0]):
+            raise RuntimeError(
+                'task_name must be a string or a list of strings equal'
+                'in length to the number of tasks.',
+            )
+
+        if isinstance(log_context, dict):
+            log_context = [log_context] * len(args[0])
+
+        if len(log_context) != len(args[0]):
+            raise RuntimeError(
+                'log_context must be a dictionary or a list of dictionaries'
+                ' equal in length to the number of tasks.',
+            )
+
+        for context in log_context:
+            for k, v in context.items():
+                if not isinstance(k, str) or not isinstance(v, str):
+                    raise RuntimeError(
+                        'log_context must be a map from strings to strings.',
+                    )
+
         # Group fnargs together
         fnargs = []
         if len(args) == 1:
@@ -568,6 +622,8 @@ class Worker:
                 breadcrumbs,
                 self._active_task.logging_level,
                 self._active_task.max_logging_depth,
+                task_name[i],
+                self._active_task.log_context | log_context[i],
             )
             for i, fnarg in enumerate(fnargs)
         ]

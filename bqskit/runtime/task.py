@@ -36,6 +36,8 @@ class RuntimeTask:
         breadcrumbs: tuple[RuntimeAddress, ...],
         logging_level: int | None = None,
         max_logging_depth: int = -1,
+        task_name: str | None = None,
+        log_context: dict[str, str] = {},
     ) -> None:
         """Create the task with a new id and return address."""
         RuntimeTask.task_counter += 1
@@ -43,7 +45,7 @@ class RuntimeTask:
 
         self.serialized_fnargs = dill.dumps(fnargs)
         self._fnargs: tuple[Any, Any, Any] | None = None
-        self._name = fnargs[0].__name__
+        self._name = fnargs[0].__name__ if task_name is None else task_name
         """Tuple of function pointer, arguments, and keyword arguments."""
 
         self.return_address = return_address
@@ -68,9 +70,6 @@ class RuntimeTask:
         self.coro: Coroutine[Any, Any, Any] | None = None
         """The coroutine containing this tasks code."""
 
-        # self.send: Any = None
-        # """A register that both the coroutine and task have access to."""
-
         self.desired_box_id: int | None = None
         """When waiting on a mailbox, this stores that mailbox's id."""
 
@@ -79,6 +78,8 @@ class RuntimeTask:
 
         self.wake_on_next: bool = False
         """Set to true if this task should wake immediately on a result."""
+
+        self.log_context: dict[str, str] = log_context
 
     @property
     def fnargs(self) -> tuple[Any, Any, Any]:

@@ -98,6 +98,7 @@ import os
 from typing import Any
 from typing import Callable
 from typing import Protocol
+from typing import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -143,18 +144,129 @@ class RuntimeHandle(Protocol):
         self,
         fn: Callable[..., Any],
         *args: Any,
+        task_name: str | None = None,
+        log_context: dict[str, str] = {},
         **kwargs: Any,
     ) -> RuntimeFuture:
-        """Submit a `fn` to the runtime."""
+        """
+        Submit a function to the runtime for execution.
+
+        This method schedules the function `fn` to be executed by the
+        runtime with the provided arguments `args` and keyword arguments
+        `kwargs`. The execution may happen asynchronously.
+
+        Args:
+            fn (Callable[..., Any]): The function to be executed.
+
+            *args (Any): Variable length argument list to be passed to
+                the function `fn`.
+
+            task_name (str | None): An optional name for the task, which
+                can be used for logging or tracking purposes. Defaults to
+                None, which will use the function name as the task name.
+
+            log_context (dict[str, str]): A dictionary containing logging
+                context information. All log messages produced by the fn
+                and any children tasks will contain this context if the
+                appropriate level (logging.DEBUG) is set on the logger.
+                Defaults to an empty dictionary for no added context.
+
+            **kwargs (Any): Arbitrary keyword arguments to be passed to
+                the function `fn`.
+
+        Returns:
+            RuntimeFuture: An object representing the future result of
+            the function execution. This can be used to retrieve the
+            result by `await`ing it.
+
+        Example:
+            >>> from bqskit.runtime import get_runtime
+            >>>
+            >>> def add(x, y):
+            ...     return x + y
+            >>>
+            >>> future = get_runtime().submit(add, 1, 2)
+            >>> result = await future
+            >>> print(result)
+            3
+
+        See Also:
+            - :func:`map` for submitting multiple tasks in parallel.
+            - :func:`cancel` for cancelling tasks.
+            - :class:`~bqskit.runtime.future.RuntimeFuture` for more
+                information on how to interact with the future object.
+        """
         ...
 
     def map(
         self,
         fn: Callable[..., Any],
         *args: Any,
+        task_name: Sequence[str | None] | str | None = None,
+        log_context: Sequence[dict[str, str]] | dict[str, str] = {},
         **kwargs: Any,
     ) -> RuntimeFuture:
-        """Map `fn` over the input arguments distributed across the runtime."""
+        """
+        Map a function over a sequence of arguments and execute in parallel.
+
+        This method schedules the function `fn` to be executed by the runtime
+        for each set of arguments provided in `args`. Each invocation of `fn`
+        will be executed potentially in parallel, depending on the runtime's
+        capabilities and current load.
+
+        Args:
+            fn (Callable[..., Any]): The function to be executed.
+
+            *args (Any): Variable length argument list to be passed to
+                the function `fn`. Each argument is expected to be a
+                sequence of arguments to be passed to a separate
+                invocation. The sequences should be of equal length.
+
+            task_name (Sequence[str | None] | str | None): An optional
+                name for the task group, which can be used for logging
+                or tracking purposes. Defaults to None, which will use
+                the function name as the task name. If a string is
+                provided, it will be used as the prefix for all task
+                names. If a sequence of strings is provided, each task
+                will be named with the corresponding string in the
+                sequence.
+
+            log_context (Sequence[dict[str, str]]) | dict[str, str]): A
+                dictionary containing logging context information. All
+                log messages produced by the `fn` and any children tasks
+                will contain this context if the appropriate level
+                (logging.DEBUG) is set on the logger. Defaults to an
+                empty dictionary for no added context. Can be a sequence
+                of contexts, one for each task, or a single context to be
+                used for all tasks.
+
+            **kwargs (Any): Arbitrary keyword arguments to be passed to
+                each invocation of the function `fn`.
+
+        Returns:
+            RuntimeFuture: An object representing the future result of
+            the function executions. This can be used to retrieve the
+            results by `await`ing it, which will return a list.
+
+        Example:
+            >>> from bqskit.runtime import get_runtime
+            >>>
+            >>> def add(x, y):
+            ...     return x + y
+            >>>
+            >>> args_list = [(1, 2, 3), (4, 5, 6)]
+            >>> future = get_runtime().map(add, *args_list)
+            >>> results = await future
+            >>> print(results)
+            [5, 7, 9]
+
+        See Also:
+            - :func:`submit` for submitting a single task.
+            - :func:`cancel` for cancelling tasks.
+            - :func:`next` for retrieving results incrementally.
+            - :class:`~bqskit.runtime.future.RuntimeFuture` for more
+                information on how to interact with the future object.
+        """
         ...
 
     def cancel(self, future: RuntimeFuture) -> None:
