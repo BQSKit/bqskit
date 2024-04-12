@@ -548,7 +548,7 @@ class Worker:
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
             task_name,
-            self._active_task.log_context | log_context,
+            {**self._active_task.log_context, **log_context},
         )
 
         # Submit the task (on the next cycle)
@@ -623,7 +623,7 @@ class Worker:
                 self._active_task.logging_level,
                 self._active_task.max_logging_depth,
                 task_name[i],
-                self._active_task.log_context | log_context[i],
+                {**self._active_task.log_context, **log_context[i]},
             )
             for i, fnarg in enumerate(fnargs)
         ]
