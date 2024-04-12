@@ -209,9 +209,9 @@ class Worker:
         logging.setLogRecordFactory(record_factory)
 
         # Start incoming thread
-        self.incomming_thread = Thread(target=self.recv_incoming)
-        self.incomming_thread.daemon = True
-        self.incomming_thread.start()
+        self.incoming_thread = Thread(target=self.recv_incoming)
+        self.incoming_thread.daemon = True
+        self.incoming_thread.start()
         _logger.debug('Started incoming thread.')
 
         # Communicate that this worker is ready
@@ -241,6 +241,7 @@ class Worker:
             except Exception:
                 _logger.debug('Crashed due to lost connection')
                 os.kill(os.getpid(), signal.SIGKILL)
+                exit()
 
             _logger.debug(f'Received message {msg.name}.')
             _logger.log(1, f'Payload: {payload}')
@@ -675,6 +676,7 @@ def start_worker(
     # If id isn't provided, wait for assignment
     if w_id is None:
         msg, w_id = conn.recv()
+        assert isinstance(w_id, int)
         assert msg == RuntimeMessage.STARTED
 
     # Set up runtime logging
@@ -684,9 +686,9 @@ def start_worker(
     _handler = logging.StreamHandler()
     _handler.setLevel(0)
     _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
-    _fmt_message = ' [wid=%(wid)s]: %(message)s'
+    _fmt_message = f' [wid={w_id}]: %(message)s'
     _fmt = _fmt_header + _fmt_message
-    _formatter = logging.Formatter(_fmt, '%H:%M:%S', defaults={'wid': w_id})
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S')
     _handler.setFormatter(_formatter)
     _runtime_logger.addHandler(_handler)
 
