@@ -249,7 +249,10 @@ class Worker:
                 msg, payload = self._conn.recv()
             except Exception:
                 _logger.debug('Crashed due to lost connection')
-                os.kill(os.getpid(), signal.SIGKILL)
+                if sys.platform == 'win32':
+                    os.kill(os.getpid(), 9)
+                else:
+                    os.kill(os.getpid(), signal.SIGKILL)
                 exit()
 
             _logger.debug(f'Received message {msg.name}.')
@@ -257,7 +260,10 @@ class Worker:
 
             # Process message
             if msg == RuntimeMessage.SHUTDOWN:
-                os.kill(os.getpid(), signal.SIGKILL)
+                if sys.platform == 'win32':
+                    os.kill(os.getpid(), 9)
+                else:
+                    os.kill(os.getpid(), signal.SIGKILL)
 
             elif msg == RuntimeMessage.SUBMIT:
                 self.read_receipt_mutex.acquire()
@@ -698,6 +704,7 @@ def start_worker(
         # Ignore interrupt signals on workers, boss will handle it for us
         # If w_id is None, then we are being spawned separately.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # TODO: check what needs to be done on win
 
     # Set number of BLAS threads
     set_blas_thread_counts(num_blas_threads)
