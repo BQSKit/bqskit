@@ -36,6 +36,7 @@ function definition.
     WorkflowLike
 """
 from __future__ import annotations
+
 from typing import Any
 
 from bqskit.compiler.basepass import BasePass
@@ -49,6 +50,7 @@ from bqskit.compiler.task import CompilationTask
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 
+
 def __getattr__(name: str) -> Any:
     # Lazy imports
     if name == 'compile':
@@ -58,6 +60,7 @@ def __getattr__(name: str) -> Any:
     # TODO: Move compile to a different subpackage and deprecate import
 
     raise AttributeError(f'module {__name__} has no attribute {name}')
+
 
 __all__ = [
     'BasePass',
