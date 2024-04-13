@@ -9,7 +9,7 @@ from setuptools import setup
 root_dir_path = os.path.abspath(os.path.dirname(__file__))
 pkg_dir_path = os.path.join(root_dir_path, 'bqskit')
 readme_path = os.path.join(root_dir_path, 'README.md')
-version_path = os.path.join(pkg_dir_path, 'version.py')
+version_path = os.path.join(pkg_dir_path, '_version.py')
 
 # Load Version Number
 with open(version_path) as version_file:
@@ -71,6 +71,7 @@ setup(
         'numpy>=1.22.0',
         'scipy>=1.8.0',
         'typing-extensions>=4.0.0',
+        'dill>=0.3.8',
     ],
     python_requires='>=3.8, <4',
     entry_points={

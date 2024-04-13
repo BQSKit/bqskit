@@ -26,3 +26,9 @@ def test_update_error_mul() -> None:
     assert data.error == 0.75
     data.update_error_mul(0.5)
     assert data.error == 0.875
+
+
+def test_target_doesnt_get_expanded_on_update() -> None:
+    data = PassData(Circuit(64))
+    data2 = PassData(Circuit(64))
+    data.update(data2)  # Should not crash

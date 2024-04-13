@@ -113,6 +113,7 @@ class PermutationAwareSynthesisPass(SynthesisPass):
             self.inner_synthesis.synthesize,
             targets,
             [data] * len(targets),
+            log_context=[{'perm': str(perm)} for perm in permsbyperms],
         )
 
         # Return best circuit

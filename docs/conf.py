@@ -100,7 +100,7 @@ autodoc_mock_imports = [
     'pytket',
     'cirq',
     'qutip',
-    'qiskit',
+    'dill',
 ]
 nbsphinx_allow_errors = True
 nbsphinx_execute = 'never'

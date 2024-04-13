@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import warnings
 from typing import Any
 from typing import Literal
@@ -9,8 +10,6 @@ from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
-
-import numpy as np
 
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
@@ -582,7 +581,7 @@ def compile(
         if error_threshold is not None:
             for i, data in enumerate(datas):
                 error = data.error
-                nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
+                nonsq_error = 1 - math.sqrt(max(1 - (error * error), 0))
                 if nonsq_error > error_threshold:
                     warnings.warn(
                         'Upper bound on error is greater than set threshold:'
@@ -631,7 +630,7 @@ def compile(
         # Log error if necessary
         if error_threshold is not None:
             error = data.error
-            nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
+            nonsq_error = 1 - math.sqrt(max(1 - (error * error), 0))
             if nonsq_error > error_threshold:
                 warnings.warn(
                     'Upper bound on error is greater than set threshold:'

@@ -27,8 +27,8 @@ class RuntimeFuture:
 
         Informs the event loop which mailbox this is waiting on.
         """
-        if self._next_flag:
-            return (yield self)
+        # if self._next_flag:
+        #     return (yield self)
 
         return (yield self)
 
