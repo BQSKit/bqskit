@@ -53,6 +53,7 @@ you will need to install the `pytket` package.
 """
 from __future__ import annotations
 
+# TODO: Deprecate imports from __init__, use lazy import to deprecate
 from bqskit.ext.cirq.models import Sycamore23Model
 from bqskit.ext.cirq.models import SycamoreModel
 from bqskit.ext.cirq.translate import bqskit_to_cirq
