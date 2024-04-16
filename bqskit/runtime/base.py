@@ -387,7 +387,9 @@ class ServerBase:
                 continue
 
             outgoing[0].send((outgoing[1], outgoing[2]))
-            _logger.debug(f'Sent message {outgoing[1].name}.')
+            if _logger.isEnabledFor(logging.DEBUG):
+                to = self.get_to_string(outgoing[0])
+                _logger.debug(f'Sent message {outgoing[1].name} to {to}.')
 
             if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
                 _logger.log(1, f'[{outgoing[2][0]}] * {len(outgoing[2])}\n')
@@ -470,6 +472,10 @@ class ServerBase:
         This is called when an error arises in runtime code not in a
         RuntimeTask's coroutine code.
         """
+
+    @abc.abstractmethod
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
 
     def handle_shutdown(self) -> None:
         """Shutdown the node and release resources."""

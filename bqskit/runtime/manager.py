@@ -228,6 +228,13 @@ class Manager(ServerBase):
             # If server has crashed then just exit
             pass
 
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
+        if conn == self.upstream:
+            return 'Boss'
+
+        return 'Employee'
+
     def handle_shutdown(self) -> None:
         """Shutdown the manager and clean up spawned processes."""
         super().handle_shutdown()
