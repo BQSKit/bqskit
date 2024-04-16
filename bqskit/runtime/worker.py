@@ -698,6 +698,7 @@ def start_worker(
     cpu: int | None = None,
     logging_level: int = logging.WARNING,
     num_blas_threads: int = 1,
+    log_client: bool = False,
 ) -> None:
     """Start this process's worker."""
     if w_id is not None:
@@ -710,7 +711,7 @@ def start_worker(
     set_blas_thread_counts(num_blas_threads)
 
     # Enforce no default logging
-    logging.lastResort = logging.NullHandler()  # type: ignore  # TODO: should I report this as a type bug?  # noqa: E501
+    logging.lastResort = logging.NullHandler()  # type: ignore # typeshed#11770
     logging.getLogger().handlers.clear()
 
     # Pin worker to cpu
@@ -743,7 +744,10 @@ def start_worker(
         assert msg == RuntimeMessage.STARTED
 
     # Set up runtime logging
-    _runtime_logger = logging.getLogger('bqskit.runtime')
+    if not log_client:
+        _runtime_logger = logging.getLogger('bqskit.runtime')
+    else:
+        _runtime_logger = logging.getLogger()
     _runtime_logger.propagate = False
     _runtime_logger.setLevel(logging_level)
     _handler = logging.StreamHandler()
@@ -810,6 +814,11 @@ def start_worker_rank() -> None:
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     parser.add_argument(
+        '-l', '--log-client',
+        action='store_true',
+        help='Log messages from the client process.',
+    )
+    parser.add_argument(
         '-t', '--num_blas_threads',
         type=int,
         default=1,
@@ -836,10 +845,20 @@ def start_worker_rank() -> None:
 
     logging_level = [30, 20, 10, 1][min(args.verbose, 3)]
 
+    if args.log_client and logging_level > 10:
+        raise RuntimeError('Cannot log client messages without at least -vv.')
+
     # Spawn worker process
     procs = []
     for cpu in cpus:
-        pargs = (None, args.port, cpu, logging_level, args.num_blas_threads)
+        pargs = (
+            None,
+            args.port,
+            cpu,
+            logging_level,
+            args.num_blas_threads,
+            args.log_client,
+        )
         procs.append(Process(target=start_worker, args=pargs))
         procs[-1].start()
 

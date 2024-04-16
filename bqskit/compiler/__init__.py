@@ -54,6 +54,7 @@ from bqskit.compiler.workflow import WorkflowLike
 def __getattr__(name: str) -> Any:
     # Lazy imports
     if name == 'compile':
+        # TODO: fix this (high-priority), overlap between module and function
         from bqskit.compiler.compile import compile
         return compile
 
