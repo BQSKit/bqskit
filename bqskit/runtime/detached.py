@@ -220,9 +220,9 @@ class DetachedServer(ServerBase):
     def get_to_string(self, conn: Connection) -> str:
         """Return a string representation of the connection."""
         if conn in self.clients:
-            return 'Client'
+            return 'CLIENT'
 
-        return 'Employee'
+        return self.conn_to_employee_dict[conn].recipient_string
 
     def handle_shutdown(self) -> None:
         """Shutdown the runtime."""

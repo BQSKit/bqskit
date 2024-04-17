@@ -164,7 +164,14 @@ class Worker:
         """Tracks all started, unfinished tasks on this worker."""
 
         self._delayed_tasks: list[RuntimeTask] = []
-        """Store all delayed tasks in LIFO order."""
+        """
+        Store all delayed tasks in LIFO order.
+
+        Delayed tasks have no context and are stored (more-or-less) as a
+        function pointer together with the arguments. When it gets started, it
+        consumes much more memory, so we delay the task start until necessary
+        (at no cost)
+        """
 
         self._ready_task_ids: Queue[RuntimeAddress] = Queue()
         """Tasks queued up for execution."""
@@ -191,7 +198,13 @@ class Worker:
         """Tracks the most recently processed submit message from above."""
 
         self.read_receipt_mutex = Lock()
-        """A lock to ensure waiting messages's read receipt is correct."""
+        """
+        A lock to ensure waiting messages's read receipt is correct.
+
+        This lock enforces atomic update of `most_recent_read_submit` and
+        task addition/enqueueing. This is necessary to ensure that the
+        idle status is always correct.
+        """
 
         # Send out every client emitted log message upstream
         old_factory = logging.getLogRecordFactory()
@@ -278,10 +291,6 @@ class Worker:
                 self.most_recent_read_submit = tasks[0].unique_id
                 self._add_task(tasks.pop())  # Submit one task
                 self._delayed_tasks.extend(tasks)  # Delay rest
-                # Delayed tasks have no context and are stored (more-or-less)
-                # as a function pointer together with the arguments.
-                # When it gets started, it consumes much more memory,
-                # so we delay the task start until necessary (at no cost)
                 self.read_receipt_mutex.release()
 
             elif msg == RuntimeMessage.RESULT:
@@ -368,6 +377,12 @@ class Worker:
                 self._add_task(self._delayed_tasks.pop())
                 continue
 
+            # Critical section
+            # Attempt to get a ready task. If none are available, message
+            # the manager/server with a waiting message letting them
+            # know the worker is idle. This needs to be atomic to prevent
+            # the self.more_recent_read_submit from being updated after
+            # catching the Empty exception, but before forming the payload.
             self.read_receipt_mutex.acquire()
             try:
                 addr = self._ready_task_ids.get_nowait()
@@ -376,6 +391,8 @@ class Worker:
                 payload = (1, self.most_recent_read_submit)
                 self._conn.send((RuntimeMessage.WAITING, payload))
                 self.read_receipt_mutex.release()
+                # Block for new message. Can release lock here since the
+                # the `self.most_recent_read_submit` has been used.
                 addr = self._ready_task_ids.get()
 
             else:
