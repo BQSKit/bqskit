@@ -70,10 +70,8 @@ runtime server through the :func:`get_runtime` function. This returns a
 :class:`RuntimeHandle`, which you can use to submit, map, wait on, and
 cancel tasks in the execution environment.
 
-For more information on how to design a custom pass, see this (TODO, sorry,
-you can look at the source code of existing
-`passes <https://github.com/BQSKit/bqskit/blob/master/bqskit/passes>`_
-for a good example for the time being).
+For more information on how to design a custom pass, see the following
+guide: :doc:`guides/custompass.md`.
 
 .. autosummary::
     :toctree: autogen

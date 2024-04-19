@@ -30,7 +30,7 @@ class RuntimeTask:
 
     def __init__(
         self,
-        fnargs: tuple[Any, Any, Any],  # TODO: Look into retyping this
+        fnargs: tuple[Any, Any, Any],
         return_address: RuntimeAddress,
         comp_task_id: int,
         breadcrumbs: tuple[RuntimeAddress, ...],
