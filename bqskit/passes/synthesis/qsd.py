@@ -139,11 +139,12 @@ class QSDPass(BasePass):
         return shift_up @ u @ shift_down
 
     @staticmethod
-    def qsd(u: UnitaryMatrix) -> Circuit:
+    def qsd(orig_u: UnitaryMatrix) -> Circuit:
         '''
         Return the circuit that is generated from one levl of QSD. 
         '''
         start = time.time()
+        u = QSDPass.mod_unitaries(orig_u)
         (u1, u2), theta_y, (v1h, v2h) = cossin(u._utry, p=u.shape[0]/2, q=u.shape[1]/2, separate=True)
         QSDPass.cs_time += (time.time() - start)
         # print(QSDPass.cs_time)
@@ -185,9 +186,8 @@ class QSDPass(BasePass):
         if len(unitaries) > 0:
             # Do a bulk QSDs -> circs
             # TODO: Combine mod_unitaries and qsd
-            # unitaries = await get_runtime().map(QSDPass.mod_unitaries, unitaries)
-            # circs = await get_runtime().map(QSDPass.qsd, unitaries)
-            circs = [QSDPass.qsd(QSDPass.mod_unitaries(u)) for u in unitaries]
+            circs = await get_runtime().map(QSDPass.qsd, unitaries)
+            # circs = [QSDPass.qsd(u) for u in unitaries]
             # Do bulk replace (single threaded)
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [Operation(x, locations[i], x._circuit.params) for i,x in enumerate(circ_gates)]
