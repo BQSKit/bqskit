@@ -1,9 +1,11 @@
 import time
 import subprocess
 import pathlib
+import os
 
 sleep_time = 0.05
 file_name = 'job.sh'
+folder = "new_queue"
 
 header = """#!/bin/bash -l
 #SBATCH -q regular
@@ -18,7 +20,7 @@ header = """#!/bin/bash -l
 module load python
 conda activate /pscratch/sd/j/jkalloor/profiler_env
 echo "{file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker}"
-python {file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker} > new_queue/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}/log.txt
+python {file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker} > {folder}/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}/log.txt
 """
 
 if __name__ == '__main__':
@@ -30,6 +32,8 @@ if __name__ == '__main__':
     num_qudits = [4]
     min_qudits = [2]
     tree_depths = [4, 8, 12]
+
+
     # tree_depths = [1]
     for method in methods:
         for num_qudit in num_qudits:
@@ -38,13 +42,14 @@ if __name__ == '__main__':
                     # for exp in range(tree_depth - 4, tree_depth + 1):
                     for num_worker in [4, 8, 64]:
                         # num_worker = 2 ** exp
-                        # pathlib.Path(f"new_queue/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}").mkdir(parents=True, exist_ok=True)
-                        to_write = open(file_name, 'w')
-                        to_write.write(header.format(file=file, method=method, num_qudit=num_qudit, min_qudit=min_qudit,
-                                                      tree_depth=tree_depth, num_worker=num_worker))
-                        to_write.close()
-                        time.sleep(2*sleep_time)
+                        pathlib.Path(f"{folder}/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}").mkdir(parents=True, exist_ok=True)
+                        os.system(f"python {file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker} > {folder}/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}/log.txt")
+                        # to_write = open(file_name, 'w')
+                        # to_write.write(header.format(file=file, method=method, num_qudit=num_qudit, min_qudit=min_qudit,
+                        #                               tree_depth=tree_depth, num_worker=num_worker))
+                        # to_write.close()
+                        # time.sleep(2*sleep_time)
                         # print(method, num_qudit, min_qudit, tree_depth, num_worker)
                         # output = subprocess.check_output(['sbatch' , file_name])
                         # # print(output)
-                        # time.sleep(sleep_time)
+                        time.sleep(sleep_time)

@@ -22,7 +22,7 @@ class LogData:
         color_map = {
             "idle": "r",
             "instantiate": "g",
-            "qsd": "",
+            "qsd": "c",
             "decompose": "o",
         }
         for item in self.timeline:
@@ -32,6 +32,12 @@ class LogData:
                 axes.add_patch(rect)
             elif item[0].startswith("instantiate"):
                 rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="g", facecolor="g")
+                axes.add_patch(rect)
+            elif item[0].startswith("qsd"):
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="c", facecolor="c")
+                axes.add_patch(rect)
+            elif item[0].startswith("decompose"):
+                rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="m", facecolor="m")
                 axes.add_patch(rect)
             else:
                 rect = patches.Rectangle((x, y_height), width=item[1], height=width, edgecolor="b", facecolor="b")
@@ -62,12 +68,18 @@ class Parser:
     
     def split_log_line(line: str):
         if not line.startswith("Worker"):
-            return [-1, "", "", 0.0]
-        arr = line.split("|")
-        arr = [x.strip() for x in arr]
-        arr[0] = int(arr[0].removeprefix("Worker "))
-        arr[-1] = float(arr[-1])
-        return arr
+            return []
+        log_lines = line.split("Worker ")
+        all_arrs = []
+        for log_line in log_lines:
+            if len(log_line) == 0:
+                continue
+            arr = log_line.split("|")
+            arr = [x.strip() for x in arr]
+            arr[0] = int(arr[0])
+            arr[-1] = float(arr[-1])
+            all_arrs.append(arr)
+        return all_arrs
 
     def parse_line(self, worker_id: int, task_type: str, task_name: str, time: float):
         if worker_id != self.worker_id:
@@ -99,7 +111,9 @@ def parse_worker(worker_id: int) -> LogData:
     parser = Parser(worker_id)
     with open(file_name, "r") as f_obj:
         for line in f_obj.readlines():
-            parser.parse_line(*Parser.split_log_line(line))
+            lines = Parser.split_log_line(line)
+            for line in lines:
+                parser.parse_line(*line)
 
     return parser.get_log_data()
 
@@ -117,8 +131,9 @@ if __name__ == '__main__':
 
 
     for ii, tree_scan_depth in enumerate(tree_scan_depths):
-        for jj ,num_workers in enumerate([4, 8, 64]):
-            file_name = f"/pscratch/sd/j/jkalloor/profiler/bqskit/new_queue/{circ}/{num_qubits}/{min_qubits}/{tree_scan_depth}/{num_workers}/log.txt"
+        for jj , num_workers in enumerate([4, 8, 64]):
+            file_name = f"/pscratch/sd/j/jkalloor/profiler/bqskit/updated_runtime/{circ}/{num_qubits}/{min_qubits}/{tree_scan_depth}/{num_workers}/log.txt"
+            print(file_name)
             if path.exists(file_name):
                 with mp.Pool(processes=num_workers) as pool:
                     log_data = pool.map(parse_worker, range(num_workers))
@@ -136,7 +151,7 @@ if __name__ == '__main__':
         axes[ii][0].set_ylabel(f"Tree Depth: {tree_scan_depth}")
 
 
-    fig.savefig(f"{circ}_{num_qubits}_{min_qubits}_no_scan.png")
+    fig.savefig(f"{circ}_{num_qubits}_{min_qubits}_latest.png")
 
 
 

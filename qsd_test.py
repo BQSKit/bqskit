@@ -45,8 +45,8 @@ instantiate_options = {'min_iters': 0,
 
 # Let's create a random 4-qubit unitary to synthesize and add it to a
 # circuit.
-num_qudits = int(argv[2])
 circ_type = argv[1]
+num_qudits = int(argv[2])
 min_qudits = int(argv[3])
 tree_depth = int(argv[4])
 amount_of_workers = int(argv[5])
