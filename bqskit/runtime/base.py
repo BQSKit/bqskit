@@ -118,6 +118,49 @@ class RuntimeEmployee:
         raise RuntimeError('Read receipt not found in submit cache.')
 
 
+class MultiLevelQueue:
+    """A multi-level queue for delaying submitted tasks."""
+
+    def __init__(self) -> None:
+        """Initialize the multi-level queue."""
+        self.queue: dict[int, list[RuntimeTask]] = {}
+        self.levels: int | None = None
+
+    def delay(self, tasks: Sequence[RuntimeTask]) -> None:
+        """Update the multi-level queue with tasks."""
+        for task in tasks:
+            task_depth = len(task.breadcrumbs)
+
+            if task_depth not in self.queue:
+                if self.levels is None or task_depth > self.levels:
+                    self.levels = task_depth
+                self.queue[task_depth] = []
+
+            self.queue[task_depth].append(task)
+
+    def empty(self) -> bool:
+        """Return True if the multi-level queue is empty."""
+        return self.levels is None
+
+    def pop(self) -> RuntimeTask:
+        """Pop the next task from the multi-level queue."""
+        if self.empty():
+            raise RuntimeError('Cannot pop from an empty multi-level queue.')
+
+        task = self.queue[self.levels].pop()  # type: ignore  # checked above
+
+        while self.levels is not None:
+            if self.levels in self.queue:
+                if len(self.queue[self.levels]) != 0:
+                    break
+                self.queue.pop(self.levels)
+            self.levels -= 1
+            if self.levels < 0:
+                self.levels = None
+
+        return task
+
+
 def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
     """Interrupt the node."""
     if not node.running:
@@ -160,6 +203,9 @@ class ServerBase:
 
         self.conn_to_employee_dict: dict[Connection, RuntimeEmployee] = {}
         """Used to find the employee associated with a message."""
+
+        self.multi_level_queue = MultiLevelQueue()
+        """Used to delay tasks until they can be scheduled."""
 
         # Servers do not need blas threads
         set_blas_thread_counts(1)
@@ -609,18 +655,47 @@ class ServerBase:
             reverse=True,
         )  # Employees with the most idle workers get assignments first
         for e, assignment in sorted_assignments:
-            num_tasks = len(assignment)
-
-            if num_tasks == 0:
-                continue
-
-            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, assignment))
-
-            e.num_tasks += num_tasks
-            e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
-            e.submit_cache.append((assignment[0].unique_id, num_tasks))
+            self.send_tasks_to_employee(e, assignment)
 
         self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
+
+    def schedule_for_workers(self, tasks: Sequence[RuntimeTask]) -> None:
+        """Schedule tasks for workers, return the amount assigned."""
+        if len(tasks) == 0:
+            return
+
+        num_assigned_tasks = 0
+        for e in self.employees:
+            # TODO: randomize? prioritize workers idle but with less tasks?
+            if num_assigned_tasks >= len(tasks):
+                break
+
+            if e.num_idle_workers > 0:
+                task = tasks[num_assigned_tasks]
+                self.send_tasks_to_employee(e, [task])
+                num_assigned_tasks += 1
+
+        self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
+        self.multi_level_queue.delay(tasks[num_assigned_tasks:])
+
+    def send_tasks_to_employee(
+        self,
+        e: RuntimeEmployee,
+        tasks: Sequence[RuntimeTask],
+    ) -> None:
+        """Send the `task` to the employee responsible for `worker_id`."""
+        num_tasks = len(tasks)
+
+        if num_tasks == 0:
+            return
+
+        e.num_tasks += num_tasks
+        e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
+        e.submit_cache.append((tasks[0].unique_id, num_tasks))
+        if num_tasks == 1:
+            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT, tasks[0]))
+        else:
+            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, tasks))
 
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""
@@ -671,13 +746,35 @@ class ServerBase:
         idle count by the number of tasks sent since the read receipt.
         """
         employee = self.conn_to_employee_dict[conn]
-        unaccounted_task = employee.get_num_of_tasks_sent_since(read_receipt)
-        adjusted_idle_count = max(new_idle_count - unaccounted_task, 0)
+        unaccounted_tasks = employee.get_num_of_tasks_sent_since(read_receipt)
+        adjusted_idle_count = max(new_idle_count - unaccounted_tasks, 0)
 
         old_count = employee.num_idle_workers
         employee.num_idle_workers = adjusted_idle_count
         self.num_idle_workers += (adjusted_idle_count - old_count)
         assert 0 <= self.num_idle_workers <= self.total_workers
+
+    def handle_direct_worker_waiting(
+        self,
+        conn: Connection,
+        new_idle_count: int,
+        read_receipt: RuntimeAddress | None,
+    ) -> None:
+        """
+        Record that a worker is idle with nothing to do.
+
+        Schedule tasks from the multi-level queue to the worker.
+        """
+        ServerBase.handle_waiting(self, conn, new_idle_count, read_receipt)
+
+        if self.multi_level_queue.empty():
+            return
+
+        employee = self.conn_to_employee_dict[conn]
+        if employee.num_idle_workers > 0:
+            task = self.multi_level_queue.pop()
+            self.send_tasks_to_employee(employee, [task])
+            self.num_idle_workers -= 1
 
 
 def parse_ipports(ipports_str: Sequence[str]) -> list[tuple[str, int]]:
