@@ -42,16 +42,28 @@ class RuntimeEmployee:
 
     def __init__(
         self,
+        id: int,
         conn: Connection,
         total_workers: int,
         process: Process | None = None,
+        is_manager: bool = False,
     ) -> None:
         """Construct an employee with all resources idle."""
+
+        self.id = id
+        """
+        The ID of the employee.
+
+        If this is a worker, then their unique worker id. If this is a manager,
+        then their local id.
+        """
+
         self.conn: Connection = conn
         self.total_workers = total_workers
         self.process = process
         self.num_tasks = 0
         self.num_idle_workers = total_workers
+        self.is_manager = is_manager
 
         self.submit_cache: list[tuple[RuntimeAddress, int]] = []
         """
@@ -82,6 +94,11 @@ class RuntimeEmployee:
         self.complete_shutdown()
 
     @property
+    def recipient_string(self) -> str:
+        """Return a string representation of the employee."""
+        return f'{"Manager" if self.is_manager else "Worker"} {self.id}'
+
+    @property
     def has_idle_resources(self) -> bool:
         return self.num_idle_workers > 0
 
@@ -99,49 +116,6 @@ class RuntimeEmployee:
                 return sum(count for _, count in self.submit_cache[1:])
 
         raise RuntimeError('Read receipt not found in submit cache.')
-
-
-class MultiLevelQueue:
-    """A multi-level queue for delaying submitted tasks."""
-
-    def __init__(self) -> None:
-        """Initialize the multi-level queue."""
-        self.queue: dict[int, list[RuntimeTask]] = {}
-        self.levels: int | None = None
-
-    def delay(self, tasks: Sequence[RuntimeTask]) -> None:
-        """Update the multi-level queue with tasks."""
-        for task in tasks:
-            task_depth = len(task.breadcrumbs)
-
-            if task_depth not in self.queue:
-                if self.levels is None or task_depth > self.levels:
-                    self.levels = task_depth
-                self.queue[task_depth] = []
-
-            self.queue[task_depth].append(task)
-
-    def empty(self) -> bool:
-        """Return True if the multi-level queue is empty."""
-        return self.levels is None
-
-    def pop(self) -> RuntimeTask:
-        """Pop the next task from the multi-level queue."""
-        if self.empty():
-            raise RuntimeError('Cannot pop from an empty multi-level queue.')
-
-        task = self.queue[self.levels].pop()  # type: ignore  # checked above
-
-        while self.levels is not None:
-            if self.levels in self.queue:
-                if len(self.queue[self.levels]) != 0:
-                    break
-                self.queue.pop(self.levels)
-            self.levels -= 1
-            if self.levels < 0:
-                self.levels = None
-
-        return task
 
 
 def sigint_handler(signum: int, _: FrameType | None, node: ServerBase) -> None:
@@ -187,9 +161,6 @@ class ServerBase:
         self.conn_to_employee_dict: dict[Connection, RuntimeEmployee] = {}
         """Used to find the employee associated with a message."""
 
-        self.multi_level_queue = MultiLevelQueue()
-        """Used to delay tasks until they can be scheduled."""
-
         # Servers do not need blas threads
         set_blas_thread_counts(1)
 
@@ -225,7 +196,14 @@ class ServerBase:
         for i, conn in enumerate(manager_conns):
             msg, num_workers = conn.recv()
             assert msg == RuntimeMessage.STARTED
-            self.employees.append(RuntimeEmployee(conn, num_workers))
+            self.employees.append(
+                RuntimeEmployee(
+                    i,
+                    conn,
+                    num_workers,
+                    is_manager=True,
+                ),
+            )
             self.conn_to_employee_dict[conn] = self.employees[-1]
             self.sel.register(
                 conn,
@@ -332,7 +310,7 @@ class ServerBase:
         for i, conn in enumerate(conns):
             msg, w_id = conn.recv()
             assert msg == RuntimeMessage.STARTED
-            employee = RuntimeEmployee(conn, 1, procs[w_id])
+            employee = RuntimeEmployee(w_id, conn, 1, procs[w_id])
             temp_reorder[w_id - self.lower_id_bound] = employee
             self.conn_to_employee_dict[conn] = employee
 
@@ -341,13 +319,13 @@ class ServerBase:
             self.employees.append(temp_reorder[i])
 
         # Register employee communication
-        for i, employee in enumerate(self.employees):
+        for employee in self.employees:
             self.sel.register(
                 employee.conn,
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            _logger.debug(f'Registered worker {i}.')
+            _logger.debug(f'Registered worker {employee.id}.')
 
         self.step_size = 1
         self.total_workers = num_workers
@@ -389,20 +367,20 @@ class ServerBase:
         for i, conn in enumerate(conns):
             w_id = self.lower_id_bound + i
             self.outgoing.put((conn, RuntimeMessage.STARTED, w_id))
-            employee = RuntimeEmployee(conn, 1)
+            employee = RuntimeEmployee(w_id, conn, 1)
             self.employees.append(employee)
             self.conn_to_employee_dict[conn] = employee
 
         # Register employee communication
-        for i, employee in enumerate(self.employees):
-            w_id = self.lower_id_bound + i
+        for employee in self.employees:
+            w_id = employee.id
             assert employee.conn.recv() == (RuntimeMessage.STARTED, w_id)
             self.sel.register(
                 employee.conn,
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            _logger.info(f'Registered worker {i}.')
+            _logger.info(f'Registered worker {w_id}.')
 
         self.step_size = 1
         self.total_workers = num_workers
@@ -433,7 +411,9 @@ class ServerBase:
                 continue
 
             outgoing[0].send((outgoing[1], outgoing[2]))
-            _logger.debug(f'Sent message {outgoing[1].name}.')
+            if _logger.isEnabledFor(logging.DEBUG):
+                to = self.get_to_string(outgoing[0])
+                _logger.debug(f'Sent message {outgoing[1].name} to {to}.')
 
             if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
                 _logger.log(1, f'[{outgoing[2][0]}] * {len(outgoing[2])}\n')
@@ -516,6 +496,10 @@ class ServerBase:
         This is called when an error arises in runtime code not in a
         RuntimeTask's coroutine code.
         """
+
+    @abc.abstractmethod
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
 
     def handle_shutdown(self) -> None:
         """Shutdown the node and release resources."""
@@ -623,49 +607,20 @@ class ServerBase:
             assignments,
             key=lambda x: x[0].num_idle_workers,
             reverse=True,
-        )
+        )  # Employees with the most idle workers get assignments first
         for e, assignment in sorted_assignments:
-            self.send_tasks_to_employee(e, assignment)
+            num_tasks = len(assignment)
+
+            if num_tasks == 0:
+                continue
+
+            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, assignment))
+
+            e.num_tasks += num_tasks
+            e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
+            e.submit_cache.append((assignment[0].unique_id, num_tasks))
 
         self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
-
-    def schedule_for_workers(self, tasks: Sequence[RuntimeTask]) -> None:
-        """Schedule tasks for workers, return the amount assigned."""
-        if len(tasks) == 0:
-            return
-
-        num_assigned_tasks = 0
-        for e in self.employees:
-            # TODO: randomize? prioritize workers idle but with less tasks?
-            if num_assigned_tasks >= len(tasks):
-                break
-
-            if e.num_idle_workers > 0:
-                task = tasks[num_assigned_tasks]
-                self.send_tasks_to_employee(e, [task])
-                num_assigned_tasks += 1
-
-        self.num_idle_workers = sum(e.num_idle_workers for e in self.employees)
-        self.multi_level_queue.delay(tasks[num_assigned_tasks:])
-
-    def send_tasks_to_employee(
-        self,
-        e: RuntimeEmployee,
-        tasks: Sequence[RuntimeTask],
-    ) -> None:
-        """Send the `task` to the employee responsible for `worker_id`."""
-        num_tasks = len(tasks)
-
-        if num_tasks == 0:
-            return
-
-        e.num_tasks += num_tasks
-        e.num_idle_workers -= min(num_tasks, e.num_idle_workers)
-        e.submit_cache.append((tasks[0].unique_id, num_tasks))
-        if num_tasks == 1:
-            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT, tasks[0]))
-        else:
-            self.outgoing.put((e.conn, RuntimeMessage.SUBMIT_BATCH, tasks))
 
     def send_result_down(self, result: RuntimeResult) -> None:
         """Send the `result` to the appropriate employee."""
@@ -716,35 +671,13 @@ class ServerBase:
         idle count by the number of tasks sent since the read receipt.
         """
         employee = self.conn_to_employee_dict[conn]
-        unaccounted_tasks = employee.get_num_of_tasks_sent_since(read_receipt)
-        adjusted_idle_count = max(new_idle_count - unaccounted_tasks, 0)
+        unaccounted_task = employee.get_num_of_tasks_sent_since(read_receipt)
+        adjusted_idle_count = max(new_idle_count - unaccounted_task, 0)
 
         old_count = employee.num_idle_workers
         employee.num_idle_workers = adjusted_idle_count
         self.num_idle_workers += (adjusted_idle_count - old_count)
         assert 0 <= self.num_idle_workers <= self.total_workers
-
-    def handle_direct_worker_waiting(
-        self,
-        conn: Connection,
-        new_idle_count: int,
-        read_receipt: RuntimeAddress | None,
-    ) -> None:
-        """
-        Record that a worker is idle with nothing to do.
-
-        Schedule tasks from the multi-level queue to the worker.
-        """
-        ServerBase.handle_waiting(self, conn, new_idle_count, read_receipt)
-
-        if self.multi_level_queue.empty():
-            return
-
-        employee = self.conn_to_employee_dict[conn]
-        if employee.num_idle_workers > 0:
-            task = self.multi_level_queue.pop()
-            self.send_tasks_to_employee(employee, [task])
-            self.num_idle_workers -= 1
 
 
 def parse_ipports(ipports_str: Sequence[str]) -> list[tuple[str, int]]:

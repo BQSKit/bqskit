@@ -99,9 +99,6 @@ class AttachedServer(DetachedServer):
             num_blas_threads,
         )
 
-        self.schedule_tasks = self.schedule_for_workers  # type: ignore
-        self.handle_waiting = self.handle_direct_worker_waiting  # type: ignore
-
     def handle_disconnect(self, conn: Connection) -> None:
         """A client disconnect in attached mode is equal to a shutdown."""
         self.handle_shutdown()
