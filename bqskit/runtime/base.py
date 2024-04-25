@@ -42,16 +42,28 @@ class RuntimeEmployee:
 
     def __init__(
         self,
+        id: int,
         conn: Connection,
         total_workers: int,
         process: Process | None = None,
+        is_manager: bool = False,
     ) -> None:
         """Construct an employee with all resources idle."""
+
+        self.id = id
+        """
+        The ID of the employee.
+
+        If this is a worker, then their unique worker id. If this is a manager,
+        then their local id.
+        """
+
         self.conn: Connection = conn
         self.total_workers = total_workers
         self.process = process
         self.num_tasks = 0
         self.num_idle_workers = total_workers
+        self.is_manager = is_manager
 
         self.submit_cache: list[tuple[RuntimeAddress, int]] = []
         """
@@ -80,6 +92,11 @@ class RuntimeEmployee:
         """Initiate and complete shutdown."""
         self.initiate_shutdown()
         self.complete_shutdown()
+
+    @property
+    def recipient_string(self) -> str:
+        """Return a string representation of the employee."""
+        return f'{"Manager" if self.is_manager else "Worker"} {self.id}'
 
     @property
     def has_idle_resources(self) -> bool:
@@ -225,7 +242,14 @@ class ServerBase:
         for i, conn in enumerate(manager_conns):
             msg, num_workers = conn.recv()
             assert msg == RuntimeMessage.STARTED
-            self.employees.append(RuntimeEmployee(conn, num_workers))
+            self.employees.append(
+                RuntimeEmployee(
+                    i,
+                    conn,
+                    num_workers,
+                    is_manager=True,
+                ),
+            )
             self.conn_to_employee_dict[conn] = self.employees[-1]
             self.sel.register(
                 conn,
@@ -333,7 +357,7 @@ class ServerBase:
         for i, conn in enumerate(conns):
             msg, w_id = conn.recv()
             assert msg == RuntimeMessage.STARTED
-            employee = RuntimeEmployee(conn, 1, procs[w_id])
+            employee = RuntimeEmployee(w_id, conn, 1, procs[w_id])
             temp_reorder[w_id - self.lower_id_bound] = employee
             self.conn_to_employee_dict[conn] = employee
 
@@ -342,13 +366,13 @@ class ServerBase:
             self.employees.append(temp_reorder[i])
 
         # Register employee communication
-        for i, employee in enumerate(self.employees):
+        for employee in self.employees:
             self.sel.register(
                 employee.conn,
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            _logger.debug(f'Registered worker {i}.')
+            _logger.debug(f'Registered worker {employee.id}.')
 
         self.step_size = 1
         self.total_workers = num_workers
@@ -390,20 +414,20 @@ class ServerBase:
         for i, conn in enumerate(conns):
             w_id = self.lower_id_bound + i
             self.outgoing.put((conn, RuntimeMessage.STARTED, w_id))
-            employee = RuntimeEmployee(conn, 1)
+            employee = RuntimeEmployee(w_id, conn, 1)
             self.employees.append(employee)
             self.conn_to_employee_dict[conn] = employee
 
         # Register employee communication
-        for i, employee in enumerate(self.employees):
-            w_id = self.lower_id_bound + i
+        for employee in self.employees:
+            w_id = employee.id
             assert employee.conn.recv() == (RuntimeMessage.STARTED, w_id)
             self.sel.register(
                 employee.conn,
                 selectors.EVENT_READ,
                 MessageDirection.BELOW,
             )
-            _logger.info(f'Registered worker {i}.')
+            _logger.info(f'Registered worker {w_id}.')
 
         self.step_size = 1
         self.total_workers = num_workers
@@ -434,7 +458,9 @@ class ServerBase:
                 continue
 
             outgoing[0].send((outgoing[1], outgoing[2]))
-            _logger.debug(f'Sent message {outgoing[1].name}.')
+            if _logger.isEnabledFor(logging.DEBUG):
+                to = self.get_to_string(outgoing[0])
+                _logger.debug(f'Sent message {outgoing[1].name} to {to}.')
 
             if outgoing[1] == RuntimeMessage.SUBMIT_BATCH:
                 _logger.log(1, f'[{outgoing[2][0]}] * {len(outgoing[2])}\n')
@@ -517,6 +543,10 @@ class ServerBase:
         This is called when an error arises in runtime code not in a
         RuntimeTask's coroutine code.
         """
+
+    @abc.abstractmethod
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
 
     def handle_shutdown(self) -> None:
         """Shutdown the node and release resources."""
@@ -626,7 +656,7 @@ class ServerBase:
             assignments,
             key=lambda x: x[0].num_idle_workers,
             reverse=True,
-        )
+        )  # Employees with the most idle workers get assignments first
         for e, assignment in sorted_assignments:
             self.send_tasks_to_employee(e, assignment)
 

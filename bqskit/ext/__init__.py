@@ -73,6 +73,7 @@ from bqskit.ext.supermarq import supermarq_entanglement_ratio
 from bqskit.ext.supermarq import supermarq_liveness
 from bqskit.ext.supermarq import supermarq_parallelism
 from bqskit.ext.supermarq import supermarq_program_communication
+# TODO: Deprecate imports from __init__, use lazy import to deprecate
 
 
 __all__ = [

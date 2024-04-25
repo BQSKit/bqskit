@@ -20,6 +20,7 @@ from typing import Any
 from typing import Callable
 from typing import cast
 from typing import List
+from typing import Sequence
 
 from bqskit.runtime import default_worker_port
 from bqskit.runtime import set_blas_thread_counts
@@ -194,7 +195,13 @@ class Worker:
         """Tracks the most recently processed submit message from above."""
 
         self.read_receipt_mutex = Lock()
-        """A lock to ensure waiting messages's read receipt is correct."""
+        """
+        A lock to ensure waiting messages's read receipt is correct.
+
+        This lock enforces atomic update of `most_recent_read_submit` and
+        task addition/enqueueing. This is necessary to ensure that the
+        idle status is always correct.
+        """
 
         # Send out every client emitted log message upstream
         old_factory = logging.getLogRecordFactory()
@@ -206,6 +213,14 @@ class Worker:
                 if active_task is not None:
                     lvl = active_task.logging_level
                     if lvl is None or lvl <= record.levelno:
+                        if lvl <= logging.DEBUG:
+                            record.msg += f' [wid={self._id}'
+                            items = active_task.log_context.items()
+                            if len(items) > 0:
+                                record.msg += ', '
+                            con_str = ', '.join(f'{k}={v}' for k, v in items)
+                            record.msg += con_str
+                            record.msg += ']'
                         tid = active_task.comp_task_id
                         self._send(RuntimeMessage.LOG, (tid, record))
             return record
@@ -213,9 +228,9 @@ class Worker:
         logging.setLogRecordFactory(record_factory)
 
         # Start incoming thread
-        self.incomming_thread = Thread(target=self.recv_incoming)
-        self.incomming_thread.daemon = True
-        self.incomming_thread.start()
+        self.incoming_thread = Thread(target=self.recv_incoming)
+        self.incoming_thread.daemon = True
+        self.incoming_thread.start()
         _logger.debug('Started incoming thread.')
 
         # Communicate that this worker is ready
@@ -244,14 +259,21 @@ class Worker:
                 msg, payload = self._conn.recv()
             except Exception:
                 _logger.debug('Crashed due to lost connection')
-                os.kill(os.getpid(), signal.SIGKILL)
+                if sys.platform == 'win32':
+                    os.kill(os.getpid(), 9)
+                else:
+                    os.kill(os.getpid(), signal.SIGKILL)
+                exit()
 
             _logger.debug(f'Received message {msg.name}.')
             _logger.log(1, f'Payload: {payload}')
 
             # Process message
             if msg == RuntimeMessage.SHUTDOWN:
-                os.kill(os.getpid(), signal.SIGKILL)
+                if sys.platform == 'win32':
+                    os.kill(os.getpid(), 9)
+                else:
+                    os.kill(os.getpid(), signal.SIGKILL)
 
             elif msg == RuntimeMessage.SUBMIT:
                 self.read_receipt_mutex.acquire()
@@ -352,6 +374,12 @@ class Worker:
             #     self._add_task(self._delayed_tasks.pop())
             #     continue
 
+            # Critical section
+            # Attempt to get a ready task. If none are available, message
+            # the manager/server with a waiting message letting them
+            # know the worker is idle. This needs to be atomic to prevent
+            # the self.more_recent_read_submit from being updated after
+            # catching the Empty exception, but before forming the payload.
             self.read_receipt_mutex.acquire()
             try:
                 addr = self._ready_task_ids.get_nowait()
@@ -363,6 +391,8 @@ class Worker:
                     print(f"Worker {self._id} | start idle | idle | {time.time()}")
                     self.idle_time_start = True
                 self.read_receipt_mutex.release()
+                # Block for new message. Can release lock here since the
+                # the `self.most_recent_read_submit` has been used.
                 addr = self._ready_task_ids.get()
 
             else:
@@ -519,10 +549,25 @@ class Worker:
         self,
         fn: Callable[..., Any],
         *args: Any,
+        task_name: str | None = None,
+        log_context: dict[str, str] = {},
         **kwargs: Any,
     ) -> RuntimeFuture:
         """Submit `fn` as a task to the runtime."""
         assert self._active_task is not None
+
+        if task_name is not None and not isinstance(task_name, str):
+            raise RuntimeError('task_name must be a string.')
+
+        if not isinstance(log_context, dict):
+            raise RuntimeError('log_context must be a dictionary.')
+
+        for k, v in log_context.items():
+            if not isinstance(k, str) or not isinstance(v, str):
+                raise RuntimeError(
+                    'log_context must be a map from strings to strings.',
+                )
+
         # Group fnargs together
         fnarg = (fn, args, kwargs)
 
@@ -539,6 +584,8 @@ class Worker:
             self._active_task.breadcrumbs + (self._active_task.return_address,),
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
+            task_name,
+            {**self._active_task.log_context, **log_context},
         )
 
         # Submit the task (on the next cycle)
@@ -551,10 +598,38 @@ class Worker:
         self,
         fn: Callable[..., Any],
         *args: Any,
+        task_name: Sequence[str | None] | str | None = None,
+        log_context: Sequence[dict[str, str]] | dict[str, str] = {},
         **kwargs: Any,
     ) -> RuntimeFuture:
         """Map `fn` over the input arguments distributed across the runtime."""
         assert self._active_task is not None
+
+        if task_name is None or isinstance(task_name, str):
+            task_name = [task_name] * len(args[0])
+
+        if len(task_name) != len(args[0]):
+            raise RuntimeError(
+                'task_name must be a string or a list of strings equal'
+                'in length to the number of tasks.',
+            )
+
+        if isinstance(log_context, dict):
+            log_context = [log_context] * len(args[0])
+
+        if len(log_context) != len(args[0]):
+            raise RuntimeError(
+                'log_context must be a dictionary or a list of dictionaries'
+                ' equal in length to the number of tasks.',
+            )
+
+        for context in log_context:
+            for k, v in context.items():
+                if not isinstance(k, str) or not isinstance(v, str):
+                    raise RuntimeError(
+                        'log_context must be a map from strings to strings.',
+                    )
+
         # Group fnargs together
         fnargs = []
         if len(args) == 1:
@@ -584,6 +659,8 @@ class Worker:
                 breadcrumbs,
                 self._active_task.logging_level,
                 self._active_task.max_logging_depth,
+                task_name[i],
+                {**self._active_task.log_context, **log_context[i]},
             )
             for i, fnarg in enumerate(fnargs)
         ]
@@ -652,19 +729,21 @@ def start_worker(
     cpu: int | None = None,
     logging_level: int = logging.WARNING,
     num_blas_threads: int = 1,
-    profile: bool = False
+    profile: bool = False,
+    log_client: bool = False,
 ) -> None:
     """Start this process's worker."""
     if w_id is not None:
         # Ignore interrupt signals on workers, boss will handle it for us
         # If w_id is None, then we are being spawned separately.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # TODO: check what needs to be done on win
 
     # Set number of BLAS threads
     set_blas_thread_counts(num_blas_threads)
 
     # Enforce no default logging
-    logging.lastResort = logging.NullHandler()  # type: ignore  # TODO: should I report this as a type bug?  # noqa: E501
+    logging.lastResort = logging.NullHandler()  # type: ignore # typeshed#11770
     logging.getLogger().handlers.clear()
 
     # Pin worker to cpu
@@ -693,18 +772,22 @@ def start_worker(
     # If id isn't provided, wait for assignment
     if w_id is None:
         msg, w_id = conn.recv()
+        assert isinstance(w_id, int)
         assert msg == RuntimeMessage.STARTED
 
     # Set up runtime logging
-    _runtime_logger = logging.getLogger('bqskit.runtime')
+    if not log_client:
+        _runtime_logger = logging.getLogger('bqskit.runtime')
+    else:
+        _runtime_logger = logging.getLogger()
     _runtime_logger.propagate = False
     _runtime_logger.setLevel(logging_level)
     _handler = logging.StreamHandler()
     _handler.setLevel(0)
     _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
-    _fmt_message = ' [wid=%(wid)s]: %(message)s'
+    _fmt_message = f' [wid={w_id}]: %(message)s'
     _fmt = _fmt_header + _fmt_message
-    _formatter = logging.Formatter(_fmt, '%H:%M:%S', defaults={'wid': w_id})
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S')
     _handler.setFormatter(_formatter)
     _runtime_logger.addHandler(_handler)
 
@@ -763,6 +846,11 @@ def start_worker_rank() -> None:
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     parser.add_argument(
+        '-l', '--log-client',
+        action='store_true',
+        help='Log messages from the client process.',
+    )
+    parser.add_argument(
         '-t', '--num_blas_threads',
         type=int,
         default=1,
@@ -789,10 +877,20 @@ def start_worker_rank() -> None:
 
     logging_level = [30, 20, 10, 1][min(args.verbose, 3)]
 
+    if args.log_client and logging_level > 10:
+        raise RuntimeError('Cannot log client messages without at least -vv.')
+
     # Spawn worker process
     procs = []
     for cpu in cpus:
-        pargs = (None, args.port, cpu, logging_level, args.num_blas_threads)
+        pargs = (
+            None,
+            args.port,
+            cpu,
+            logging_level,
+            args.num_blas_threads,
+            args.log_client,
+        )
         procs.append(Process(target=start_worker, args=pargs))
         procs[-1].start()
 

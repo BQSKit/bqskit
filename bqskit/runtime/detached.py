@@ -217,6 +217,13 @@ class DetachedServer(ServerBase):
         # Sleep to ensure clients receive error message before shutdown
         time.sleep(1)
 
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
+        if conn in self.clients:
+            return 'CLIENT'
+
+        return self.conn_to_employee_dict[conn].recipient_string
+
     def handle_shutdown(self) -> None:
         """Shutdown the runtime."""
         super().handle_shutdown()

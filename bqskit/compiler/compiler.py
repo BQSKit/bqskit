@@ -297,7 +297,7 @@ class Compiler:
                 tasks equal opportunity to log.
 
         Returns:
-            (uuid.UUID): The ID of the generated task in the system. This
+            uuid.UUID: The ID of the generated task in the system. This
                 ID can be used to check the status of, cancel, and request
                 the result of the task.
         """

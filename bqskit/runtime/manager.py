@@ -186,12 +186,10 @@ class Manager(ServerBase):
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.send_up_or_schedule_tasks([rtask])
-                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 rtasks = cast(List[RuntimeTask], payload)
                 self.send_up_or_schedule_tasks(rtasks)
-                # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.RESULT:
                 result = cast(RuntimeResult, payload)
@@ -230,6 +228,13 @@ class Manager(ServerBase):
         except Exception:
             # If server has crashed then just exit
             pass
+
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
+        if conn == self.upstream:
+            return 'BOSS'
+
+        return self.conn_to_employee_dict[conn].recipient_string
 
     def handle_shutdown(self) -> None:
         """Shutdown the manager and clean up spawned processes."""
