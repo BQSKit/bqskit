@@ -71,7 +71,7 @@ class Compiler:
         num_workers: int = -1,
         runtime_log_level: int = logging.WARNING,
         worker_port: int = default_worker_port,
-        run_profiler: bool = False,
+        log_file: str | None = None,
         num_blas_threads: int = 1,
     ) -> None:
         """
@@ -105,7 +105,7 @@ class Compiler:
             num_blas_threads (int): The number of threads to use in the
                 BLAS libraries on the worker nodes. (Defaults to 1)
         """
-        self.profile = run_profiler
+        self.log_file = log_file
         self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
 
@@ -134,12 +134,12 @@ class Compiler:
 
         See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
         """
-        profile = self.profile
+        log_file = self.log_file
         params = f'{num_workers}, '
         params += f'log_level={runtime_log_level}, '
         params += f'{worker_port=}, '
         params += f'{num_blas_threads=}, '
-        params += f'{profile=}, '
+        params += f'{log_file=}, '
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
         if sys.platform == 'win32':
