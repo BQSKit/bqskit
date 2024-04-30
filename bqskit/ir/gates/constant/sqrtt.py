@@ -1,4 +1,4 @@
-"""This module implements the TGate."""
+"""This module implements the SqrtTGate."""
 from __future__ import annotations
 
 import cmath
@@ -10,7 +10,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class SqrtTGate(ConstantGate, QubitGate):
     """
-    The single-qubit SqrtT gate.
+    The single-qubit Square root T gate.
 
     .. math::
 
