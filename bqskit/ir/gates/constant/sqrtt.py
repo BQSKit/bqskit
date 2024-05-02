@@ -10,7 +10,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class SqrtTGate(ConstantGate, QubitGate):
     """
-    The single-qubit Square root T gate.
+    The single-qubit square root T gate.
 
     .. math::
 
@@ -21,7 +21,7 @@ class SqrtTGate(ConstantGate, QubitGate):
     """
 
     _num_qudits = 1
-    _qasm_name = 'sqrtt'
+    _qasm_name = 'st'
     _utry = UnitaryMatrix(
         [
             [1, 0],
