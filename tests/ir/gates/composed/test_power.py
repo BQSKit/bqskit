@@ -1,3 +1,4 @@
+# type: ignore
 """This module tests the PowerGate class."""
 from __future__ import annotations
 
