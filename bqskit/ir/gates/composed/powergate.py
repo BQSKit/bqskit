@@ -10,7 +10,6 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.ir.gates.constant.identity import IdentityGate
-from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -30,7 +29,8 @@ class PowerGate(
 
     For example:
         >>> from bqskit.ir.gates import TGate, TdgGate
-        >>> PowerGate(TGate(),2).get_unitary() == TdgGate().get_unitary()*TdgGate().get_unitary()
+        >>> PowerGate(TGate(),2).get_unitary() ==
+           TdgGate().get_unitary()*TdgGate().get_unitary()
         True
     """
 
@@ -59,8 +59,10 @@ class PowerGate(
 
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0 and not building_docs():
-            self.utry = np.linalg.matrix_power(
-                self.gate.get_unitary(), self.power,
+            self.utry = UnitaryMatrix(
+                np.linalg.matrix_power(
+                    self.gate.get_unitary(), self.power,
+                ), self._radixes,
             )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
@@ -68,9 +70,18 @@ class PowerGate(
         if hasattr(self, 'utry'):
             return self.utry
 
-        return np.linalg.matrix_power(self.gate.get_unitary(params), self.power)
+        return UnitaryMatrix(
+            np.linalg.matrix_power(
+                self.gate.get_unitary(params),
+                self.power,
+            ),
+            self._radixes,
+        )
 
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
+    def get_grad(
+        self,
+        params: RealVector = [],
+    ) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
 
@@ -78,7 +89,8 @@ class PowerGate(
 
         Notes:
             The derivative of the integer power of matrix is equal
-            to the derivative of the matrix multiplied by the integer-1 power of the matrix
+            to the derivative of the matrix multiplied by
+            the integer-1 power of the matrix
             and by the integer power.
         """
         if hasattr(self, 'utry'):
@@ -100,7 +112,9 @@ class PowerGate(
             return self.utry, np.array([])
 
         if self.power == 0:
-            return IdentityGate(radixes=self.gate.radixes).get_unitary(), 0 * IdentityGate(radixes=self.gate.radixes).get_unitary()
+            ID = IdentityGate(radixes=self.gate.radixes).get_unitary()
+            ID_GRAD = 0 * IdentityGate(radixes=self.gate.radixes).get_unitary()
+            return ID, ID_GRAD
 
         # powers = {0: IdentityGate(radixes=self.gate.radixes).get_unitary()}
         # grads = {0: 0*IdentityGate(radixes=self.gate.radixes).get_unitary()}
@@ -115,8 +129,10 @@ class PowerGate(
             for xb in re.finditer('1', indexbin)
         ][::-1]
 
-        powers[0], grads[0] = self.gate.get_unitary_and_grad(params)
+        powers[0], grads[0] = self.gate.get_unitary_and_grad(  # type: ignore
 
+            params,
+        )
         # avoid doing computations if not needed
         if self.power == 1:
             return powers[0], grads[0]
