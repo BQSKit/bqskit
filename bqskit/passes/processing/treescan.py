@@ -12,7 +12,8 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.runtime import get_runtime
-from bqskit.utils.typing import is_real_number, is_integer
+from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import is_real_number
 
 _logger = logging.getLogger(__name__)
 
@@ -26,15 +27,17 @@ class TreeScanningGateRemovalPass(BasePass):
     Split the circuit operations into chunks of size tree_depth
     At every iteration:
     a. Look at the next chunk of operations
-    b. Generate 2 ^ tree_depth circuits. Each circuit corresponds to every combination of whether or not to include one of the operations in the chunk.
+    b. Generate 2 ^ tree_depth circuits. Each circuit corresponds to every
+    combination of whether or not to include one of the operations in the chunk.
     c. Instantiate in parallel all 2^tree_depth circuits
-    d. Choose the circuit that has the least number of operations and move on to the next chunk of operations.
+    d. Choose the circuit that has the least number of operations and move
+    on to the next chunk of operations.
 
-    This optimization is less greedy than the current ScanningGate removal, which we see can offer 
-    much better quality circuits than ScanningGate. In very rare occasions, ScanningGate may 
-    be able to outperform TreeScan (since it is still greedy), but in general we can expect 
+    This optimization is less greedy than the current ScanningGate removal,
+    which we see can offermuch better quality circuits than ScanningGate.
+    In very rare occasions, ScanningGate may be able to outperform
+    TreeScan (since it is still greedy), but in general we can expect
     TreeScan to almost always outperform ScanningGate.
-
     """
 
     def __init__(
@@ -112,7 +115,7 @@ class TreeScanningGateRemovalPass(BasePass):
                 'Expected Integer type for tree_depth, got %s.'
                 % type(instantiate_options),
             )
-        
+
         self.tree_depth = tree_depth
         self.start_from_left = start_from_left
         self.success_threshold = success_threshold
@@ -126,7 +129,7 @@ class TreeScanningGateRemovalPass(BasePass):
 
     @staticmethod
     def get_tree_circs(
-        orig_num_cycles: int, 
+        orig_num_cycles: int,
         circuit_copy: Circuit,
         cycle_and_ops: list[tuple[int, Operation]],
     ) -> list[Circuit]:
