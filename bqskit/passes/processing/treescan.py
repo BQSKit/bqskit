@@ -12,7 +12,7 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.runtime import get_runtime
-from bqskit.utils.typing import is_real_number
+from bqskit.utils.typing import is_real_number, is_integer
 
 _logger = logging.getLogger(__name__)
 
@@ -21,7 +21,20 @@ class TreeScanningGateRemovalPass(BasePass):
     """
     The ScanningGateRemovalPass class.
 
-    Starting from one side of the circuit, attempt to remove gates one-by-one.
+    Starting from one side of the circuit, run the following:
+
+    Split the circuit operations into chunks of size tree_depth
+    At every iteration:
+    a. Look at the next chunk of operations
+    b. Generate 2 ^ tree_depth circuits. Each circuit corresponds to every combination of whether or not to include one of the operations in the chunk.
+    c. Instantiate in parallel all 2^tree_depth circuits
+    d. Choose the circuit that has the least number of operations and move on to the next chunk of operations.
+
+    This optimization is less greedy than the current ScanningGate removal, which we see can offer 
+    much better quality circuits than ScanningGate. In very rare occasions, ScanningGate may 
+    be able to outperform TreeScan (since it is still greedy), but in general we can expect 
+    TreeScan to almost always outperform ScanningGate.
+
     """
 
     def __init__(
@@ -56,7 +69,9 @@ class TreeScanningGateRemovalPass(BasePass):
 
             tree_depth (int): The depth of the tree of potential
                 solutions to instantiate. Note that 2^(tree_depth) - 1
-                circuits will be instantiated in parallel.
+                circuits will be instantiated in parallel. Note that the default
+                behavior will be equivalent to normal ScanningGateRemoval
+                (Default: 1)
 
             collection_filter (Callable[[Operation], bool] | None):
                 A predicate that determines which operations should be
@@ -92,23 +107,34 @@ class TreeScanningGateRemovalPass(BasePass):
                 ' collection_filter, got %s.' % type(self.collection_filter),
             )
 
+        if not is_integer(tree_depth):
+            raise TypeError(
+                'Expected Integer type for tree_depth, got %s.'
+                % type(instantiate_options),
+            )
+        
         self.tree_depth = tree_depth
         self.start_from_left = start_from_left
         self.success_threshold = success_threshold
         self.cost = cost
         self.instantiate_options: dict[str, Any] = {
             'dist_tol': self.success_threshold,
-            'min_iters': 100,
+            'min_iters': 10,
             'cost_fn_gen': self.cost,
         }
         self.instantiate_options.update(instantiate_options)
 
     @staticmethod
     def get_tree_circs(
-        orig_num_cycles: int, circuit_copy: Circuit,
+        orig_num_cycles: int, 
+        circuit_copy: Circuit,
         cycle_and_ops: list[tuple[int, Operation]],
     ) -> list[Circuit]:
-        # Implement recursively for now, if slow then fix
+        '''
+        Given a circuit, create 2^(tree_depth) - 1 circuits that remove up
+        to tree_depth operations. The circuits are sorted by the number of
+        operations removed.
+        '''
         all_circs = [circuit_copy.copy()]
         for cycle, op in cycle_and_ops:
             new_circs = []
@@ -123,8 +149,8 @@ class TreeScanningGateRemovalPass(BasePass):
             all_circs = new_circs
 
         all_circs = sorted(all_circs, key=lambda x: x.num_operations)
-
-        return all_circs
+        # Remove circuit with no gates deleted
+        return all_circs[:-1]
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
@@ -156,15 +182,13 @@ class TreeScanningGateRemovalPass(BasePass):
             all_circs = TreeScanningGateRemovalPass.get_tree_circs(
                 circuit.num_cycles, circuit_copy, chunk,
             )
-            # Remove circuit with no gates deleted
-            all_circs = all_circs[:-1]
 
             _logger.debug(
-                'Attempting removal of operation of'
+                'Attempting removal of operation of up to'
                 f' {self.tree_depth} operations.',
             )
 
-            instantiated_circuits = await get_runtime().map(
+            instantiated_circuits: list[Circuit] = await get_runtime().map(
                 Circuit.instantiate,
                 all_circs,
                 target=target,
@@ -176,9 +200,18 @@ class TreeScanningGateRemovalPass(BasePass):
             # Pick least count with least dist
             for i, dist in enumerate(dists):
                 if dist < self.success_threshold:
+                    # Log gates removed
+                    gate_dict_orig = circuit_copy.gate_counts
+                    gate_dict_new = instantiated_circuits[i].gate_counts
+                    gates_removed = {
+                        k: circuit_copy.gate_counts[k] - gate_dict_new.get(k, 0)
+                        for k in gate_dict_orig.keys()
+                    }
+                    gates_removed = {
+                        k: v for k, v in gates_removed.items() if v != 0
+                    }
                     _logger.debug(
-                        f'Successfully switched to circuit {i}'
-                        ' of {2 ** self.tree_depth}.',
+                        f'Successfully removed {gates_removed} gates',
                     )
                     circuit_copy = instantiated_circuits[i]
                     break
