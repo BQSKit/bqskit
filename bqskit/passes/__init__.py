@@ -43,6 +43,7 @@ synthesis pass to convert the circuit to native gates.
     ExhaustiveGateRemovalPass
     IterativeScanningGateRemovalPass
     ScanningGateRemovalPass
+    TreeScanningGateRemovalPass
     SubstitutePass
 
 .. rubric:: Retargeting Passes
