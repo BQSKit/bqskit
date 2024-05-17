@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+import numpy as np
+
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CXGate
+from bqskit.ir.gates import ECRGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import XGate
-from bqskit.ir.gates import ECRGate
-import numpy as np
 
 def test_ecr() -> None:
     c = Circuit(2)
     c.append_gate(HGate(), 1)
     c.append_gate(CXGate(), (0, 1))
-    c.append_gate(RZGate(np.pi/4.0), 1) 
+    c.append_gate(RZGate(np.pi/4.0), 1)
     c.append_gate(CXGate(), (0, 1))
     c.append_gate(HGate(), 1)
 
@@ -20,7 +21,7 @@ def test_ecr() -> None:
 
     c.append_gate(HGate(), 1)
     c.append_gate(CXGate(), (0, 1))
-    c.append_gate(RZGate(-np.pi/4.0), 1) 
+    c.append_gate(RZGate(-np.pi/4.0), 1)
     c.append_gate(CXGate(), (0, 1))
     c.append_gate(HGate(), 1)
 

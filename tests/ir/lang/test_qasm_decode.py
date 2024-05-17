@@ -525,6 +525,7 @@ def test_U1Q_gate() -> None:
     assert circuit[0, 0].gate == U1qGate()
     assert circuit[1, 0].gate == U1qGate()
 
+
 def test_ECR_gate() -> None:
     input = """
         OPENQASM 2.0;
