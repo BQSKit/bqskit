@@ -1,9 +1,12 @@
 """This module implements the U2Gate."""
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -72,3 +75,13 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
                 ],
             ], dtype=np.complex128,
         )
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the parameters for the inverse of this gate."""
+        self.check_parameters(params)
+        return [- math.pi / 2, -params[1], -params[0]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        from bqskit.ir.gates.parameterized.u3 import U3Gate
+        return U3Gate()

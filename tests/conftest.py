@@ -24,7 +24,10 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import ConstantUnitaryGate
+from bqskit.ir.gates import CPGate
 from bqskit.ir.gates import CPIGate
+from bqskit.ir.gates import CSDGGate
+from bqskit.ir.gates import CSGate
 from bqskit.ir.gates import CSUMGate
 from bqskit.ir.gates import CXGate
 from bqskit.ir.gates import CYGate
@@ -33,16 +36,22 @@ from bqskit.ir.gates import DaggerGate
 from bqskit.ir.gates import FrozenParameterGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import IdentityGate
+from bqskit.ir.gates import ISwapDGGate
 from bqskit.ir.gates import ISwapGate
 from bqskit.ir.gates import PauliGate
+from bqskit.ir.gates import PhasedXZGate
 from bqskit.ir.gates import RXGate
 from bqskit.ir.gates import RYGate
 from bqskit.ir.gates import RZGate
 from bqskit.ir.gates import SdgGate
 from bqskit.ir.gates import SGate
+from bqskit.ir.gates import SqrtCNOTDGGate
 from bqskit.ir.gates import SqrtCNOTGate
+from bqskit.ir.gates import SqrtISwapDGGate
+from bqskit.ir.gates import SqrtISwapGate
 from bqskit.ir.gates import SqrtXGate
 from bqskit.ir.gates import SwapGate
+from bqskit.ir.gates import SXDGGate
 from bqskit.ir.gates import SXGate
 from bqskit.ir.gates import TaggedGate
 from bqskit.ir.gates import TdgGate
@@ -55,9 +64,12 @@ from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.gates import XGate
 from bqskit.ir.gates import XXGate
 from bqskit.ir.gates import YGate
+from bqskit.ir.gates import YYGate
 from bqskit.ir.gates import ZGate
+from bqskit.ir.gates import ZZGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
+
 # from bqskit.ir.gates import CircuitGate
 # from bqskit.ir.gates import ControlledGate
 # from bqskit.ir.gates import PermutationGate
@@ -246,18 +258,27 @@ BQSKIT_GATES = [
     CNOTGate(),
     CYGate(),
     CZGate(),
+    CSGate(),
+    CSDGGate(),
+    CPGate(),
+    SqrtISwapGate(),
+    SqrtISwapDGGate(),
+    PhasedXZGate(),
+    ISwapGate(),
+    ISwapDGGate(),
+    SqrtCNOTGate(),
+    SqrtCNOTDGGate(),
+    SXGate(),
+    SXDGGate(),
     HGate(),
     IdentityGate(1),
     IdentityGate(2),
     IdentityGate(3),
     IdentityGate(4),
-    ISwapGate(),
     # PermutationGate(),  # TODO
     SGate(),
     SdgGate(),
-    SqrtCNOTGate(),
     SwapGate(),
-    SXGate(),
     SqrtXGate(),
     TGate(),
     TdgGate(),
@@ -265,7 +286,9 @@ BQSKIT_GATES = [
     XGate(),
     XXGate(),
     YGate(),
+    YYGate(),
     ZGate(),
+    ZZGate(),
     # PauliGate(),  # TODO
     RXGate(),
     RYGate(),
@@ -401,6 +424,7 @@ def multi_qutrit_gate(request: Any) -> Gate:
     """Provides all of MULTI_QUTRIT_GATES as a gate fixture."""
     return request.param
 
+
 # endregion
 
 # region Circuits
@@ -450,11 +474,11 @@ def toffoli_circuit() -> Circuit:
 
 
 def circuit_gen(
-    size: int,
-    radixes: Sequence[int] = [],
-    depth: int = 10,
-    constant: bool = False,
-    gateset: list[Gate] = BQSKIT_GATES,
+        size: int,
+        radixes: Sequence[int] = [],
+        depth: int = 10,
+        constant: bool = False,
+        gateset: list[Gate] = BQSKIT_GATES,
 ) -> Circuit:
     """
     Generate a random circuit according to input specifications.
@@ -517,9 +541,9 @@ def circuit_gen(
 
             # must be compatible with circuit radix
             if not all(
-                gate.radixes.count(unique_radix)
-                <= circuit.radixes.count(unique_radix)
-                for unique_radix in set(gate.radixes)
+                    gate.radixes.count(unique_radix)
+                    <= circuit.radixes.count(unique_radix)
+                    for unique_radix in set(gate.radixes)
             ):
                 continue
 
@@ -543,9 +567,9 @@ def circuit_gen(
             iter = 0
             qudit = None
             while (
-                qudit is None
-                or qudit in location_selected
-                or qudit == qudit_selected
+                    qudit is None
+                    or qudit in location_selected
+                    or qudit == qudit_selected
             ):
                 qudit = circuit.radixes[iter:].index(radix) + iter
                 iter = qudit + 1
@@ -562,6 +586,7 @@ def circuit_gen(
 def gen_random_circuit() -> Callable[[int, Sequence[int], int, bool], Circuit]:
     """Provide a function to generate random circuits."""
     return circuit_gen
+
 
 # Pregenerated random circuit fixtures:
 
@@ -632,6 +657,5 @@ def random_6_qudit_circuits() -> list[tuple[int, Circuit]]:
 def r6_qudit_circuit(request: Any) -> Circuit:
     """Provide random 6-qudit random-radix circuits as a fixture."""
     return request.param[1].copy()
-
 
 # endregion

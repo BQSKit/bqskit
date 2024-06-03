@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -34,3 +35,8 @@ class ZZGate(ConstantGate, QubitGate):
             [0, 0, 0, math.sqrt(2) / 2 - 1j * math.sqrt(2) / 2],
         ],
     )
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        from bqskit.ir.gates.constant.zzdg import ZZDGGate
+        return ZZDGGate()

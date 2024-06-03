@@ -1,6 +1,7 @@
 """This module implements the SqrtCNOTGate."""
 from __future__ import annotations
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -32,3 +33,8 @@ class SqrtCNOTGate(ConstantGate, QubitGate):
             [0, 0, 0.5 - 0.5j, 0.5 + 0.5j],
         ],
     )
+
+    def get_inverse(self) -> Gate:
+        """"Return the inverse of this gate."""
+        from bqskit.ir.gates.constant.sqrtcnotdg import SqrtCNOTDGGate
+        return SqrtCNOTDGGate()

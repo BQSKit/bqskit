@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
@@ -81,3 +82,12 @@ class RXGate(
         theta = 2 * np.arccos(a / np.sqrt(a ** 2 + b ** 2))
         theta *= -1 if b < 0 else 1
         return [theta]
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the inverse parameters for this gate."""
+        self.check_parameters(params)
+        return [-params[0]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        return RXGate()
