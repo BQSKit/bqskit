@@ -5,6 +5,7 @@
 .hypothesis/
 .venv/
 .vscode/
+.idea/
 .mypy_cache/
 .DS_Store
 docs/source/autogen

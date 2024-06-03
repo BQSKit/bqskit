@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import cmath
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -28,3 +29,8 @@ class TGate(ConstantGate, QubitGate):
             [0, cmath.exp(1j * cmath.pi / 4)],
         ],
     )
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        from bqskit.ir.gates.constant.tdg import TdgGate
+        return TdgGate()

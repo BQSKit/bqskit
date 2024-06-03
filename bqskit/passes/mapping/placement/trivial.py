@@ -20,7 +20,7 @@ class TrivialPlacementPass(BasePass):
         model = BasePass.get_model(circuit, data)
         data['placement'] = trivial_placement
 
-        _logger.info(f'Placed qudits on {data["placement"]}')
+        _logger.info(f"Placed qudits on {data['placement']}")
 
         # Raise an error if this is not a valid placement
         sg = model.coupling_graph.get_subgraph(data['placement'])

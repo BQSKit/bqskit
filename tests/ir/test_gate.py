@@ -137,3 +137,37 @@ class TestBasicGate:
         utry = gate.get_unitary(params)
         pickled_utry = pickle.loads(pickle.dumps(gate)).get_unitary(params)
         assert utry == pickled_utry
+
+    def test_get_inverse(self, gate: Gate) -> None:
+        from bqskit.ir.gates.constantgate import ConstantGate
+        from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+        from bqskit.ir.gates.qubitgate import QubitGate
+        from bqskit.ir.operation import Operation
+        if isinstance(gate, QubitGate):
+            if isinstance(gate, ConstantGate):
+                assert hasattr(gate, 'get_inverse')
+                inv_gate = gate.get_inverse()
+                assert inv_gate._qasm_name, \
+                    'All inverses should have an effective _qasm_name'
+                iden = np.identity(gate.dim)
+                inv_gate = gate.get_inverse()
+                supposed_to_be_iden = (
+                    inv_gate.get_unitary() @ gate.get_unitary()
+                )
+                dist = supposed_to_be_iden.get_distance_from(iden, 1)
+                assert dist < 1e-10
+
+            if isinstance(gate, DifferentiableUnitary):
+                assert hasattr(gate, 'get_inverse')
+                inv_gate = gate.get_inverse()
+                assert inv_gate._qasm_name, \
+                    'All inverses should have an effective _qasm_name'
+                op = Operation(
+                    gate, list(range(gate.num_qudits)),
+                    np.random.rand(gate.num_params),
+                )
+                inv_op = op.get_inverse()
+                iden = np.identity(gate.dim)
+                supposed_to_be_iden = (inv_op.get_unitary() @ op.get_unitary())
+                dist = supposed_to_be_iden.get_distance_from(iden, 1)
+                assert dist < 1e-10

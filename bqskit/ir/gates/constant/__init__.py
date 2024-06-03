@@ -8,6 +8,7 @@ from bqskit.ir.gates.constant.ch import CHGate
 from bqskit.ir.gates.constant.clock import ClockGate
 from bqskit.ir.gates.constant.cpi import CPIGate
 from bqskit.ir.gates.constant.cs import CSGate
+from bqskit.ir.gates.constant.csdg import CSDGGate
 from bqskit.ir.gates.constant.csum import CSUMGate
 from bqskit.ir.gates.constant.ct import CTGate
 from bqskit.ir.gates.constant.cx import CNOTGate
@@ -17,6 +18,7 @@ from bqskit.ir.gates.constant.cz import CZGate
 from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
+from bqskit.ir.gates.constant.iswapdg import ISwapDGGate
 from bqskit.ir.gates.constant.itoffoli import IToffoliGate
 from bqskit.ir.gates.constant.pd import PDGate
 from bqskit.ir.gates.constant.permutation import PermutationGate
@@ -27,21 +29,28 @@ from bqskit.ir.gates.constant.s import SGate
 from bqskit.ir.gates.constant.sdg import SdgGate
 from bqskit.ir.gates.constant.shift import ShiftGate
 from bqskit.ir.gates.constant.sqrtcnot import SqrtCNOTGate
+from bqskit.ir.gates.constant.sqrtcnotdg import SqrtCNOTDGGate
 from bqskit.ir.gates.constant.sqrtiswap import SqrtISwapGate
+from bqskit.ir.gates.constant.sqrtiswapdg import SqrtISwapDGGate
 from bqskit.ir.gates.constant.subswap import SubSwapGate
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.constant.sx import SqrtXGate
 from bqskit.ir.gates.constant.sx import SXGate
+from bqskit.ir.gates.constant.sxdg import SqrtXDGGate
+from bqskit.ir.gates.constant.sxdg import SXDGGate
 from bqskit.ir.gates.constant.sycamore import SycamoreGate
 from bqskit.ir.gates.constant.t import TGate
 from bqskit.ir.gates.constant.tdg import TdgGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.constant.x import XGate
 from bqskit.ir.gates.constant.xx import XXGate
+from bqskit.ir.gates.constant.xxdg import XXDGGate
 from bqskit.ir.gates.constant.y import YGate
 from bqskit.ir.gates.constant.yy import YYGate
+from bqskit.ir.gates.constant.yydg import YYDGGate
 from bqskit.ir.gates.constant.z import ZGate
 from bqskit.ir.gates.constant.zz import ZZGate
+from bqskit.ir.gates.constant.zzdg import ZZDGGate
 
 __all__ = [
     'BGate',
@@ -51,6 +60,7 @@ __all__ = [
     'ClockGate',
     'CPIGate',
     'CSGate',
+    'CSDGGate',
     'CSUMGate',
     'CTGate',
     'CNOTGate',
@@ -60,6 +70,7 @@ __all__ = [
     'HGate',
     'IdentityGate',
     'ISwapGate',
+    'ISwapDGGate',
     'IToffoliGate',
     'PDGate',
     'PermutationGate',
@@ -70,19 +81,26 @@ __all__ = [
     'SdgGate',
     'ShiftGate',
     'SqrtCNOTGate',
+    'SqrtCNOTDGGate',
     'SqrtISwapGate',
+    'SqrtISwapDGGate',
     'SubSwapGate',
     'SwapGate',
     'SqrtXGate',
     'SXGate',
+    'SqrtXDGGate',
+    'SXDGGate',
     'SycamoreGate',
     'TGate',
     'TdgGate',
     'ConstantUnitaryGate',
     'XGate',
     'XXGate',
+    'XXDGGate',
     'YGate',
     'YYGate',
+    'YYDGGate',
     'ZGate',
     'ZZGate',
+    'ZZDGGate',
 ]

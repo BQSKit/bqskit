@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -86,3 +87,20 @@ class PhasedXZGate(QubitGate, DifferentiableUnitary, CachedClass):
                 ],
             ], dtype=np.complex128,
         )
+
+    def get_qasm_gate_def(self) -> str:
+        """Return the QASM gate definition for this gate."""
+        theta0 = 'x*pi'
+        theta1 = '(z+a-0.5)*pi'
+        theta2 = '(0.5-a)*pi'
+        return (f'gate {self._qasm_name} a,b,c'
+                f' {{ u3({theta0},{theta1},{theta2}); }}')
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the inverse parameters for this gate."""
+        self.check_parameters(params)
+        return [-params[0], -params[1], params[1] + params[2]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        return PhasedXZGate()

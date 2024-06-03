@@ -12,9 +12,9 @@ class ConstantUnitaryGate(ConstantGate):
     """An arbitrary constant unitary operator."""
 
     def __init__(
-        self,
-        utry: UnitaryLike,
-        radixes: Sequence[int] = [],
+            self,
+            utry: UnitaryLike,
+            radixes: Sequence[int] = [],
     ) -> None:
         """
         Construct a constant unitary operator.

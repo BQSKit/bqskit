@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.utils.typing import is_integer
 
 
-class SwapGate(ConstantGate):
+class SwapGate(ConstantGate, QubitGate):
     """
     The two-qudit swap gate.
 

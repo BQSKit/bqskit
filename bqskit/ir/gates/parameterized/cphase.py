@@ -75,3 +75,12 @@ class ArbitraryCPhaseGate(
 
     def __hash__(self) -> int:
         return hash(self.radixes)
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the inverse parameters for this gate."""
+        self.check_parameters(params)
+        return [-params[0]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        return ArbitraryCPhaseGate(self.radixes)

@@ -4,6 +4,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
@@ -72,3 +73,12 @@ class RZZGate(
                 ],
             ], dtype=np.complex128,
         )
+
+    def get_inverse_params(self, params: RealVector = []) -> RealVector:
+        """Return the parameters for the inverse of this gate."""
+        self.check_parameters(params)
+        return [-params[0]]
+
+    def get_inverse(self) -> Gate:
+        """Return the inverse of this gate."""
+        return RZZGate()
