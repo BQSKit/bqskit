@@ -38,6 +38,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     ShiftGate
     SqrtCNOTGate
     SqrtISwapGate
+    SqrtTGate
     SubSwapGate
     SwapGate
     SqrtXGate
