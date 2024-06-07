@@ -440,12 +440,12 @@ class Worker:
             # Perform a step of the task and get the future it awaits on
             self.logs.append(f"Worker {self._id} | start step | {task.task_name} | {time.time()}")
             future = task.step(self._get_desired_result(task))
-            self.logs.append(f"Worker {self._id} | finish step | {task.task_name} stepped | {time.time()}")
+            self.logs.append(f"Worker {self._id} | finish step | {task.task_name} | {time.time()}")
 
             self._process_await(task, future)
 
         except StopIteration as e:
-            self.logs.append(f"Worker {self._id} | finish step | {task.task_name} finished | {time.time()}")
+            self.logs.append(f"Worker {self._id} | finish step | {task.task_name} | {time.time()}")
             self._process_task_completion(task, e.value)
 
         except Exception:

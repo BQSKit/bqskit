@@ -28,10 +28,10 @@ if __name__ == '__main__':
     # file = "get_ensemble_stats"
     file = "qsd_test"
     # tols = range(1, 7)
-    methods = ["ccx", "qft"]#, "random"]
-    num_qudits = [4]
-    min_qudits = [2]
-    tree_depths = [4, 8, 12]
+    methods = ["qft"]#, "random"]
+    num_qudits = [6,7,8,9]
+    min_qudits = [4]
+    tree_depths = [12,13]
 
 
     # tree_depths = [1]
@@ -40,10 +40,16 @@ if __name__ == '__main__':
             for min_qudit in min_qudits:
                 for tree_depth in tree_depths:
                     # for exp in range(tree_depth - 4, tree_depth + 1):
-                    for num_worker in [4, 8, 64]:
+                    for num_worker in [128]:
                         # num_worker = 2 ** exp
-                        pathlib.Path(f"{folder}/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}").mkdir(parents=True, exist_ok=True)
-                        os.system(f"python {file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker} > {folder}/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}/log.txt")
+                        log_file_name = f"{folder}/{method}/{num_qudit}/{min_qudit}/{tree_depth}/{num_worker}/log.txt"
+                        # if os.path.exists(log_file_name):
+                        #     with open(log_file_name) as log_file:
+                        #         lines = log_file.readlines()
+                        #         if len(lines) > 0 and (not lines[-1].endswith("ERROR")):
+                        #             continue
+                        print(f"python {file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker} \"{log_file_name}\"")
+                        os.system(f"python {file}.py {method} {num_qudit} {min_qudit} {tree_depth} {num_worker} \"{log_file_name}\"")
                         # to_write = open(file_name, 'w')
                         # to_write.write(header.format(file=file, method=method, num_qudit=num_qudit, min_qudit=min_qudit,
                         #                               tree_depth=tree_depth, num_worker=num_worker))
@@ -51,5 +57,5 @@ if __name__ == '__main__':
                         # time.sleep(2*sleep_time)
                         # print(method, num_qudit, min_qudit, tree_depth, num_worker)
                         # output = subprocess.check_output(['sbatch' , file_name])
-                        # # print(output)
+                        # print(output)
                         time.sleep(sleep_time)

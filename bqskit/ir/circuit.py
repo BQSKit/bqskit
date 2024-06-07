@@ -2430,6 +2430,52 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Remove all idle qudits-cycles in `region` while keeping it valid."""
         return self.get_region(CircuitRegion(region).points)
 
+    def swap(self, op_1: Operation, op_2: Operation, cyc_1: int, cyc_2: int):
+        """
+        Swap 2 operations in the circuit if they commute.
+        """
+        assert(cyc_1 <= cyc_2)
+        commutes = False
+        if len(op_1.location.intersection(op_2.location)) == 0:
+            # If working on different qudits, they commute
+            commutes = True
+        else:
+            i = 0
+            q_map = {}
+            for qudit in op_1.location:
+                q_map[qudit] = i
+                i += 1
+            for qudit in op_2.location:
+                if qudit not in q_map:
+                    q_map[qudit] = i
+                    i += 1
+
+            assert(i == len(op_1.location.union(op_2.location)))
+
+            new_op_1_loc = tuple(q_map[qudit] for qudit in op_1.location)
+            new_op_2_loc = tuple(q_map[qudit] for qudit in op_2.location)
+            circ_1 = Circuit(i)
+            circ_1.append_gate(op_1.gate, new_op_1_loc, op_1.params)
+            circ_1.append_gate(op_2.gate, new_op_2_loc, op_2.params)
+            circ_2 = Circuit(i)
+            circ_2.append_gate(op_2.gate, new_op_2_loc, op_2.params)
+            circ_2.append_gate(op_1.gate, new_op_1_loc, op_1.params)
+
+            commutes = np.allclose(circ_1.get_unitary().numpy, circ_2.get_unitary().numpy, atol=1e-12)
+
+            # Get new sublocations
+
+        if commutes:
+            self.pop((cyc_2, op_2.location[0]))
+            self.pop((cyc_1, op_1.location[0]))
+            self.insert(cyc_1, op_2)
+            self.insert(cyc_2, op_1)
+            print("Commuting")
+            return True
+        
+        print("Operations do not commute")
+        return False
+
     def get_operations(
             self,
             points: Iterable[CircuitPointLike],

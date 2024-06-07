@@ -50,7 +50,8 @@ num_qudits = int(argv[2])
 min_qudits = int(argv[3])
 tree_depth = int(argv[4])
 amount_of_workers = int(argv[5])
-partition_depth = int(argv[6]) if len(argv) >= 7 else None
+log_file = argv[6] if len(argv) == 7 else None
+partition_depth = None
 circuit = Circuit(num_qudits)
 
 ccx_unitary = np.identity(2 ** num_qudits)
@@ -87,7 +88,7 @@ workflow = [
 start = time.time()
 
 # Finally let's create create the compiler and execute the CompilationTask.
-with Compiler(num_workers=amount_of_workers, run_profiler=True) as compiler:
+with Compiler(num_workers=amount_of_workers, log_file=log_file) as compiler:
     start = time.time()
     compiled_circuit = compiler.compile(circuit, workflow)
     total_time = time.time() - start

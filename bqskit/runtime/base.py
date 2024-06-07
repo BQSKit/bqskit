@@ -498,6 +498,7 @@ class ServerBase:
                     if direction == MessageDirection.SIGNAL:
                         _logger.debug('Received interrupt signal.')
                         self.handle_shutdown()
+                        print("Process was interuppted | ERROR", file=self.log_file, flush=True)
                         return
 
                     # Unpack and Log message
@@ -524,6 +525,7 @@ class ServerBase:
 
         finally:
             self.handle_shutdown()
+            print("Terminated correctly | TERMINATED", file=self.log_file, flush=True)
 
     @abc.abstractmethod
     def handle_message(
@@ -569,8 +571,8 @@ class ServerBase:
         for employee in self.employees:
             employee.initiate_shutdown()
             _, worker_logs = employee.conn.recv()
-            for log in worker_logs:
-                print(log, file=self.log_file, flush=True)
+            # for log in worker_logs:
+            #     print(log, file=self.log_file, flush=True)
             
 
         for employee in self.employees:
@@ -598,6 +600,8 @@ class ServerBase:
         # If one of my employees crashed/shutdown/disconnected, I shutdown
         if conn in self.conn_to_employee_dict:
             self.handle_shutdown()
+            print("Worker was disconnected | ERROR", file=self.log_file, flush=True)
+            
 
     def assign_tasks(
         self,
