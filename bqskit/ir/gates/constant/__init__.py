@@ -14,6 +14,7 @@ from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.gates.constant.cy import CYGate
 from bqskit.ir.gates.constant.cz import CZGate
+from bqskit.ir.gates.constant.ecr import ECRGate
 from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
@@ -57,6 +58,7 @@ __all__ = [
     'CXGate',
     'CYGate',
     'CZGate',
+    'ECRGate',
     'HGate',
     'IdentityGate',
     'ISwapGate',
