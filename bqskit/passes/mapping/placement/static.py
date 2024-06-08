@@ -62,21 +62,20 @@ class StaticPlacementPass(BasePass):
         logical_graph = circuit.coupling_graph
 
         # Find an monomorphic subgraph
+        placement = []
         try:
-            data.placement = self.find_monomorphic_subgraph(
+            placement = self.find_monomorphic_subgraph(
                 physical_graph, logical_graph, self.timeout_sec
             )
-            if len(data.placement) == 0:
-                raise RuntimeError("No monomorphic subgraph found.")
+            if len(placement) == 0:
+                return
         except TimeoutError:
-            raise RuntimeError("Static placement search timed out.")
+            return
 
-        _logger.info(f"Placed qudits on {data.placement}")
-
-        # Raise an error if this is not a valid placement
-        if not all(
-            data.placement[e[1]]
-            in physical_graph.get_neighbors_of(data.placement[e[0]])
+        # Set the placement if it is valid
+        if all(
+            placement[e[1]] in physical_graph.get_neighbors_of(placement[e[0]])
             for e in logical_graph
         ):
-            raise RuntimeError("No valid placement found.")
+            data.placement = placement
+            _logger.info(f"Placed qudits on {data.placement}")
