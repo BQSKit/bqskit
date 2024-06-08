@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import logging
-
-from timeout_decorator import timeout, TimeoutError
-import networkx as nx
+import itertools
+import time
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
@@ -25,36 +24,22 @@ class StaticPlacementPass(BasePass):
         self,
         physical_graph: CouplingGraph,
         logical_graph: CouplingGraph,
-        timeout_sec: float,
     ) -> list[int]:
-        """Find an monomorphic subgraph."""
+        """Try all possible placements"""
 
-        @timeout(timeout_sec)
-        def _find_monomorphic_subgraph(
-            physical_graph: CouplingGraph, logical_graph: CouplingGraph
-        ) -> list[int]:
-
-            # Convert the coupling graph to a networkx graph
-            def coupling_graph_to_nx_graph(coupling_graph: CouplingGraph) -> nx.Graph:
-                nx_graph = nx.Graph()
-                nx_graph.add_nodes_from(range(coupling_graph.num_qudits))
-                nx_graph.add_edges_from([e for e in coupling_graph])
-                return nx_graph
-
-            # Find an monomorphic subgraph
-            graph_matcher = nx.algorithms.isomorphism.GraphMatcher(
-                coupling_graph_to_nx_graph(physical_graph),
-                coupling_graph_to_nx_graph(logical_graph),
-            )
-            if not graph_matcher.subgraph_is_monomorphic():
+        start_time = time.time()
+        for placement in itertools.permutations(
+            range(physical_graph.num_qudits), logical_graph.num_qudits
+        ):
+            if time.time() - start_time > self.timeout_sec:
                 return []
 
-            placement = list(range(logical_graph.num_qudits))
-            for k, v in graph_matcher.mapping.items():
-                placement[v] = k
-            return placement
-
-        return _find_monomorphic_subgraph(physical_graph, logical_graph)
+            placement = list(placement)
+            if all(
+                placement[e[1]] in physical_graph.get_neighbors_of(placement[e[0]])
+                for e in logical_graph
+            ):
+                return placement
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
@@ -62,18 +47,10 @@ class StaticPlacementPass(BasePass):
         logical_graph = circuit.coupling_graph
 
         # Find an monomorphic subgraph
-        placement = []
-        try:
-            placement = self.find_monomorphic_subgraph(
-                physical_graph, logical_graph, self.timeout_sec
-            )
-            if len(placement) == 0:
-                return
-        except TimeoutError:
-            return
+        placement = self.find_monomorphic_subgraph(physical_graph, logical_graph)
 
         # Set the placement if it is valid
-        if all(
+        if len(placement) == logical_graph.num_qudits and all(
             placement[e[1]] in physical_graph.get_neighbors_of(placement[e[0]])
             for e in logical_graph
         ):
