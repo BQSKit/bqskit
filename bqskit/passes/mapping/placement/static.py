@@ -95,13 +95,15 @@ class StaticPlacementPass(BasePass):
                     connected_indices[i].append(j)
 
         # Find a monomorphic subgraph
+        start_time = time.time()
         index_to_physical = self._find_monomorphic_subgraph(
-            time.time() + self.timeout_sec,
+            start_time + self.timeout_sec,
             physical_graph,
             logical_graph.num_qudits,
             minimum_degrees,
             connected_indices,
         )
+        _logger.info(f"elapsed time: {time.time() - start_time}")
         if len(index_to_physical) == 0:
             return []
 
@@ -126,3 +128,5 @@ class StaticPlacementPass(BasePass):
         ):
             data.placement = placement
             _logger.info(f"Placed qudits on {data.placement}")
+        else:
+            _logger.info(f"No valid placement found")
