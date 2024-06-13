@@ -1,9 +1,7 @@
 """This module implements the StaticPlacementPass class."""
-
 from __future__ import annotations
 
 import logging
-import itertools
 import time
 
 from bqskit.compiler.basepass import BasePass
@@ -15,7 +13,8 @@ _logger = logging.getLogger(__name__)
 
 
 class StaticPlacementPass(BasePass):
-    """Find a subgraph monomorphic to the coupling graph so that no SWAPs are needed."""
+    """Find a subgraph monomorphic to the coupling graph so that no SWAPs are
+    needed."""
 
     def __init__(self, timeout_sec: float = 10) -> None:
         self.timeout_sec = timeout_sec
@@ -30,7 +29,7 @@ class StaticPlacementPass(BasePass):
         current_placement: list[int] = [],
         current_index: int = 0,
     ) -> list[int]:
-        """Recursively find a monomorphic subgraph"""
+        """Recursively find a monomorphic subgraph."""
         if current_index == num_logical_qudits:
             return current_placement
 
@@ -52,7 +51,7 @@ class StaticPlacementPass(BasePass):
         # Filter out qudits that are not connected to previous logical qudits
         for i in connected_indices[current_index]:
             candidate_indices &= set(
-                physical_graph.get_neighbors_of(current_placement[i])
+                physical_graph.get_neighbors_of(current_placement[i]),
             )
 
         # Try all possible placements for the current logical qudit
@@ -78,7 +77,7 @@ class StaticPlacementPass(BasePass):
         physical_graph: CouplingGraph,
         logical_graph: CouplingGraph,
     ) -> list[int]:
-        """Try all possible placements"""
+        """Try all possible placements."""
 
         # To be optimized later
         logical_qubit_order = list(range(logical_graph.num_qudits))
@@ -86,11 +85,13 @@ class StaticPlacementPass(BasePass):
         minimum_degrees = [
             logical_graph.get_qudit_degrees()[i] for i in logical_qubit_order
         ]
-        connected_indices = [[] for _ in range(logical_graph.num_qudits)]
+        connected_indices: list[list[int]] = [
+            [] for _ in range(logical_graph.num_qudits)
+        ]
         for i in range(logical_graph.num_qudits):
             for j in range(i):
                 if logical_qubit_order[j] in logical_graph.get_neighbors_of(
-                    logical_qubit_order[i]
+                    logical_qubit_order[i],
                 ):
                     connected_indices[i].append(j)
 
@@ -103,7 +104,7 @@ class StaticPlacementPass(BasePass):
             minimum_degrees,
             connected_indices,
         )
-        _logger.info(f"elapsed time: {time.time() - start_time}")
+        _logger.info(f'elapsed time: {time.time() - start_time}')
         if len(index_to_physical) == 0:
             return []
 
@@ -119,7 +120,9 @@ class StaticPlacementPass(BasePass):
         logical_graph = circuit.coupling_graph
 
         # Find an monomorphic subgraph
-        placement = self.find_monomorphic_subgraph(physical_graph, logical_graph)
+        placement = self.find_monomorphic_subgraph(
+            physical_graph, logical_graph,
+        )
 
         # Set the placement if it is valid
         if len(placement) == logical_graph.num_qudits and all(
@@ -127,6 +130,6 @@ class StaticPlacementPass(BasePass):
             for e in logical_graph
         ):
             data.placement = placement
-            _logger.info(f"Placed qudits on {data.placement}")
+            _logger.info(f'Placed qudits on {data.placement}')
         else:
-            _logger.info(f"No valid placement found")
+            _logger.info('No valid placement found')
