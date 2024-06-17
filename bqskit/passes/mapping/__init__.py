@@ -6,6 +6,7 @@ from bqskit.passes.mapping.embed import EmbedAllPermutationsPass
 from bqskit.passes.mapping.layout.pam import PAMLayoutPass
 from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
+from bqskit.passes.mapping.placement.static import StaticPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
@@ -22,6 +23,7 @@ __all__ = [
     'GeneralizedSabreLayoutPass',
     'GreedyPlacementPass',
     'TrivialPlacementPass',
+    'StaticPlacementPass',
     'GeneralizedSabreRoutingPass',
     'SetModelPass',
     'ApplyPlacement',
