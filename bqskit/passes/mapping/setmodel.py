@@ -42,7 +42,7 @@ class ExtractModelConnectivityPass(BasePass):
     Extracts and saves the current target machine model's connectivity.
 
     The model will remain unchanged except that it will be fully connected until
-    the RestoreModelConnevtivityPass is executed.
+    the RestoreModelConnectivityPass is executed.
     """
 
     key = '_ExtractModelConnectivityPass_connectivity'
@@ -55,7 +55,7 @@ class ExtractModelConnectivityPass(BasePass):
         )
 
 
-class RestoreModelConnevtivityPass(BasePass):
+class RestoreModelConnectivityPass(BasePass):
     """Restores the connectivity of the target machine model."""
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
