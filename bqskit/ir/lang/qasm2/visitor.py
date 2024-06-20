@@ -58,6 +58,7 @@ from bqskit.ir.gates.parameterized.crz import CRZGate
 from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
 from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
+from bqskit.ir.gates.parameterized.diagonal import DiagonalGate
 from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rxx import RXXGate
 from bqskit.ir.gates.parameterized.ry import RYGate
@@ -210,6 +211,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['cu2'] = GateDef('cu2', 2, 2, ControlledGate(U2Gate()))
         self.gate_defs['cu3'] = GateDef('cu3', 3, 2, ControlledGate(U3Gate()))
         self.gate_defs['cu'] = GateDef('cu', 4, 2, CUGate())
+        self.gate_defs['diag'] = GateDef('diag', 7, 3, DiagonalGate(3))
 
         # Constant Gates
         self.gate_defs['b'] = GateDef('b', 0, 2, BGate())

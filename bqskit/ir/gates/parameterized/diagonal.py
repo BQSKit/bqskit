@@ -14,7 +14,6 @@ from bqskit.utils.cachedclass import CachedClass
 
 class DiagonalGate(
     QubitGate,
-    DifferentiableUnitary,
     CachedClass,
     LocallyOptimizableUnitary
 ):

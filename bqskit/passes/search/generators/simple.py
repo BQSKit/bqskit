@@ -6,6 +6,7 @@ import logging
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gate import Gate
+from bqskit.ir.gates.parameterized.diagonal import DiagonalGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.passes.search.generator import LayerGenerator
@@ -166,6 +167,7 @@ class SimpleLayerGenerator(LayerGenerator):
                 )
 
         init_circuit = Circuit(target.num_qudits, target.radixes)
+        init_circuit.append_gate(DiagonalGate(target.num_qudits), list(range(target.num_qudits)))
         for i in range(init_circuit.num_qudits):
             init_circuit.append_gate(self.initial_layer_gate, [i])
         return init_circuit
