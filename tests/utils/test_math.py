@@ -10,10 +10,12 @@ import scipy as sp
 from scipy.stats import unitary_group
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.utils.math import canonical_unitary
 from bqskit.utils.math import dexpmv
 from bqskit.utils.math import dot_product
 from bqskit.utils.math import pauli_expansion
+from bqskit.utils.math import pauliz_expansion
 from bqskit.utils.math import softmax
 from bqskit.utils.math import unitary_log_no_i
 
@@ -185,6 +187,21 @@ class TestPauliExpansion:
         alpha = pauli_expansion(reH)
         print(alpha)
         H = PauliMatrices(int(np.log2(reH.shape[0]))).dot_product(alpha)
+        assert np.linalg.norm(H - reH) < 1e-16
+
+
+class TestPauliZExpansion:
+    @pytest.mark.parametrize(
+        'reH',
+        PauliZMatrices(1).paulizs
+        + PauliZMatrices(2).paulizs
+        + PauliZMatrices(3).paulizs
+        + PauliZMatrices(4).paulizs,
+    )
+    def test_valid(self, reH: npt.NDArray[np.complex128]) -> None:
+        alpha = pauliz_expansion(reH)
+        print(alpha)
+        H = PauliZMatrices(int(np.log2(reH.shape[0]))).dot_product(alpha)
         assert np.linalg.norm(H - reH) < 1e-16
 
 

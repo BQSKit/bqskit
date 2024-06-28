@@ -8,6 +8,7 @@ import numpy.typing as npt
 import scipy as sp
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.qis.unitary.unitary import RealVector
 
 
@@ -164,6 +165,36 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     flatten_paulis = [np.reshape(pauli, 4 ** n) for pauli in paulis]
     flatten_H = np.reshape(H, 4 ** n)
     A = np.stack(flatten_paulis, axis=-1)
+    X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
+    return np.array(X)
+
+
+def pauliz_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
+    """
+    Computes a Pauli Z expansion of the diagonal hermitian matrix H.
+
+    Args:
+        H (np.ndarray): The diagonal hermitian matrix to expand.
+
+    Returns:
+        np.ndarray: The coefficients of a Pauli Z expansion for H,
+        i.e., X dot Sigma = H where Sigma contains Pauli Z matrices of
+        same size of H.
+
+    Note:
+        This assumes the input is diagonal. No check is done for hermicity.
+        The output is undefined on non-hermitian inputs.
+    """
+    diag_H = np.diag(np.diag(H))
+    if not np.allclose(H, diag_H):
+        msg = 'H must be a diagonal matrix.'
+        raise ValueError(msg)
+    # Change basis of H to Pauli Basis (solve for coefficients -> X)
+    n = int(np.log2(len(H)))
+    paulizs = PauliZMatrices(n)
+    flatten_paulizs = [np.diag(pauli) for pauli in paulizs]
+    flatten_H = np.diag(H)
+    A = np.stack(flatten_paulizs, axis=-1)
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
 
