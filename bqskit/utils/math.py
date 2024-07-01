@@ -301,7 +301,7 @@ def diagonal_distance(unitary: npt.NDArray[np.complex128]) -> float:
 
     Args:
         unitary (np.ndarray): The unitary matrix to check.
-    
+
     Returns:
         float: The Hilbert-Schmidt distance to the nearest diagonal.
     """

@@ -23,8 +23,8 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
     """
     The group of Pauli Z matrices.
 
-    A PauliZMatrices object represents the entire of set of Pauli Z matrices
-    for some number of qubits.
+    A PauliZMatrices object represents the entire of set of Pauli Z matrices for
+    some number of qubits.
     """
 
     Z = np.array(

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from hypothesis import given
-from hypothesis.strategies import integers
+from itertools import combinations
+from random import choices
 
 import numpy as np
-
-from itertools import combinations
-
-from random import choices
+from hypothesis import given
+from hypothesis.strategies import integers
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -25,6 +23,7 @@ def phase_gadget() -> Circuit:
     gadget.append_gate(CNOTGate(), (0, 1))
     return gadget
 
+
 @given(integers(2, 6), integers(0, 10))
 def test_diagonal_predicate(num_qudits: int, num_gadgets: int) -> None:
     circuit = Circuit(num_qudits)
@@ -34,11 +33,13 @@ def test_diagonal_predicate(num_qudits: int, num_gadgets: int) -> None:
         circuit.append_circuit(phase_gadget(), location)
     data = PassData(circuit)
     pred = DiagonalPredicate(1e-5)
-    assert pred.get_truth_value(circuit, data) == True
+
+    is_diagonal = True
+    assert pred.get_truth_value(circuit, data) == is_diagonal
 
     circuit.append_gate(HGate(), (0))
-    data = PassData(circuit)
-    assert pred.get_truth_value(circuit, data) == False
+    assert not pred.get_truth_value(circuit, data) == is_diagonal
+
 
 @given(integers(1, 10))
 def test_single_qubit_diagonal_predicate(exponent: int) -> None:
