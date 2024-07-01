@@ -288,3 +288,24 @@ def canonical_unitary(
     correction_phase = 0 - std_phase
     std_correction = np.exp(1j * correction_phase)
     return std_correction * special_unitary
+
+
+def diagonal_distance(unitary: npt.NDArray[np.complex128]) -> float:
+    """
+    Compute how diagonal a unitary is.
+
+    The diagonal distance measures how closely a unitary can be approx-
+    imately inverted by a diagonal unitary. A unitary is approximately
+    inverted when the Hilbert-Schmidt distance to the identity is less
+    than some threshold.
+
+    Args:
+        unitary (np.ndarray): The unitary matrix to check.
+    
+    Returns:
+        float: The Hilbert-Schmidt distance to the nearest diagonal.
+    """
+    eps = unitary - np.diag(np.diag(unitary.numpy))
+    eps2 = eps * eps.conj()
+    distance = abs(np.sqrt(eps2.sum(-1).max()))
+    return distance
