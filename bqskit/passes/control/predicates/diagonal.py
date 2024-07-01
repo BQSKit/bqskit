@@ -16,7 +16,7 @@ class DiagonalPredicate(PassPredicate):
     The DiagonalPredicate class.
 
     The DiagonalPredicate class returns True if the circuit's unitary can be
-    approximately inverted by a diagonal unitary. A unitary is approx- imately
+    approximately inverted by a diagonal unitary. A unitary is approximately
     inverted when the Hilbert-Schmidt distance to the identity is less than some
     threshold.
     """
