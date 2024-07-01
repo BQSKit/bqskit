@@ -305,7 +305,7 @@ def diagonal_distance(unitary: npt.NDArray[np.complex128]) -> float:
     Returns:
         float: The Hilbert-Schmidt distance to the nearest diagonal.
     """
-    eps = unitary - np.diag(np.diag(unitary.numpy))
+    eps = unitary - np.diag(np.diag(unitary))
     eps2 = eps * eps.conj()
     distance = abs(np.sqrt(eps2.sum(-1).max()))
     return distance
