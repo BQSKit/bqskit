@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import logging
 
-from typing import Any
-
 from numpy import where
 
 from bqskit.compiler.passdata import PassData
@@ -15,17 +13,15 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
-from bqskit.utils.math import unitary_log_no_i
 from bqskit.utils.math import pauliz_expansion
+from bqskit.utils.math import unitary_log_no_i
 
 
 _logger = logging.getLogger(__name__)
 
 
 class DiagonalSynthesisPass(SynthesisPass):
-    """
-    A pass that synthesizes diagonal unitaries.
-    """
+    """A pass that synthesizes diagonal unitaries."""
 
     def __init__(
         self,
@@ -37,13 +33,13 @@ class DiagonalSynthesisPass(SynthesisPass):
         Args:
             parameter_precision (float): Pauli strings with parameter values
                 less than this are rounded to zero. (Default: 1e-8)
-        
+
         TODO:
             - Optimize Pauli string ordering
             - Cancel adjacent CNOTs
         """
         self.parameter_precision = parameter_precision
-    
+
     def gray_code(self, number: int) -> int:
         """Convert a number to its Gray code representation."""
         gray = number ^ (number >> 1)
@@ -62,7 +58,7 @@ class DiagonalSynthesisPass(SynthesisPass):
             circuit.append_gate(RZGate(), locations[0], [angle])
         elif len(locations) > 1:
             pairs = [
-                (locations[i], locations[i+1])
+                (locations[i], locations[i + 1])
                 for i in range(len(locations) - 1)
             ]
             for pair in pairs:
@@ -82,17 +78,17 @@ class DiagonalSynthesisPass(SynthesisPass):
             m = 'DiagonalSynthesisPass can only synthesize diagonal, '
             m += f'UnitaryMatrixs, got {type(utry)}.'
             raise TypeError(m)
-        
+
         if not utry.is_qubit_only():
             m = 'DiagonalSynthesisPass can only synthesize diagonal '
             m += 'UnitaryMatrixs with qubits, got higher radix than 2.'
             raise ValueError(m)
-        
+
         num_qubits = utry.num_qudits
         circuit = Circuit(num_qubits)
 
         # Find parameters of each I/Z Pauli string
-        H_matrix = unitary_log_no_i(utry)
+        H_matrix = unitary_log_no_i(utry.numpy)
         params = pauliz_expansion(H_matrix) * 2
         # Remove low weight terms - these are likely numerical errors
         params = where(abs(params) < self.parameter_precision, 0, params)
@@ -100,7 +96,7 @@ class DiagonalSynthesisPass(SynthesisPass):
         # Order the Pauli strings by their Gray code representation
         pauli_params = sorted(
             [(i, -p) for i, p in enumerate(params)],
-            key=lambda x: self.gray_code(x[0])
+            key=lambda x: self.gray_code(x[0]),
         )
         subcircuits = [
             self.pauli_to_subcircuit(i, p, num_qubits) for i, p in pauli_params

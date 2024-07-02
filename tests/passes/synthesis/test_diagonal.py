@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from numpy.random import normal
-
 from scipy.linalg import expm
 
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
-from bqskit.qis import UnitaryMatrix
-
-from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.passes.synthesis.diagonal import DiagonalSynthesisPass
+from bqskit.qis import UnitaryMatrix
+from bqskit.qis.pauliz import PauliZMatrices
 
 
 class TestDiagonalSynthesis:
