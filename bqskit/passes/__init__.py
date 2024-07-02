@@ -28,6 +28,7 @@ synthesis pass to convert the circuit to native gates.
     :toctree: autogen
     :recursive:
 
+    DiagonalSynthesisPass
     LEAPSynthesisPass
     QSearchSynthesisPass
     QFASTDecompositionPass
@@ -319,6 +320,7 @@ __all__ = [
     'ScanPartitioner',
     'QuickPartitioner',
     'SynthesisPass',
+    'DiagonalSynthesisPass',
     'LEAPSynthesisPass',
     'QSearchSynthesisPass',
     'QFASTDecompositionPass',

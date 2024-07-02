@@ -10,10 +10,13 @@ import scipy as sp
 from scipy.stats import unitary_group
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.utils.math import canonical_unitary
 from bqskit.utils.math import dexpmv
+from bqskit.utils.math import diagonal_distance
 from bqskit.utils.math import dot_product
 from bqskit.utils.math import pauli_expansion
+from bqskit.utils.math import pauliz_expansion
 from bqskit.utils.math import softmax
 from bqskit.utils.math import unitary_log_no_i
 
@@ -188,6 +191,21 @@ class TestPauliExpansion:
         assert np.linalg.norm(H - reH) < 1e-16
 
 
+class TestPauliZExpansion:
+    @pytest.mark.parametrize(
+        'reH',
+        PauliZMatrices(1).paulizs
+        + PauliZMatrices(2).paulizs
+        + PauliZMatrices(3).paulizs
+        + PauliZMatrices(4).paulizs,
+    )
+    def test_valid(self, reH: npt.NDArray[np.complex128]) -> None:
+        alpha = pauliz_expansion(reH)
+        print(alpha)
+        H = PauliZMatrices(int(np.log2(reH.shape[0]))).dot_product(alpha)
+        assert np.linalg.norm(H - reH) < 1e-16
+
+
 class TestCanonicalUnitary:
     @pytest.mark.parametrize(
         'phase, num_qudits',
@@ -206,3 +224,32 @@ class TestCanonicalUnitary:
         phased_unitary = phase * base_unitary
         recanon_unitary = canonical_unitary(phased_unitary)
         assert np.allclose(canon_unitary, recanon_unitary, atol=1e-5)
+
+
+class TestDiagonalDistance:
+    @pytest.mark.parametrize(
+        'num_qudits, epsilon, threshold_list',
+        [
+            (n, 10 ** -e, [10 ** -t for t in range(1, 10)])
+            for n in range(1, 4)
+            for e in range(1, 10)
+        ],
+    )
+    def test_diagonal_distance(
+        self,
+        num_qudits: int,
+        epsilon: float,
+        threshold_list: list[float],
+    ) -> None:
+        N = 2 ** num_qudits
+        off_diag = epsilon / (N - 1)
+        on_diag = 1 - epsilon
+        matrix = -off_diag * np.ones((N, N), dtype=np.complex128)
+        np.fill_diagonal(matrix, on_diag)
+
+        for threshold in threshold_list:
+            distance = diagonal_distance(matrix)
+            if epsilon <= threshold:
+                assert distance <= threshold
+            else:
+                assert distance > threshold
