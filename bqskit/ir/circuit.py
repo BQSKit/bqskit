@@ -2096,9 +2096,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         num_qudits: int,
         bounding_region: CircuitRegionLike | None = None,
         fail_quickly: bool = False,
+        filter: Callable[[Circuit.surround.Node], bool] | None = None,
     ) -> CircuitRegion:
         """
-        Retrieve the maximal region in this circuit with `point` included.
+        Retrieve the maximal connected region in this circuit with `point`.
 
         Args:
             point (CircuitPointLike): Find a surrounding region for this
@@ -2114,6 +2115,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 result in some cases at the cost of only approximating
                 the maximal region.
 
+            filter (Callable[[], bool] | None): The filter function determines
+                if a candidate region is valid. This is used to prune the
+                search space of the surround function. If None then no
+                filtering is done. It takes a surround search node and
+                returns a boolean. See the code for more type information.
+
         Raises:
             IndexError: If `point` is not a valid index.
 
@@ -2123,6 +2130,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 `num_qudits`.
 
             ValueError: If `bounding_region` is invalid.
+
+            ValueError: If the initial node does not pass the filter.
 
         Notes:
             This algorithm explores outward horizontally as much as possible.
@@ -2142,6 +2151,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise ValueError(
                 f'Expected a positive integer num_qudits, got {num_qudits}.',
             )
+
+        if filter is not None and not callable(filter):
+            raise TypeError(f'Expected callable filter, got {type(filter)}.')
 
         if bounding_region is not None:
             bounding_region = CircuitRegion(bounding_region)
@@ -2194,6 +2206,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             {CircuitPoint(point[0], q) for q in init_op.location},
         )
 
+        if filter is not None and not filter(init_node):
+            raise ValueError('Initial node does not pass filter.')
+
         frontier: list[Node] = [init_node]
 
         # Track best so far
@@ -2209,6 +2224,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             _logger.debug('popped node:')
             _logger.debug(node[0])
             _logger.debug(f'Items remaining in the frontier: {len(frontier)}')
+
+            if filter is not None and not filter(node):
+                _logger.debug('Node failed filter; skipping.')
+                continue
 
             # Evaluate node
             if score(node) > best_score:
