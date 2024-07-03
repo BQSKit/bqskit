@@ -2170,7 +2170,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         A HalfWire is a point in the circuit and a direction.
 
         This represents a point to start exploring from and a direction to
-        explore in.
+        explore in. The direction is either 'left' or 'right'.
         """
 
         Node = Tuple[
