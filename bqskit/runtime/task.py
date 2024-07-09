@@ -80,6 +80,9 @@ class RuntimeTask:
         """Set to true if this task should wake immediately on a result."""
 
         self.log_context: dict[str, str] = log_context
+        """Additional context to be logged with this task."""
+
+        self.msg_buffer: list[Any] = []
 
     @property
     def fnargs(self) -> tuple[Any, Any, Any]:

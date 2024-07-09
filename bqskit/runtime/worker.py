@@ -302,6 +302,10 @@ class Worker:
                 self._handle_cancel(addr)
                 # TODO: preempt?
 
+            elif msg == RuntimeMessage.COMMUNICATE:
+                addrs, msg = cast(tuple[list[RuntimeAddress], Any], payload)
+                self._handle_communicate(addrs, msg)
+
             elif msg == RuntimeMessage.IMPORTPATH:
                 paths = cast(List[str], payload)
                 for path in paths:
@@ -369,6 +373,13 @@ class Worker:
             t for t in self._delayed_tasks
             if not t.is_descendant_of(addr)
         ]
+
+    def _handle_communicate(self, addrs: list[RuntimeAddress], msg: Any) -> None:
+        for task_addr in addrs:
+            if task_addr not in self._tasks:
+                continue
+
+            self._tasks[task_addr].msg_buffer.append(msg)
 
     def _get_next_ready_task(self) -> RuntimeTask | None:
         """Return the next ready task if one exists, otherwise block."""
@@ -656,6 +667,25 @@ class Worker:
 
         # Return future pointing to the mailbox
         return RuntimeFuture(mailbox_id)
+
+    def communicate(self, future: RuntimeFuture, msg: Any) -> None:
+        """Send a message to the task associated with `future`."""
+        assert self._active_task is not None
+        assert future.mailbox_id in self._mailboxes
+
+        num_slots = self._mailboxes[future.mailbox_id].expected_num_results
+        addrs = [
+            RuntimeAddress(self._id, future.mailbox_id, slot_id)
+            for slot_id in range(num_slots)
+        ]
+        self._conn.send((RuntimeMessage.COMMUNICATE, (addrs, msg)))
+
+    def get_messages(self) -> list[Any]:
+        """Return all messages received by the worker for this task."""
+        assert self._active_task is not None
+        x = self._active_task.msg_buffer
+        self._active_task.msg_buffer = []
+        return x
 
     def cancel(self, future: RuntimeFuture) -> None:
         """Cancel all tasks associated with `future`."""

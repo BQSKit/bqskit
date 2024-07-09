@@ -175,6 +175,9 @@ class Manager(ServerBase):
                 paths = cast(List[str], payload)
                 self.handle_importpath(paths)
 
+            elif msg == RuntimeMessage.COMMUNICATE:
+                self.broadcast(RuntimeMessage.COMMUNICATE, payload)
+
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 

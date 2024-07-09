@@ -193,6 +193,9 @@ class DetachedServer(ServerBase):
                 task_diff = cast(int, payload)
                 self.conn_to_employee_dict[conn].num_tasks += task_diff
 
+            elif msg == RuntimeMessage.COMMUNICATE:
+                self.broadcast(msg, payload)
+
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 
