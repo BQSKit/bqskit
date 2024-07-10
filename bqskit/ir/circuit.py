@@ -2222,6 +2222,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # Exhaustive Search
         while len(frontier) > 0:
             #_logger.debug(f'Current frontiers:{frontier}')
+            best_score_flag = False
             node = frontier.pop(0)
             _logger.debug('popped node:')
             _logger.debug(node[0])
@@ -2247,6 +2248,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 except ValueError:
                     if fail_quickly:
                         continue
+            elif score(node) == best_score:
+                _logger.debug(f'current score is {score(node)} and is equal to the best score.')
+                best_score_flag = True
             # Bao's comment: The reason why I considering the node where the score is at least the same with
             # the best score is due to the need to expand the region to at least the number of qubits that we required
             # Why this works: as the filtering now limit the region to what we want, the node that we assuming should
@@ -2296,10 +2300,12 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
                     # Stop when exploring previously explored points
                     point = CircuitPoint(cycle_index, qudit_index)
-                    # if point in node[3]:
-                    #     _logger.debug(f"Skipping op {self[point]} because previously seen.")
-                    #     break
-                    node[3].add(point)
+                    if point in node[3]:
+                        if not best_score_flag:
+                            _logger.debug(f"Skipping op {self[point]} because previously seen.")
+                            break
+                    else:
+                        node[3].add(point)
 
                     # Continue until next operation
                     if self.is_point_idle(point):
