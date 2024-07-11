@@ -2289,23 +2289,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 # Discard invalid regions
                 if not self.is_valid_region(new_region):
                     continue
-
-                # # Absorb single-qudit gates
-                # while True:
-                #     new_exp = self.next(new_region).union(self.prev(new_region))
-                #     if not any(op.num_qudits == 1 for op in self[new_exp]):
-                #         break
-                #     for point in new_exp:
-                #         op = self[point]
-                #         if len(op.location) == 1:
-                #             qudit = op.location[0]
-                #             if qudit not in new_region:
-                #                 new_region[qudit] = (point[0], point[0])
-                #             else:
-                #                 new_region[qudit] = (
-                #                     min(new_region[qudit][0], point[0]),
-                #                     max(new_region[qudit][1], point[0]),
-                #                 )
                 
                 new_region = CircuitRegion(new_region)
 
