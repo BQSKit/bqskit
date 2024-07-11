@@ -13,10 +13,10 @@ from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.x import XGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
+from bqskit.ir.location import CircuitLocation
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
-from bqskit.ir.location import CircuitLocation
 
 
 def check_no_idle_cycles(circuit: Circuit) -> None:
@@ -340,7 +340,7 @@ class TestSurround:
         r6_qudit_circuit.fold(region)
         assert r6_qudit_circuit.get_unitary() == utry
 
-    def test_surround_symmetric(self):
+    def test_surround_symmetric(self) -> None:
         circuit = Circuit(6)
         # whole wall of even
         circuit.append_gate(CNOTGate(), [0, 1])
@@ -358,7 +358,7 @@ class TestSurround:
         region = circuit.surround((1, 3), 4)
         assert region.location == CircuitLocation([2, 3, 4, 5])
 
-    def test_surround_filter_hard(self):
+    def test_surround_filter_hard(self) -> None:
         circuit = Circuit(7)
         # whole wall of even
         circuit.append_gate(CNOTGate(), [0, 1])
@@ -380,8 +380,13 @@ class TestSurround:
         circuit.append_gate(CNOTGate(), [5, 6])
         circuit.append_gate(CNOTGate(), [5, 6])
 
-        region = circuit.surround((1, 3), 4, None, None, lambda region: (region.min_qudit > 1 and region.max_qudit < 6))
+        region = circuit.surround(
+            (1, 3), 4, None, None, lambda region: (
+                region.min_qudit > 1 and region.max_qudit < 6
+            ),
+        )
         assert region.location == CircuitLocation([2, 3, 4, 5])
+
 
 def test_check_region() -> None:
     c = Circuit(4)
@@ -389,4 +394,4 @@ def test_check_region() -> None:
     c.append_gate(CNOTGate(), [0, 1])
     c.append_gate(CNOTGate(), [2, 3])
     c.append_gate(CNOTGate(), [1, 2])
-    assert not c.is_valid_region({1:(0, 2), 2:(0, 2), 3:(0, 2)})
+    assert not c.is_valid_region({1: (0, 2), 2: (0, 2), 3: (0, 2)})

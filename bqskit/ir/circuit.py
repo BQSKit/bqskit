@@ -5,17 +5,15 @@ import copy
 import logging
 import warnings
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Iterable
 from typing import Iterator
-from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
-from typing import Set
-from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -25,6 +23,7 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.interval import CycleInterval
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.lang import get_language
 from bqskit.ir.location import CircuitLocation
@@ -902,7 +901,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Report the point for the first operation on `qudit` if it exists."""
         return self._front[qudit]
 
-    def next(self, point: CircuitPoint | CircuitRegionLike) -> set[CircuitPoint]:
+    def next(
+        self,
+        point: CircuitPointLike | CircuitRegionLike,
+    ) -> set[CircuitPoint]:
         """Return the points of operations dependent on the one at `point`."""
         if CircuitRegion.is_region(point):
             points = []
@@ -917,9 +919,16 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             return next_points
 
-        return {p for p in self._dag[point][1].values() if p is not None}
+        return {
+            p
+            for p in self._dag[point][1].values()  # type: ignore
+            if p is not None
+        }
 
-    def prev(self, point: CircuitPoint | CircuitRegionLike) -> set[CircuitPoint]:
+    def prev(
+        self,
+        point: CircuitPointLike | CircuitRegionLike,
+    ) -> set[CircuitPoint]:
         """Return the points of operations the one at `point` depends on."""
         if CircuitRegion.is_region(point):
             points = []
@@ -934,7 +943,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             return prev_points
 
-        return {p for p in self._dag[point][0].values() if p is not None}
+        return {
+            p
+            for p in self._dag[point][0].values()  # type: ignore
+            if p is not None
+        }
 
     # endregion
 
@@ -1919,7 +1932,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                     if not cycle_intervals.overlaps(other_cycle_intervals):
                         raise ValueError('Disconnect detected in region.')
 
-        cycles_ops = self.operations_with_cycles(qudits_or_region=region, exclude=True)
+        cycles_ops = self.operations_with_cycles(
+            qudits_or_region=region, exclude=True,
+        )
         points = [(cop[0], cop[1].location[0]) for cop in cycles_ops]
         known_to_never_reenter = set()
 
@@ -2253,7 +2268,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         # Initialize Search
         frontier: list[CircuitRegion] = [init_region]
         seen: set[CircuitRegion] = set()
-    
+
         # Track best so far
         best_score = (scoring_fn(init_region), init_region.num_qudits)
         best_region = init_region
@@ -2271,26 +2286,28 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             # Expand node
             for point in self.next(node).union(self.prev(node)):
                 # Create new region by adding the gate at this point
-                new_region = {k: v for k, v in node.items()}
+                new_region_bldr = {k: v for k, v in node.items()}
                 op = self[point]
                 for qudit in op.location:
-                    if qudit not in new_region:
-                        new_region[qudit] = (point[0], point[0])
+                    if qudit not in new_region_bldr:
+                        new_region_bldr[qudit] = CycleInterval(
+                            point[0], point[0],
+                        )
                     else:
-                        new_region[qudit] = (
-                            min(new_region[qudit][0], point[0]),
-                            max(new_region[qudit][1], point[0]),
+                        new_region_bldr[qudit] = CycleInterval(
+                            min(new_region_bldr[qudit][0], point[0]),
+                            max(new_region_bldr[qudit][1], point[0]),
                         )
 
                 # Discard too large regions
-                if len(new_region) > num_qudits:
+                if len(new_region_bldr) > num_qudits:
                     continue
 
                 # Discard invalid regions
-                if not self.is_valid_region(new_region):
+                if not self.is_valid_region(new_region_bldr):
                     continue
-                
-                new_region = CircuitRegion(new_region)
+
+                new_region = CircuitRegion(new_region_bldr)
 
                 # Check uniqueness
                 if new_region in seen:
