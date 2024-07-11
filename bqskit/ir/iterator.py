@@ -248,18 +248,18 @@ class CircuitGridIterator(CircuitIterator):
         self.min_cycle = self.region.min_cycle
         self.max_cycle = self.region.max_cycle
 
-        if start < (self.min_cycle, self.min_qudit):
-            start = CircuitPoint(self.min_cycle, self.min_qudit)
+        if self.start < (self.min_cycle, self.min_qudit):
+            self.start = CircuitPoint(self.min_cycle, self.min_qudit)
 
-        if end > (self.max_cycle, self.max_qudit):
-            end = CircuitPoint(self.max_cycle, self.max_qudit)
+        if self.end > (self.max_cycle, self.max_qudit):
+            self.end = CircuitPoint(self.max_cycle, self.max_qudit)
 
-        assert isinstance(start, CircuitPoint)  # TODO: Typeguard
-        assert isinstance(end, CircuitPoint)  # TODO: Typeguard
+        assert isinstance(self.start, CircuitPoint)  # TODO: Typeguard
+        assert isinstance(self.end, CircuitPoint)  # TODO: Typeguard
 
         # Pointer into the circuit structure
-        self.cycle = start.cycle if not self.reverse else end.cycle
-        self.qudit = start.qudit if not self.reverse else end.qudit
+        self.cycle = self.start.cycle if not self.reverse else self.end.cycle
+        self.qudit = self.start.qudit if not self.reverse else self.end.qudit
 
         # Used to track changes to circuit structure
         self.num_ops = self.circuit.num_operations
@@ -330,6 +330,8 @@ class CircuitGridIterator(CircuitIterator):
                 self.qudits_to_skip.add(self.qudit)
                 continue
 
+            self.qudits_to_skip.update(op.location)
+
             if self.exclude:
                 if not all(qudit in self.qudits for qudit in op.location):
                     continue
@@ -339,8 +341,6 @@ class CircuitGridIterator(CircuitIterator):
                     for qudit in op.location
                 ):
                     continue
-
-            self.qudits_to_skip.update(op.location)
 
             if self.and_cycles:
                 return self.cycle, op

@@ -16,6 +16,7 @@ from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
+from bqskit.ir.location import CircuitLocation
 
 
 def check_no_idle_cycles(circuit: Circuit) -> None:
@@ -338,3 +339,54 @@ class TestSurround:
         region = r6_qudit_circuit.surround((cycle, qudit), 4)
         r6_qudit_circuit.fold(region)
         assert r6_qudit_circuit.get_unitary() == utry
+
+    def test_surround_symmetric(self):
+        circuit = Circuit(6)
+        # whole wall of even
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [4, 5])
+
+        # one odd gate; problematic point in test
+        circuit.append_gate(CNOTGate(), [3, 4])
+
+        # whole wall of even
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [4, 5])
+
+        region = circuit.surround((1, 3), 4)
+        assert region.location == CircuitLocation([2, 3, 4, 5])
+
+    def test_surround_filter_hard(self):
+        circuit = Circuit(7)
+        # whole wall of even
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [4, 5])
+
+        # one odd gate; problematic point in test
+        circuit.append_gate(CNOTGate(), [3, 4])
+
+        # whole wall of even
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [4, 5])
+
+        # more odd gates to really test filter
+        circuit.append_gate(CNOTGate(), [5, 6])
+        circuit.append_gate(CNOTGate(), [5, 6])
+        circuit.append_gate(CNOTGate(), [5, 6])
+        circuit.append_gate(CNOTGate(), [5, 6])
+        circuit.append_gate(CNOTGate(), [5, 6])
+
+        region = circuit.surround((1, 3), 4, None, None, lambda region: (region.min_qudit > 1 and region.max_qudit < 6))
+        assert region.location == CircuitLocation([2, 3, 4, 5])
+
+def test_check_region() -> None:
+    c = Circuit(4)
+    c.append_gate(CNOTGate(), [1, 2])
+    c.append_gate(CNOTGate(), [0, 1])
+    c.append_gate(CNOTGate(), [2, 3])
+    c.append_gate(CNOTGate(), [1, 2])
+    assert not c.is_valid_region({1:(0, 2), 2:(0, 2), 3:(0, 2)})
