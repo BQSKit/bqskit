@@ -1,8 +1,8 @@
-# Using BQSkit on a GPU Cluster
+# Using BQSKit on a GPU Cluster
 
-This guide explains how to use BQSkit with GPUs by leveraging the `bqskit-qfactor-jax` package. This package provides GPU implementation support for the [QFactor](https://ieeexplore.ieee.org/abstract/document/10313638) and [QFactor-Sample](https://arxiv.org/abs/2405.12866) instantiation algorithms. For more detailed information and advanced configurations of the BQSkit runtime, refer to the [BQSKit distribution guide](https://bqskit.readthedocs.io/en/latest/guides/distributing.html).
+This guide explains how to use BQSKit with GPUs by leveraging the `bqskit-qfactor-jax` package. This package provides GPU implementation support for the [QFactor](https://ieeexplore.ieee.org/abstract/document/10313638) and [QFactor-Sample](https://arxiv.org/abs/2405.12866) instantiation algorithms. For more detailed information and advanced configurations of the BQSKit runtime, refer to the [BQSKit distribution guide](https://bqskit.readthedocs.io/en/latest/guides/distributing.html).
 
-We will guide you through the installation, setup, and execution process for BQSkit on a GPU cluster.
+We will guide you through the installation, setup, and execution process for BQSKit on a GPU cluster.
 
 ## bqskit-qfactor-jax Package Installation
 
@@ -10,7 +10,7 @@ First, you will need to install `bqskit-qfactor-jax`. Follow the instructions av
 
 ## Setting Up the Environment
 
-To run BQSkit with GPUs, you need to set up the BQSkit runtime properly. Each worker should be assigned to a specific GPU, and several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on an interactive node or using SBATCH on several nodes. Below are the scripts to help you set up the runtime.
+To run BQSKit with GPUs, you need to set up the BQSKit runtime properly. Each worker should be assigned to a specific GPU, and several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on an interactive node or using SBATCH on several nodes. Below are the scripts to help you set up the runtime.
 
 You may configure the number of GPUs to use on each node and also the number of workers on each GPU. If you use too many workers on the same GPU, you will get an out-of-memory exception. You may use the following table as a starting configuration and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. You can use the `nvidia-smi` command to check the GPU usage during execution; it specifies the utilization of the memory and the execution units.
 
