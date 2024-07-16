@@ -22,7 +22,7 @@ You may configure the number of GPUs to use on each node and also the number of 
 | 7              | 2                |
 | 8 and more     | 1                |
 
-Make sure that in your Python script you are creating the compiler object with the appropriate IP address. When running on the same node as the server, you can use `localhost` as the IP address.
+Make sure that in your Python script you are creating the compiler object with the appropriate IP address. When running on the same node as the server, you can use \`localhost\` as the IP address.
 
 
 ### Interactive Node Setup Script
