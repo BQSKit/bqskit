@@ -78,8 +78,7 @@ bqskit-manager -x -n$total_amount_of_workers -vvv &> $manager_log_file &
 manager_pid=$!
 wait_for_outgoing_thread_in_manager_log
 
-echo "starting BQSKit server on main node"
-echo "Will run the command bqskit-server ${hostname} -vvv" > $server_log_file
+echo "starting BQSKit server"
 bqskit-server $hostname -vvv &>> $server_log_file &
 server_pid=$!
 
@@ -88,7 +87,6 @@ wait_for_server_to_connect
 echo "Starting $total_amount_of_workers workers on $amount_of_gpus gpus"
 for (( gpu_id=0; gpu_id<$amount_of_gpus; gpu_id++ ))
 do
-    echo "XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=$gpu_id bqskit-worker $amount_of_workers_per_gpu"
     XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=$gpu_id bqskit-worker $amount_of_workers_per_gpu > $scratch_dir/bqskit_logs/workers_${SLURM_JOB_ID}_${hostname}_${gpu_id}.log &
 done
 
