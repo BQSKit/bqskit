@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 
 class ConstrainedMinimizer(abc.ABC):
     """
-    The Minimizer class.
+    The ConstrainedMinimizer class.
 
     An minimizer finds the parameters for a circuit template that minimizes some
-    CostFunction.
+    CostFunction while also satisfying some constraint CostFunction.
     """
 
     @abc.abstractmethod
