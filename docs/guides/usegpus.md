@@ -155,7 +155,6 @@ date
 echo "Killing the server"
 kill -2 $server_pid
 
-sleep 2
 ```
 
 
