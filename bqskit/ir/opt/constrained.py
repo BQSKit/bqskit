@@ -1,4 +1,4 @@
-"""This module implements the Minimizer base class."""
+"""This module implements the ConstrainedMinimizer base class."""
 from __future__ import annotations
 
 import abc
@@ -17,8 +17,8 @@ class ConstrainedMinimizer(abc.ABC):
     """
     The ConstrainedMinimizer class.
 
-    An minimizer finds the parameters for a circuit template that minimizes some
-    CostFunction while also satisfying some constraint CostFunction.
+    A minimizer that finds parameters for a circuit template that minimize a
+    'cost' CostFunction while also satisfying some 'constraint' CostFunction.
     """
 
     @abc.abstractmethod
@@ -32,15 +32,18 @@ class ConstrainedMinimizer(abc.ABC):
         Minimize `cost` starting from initial point `x0` while obeying `cstr`.
 
         Args:
-            cost (CostFunction): The CostFunction to minimize.
+            cost (CostFunction): The CostFunction to minimize. This function
+                should capture the objective of the optimization.
 
             cstr (CostFunction): The CostFunction used to constrain solutions.
+                In most cases, this will be based on the Hilbert-Schmidt dist-
+                ance or some related fidelity metric.
 
-            x0 (np.ndarray): The initial point.
+            x0 (np.ndarray): An initial point in parameter space.
 
         Returns:
-            (np.ndarray): The inputs that best minimizes the cost while obeying
-                the constraints.
+            (np.ndarray): The inputs that minimize the cost while obeying the
+                constraints.
 
         Notes:
             This function should be side-effect free. This is because many
