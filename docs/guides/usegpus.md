@@ -1,49 +1,29 @@
 # Using BQSkit on a GPU Cluster
 
-This guide explains how to use BQSkit with GPUs by leveraging the `bqskit-qfactor-jax` package. This package provides the GPU implemantation support for the [QFactor](https://ieeexplore.ieee.org/abstract/document/10313638) and [QFactor-Sample](https://arxiv.org/abs/2405.12866) instantiation algorithms. For more detailed insnformation and advanced configurations of the BQSkit runtime, refer to the [BQSKit distribution guide](https://bqskit.readthedocs.io/en/latest/guides/distributing.html).
+This guide explains how to use BQSkit with GPUs by leveraging the `bqskit-qfactor-jax` package. This package provides GPU implementation support for the [QFactor](https://ieeexplore.ieee.org/abstract/document/10313638) and [QFactor-Sample](https://arxiv.org/abs/2405.12866) instantiation algorithms. For more detailed information and advanced configurations of the BQSkit runtime, refer to the [BQSKit distribution guide](https://bqskit.readthedocs.io/en/latest/guides/distributing.html).
 
 We will guide you through the installation, setup, and execution process for BQSkit on a GPU cluster.
 
-
 ## bqskit-qfactor-jax Package Installation
 
-First you will need to install `bqskit-qfactor-jax`, follow the instructions available at the [PyPI page](https://pypi.org/project/bqskit-qfactor-jax/).
+First, you will need to install `bqskit-qfactor-jax`. Follow the instructions available on the [PyPI page](https://pypi.org/project/bqskit-qfactor-jax/).
 
 ## Setting Up the Environment
 
-To run BQSkit with GPUs, you need to setup the BQSkit runtime properly, each worker should be assigned to a specific GPU, and several workers can use the same GPU by utilizing [NVIDIA's MPS]https://docs.nvidia.com/deploy/mps/. You can setup the runtime on an interactive node, or using SBATCH on several nodes. Below are the scripts to help you set up the runtime.
+To run BQSkit with GPUs, you need to set up the BQSkit runtime properly. Each worker should be assigned to a specific GPU, and several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on an interactive node or using SBATCH on several nodes. Below are the scripts to help you set up the runtime.
 
-You may configure the number of GPUs to use on each node, and also the number of workers on each GPU. If you will use too many workers on the same GPU, you will get an out-of-memory exception. You may use the following table as a starting configuration, and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. You can use the nvidia-smi command to check the GPU usage during the execution, it specifices the utilization of the memroy and of the exection units.
+You may configure the number of GPUs to use on each node and also the number of workers on each GPU. If you use too many workers on the same GPU, you will get an out-of-memory exception. You may use the following table as a starting configuration and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. You can use the `nvidia-smi` command to check the GPU usage during execution; it specifies the utilization of the memory and the execution units.
 
-<table>
-  <tr>
-    <th>Unitary size</th>
-    <th>Workers per GPU</th>
-  </tr>
-  <tr>
-    <td>3,4</td>
-    <td>10</td>
-  </tr>
-  <tr>
-    <td>5</td>
-    <td>8</td>
-  </tr>
-  <tr>
-    <td>6</td>
-    <td>5</td>
-  </tr>
-  <tr>
-    <td>7</td>
-    <td>2</td>
-  </tr>
-  <tr>
-    <td>8 and more</td>
-    <td>1</td>
-  </tr>
-</table>
+| Unitary Size   | Workers per GPU |
+|----------------|------------------|
+| 3,4            | 10               |
+| 5              | 8                |
+| 6              | 4                |
+| 7              | 2                |
+| 8 and more     | 1                |
 
+Make sure that in your Python script you are creating the compiler object with the appropriate IP address. When running on the same node as the server, you can use `localhost` as the IP address.
 
-Make sure that in your python script you are creating the compiler object with the appropriate ip address. When running on the same node as the server, you can use 'localhost' as the ip address.
 
 ### Interactive Node Setup Script
 Use the following script to set up the environment on an interactive node. After the enviorment is up, you may open a seconed terminal and run your python script.
