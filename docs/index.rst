@@ -26,6 +26,7 @@ our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
    :maxdepth: 1
 
    guides/distributing.md
+   guides/usegpus.md
    guides/custompass.md
 
 .. toctree::
