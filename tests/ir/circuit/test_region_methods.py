@@ -297,7 +297,7 @@ class TestSurround:
         circuit.append_gate(HGate(), 1)
         circuit.append_gate(HGate(), 2)
         region = circuit.surround((0, 1), 2)
-        assert region == CircuitRegion({0: (0, 1), 1: (0, 2)})
+        assert region == CircuitRegion({0: (0, 1), 1: (0, 3)})
 
     def test_small_circuit_3(self) -> None:
         circuit = Circuit(3)
@@ -325,7 +325,7 @@ class TestSurround:
         circuit.append_gate(CNOTGate(), (0, 2))
         circuit.append_gate(CNOTGate(), (0, 1))
         region = circuit.surround((1, 0), 2)
-        assert region == CircuitRegion({0: (0, 1), 1: (0, 1)})
+        assert region == CircuitRegion({0: (0, 1), 1: (0, 2)})
 
     def test_with_fold(self, r6_qudit_circuit: Circuit) -> None:
         cycle = 0

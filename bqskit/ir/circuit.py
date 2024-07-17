@@ -2286,28 +2286,68 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             # Expand node
             for point in self.next(node).union(self.prev(node)):
                 # Create new region by adding the gate at this point
-                new_region_bldr = {k: v for k, v in node.items()}
+                region_bldr = {k: v for k, v in node.items()}
                 op = self[point]
+                valid_region = True
                 for qudit in op.location:
-                    if qudit not in new_region_bldr:
-                        new_region_bldr[qudit] = CycleInterval(
-                            point[0], point[0],
+                    if qudit not in region_bldr:
+                        region_bldr[qudit] = CycleInterval(point[0], point[0])
+
+                    elif point[0] < region_bldr[qudit][0]:
+                        # Check for gates in the middle not in region
+                        if any(
+                            not self.is_point_idle((i, qudit))
+                            for i in range(point[0] + 1, region_bldr[qudit][0])
+                        ):
+                            valid_region = False
+                            break
+
+                        # Absorb Single-qudit gates
+                        index = point[0]
+                        while index > 0:
+                            if not self.is_point_idle((index - 1, qudit)):
+                                prev_op = self[index - 1, qudit]
+                                if len(prev_op.location) != 1:
+                                    break
+                            index -= 1
+
+                        region_bldr[qudit] = CycleInterval(
+                            index,
+                            region_bldr[qudit][1],
                         )
-                    else:
-                        new_region_bldr[qudit] = CycleInterval(
-                            min(new_region_bldr[qudit][0], point[0]),
-                            max(new_region_bldr[qudit][1], point[0]),
+
+                    elif point[0] > region_bldr[qudit][1]:
+                        # Check for gates in the middle not in region
+                        if any(
+                            not self.is_point_idle((i, qudit))
+                            for i in range(region_bldr[qudit][1] + 1, point[0])
+                        ):
+                            valid_region = False
+                            break
+
+                        # Absorb Single-qudit gates
+                        index = point[0]
+                        while index < self.num_cycles - 1:
+                            if not self.is_point_idle((index + 1, qudit)):
+                                next_op = self[index + 1, qudit]
+                                if len(next_op.location) != 1:
+                                    break
+                            index += 1
+
+                        region_bldr[qudit] = CycleInterval(
+                            region_bldr[qudit][0],
+                            index,
                         )
 
                 # Discard too large regions
-                if len(new_region_bldr) > num_qudits:
+                if len(region_bldr) > num_qudits:
                     continue
 
                 # Discard invalid regions
-                if not self.is_valid_region(new_region_bldr):
+                if not valid_region:
                     continue
 
-                new_region = CircuitRegion(new_region_bldr)
+                new_region = CircuitRegion(region_bldr)
 
                 # Check uniqueness
                 if new_region in seen:
