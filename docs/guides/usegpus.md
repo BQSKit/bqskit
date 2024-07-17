@@ -12,7 +12,7 @@ First, you will need to install `bqskit-qfactor-jax`. Follow the instructions av
 
 To run BQSKit with GPUs, you need to set up the BQSKit runtime properly. Each worker should be assigned to a specific GPU, and several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on an interactive node or using SBATCH on several nodes. Below are the scripts to help you set up the runtime.
 
-You may configure the number of GPUs to use on each node and also the number of workers on each GPU. If you use too many workers on the same GPU, you will get an out-of-memory exception. You may use the following table as a starting configuration and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. You can use the `nvidia-smi` command to check the GPU usage during execution; it specifies the utilization of the memory and the execution units.
+You may configure the number of GPUs to use on each node and also the number of workers on each GPU. If you use too many workers on the same GPU, you will get an out-of-memory exception. If you are using QFactor, you may use the following table as a starting configuration and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. If you are using QFactor-Sample, start with a single worker and increase if the memory premits it. You can use the `nvidia-smi` command to check the GPU usage during execution; it specifies the utilization of the memory and the execution units.
 
 | Unitary Size   | Workers per GPU |
 |----------------|------------------|
