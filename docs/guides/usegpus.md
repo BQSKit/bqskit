@@ -8,6 +8,12 @@ We will guide you through the installation, setup, and execution process for BQS
 
 First, you will need to install `bqskit-qfactor-jax`. Follow the instructions available on the [PyPI page](https://pypi.org/project/bqskit-qfactor-jax/).
 
+## QFactor-JAX and QFactor-Sample-JAX Use Examples
+
+
+For detailed usage examples, please refer to the [examples directory](https://github.com/BQSKit/bqskit-qfactor-jax/tree/main/examples)  in the `bqskit-qfactor-jax` package. There, you will find two Toffoli instantiation examples using QFactor and QFactor-Sample, as well as two different synthesis flows that also utilize these algorithms.
+
+
 ## Setting Up the Environment
 
 To run BQSKit with GPUs, you need to set up the BQSKit runtime properly. Each worker should be assigned to a specific GPU, and several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on an interactive node or using SBATCH on several nodes. Below are the scripts to help you set up the runtime.
@@ -34,7 +40,7 @@ unique_id=bqskit_${RANDOM}
 amount_of_gpus=<Number of GPUS to use in the node>
 amount_of_workers_per_gpu=<Number of workers per GPU>
 total_amount_of_workers=$(($amount_of_gpus * $amount_of_workers_per_gpu))
-scratch_dir=$SCRATCH
+scratch_dir=<temp_dir>
 
 wait_for_outgoing_thread_in_manager_log() {
     while [[ ! -f "$manager_log_file" ]]
@@ -111,6 +117,8 @@ Use the following SBATCH script to set up the job on a cluster:
 #SBATCH --gpus=<total number of GPUs, not nodes>
 #SBATCH --output=<full_path_to_log_file>
 
+scratch_dir=<temp_dir>
+
 date
 uname -a
 
@@ -124,7 +132,7 @@ echo "starting BQSKit managers on all nodes"
 srun run_workers_and_managers.sh <number_of_gpus_per_node> <number_of_workers_per_gpu> &
 managers_pid=$!
 
-managers_started_file=$SCRATCH/managers_${SLURM_JOB_ID}_started
+managers_started_file=$scratch_dir/managers_${SLURM_JOB_ID}_started
 n=<number_of_nodes>
 
 
@@ -139,10 +147,10 @@ while [ "$(cat "$managers_started_file" | wc -l)" -lt "$n" ]; do
 done
 
 echo "starting BQSKit server on main node"
-bqskit-server $(scontrol show hostnames "$SLURM_JOB_NODELIST" | tr '\n' ' ') &> $SCRATCH/bqskit_logs/server_${SLURM_JOB_ID}.log &
+bqskit-server $(scontrol show hostnames "$SLURM_JOB_NODELIST" | tr '\n' ' ') &> $scratch_dir/bqskit_logs/server_${SLURM_JOB_ID}.log &
 server_pid=$!
 
-uname -a >> $SCRATCH/server_${SLURM_JOB_ID}_started
+uname -a >> $scratch_dir/server_${SLURM_JOB_ID}_started
 
 echo "will run python your command"
 
@@ -164,9 +172,11 @@ node_id=$(uname -n)
 amount_of_gpus=$1
 amount_of_workers_per_gpu=$2
 total_amount_of_workers=$(($amount_of_gpus * $amount_of_workers_per_gpu))
-manager_log_file="$SCRATCH/bqskit_logs/manager_${SLURM_JOB_ID}_${node_id}.log"
-server_started_file="$SCRATCH/server_${SLURM_JOB_ID}_started"
-managers_started_file="$SCRATCH/managers_${SLURM_JOB_ID}_started"
+
+scratch_dir=<temp_dir>
+manager_log_file="$scratch_dir/bqskit_logs/manager_${SLURM_JOB_ID}_${node_id}.log"
+server_started_file="$scratch_dir/server_${SLURM_JOB_ID}_started"
+managers_started_file="$scratch_dir/managers_${SLURM_JOB_ID}_started"
 
 touch $managers_started_file
 
@@ -193,7 +203,7 @@ wait_for_bqskit_server() {
 start_workers() {
     echo "Starting $total_amount_of_workers workers on $amount_of_gpus gpus"
     for (( gpu_id=0; gpu_id<$amount_of_gpus; gpu_id++ )); do
-        XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=$gpu_id bqskit-worker $amount_of_workers_per_gpu &> $SCRATCH/bqskit_logs/workers_${SLURM_JOB_ID}_${node_id}_${gpu_id}.log &
+        XLA_PYTHON_CLIENT_PREALLOCATE=false CUDA_VISIBLE_DEVICES=$gpu_id bqskit-worker $amount_of_workers_per_gpu &> $scratch_dir/bqskit_logs/workers_${SLURM_JOB_ID}_${node_id}_${gpu_id}.log &
     done
     wait
 }
