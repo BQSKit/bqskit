@@ -96,7 +96,7 @@ class U8Gate(QutritGate, DifferentiableUnitary, CachedClass, GeneralGate):
                     ],
                     [
                         -c1 * c2 * s3 * p1 * m3 * p5, -s1 * s3 * p5,
-                         -c1 * s2 * s3 * m3 * p4 * p5,
+                        -c1 * s2 * s3 * m3 * p4 * p5,
                     ],
                 ],
 
@@ -143,7 +143,7 @@ class U8Gate(QutritGate, DifferentiableUnitary, CachedClass, GeneralGate):
                     [0, 0, 0],
                     [
                         -1j * s1 * c2 * c3 * p1 * p2 * m3, 1j * c1 *  c3 * p2,
-                         -1j * s1 * s2 * c3 * p2 * m3 * p4,
+                        -1j * s1 * s2 * c3 * p2 * m3 * p4,
                     ],
                     [1j * s2 * c3 * m2 * m4, 0, -1j * c2 * c3 * m1 * m2],
                 ],
