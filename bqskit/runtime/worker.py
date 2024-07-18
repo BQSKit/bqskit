@@ -315,6 +315,9 @@ class Worker:
             to discard cancelled tasks when popping from it. Therefore, we
             do not do anything with `self._ready_task_ids` here.
 
+            We also must make sure to call the `cancel` function of the
+            tasks to make sure their coroutines are cleaned up.
+
             Also, we also don't need to send out cancel messages for
             cancelled children tasks since other workers can evaluate that
             for themselves using breadcrumbs and the original `addr` cancel
@@ -327,12 +330,17 @@ class Worker:
             if task.is_descendant_of(addr):
                 for mailbox_id in self._tasks[key].owned_mailboxes:
                     self._mailboxes.pop(mailbox_id)
+                task.cancel()
         self._tasks = {
             a: t for a, t in self._tasks.items()
             if not t.is_descendant_of(addr)
         }
 
         # Remove all tasks that are children of `addr` from delayed tasks
+        for task in self._delayed_tasks:
+            if task.is_descendant_of(addr):
+                task.cancel()
+
         self._delayed_tasks = [
             t for t in self._delayed_tasks
             if not t.is_descendant_of(addr)

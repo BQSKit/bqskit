@@ -101,6 +101,11 @@ class RuntimeTask:
         """Initialize the task."""
         self.coro = self.run()
 
+    def cancel(self) -> None:
+        """Ask the coroutine to gracefully exit."""
+        if self.coro is not None:
+            self.coro.close()
+
     async def run(self) -> Any:
         """Task coroutine wrapper."""
         if inspect.iscoroutinefunction(self.fnargs[0]):
@@ -111,7 +116,3 @@ class RuntimeTask:
         """Return true if `addr` identifies a parent (or this) task."""
         return addr == self.return_address or addr in self.breadcrumbs
 
-    def __del__(self) -> None:
-        """Close the coroutine to make sure it is not left hanging."""
-        if self.coro is not None:
-            self.coro.close()
