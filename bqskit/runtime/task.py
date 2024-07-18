@@ -115,4 +115,3 @@ class RuntimeTask:
     def is_descendant_of(self, addr: RuntimeAddress) -> bool:
         """Return true if `addr` identifies a parent (or this) task."""
         return addr == self.return_address or addr in self.breadcrumbs
-
