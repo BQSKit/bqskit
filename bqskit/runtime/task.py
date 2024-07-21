@@ -103,8 +103,7 @@ class RuntimeTask:
 
     def cancel(self) -> None:
         """Ask the coroutine to gracefully exit."""
-        if self.coro is not None:
-            self.coro.close()
+        self.coro.close()
 
     async def run(self) -> Any:
         """Task coroutine wrapper."""
