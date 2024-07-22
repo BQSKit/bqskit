@@ -3,94 +3,53 @@
 from __future__ import annotations
 
 import numpy as np
+import numpy.typing as npt
+from hypothesis import given
+from hypothesis.strategies import integers
 
-from bqskit.ir.gates import DaggerGate
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PowerGate
-from bqskit.ir.gates import RXGate
-from bqskit.ir.gates import RYGate
-from bqskit.ir.gates import RZGate
+from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.test.strategies import gates_and_params
 
 
-test_power = lambda gate, power, params: np.linalg.matrix_power(
-    gate.get_unitary([params]), power,
-)
+def _recursively_calc_power_grad(
+    g: UnitaryMatrix,
+    dg: npt.NDArray[np.complex128],
+    power: int,
+) -> npt.NDArray[np.complex128]:
+    """D(g^n+1) = d(g@g^n) = g @ d(g^n) + dg @ g^n."""
+    if len(dg) == 0:
+        return np.zeros_like(dg)
+    if power < 0:
+        return _recursively_calc_power_grad(
+            g.dagger,
+            dg.conj().transpose([0, 2, 1]),
+            -power,
+        )
+    if power == 1:
+        return dg
+    dgn = _recursively_calc_power_grad(g, dg, power - 1)
+    return g @ dgn + dg @ g.ipower(power - 1)
 
 
-def square_grad(gate, params):
-    g, gd = gate.get_unitary_and_grad([params])
-    return g @ gd + gd @ g
+@given(gates_and_params(), integers(min_value=-10, max_value=10))
+def test_power_gate(g_and_p: tuple[Gate, RealVector], power: int) -> None:
+    gate, params = g_and_p
+    pgate = PowerGate(gate, power)
+    actual_unitary = pgate.get_unitary(params)
+    expected_unitary = gate.get_unitary(params).ipower(power)
+    assert actual_unitary.isclose(expected_unitary)
 
+    if not isinstance(gate, DifferentiableUnitary):
+        return
 
-def third_power_grad(gate, params):
-    g, gd = gate.get_unitary_and_grad([params])
-    return g @ square_grad(gate, params) + gd @ test_power(gate, 2, params)
-
-
-def quartic_power_grad(gate, params):
-    g, gd = gate.get_unitary_and_grad([params])
-    return g @ third_power_grad(gate, params) + gd @ test_power(gate, 3, params)
-
-
-def power_gate_grads(gate, power, params):
-    if power == 2:
-        return square_grad(gate, params)
-    elif power == -2:
-        return square_grad(DaggerGate(gate), params)
-    elif power == 3:
-        return third_power_grad(gate, params)
-    elif power == -3:
-        return third_power_grad(DaggerGate(gate), params)
-    elif power == 4:
-        return quartic_power_grad(gate, power)
-    elif power == -4:
-        return quartic_power_grad(DaggerGate(gate), power)
-
-
-def test(test_gate, indices, params, error) -> None:
-
-    # test index 1
-    for param in params:
-        pgt, pgdt = test_gate.get_unitary_and_grad([param])
-        pgate = PowerGate(test_gate, 1)
-        pg, pgd = pgate.get_unitary_and_grad([param])
-        assert np.sum(abs(pg - pgt)) < error
-        assert np.sum(abs(pgd - pgdt)) < error
-
-    # test index -1
-    for param in params:
-        pgt, pgdt = DaggerGate(test_gate).get_unitary_and_grad([param])
-        pgate = PowerGate(test_gate, -1)
-        pg, pgd = pgate.get_unitary_and_grad([param])
-        assert np.sum(abs(pg - pgt)) < error
-        assert np.sum(abs(pgd - pgdt)) < error
-
-    # test other indices
-    for index in indices:
-        for param in params:
-            gate = test_power(test_gate, index, param)
-            grad = power_gate_grads(test_gate, index, param)
-
-            pgate = PowerGate(test_gate, index)
-            pg, pgd = pgate.get_unitary_and_grad([param])
-            assert np.sum(abs(pg - gate)) < error
-            assert np.sum(abs(pgd - grad)) < error
-
-
-error = 1e-14
-params = [-0.7, -0.3, 0.2, 1.4]
-indices = [-4, -3, -2, 2, 3, 4]
-
-
-def test_x() -> None:
-    global error, indices, parames
-    test(RXGate(), indices, params, error)
-
-
-def test_y() -> None:
-    global error, indices, parames
-    test(RYGate(), indices, params, error)
-
-
-def test_z() -> None:
-    global error, indices, parames
-    test(RZGate(), indices, params, error)
+    actual_grad = pgate.get_grad(params)
+    expected_grad = _recursively_calc_power_grad(
+        gate.get_unitary(params),
+        gate.get_grad(params),
+        power,
+    )
+    assert np.allclose(actual_grad, expected_grad)
