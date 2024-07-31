@@ -148,9 +148,9 @@ class TreeScanningGateRemovalPass(BasePass):
             of operations to be considered for deletion.
 
         Returns:
-            A list of 2^(`tree_depth`) - 1 circuits that remove up
-            to `tree_depth` operations. The circuits are sorted by
-            the number of operations removed.
+            list[Circuit]: A list of 2^(`tree_depth`) - 1 circuits
+            that remove up to `tree_depth` operations. The circuits
+            are sorted by the number of operations removed.
         """
         all_circs = [circuit_copy.copy()]
         for cycle, op in cycle_and_ops:
