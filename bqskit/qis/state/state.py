@@ -166,6 +166,45 @@ class StateVector(NDArrayOperatorsMixin):
                 states.
         """
         return all([r == radix for r in self.radixes])
+    
+    def get_sub_state(self, location: CircuitLocationLike) -> StateVector:
+        """
+        Return the StateVector corresponding to the specified location.
+
+        Args:
+            location (CircuitLocationLike): The qudits to keep.
+
+        Returns:
+            StateVector: The sub-state of the state vector.
+        """
+        if len(location) == 0:
+            raise ValueError('Expected non-empty location.')
+
+        if len(location) == self.num_qudits:
+            return self
+
+        identity_action_perm = [
+            x
+            for x in range(self.num_qudits)
+            if x not in location
+        ]
+        unitary_action_perm = list(location)
+
+
+        # Calculate dimension of new state
+        sub_radixes = [
+                self.radixes[x]
+                for x in location
+        ]
+        left_dim = int(np.prod(sub_radixes))
+        perm = unitary_action_perm + identity_action_perm
+
+        sub_vec = self._vec.reshape(self.radixes)
+        sub_vec = sub_vec.transpose(perm)
+        sub_vec= sub_vec.reshape((left_dim, -1))
+        sub_vec = np.sum(sub_vec, axis=-1)
+
+        return StateVector(sub_vec, sub_radixes)
 
     @staticmethod
     def is_pure_state(V: Any, tol: float = 1e-8) -> TypeGuard[StateLike]:
