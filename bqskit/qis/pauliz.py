@@ -1,4 +1,4 @@
-"""This module implements the PauliMatrices class."""
+"""This module implements the PauliZMatrices class."""
 from __future__ import annotations
 
 import itertools as it
@@ -23,8 +23,25 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
     """
     The group of Pauli Z matrices.
 
-    A PauliZMatrices object represents the entire of set of Pauli Z matrices for
-    some number of qubits.
+    A PauliZMatrices object represents the entire of set of diagonal Hermitian
+    matrices for some number of qubits. These matrices are a linear combination
+    of all n-fold tensor products of Pauli Z and the identity matrix.
+
+    Examples:
+    .. math::
+        I + Z = \\begin{pmatrix}
+            2 & 0 \\\\
+            0 & 0 \\\\
+        \\end{pmatrix}
+
+    .. math::
+        I \\otimes I + Z \\otimes I + 3 I \\otimes Z - Z \\otimes Z = 
+            \\begin{pmatrix}
+                4 & 0 & 0 & 0 \\\\
+                0 & -2 & 0 & 0 \\\\
+                0 & 0 & 2 & 0 \\\\
+                0 & 0 & 0 & -2 \\\\
+            \\end{pmatrix}
     """
 
     Z = np.array(
