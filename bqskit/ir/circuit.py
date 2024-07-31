@@ -2289,9 +2289,11 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 region_bldr = {k: v for k, v in node.items()}
                 op = self[point]
                 valid_region = True
+                need_to_fully_check = False
                 for qudit in op.location:
                     if qudit not in region_bldr:
                         region_bldr[qudit] = CycleInterval(point[0], point[0])
+                        need_to_fully_check = True 
 
                     elif point[0] < region_bldr[qudit][0]:
                         # Check for gates in the middle not in region
@@ -2346,6 +2348,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 # Discard invalid regions
                 if not valid_region:
                     continue
+
+                if need_to_fully_check:
+                    if not self.is_valid_region(region_bldr):
+                        continue
 
                 new_region = CircuitRegion(region_bldr)
 
