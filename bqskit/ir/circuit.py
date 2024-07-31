@@ -2225,7 +2225,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             raise TypeError(f'Expected callable filter, got {type(filter)}.')
 
         def default_scoring_fn(region: CircuitRegion) -> float:
-            return float(sum(op.num_qudits for op in self[region]))
+            return float(sum(op.num_qudits * 100 for op in self[region]))
 
         if scoring_fn is None:
             scoring_fn = default_scoring_fn
