@@ -63,3 +63,13 @@ class TestMachineGetSubgraph:
 
         with pytest.raises(TypeError):
             coupling_graph.get_subgraph('a')  # type: ignore
+
+def test_is_linear() -> None:
+    coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+    assert coupling_graph.is_linear()
+
+    coupling_graph = CouplingGraph({(0, 1), (1, 2), (0, 3), (2, 3)})
+    assert not coupling_graph.is_linear()
+
+    coupling_graph = CouplingGraph.all_to_all(4)
+    assert not coupling_graph.is_linear()
