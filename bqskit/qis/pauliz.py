@@ -167,7 +167,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
 
         # Nth Order Pauli Z Matrices can be thought of base 2 number
         # I = 0, Z = 1
-        # IZZ = 1 * 2^2 + 1 * 2^1 + 0 * 4^0 = 6 (base 10)
+        # IZZ = 1 * 2^2 + 1 * 2^1 + 0 * 2^0 = 6 (base 10)
         # This gives the idx of IZZ in paulizs
         # Note we read qubit index from the left,
         # so Z in ZII corresponds to q = 0
@@ -185,14 +185,14 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         Computes the standard dot product of `alpha` with the paulis.
 
         Args:
-            alpha (RealVector): The pauli coefficients.
+            alpha (RealVector): The Pauli Z coefficients.
 
         Returns:
             np.ndarray: Sum of element-wise multiplication of `alpha`
-            and `self.paulis`.
+            and `self.paulizs`.
 
         Raises:
-            ValueError: If `alpha` and `self.paulis` are incompatible.
+            ValueError: If `alpha` and `self.paulizs` are incompatible.
         """
 
         if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
@@ -216,14 +216,14 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         Construct Pauli Z matrices from a string description.
 
         Args:
-            pauli_string (str): A string that describes the desired matrices.
-                This is a comma-seperated list of pauli strings.
-                A pauli string has the following regex pattern: [IZ]+
+            pauliz_string (str): A string that describes the desired matrices.
+                This is a comma-seperated list of Pauli Z strings.
+                A Pauli Z string has the following regex pattern: [IZ]+
 
         Returns:
-            np.ndarray | list[np.ndarray]: Either the single pauli Z matrix
+            np.ndarray | list[np.ndarray]: Either the single Pauli Z matrix
             if only one is constructed, or the list of the constructed
-            pauli Z matrices.
+            Pauli Z matrices.
 
         Raises:
             ValueError: if `pauliz_string` is invalid.

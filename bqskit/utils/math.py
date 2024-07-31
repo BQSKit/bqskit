@@ -174,16 +174,16 @@ def pauliz_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     Computes a Pauli Z expansion of the diagonal hermitian matrix H.
 
     Args:
-        H (np.ndarray): The diagonal hermitian matrix to expand.
+        H (np.ndarray): The (N, N) diagonal hermitian matrix to expand.
 
     Returns:
         np.ndarray: The coefficients of a Pauli Z expansion for H,
-        i.e., X dot Sigma = H where Sigma contains Pauli Z matrices of
+        i.e., x dot Sigma = H where Sigma contains Pauli Z matrices of
         same size of H.
 
     Note:
-        This assumes the input is diagonal. No check is done for hermicity.
-        The output is undefined on non-hermitian inputs.
+        This assumes the input is diagonal but of shape (N, N). No check is
+        done for hermicity. The output is undefined on non-hermitian inputs.
     """
     diag_H = np.diag(np.diag(H))
     if not np.allclose(H, diag_H):
