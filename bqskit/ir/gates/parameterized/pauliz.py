@@ -5,7 +5,6 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-import scipy as sp
 
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qubitgate import QubitGate

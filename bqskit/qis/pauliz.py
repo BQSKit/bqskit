@@ -35,7 +35,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         \\end{pmatrix}
 
     .. math::
-        I \\otimes I + Z \\otimes I + 3 I \\otimes Z - Z \\otimes Z = 
+        I \\otimes I + Z \\otimes I + 3 I \\otimes Z - Z \\otimes Z =
             \\begin{pmatrix}
                 4 & 0 & 0 & 0 \\\\
                 0 & -2 & 0 & 0 \\\\
