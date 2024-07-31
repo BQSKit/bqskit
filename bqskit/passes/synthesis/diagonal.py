@@ -9,7 +9,7 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RZGate
-from bqskit.passes.synthesis import SynthesisPass
+from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
