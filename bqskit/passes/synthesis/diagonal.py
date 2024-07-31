@@ -9,7 +9,7 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import RZGate
-from bqskit.passes.synthesis.synthesis import SynthesisPass
+from bqskit.compiler.basepass import BasePass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
@@ -20,8 +20,12 @@ from bqskit.utils.math import unitary_log_no_i
 _logger = logging.getLogger(__name__)
 
 
-class DiagonalSynthesisPass(SynthesisPass):
-    """A pass that synthesizes diagonal unitaries."""
+class DiagonalSynthesisPass(BasePass):
+    """
+    A pass that synthesizes diagonal unitaries.
+    
+    Based on: https://arxiv.org/abs/1306.3991
+    """
 
     def __init__(
         self,
