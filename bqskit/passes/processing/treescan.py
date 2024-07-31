@@ -1,4 +1,4 @@
-"""This module implements the ScanningGateRemovalPass."""
+"""This module implements the TreeScanningGateRemovalPass."""
 from __future__ import annotations
 
 import logging
@@ -20,21 +20,22 @@ _logger = logging.getLogger(__name__)
 
 class TreeScanningGateRemovalPass(BasePass):
     """
-    The ScanningGateRemovalPass class.
+    The TreeScanningGateRemovalPass class.
 
     Starting from one side of the circuit, run the following:
 
-    Split the circuit operations into chunks of size tree_depth
+    Split the circuit operations into chunks of size `tree_depth`
     At every iteration:
     a. Look at the next chunk of operations
-    b. Generate 2 ^ tree_depth circuits. Each circuit corresponds to every
+    b. Generate 2 ^ `tree_depth` circuits. Each circuit corresponds to every
     combination of whether or not to include one of the operations in the chunk.
-    c. Instantiate in parallel all 2^tree_depth circuits
+    c. Instantiate in parallel all 2^`tree_depth` circuits
     d. Choose the circuit that has the least number of operations and move
     on to the next chunk of operations.
 
-    This optimization is less greedy than the current ScanningGate removal,
-    which we see can offermuch better quality circuits than ScanningGate.
+    This optimization is less greedy than the current
+    :class:`~bqskit.passes.processing.ScanningGateRemovalPass` removal,
+    which leads to much better quality circuits than ScanningGate.
     In very rare occasions, ScanningGate may be able to outperform
     TreeScan (since it is still greedy), but in general we can expect
     TreeScan to almost always outperform ScanningGate.
@@ -50,7 +51,7 @@ class TreeScanningGateRemovalPass(BasePass):
         collection_filter: Callable[[Operation], bool] | None = None,
     ) -> None:
         """
-        Construct a ScanningGateRemovalPass.
+        Construct a TreeScanningGateRemovalPass.
 
         Args:
             start_from_left (bool): Determines where the scan starts
@@ -133,11 +134,24 @@ class TreeScanningGateRemovalPass(BasePass):
         circuit_copy: Circuit,
         cycle_and_ops: list[tuple[int, Operation]],
     ) -> list[Circuit]:
-        '''
-        Given a circuit, create 2^(tree_depth) - 1 circuits that remove up
-        to tree_depth operations. The circuits are sorted by the number of
-        operations removed.
-        '''
+        """
+        Generate all circuits to be instantiated in the tree scan.
+
+        Args:
+            orig_num_cycles (int): The original number of cycles
+            in the circuit. This allows us to keep track of the shift
+            caused by previous deletions.
+
+            circuit_copy (Circuit): Current state of the circuit.
+
+            cycle_and_ops: list[(int, Operation)]: The next chunk
+            of operations to be considered for deletion.
+
+        Returns:
+            A list of 2^(`tree_depth`) - 1 circuits that remove up
+            to `tree_depth` operations. The circuits are sorted by
+            the number of operations removed.
+        """
         all_circs = [circuit_copy.copy()]
         for cycle, op in cycle_and_ops:
             new_circs = []
@@ -162,7 +176,7 @@ class TreeScanningGateRemovalPass(BasePass):
             instantiate_options['seed'] = data.seed
 
         start = 'left' if self.start_from_left else 'right'
-        _logger.debug(f'Starting scanning gate removal on the {start}.')
+        _logger.debug(f'Starting tree scanning gate removal on the {start}.')
 
         target = self.get_target(circuit, data)
         # target = None
@@ -172,8 +186,8 @@ class TreeScanningGateRemovalPass(BasePass):
 
         ops_left = list(circuit.operations_with_cycles(reverse=reverse_iter))
         print(
-            f'Starting Scan with tree depth {self.tree_depth}'
-            ' on circuit with {len(ops_left)} gates',
+            f'Starting TreeScan with tree depth {self.tree_depth}'
+            f' on circuit with {len(ops_left)} gates',
         )
 
         while ops_left:
