@@ -51,18 +51,18 @@ class PauliZGate(QubitGate, DifferentiableUnitary, GeneralGate):
 
         self._name = f'PauliZGate({num_qudits})'
         self._num_qudits = num_qudits
-        self.paulis = PauliZMatrices(self.num_qudits)
-        self._num_params = len(self.paulis)
+        paulizs = PauliZMatrices(self.num_qudits)
+        self._num_params = len(paulizs)
         if building_docs():
             self.sigmav: npt.NDArray[Any] = np.array([])
         else:
-            self.sigmav = (-1j / 2) * self.paulis.numpy
+            self.sigmav = (-1j / 2) * paulizs.numpy
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
         H = dot_product(params, self.sigmav)
-        eiH = sp.linalg.expm(H)
+        eiH = np.diag(np.exp(np.diag(H)))
         return UnitaryMatrix(eiH, check_arguments=False)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
@@ -70,9 +70,10 @@ class PauliZGate(QubitGate, DifferentiableUnitary, GeneralGate):
         Return the gradient for this gate.
 
         See :class:`DifferentiableUnitary` for more info.
+
+        TODO: Accelerated gradient computation for diagonal matrices.
         """
         self.check_parameters(params)
-
         H = dot_product(params, self.sigmav)
         _, dU = dexpmv(H, self.sigmav)
         return dU
