@@ -39,8 +39,8 @@ class DiagonalSynthesisPass(BasePass):
                 less than this are rounded to zero. (Default: 1e-8)
 
         TODO:
-            - Optimize Pauli string ordering
             - Cancel adjacent CNOTs
+            - See how QFAST can be used to generalize to qudits
         """
         self.parameter_precision = parameter_precision
 
