@@ -20,7 +20,7 @@ def dexpmv(
 
     User must provide M and its derivative dM. If the argument dM is a
     vector of partials then dF will be the respective partial vector.
-    This is done using a Pade Approximat with scaling and squaring.
+    This is done using a Pade Approximation with scaling and squaring.
 
     Args:
         M (np.ndarray): Matrix to exponentiate.

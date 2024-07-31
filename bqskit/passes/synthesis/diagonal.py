@@ -76,12 +76,12 @@ class DiagonalSynthesisPass(SynthesisPass):
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         if not isinstance(utry, UnitaryMatrix):
             m = 'DiagonalSynthesisPass can only synthesize diagonal, '
-            m += f'UnitaryMatrixs, got {type(utry)}.'
+            m += f'`UnitaryMatrix`s, got {type(utry)}.'
             raise TypeError(m)
 
         if not utry.is_qubit_only():
             m = 'DiagonalSynthesisPass can only synthesize diagonal '
-            m += 'UnitaryMatrixs with qubits, got higher radix than 2.'
+            m += '`UnitaryMatrix`s with qubits, got higher radix than 2.'
             raise ValueError(m)
 
         num_qubits = utry.num_qudits
