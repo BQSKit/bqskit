@@ -46,6 +46,9 @@ def test_power_gate(g_and_p: tuple[Gate, RealVector], power: int) -> None:
     if not isinstance(gate, DifferentiableUnitary):
         return
 
+    if gate.num_params == 0:
+        return
+
     actual_grad = pgate.get_grad(params)
     expected_grad = _recursively_calc_power_grad(
         gate.get_unitary(params),
