@@ -2180,8 +2180,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 function determines if a candidate region is valid in the
                 caller's context. This is used to prune the search space
                 of the surround function. If None, then no filtering is
-                done. It takes a CircuitRegion and returns a
-                boolean.
+                done. It takes a CircuitRegion and returns a boolean.
+                Only regions that pass the filter are considered.
 
             scoring_fn (Callable[[CircuitRegion], float] | None): The
                 scoring function determines the "best" surrounding region.
