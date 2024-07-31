@@ -387,11 +387,41 @@ class TestSurround:
         )
         assert region.location == CircuitLocation([2, 3, 4, 5])
 
+    def test_surround_filter_topology(self) -> None:
+        circuit = Circuit(5)
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [0, 2])
+        circuit.append_gate(CNOTGate(), [0, 1])
+        circuit.append_gate(CNOTGate(), [0, 2])
+        circuit.append_gate(CNOTGate(), [1, 2])
+        circuit.append_gate(CNOTGate(), [2, 3])
+        circuit.append_gate(CNOTGate(), [3, 4])
 
-def test_check_region() -> None:
+        def region_filter(region: CircuitRegion) -> bool:
+            print(circuit.get_slice(region.points).coupling_graph, circuit.get_slice(region.points).coupling_graph.is_linear(), region)
+            return circuit.get_slice(region.points).coupling_graph.is_linear()
+
+        region = circuit.surround(
+            (4, 1), 4, None, None, lambda region: (
+                region_filter(region)
+            ),
+        )
+        print(region)
+        assert circuit.is_valid_region(region)
+        assert region.location == CircuitLocation([1, 2, 3, 4])
+
+
+def test_check_region_1() -> None:
     c = Circuit(4)
     c.append_gate(CNOTGate(), [1, 2])
     c.append_gate(CNOTGate(), [0, 1])
     c.append_gate(CNOTGate(), [2, 3])
     c.append_gate(CNOTGate(), [1, 2])
     assert not c.is_valid_region({1: (0, 2), 2: (0, 2), 3: (0, 2)})
+
+def test_check_region_2() -> None:
+    c = Circuit(3)
+    c.append_gate(CNOTGate(), [0, 1])
+    c.append_gate(CNOTGate(), [0, 2])
+    c.append_gate(CNOTGate(), [1, 2])
+    assert not c.is_valid_region({0: (0, 0), 1: (0, 2), 2: (2, 2)})
