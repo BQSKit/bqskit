@@ -34,7 +34,7 @@ def _recursively_calc_power_grad(
     dgn = _recursively_calc_power_grad(g, dg, power - 1)
     return g @ dgn + dg @ g.ipower(power - 1)
 
-from bqskit.ir.gates import CRYGate
+
 @given(gates_and_params(), integers(min_value=-10, max_value=10))
 def test_power_gate(g_and_p: tuple[Gate, RealVector], power: int) -> None:
     gate, params = g_and_p
