@@ -28,6 +28,7 @@ from bqskit.ir.gates.constant.ct import CTGate
 from bqskit.ir.gates.constant.cx import CXGate
 from bqskit.ir.gates.constant.cy import CYGate
 from bqskit.ir.gates.constant.cz import CZGate
+from bqskit.ir.gates.constant.ecr import ECRGate
 from bqskit.ir.gates.constant.h import HGate
 from bqskit.ir.gates.constant.identity import IdentityGate
 from bqskit.ir.gates.constant.iswap import ISwapGate
@@ -221,6 +222,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['CX'] = GateDef('CX', 0, 2, CXGate())
         self.gate_defs['cy'] = GateDef('cy', 0, 2, CYGate())
         self.gate_defs['cz'] = GateDef('cz', 0, 2, CZGate())
+        self.gate_defs['ecr'] = GateDef('ecr', 0, 2, ECRGate())
         self.gate_defs['h'] = GateDef('h', 0, 1, HGate())
         self.gate_defs['id'] = GateDef('id', 0, 1, IdentityGate(1))
         self.gate_defs['u0'] = GateDef('u0', 0, 1, IdentityGate(1))

@@ -23,6 +23,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CXGate
     CYGate
     CZGate
+    ECRGate
     HGate
     IdentityGate
     ISwapGate
@@ -37,6 +38,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     ShiftGate
     SqrtCNOTGate
     SqrtISwapGate
+    SqrtTGate
     SubSwapGate
     SwapGate
     SqrtXGate
