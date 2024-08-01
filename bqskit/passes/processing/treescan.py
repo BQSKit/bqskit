@@ -179,7 +179,6 @@ class TreeScanningGateRemovalPass(BasePass):
         _logger.debug(f'Starting tree scanning gate removal on the {start}.')
 
         target = self.get_target(circuit, data)
-        # target = None
 
         circuit_copy = circuit.copy()
         reverse_iter = not self.start_from_left
@@ -194,8 +193,6 @@ class TreeScanningGateRemovalPass(BasePass):
             chunk = ops_left[:self.tree_depth]
             ops_left = ops_left[self.tree_depth:]
 
-            # Circuits of size 2 ** tree_depth - 1,
-            # ranked in order of most to fewest deletions
             all_circs = TreeScanningGateRemovalPass.get_tree_circs(
                 circuit.num_cycles, circuit_copy, chunk,
             )
