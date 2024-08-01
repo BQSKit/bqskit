@@ -1,4 +1,4 @@
-"""This module implements the DiagonalSynthesisPass."""
+"""This module implements the WalshDiagonalSynthesisPass."""
 from __future__ import annotations
 
 import logging
@@ -20,9 +20,9 @@ from bqskit.utils.math import unitary_log_no_i
 _logger = logging.getLogger(__name__)
 
 
-class DiagonalSynthesisPass(SynthesisPass):
+class WalshDiagonalSynthesisPass(SynthesisPass):
     """
-    A pass that synthesizes diagonal unitaries.
+    A pass that synthesizes diagonal unitaries into Walsh functions.
 
     Based on: https://arxiv.org/abs/1306.3991
     """
@@ -32,7 +32,7 @@ class DiagonalSynthesisPass(SynthesisPass):
         parameter_precision: float = 1e-8,
     ) -> None:
         """
-        Constructor for DiagonalSynthesisPass.
+        Constructor for WalshDiagonalSynthesisPass.
 
         Args:
             parameter_precision (float): Pauli strings with parameter values
@@ -79,12 +79,12 @@ class DiagonalSynthesisPass(SynthesisPass):
     ) -> Circuit:
         """Synthesize `utry`, see :class:`SynthesisPass` for more."""
         if not isinstance(utry, UnitaryMatrix):
-            m = 'DiagonalSynthesisPass can only synthesize diagonal, '
+            m = 'WalshDiagonalSynthesisPass can only synthesize diagonal, '
             m += f'`UnitaryMatrix`s, got {type(utry)}.'
             raise TypeError(m)
 
         if not utry.is_qubit_only():
-            m = 'DiagonalSynthesisPass can only synthesize diagonal '
+            m = 'WalshDiagonalSynthesisPass can only synthesize diagonal '
             m += '`UnitaryMatrix`s with qubits, got higher radix than 2.'
             raise ValueError(m)
 

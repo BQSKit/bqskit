@@ -5,12 +5,12 @@ from scipy.linalg import expm
 
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
-from bqskit.passes.synthesis.diagonal import DiagonalSynthesisPass
+from bqskit.passes.synthesis.diagonal import WalshDiagonalSynthesisPass
 from bqskit.qis import UnitaryMatrix
 from bqskit.qis.pauliz import PauliZMatrices
 
 
-class TestDiagonalSynthesis:
+class TestWalshDiagonalSynthesis:
 
     def test_1_qubit(self, compiler: Compiler) -> None:
         num_qubits = 1
@@ -20,7 +20,7 @@ class TestDiagonalSynthesis:
         utry = UnitaryMatrix(expm(1j * H_matrix))
 
         circuit = Circuit.from_unitary(utry)
-        synthesis = DiagonalSynthesisPass()
+        synthesis = WalshDiagonalSynthesisPass()
         circuit = compiler.compile(circuit, [synthesis])
         dist = circuit.get_unitary().get_distance_from(utry)
 
@@ -34,7 +34,7 @@ class TestDiagonalSynthesis:
         utry = UnitaryMatrix(expm(1j * H_matrix))
 
         circuit = Circuit.from_unitary(utry)
-        synthesis = DiagonalSynthesisPass()
+        synthesis = WalshDiagonalSynthesisPass()
         circuit = compiler.compile(circuit, [synthesis])
         dist = circuit.get_unitary().get_distance_from(utry)
 
@@ -48,7 +48,7 @@ class TestDiagonalSynthesis:
         utry = UnitaryMatrix(expm(1j * H_matrix))
 
         circuit = Circuit.from_unitary(utry)
-        synthesis = DiagonalSynthesisPass()
+        synthesis = WalshDiagonalSynthesisPass()
         circuit = compiler.compile(circuit, [synthesis])
         dist = circuit.get_unitary().get_distance_from(utry)
 
@@ -62,7 +62,7 @@ class TestDiagonalSynthesis:
         utry = UnitaryMatrix(expm(1j * H_matrix))
 
         circuit = Circuit.from_unitary(utry)
-        synthesis = DiagonalSynthesisPass()
+        synthesis = WalshDiagonalSynthesisPass()
         circuit = compiler.compile(circuit, [synthesis])
         dist = circuit.get_unitary().get_distance_from(utry)
 
@@ -76,7 +76,7 @@ class TestDiagonalSynthesis:
         utry = UnitaryMatrix(expm(1j * H_matrix))
 
         circuit = Circuit.from_unitary(utry)
-        synthesis = DiagonalSynthesisPass()
+        synthesis = WalshDiagonalSynthesisPass()
         circuit = compiler.compile(circuit, [synthesis])
         dist = circuit.get_unitary().get_distance_from(utry)
 
