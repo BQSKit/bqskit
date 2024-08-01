@@ -21,7 +21,7 @@ def _recursively_calc_power_grad(
     power: int,
 ) -> npt.NDArray[np.complex128]:
     """D(g^n+1) = d(g@g^n) = g @ d(g^n) + dg @ g^n."""
-    if len(dg) == 0:
+    if len(dg) == 0 or power == 0:
         return np.zeros_like(dg)
     if power < 0:
         return _recursively_calc_power_grad(
@@ -34,7 +34,7 @@ def _recursively_calc_power_grad(
     dgn = _recursively_calc_power_grad(g, dg, power - 1)
     return g @ dgn + dg @ g.ipower(power - 1)
 
-
+from bqskit.ir.gates import CRYGate
 @given(gates_and_params(), integers(min_value=-10, max_value=10))
 def test_power_gate(g_and_p: tuple[Gate, RealVector], power: int) -> None:
     gate, params = g_and_p
