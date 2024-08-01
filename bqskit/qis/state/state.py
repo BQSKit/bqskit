@@ -169,26 +169,24 @@ class StateVector(NDArrayOperatorsMixin):
     
     def get_sub_state(self, location: CircuitLocationLike) -> StateVector:
         """
-        Return the StateVector corresponding to the specified location.
+        Return the StateVector corresponding to the specified location
+        in the Circuit.
 
         Args:
-            location (CircuitLocationLike): The qudits to keep.
-
-        Returns:
-            StateVector: The sub-state of the state vector.
+            location (CircuitLocationLike): The location of interest.
         """
         if len(location) == 0:
             raise ValueError('Expected non-empty location.')
 
         if len(location) == self.num_qudits:
-            return self
+            return StateVector(self)
 
-        identity_action_perm = [
+        excluded_perm = [
             x
             for x in range(self.num_qudits)
             if x not in location
         ]
-        unitary_action_perm = list(location)
+        included_perm = list(location)
 
 
         # Calculate dimension of new state
@@ -197,7 +195,7 @@ class StateVector(NDArrayOperatorsMixin):
                 for x in location
         ]
         left_dim = int(np.prod(sub_radixes))
-        perm = unitary_action_perm + identity_action_perm
+        perm = included_perm + excluded_perm
 
         sub_vec = self._vec.reshape(self.radixes)
         sub_vec = sub_vec.transpose(perm)
