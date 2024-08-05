@@ -5,17 +5,15 @@ import copy
 import logging
 import warnings
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Collection
 from typing import Dict
 from typing import Iterable
 from typing import Iterator
-from typing import List
 from typing import Optional
 from typing import overload
 from typing import Sequence
-from typing import Set
-from typing import Tuple
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -25,6 +23,7 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
+from bqskit.ir.interval import CycleInterval
 from bqskit.ir.iterator import CircuitIterator
 from bqskit.ir.lang import get_language
 from bqskit.ir.location import CircuitLocation
@@ -902,13 +901,53 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """Report the point for the first operation on `qudit` if it exists."""
         return self._front[qudit]
 
-    def next(self, point: CircuitPoint) -> set[CircuitPoint]:
+    def next(
+        self,
+        point: CircuitPointLike | CircuitRegionLike,
+    ) -> set[CircuitPoint]:
         """Return the points of operations dependent on the one at `point`."""
-        return {p for p in self._dag[point][1].values() if p is not None}
+        if CircuitRegion.is_region(point):
+            points = []
+            for cyc_op in self.operations_with_cycles(qudits_or_region=point):
+                points.append((cyc_op[0], cyc_op[1].location[0]))
 
-    def prev(self, point: CircuitPoint) -> set[CircuitPoint]:
+            next_points = set()
+            for p in points:
+                for next in self.next(p):
+                    if next not in points:
+                        next_points.add(next)
+
+            return next_points
+
+        return {
+            p
+            for p in self._dag[point][1].values()  # type: ignore
+            if p is not None
+        }
+
+    def prev(
+        self,
+        point: CircuitPointLike | CircuitRegionLike,
+    ) -> set[CircuitPoint]:
         """Return the points of operations the one at `point` depends on."""
-        return {p for p in self._dag[point][0].values() if p is not None}
+        if CircuitRegion.is_region(point):
+            points = []
+            for cyc_op in self.operations_with_cycles(qudits_or_region=point):
+                points.append((cyc_op[0], cyc_op[1].location[0]))
+
+            prev_points = set()
+            for p in points:
+                for prev in self.prev(p):
+                    if prev not in points:
+                        prev_points.add(prev)
+
+            return prev_points
+
+        return {
+            p
+            for p in self._dag[point][0].values()  # type: ignore
+            if p is not None
+        }
 
     # endregion
 
@@ -1853,6 +1892,10 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         """
         Check `region` to be a valid in the context of this circuit.
 
+        A CircuitRegion is valid if it is within the bounds of the circuit
+        and for every pair of operations in the region, there is no path
+        between them that exits the region.
+
         Args:
             region (CircuitRegionLike): The region to check.
 
@@ -1883,35 +1926,49 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 f"but region's maximum cycle is {region.max_cycle}.",
             )
 
-        for qudit_index, cycle_intervals in region.items():
-            for other_qudit_index, other_cycle_intervals in region.items():
-                if cycle_intervals.overlaps(other_cycle_intervals):
-                    continue
-                involved_qudits = {qudit_index}
-                min_index = min(
-                    cycle_intervals.upper,
-                    other_cycle_intervals.upper,
-                )
-                max_index = max(
-                    cycle_intervals.lower,
-                    other_cycle_intervals.lower,
-                )
-                for cycle_index in range(min_index + 1, max_index):
-                    try:
-                        ops = self[cycle_index, involved_qudits]
-                    except IndexError:
-                        continue
-
-                    if strict:
+        if strict:
+            for qudit_index, cycle_intervals in region.items():
+                for other_qudit_index, other_cycle_intervals in region.items():
+                    if not cycle_intervals.overlaps(other_cycle_intervals):
                         raise ValueError('Disconnect detected in region.')
 
-                    if any(other_qudit_index in op.location for op in ops):
-                        raise ValueError(
-                            'Disconnected region has excluded gate in middle.',
-                        )
+        cycles_ops = self.operations_with_cycles(
+            qudits_or_region=region, exclude=True,
+        )
+        points = [(cop[0], cop[1].location[0]) for cop in cycles_ops]
+        known_to_never_reenter = set()
 
-                    for op in ops:
-                        involved_qudits.update(op.location)
+        # Walk back from max cycle
+        for pt in sorted(points, key=lambda x: x[0], reverse=True):
+
+            # Max cycle is valid in base case
+            if pt[0] == region.max_cycle:
+                continue
+
+            frontier = self.next(pt)
+            while frontier:
+                pt2 = frontier.pop()
+
+                # Walk only paths that exit the region
+                if pt2 in points:
+                    continue
+
+                # Stop walking after the max cycle
+                if pt2[0] >= region.max_cycle:
+                    continue
+
+                # Skip this point if previously determined it to be good
+                if pt2 in known_to_never_reenter:
+                    continue
+
+                expansion = self.next(pt2)
+
+                # If there is a path that re-enters the region, fail
+                if any(p in points for p in expansion):
+                    raise ValueError('Disconnect detected in region.')
+
+                frontier.update(expansion)
+                known_to_never_reenter.add(pt2)
 
     def straighten(
         self,
@@ -2092,27 +2149,46 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def surround(
         self,
-        point: CircuitPointLike,
+        point: CircuitPointLike | CircuitRegionLike,
         num_qudits: int,
         bounding_region: CircuitRegionLike | None = None,
-        fail_quickly: bool = False,
+        fail_quickly: bool | None = None,
+        filter: Callable[[CircuitRegion], bool] | None = None,
+        scoring_fn: Callable[[CircuitRegion], float] | None = None,
     ) -> CircuitRegion:
         """
-        Retrieve the maximal region in this circuit with `point` included.
+        Retrieve the maximal connected region in this circuit with `point`.
 
         Args:
-            point (CircuitPointLike): Find a surrounding region for this
-                point. This point will be in the final CircuitRegion.
+            point (CircuitPointLike | CircuitRegionLike): Find a surrounding
+                region for this point (or region). This point (or region)
+                will be in the final CircuitRegion.
 
-            num_qudits (int): The number of qudits to include in the region.
+            num_qudits (int): The maximum number of qudits to include in
+                the surrounding region.
 
             bounding_region (CircuitRegionLike | None): An optional
                 region that bounds the resulting region.
 
-            fail_quickly (bool): If set to true, will not branch on
+            fail_quickly (bool | None): If set to true, will not branch on
                 an invalid region. This will lead to a much faster
                 result in some cases at the cost of only approximating
-                the maximal region.
+                the maximal region. (Deprecated, does nothing now besides
+                print a warning if a bool.)
+
+            filter (Callable[[CircuitRegion], bool] | None): The filter
+                function determines if a candidate region is valid in the
+                caller's context. This is used to prune the search space
+                of the surround function. If None, then no filtering is
+                done. It takes a CircuitRegion and returns a boolean.
+                Only regions that pass the filter are considered.
+
+            scoring_fn (Callable[[CircuitRegion], float] | None): The
+                scoring function determines the "best" surrounding region.
+                If left as None, then this will default to the region with
+                the most number of gates with larger gates worth more.
+                It takes a CircuitRegion and returns a float. Larger scores
+                are better.
 
         Raises:
             IndexError: If `point` is not a valid index.
@@ -2123,6 +2199,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 `num_qudits`.
 
             ValueError: If `bounding_region` is invalid.
+
+            ValueError: If the initial node does not pass the filter.
 
         Notes:
             This algorithm explores outward horizontally as much as possible.
@@ -2143,193 +2221,151 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 f'Expected a positive integer num_qudits, got {num_qudits}.',
             )
 
+        if filter is not None and not callable(filter):
+            raise TypeError(f'Expected callable filter, got {type(filter)}.')
+
+        def default_scoring_fn(region: CircuitRegion) -> float:
+            return float(sum(op.num_qudits * 100 for op in self[region]))
+
+        if scoring_fn is None:
+            scoring_fn = default_scoring_fn
+
+        if not callable(scoring_fn):
+            raise TypeError(
+                f'Expected callable scoring_fn, got {type(scoring_fn)}.',
+            )
+
+        if fail_quickly is not None:
+            warnings.warn(
+                'The fail_quickly argument is deprecated and does nothing. '
+                'Surround will always attempt to find the maximal region. '
+                'This argument will be removed in a future release and this '
+                'warning will become an error.',
+                DeprecationWarning,
+            )
+
         if bounding_region is not None:
             bounding_region = CircuitRegion(bounding_region)
 
-        point = self.normalize_point(point)
+        if CircuitPoint.is_point(point):
+            if self.is_point_idle(point):
+                init_region = CircuitRegion({point[1]: (point[0], point[0])})
+            else:
+                init_region = self.get_region([point])
+        elif CircuitRegion.is_region(point):
+            init_region = CircuitRegion(point)
+        else:
+            raise TypeError(
+                f'Expected CircuitPoint or CircuitRegion, got {type(point)}.',
+            )
 
-        init_op: Operation = self[point]  # Allow starting at an idle point
+        if init_region.num_qudits > num_qudits:
+            raise ValueError('Initial region is too large for num_qudits.')
 
-        if init_op.num_qudits > num_qudits:
-            raise ValueError('Gate at point is too large for num_qudits.')
+        if filter is not None and not filter(init_region):
+            raise ValueError('Initial region does not pass filter.')
 
-        HalfWire = Tuple[CircuitPoint, str]
-        """
-        A HalfWire is a point in the circuit and a direction.
-
-        This represents a point to start exploring from and a direction to
-        explore in.
-        """
-
-        Node = Tuple[
-            List[HalfWire],
-            Set[Tuple[int, Operation]],
-            CircuitLocation,
-            Set[CircuitPoint],
-        ]
-        """
-        A Node in the search tree.
-
-        Each node represents a region that may grow further. The data structure
-        tracks all HalfWires in the region and the set of operations inside the
-        region. During node exploration each HalfWire is walked until we find a
-        multi-qudit gate. Multi- qudit gates form branches in the tree on
-        whether on the gate should be included. The node structure additionally
-        stores the set of qudit indices involved in the region currently. Also,
-        we track points that have already been explored to reduce repetition.
-        """
-
-        # Initialize the frontier
-        init_node = (
-            [
-                (CircuitPoint(point[0], qudit_index), 'left')
-                for qudit_index in init_op.location
-            ]
-            + [
-                (CircuitPoint(point[0], qudit_index), 'right')
-                for qudit_index in init_op.location
-            ],
-            {(point[0], init_op)},
-            init_op.location,
-            {CircuitPoint(point[0], q) for q in init_op.location},
-        )
-
-        frontier: list[Node] = [init_node]
+        # Initialize Search
+        frontier: list[CircuitRegion] = [init_region]
+        seen: set[CircuitRegion] = set()
 
         # Track best so far
-        def score(node: Node) -> int:
-            return sum(op[1].num_qudits for op in node[1])
-
-        best_score = score(init_node)
-        best_region = self.get_region({(point[0], init_op.location[0])})
+        best_score = (scoring_fn(init_region), init_region.num_qudits)
+        best_region = init_region
 
         # Exhaustive Search
         while len(frontier) > 0:
             node = frontier.pop(0)
-            _logger.debug('popped node:')
-            _logger.debug(node[0])
-            _logger.debug(f'Items remaining in the frontier: {len(frontier)}')
 
             # Evaluate node
-            if score(node) > best_score:
-                # Calculate region from best node and return
-                points = {(cycle, op.location[0]) for cycle, op in node[1]}
-
-                try:
-                    best_region = self.get_region(points)
-                    best_score = score(node)
-                    _logger.debug(f'new best: {best_region}.')
-
-                # Need to reject bad regions
-                except ValueError:
-                    if fail_quickly:
-                        continue
+            node_score = (scoring_fn(node), node.num_qudits)
+            if node_score > best_score:
+                best_region = node
+                best_score = node_score
 
             # Expand node
-            absorbed_gates: set[tuple[int, Operation]] = set()
-            branches: set[tuple[int, int, Operation]] = set()
-            before_branch_half_wires: dict[int, HalfWire] = {}
-            for i, half_wire in enumerate(node[0]):
+            for point in self.next(node).union(self.prev(node)):
+                # Create new region by adding the gate at this point
+                region_bldr = {k: v for k, v in node.items()}
+                op = self[point]
+                valid_region = True
+                need_to_fully_check = False
+                for qudit in op.location:
+                    if qudit not in region_bldr:
+                        region_bldr[qudit] = CycleInterval(point[0], point[0])
+                        need_to_fully_check = True
 
-                cycle_index, qudit_index = half_wire[0]
-                step = -1 if half_wire[1] == 'left' else 1
-
-                while True:
-
-                    # Take a step
-                    cycle_index += step
-
-                    # Stop at edges
-                    if cycle_index < 0 or cycle_index >= self.num_cycles:
-                        break
-
-                    # Stop when outside bounds
-                    if bounding_region is not None:
-                        if (cycle_index, qudit_index) not in bounding_region:
+                    elif point[0] < region_bldr[qudit][0]:
+                        # Check for gates in the middle not in region
+                        if any(
+                            not self.is_point_idle((i, qudit))
+                            for i in range(point[0] + 1, region_bldr[qudit][0])
+                        ):
+                            valid_region = False
                             break
 
-                    # Stop when exploring previously explored points
-                    point = CircuitPoint(cycle_index, qudit_index)
-                    if point in node[3]:
-                        break
-                    node[3].add(point)
+                        # Absorb Single-qudit gates
+                        index = point[0]
+                        while index > 0:
+                            if not self.is_point_idle((index - 1, qudit)):
+                                prev_op = self[index - 1, qudit]
+                                if len(prev_op.location) != 1:
+                                    break
+                            index -= 1
 
-                    # Continue until next operation
-                    if self.is_point_idle(point):
+                        region_bldr[qudit] = CycleInterval(
+                            index,
+                            region_bldr[qudit][1],
+                        )
+
+                    elif point[0] > region_bldr[qudit][1]:
+                        # Check for gates in the middle not in region
+                        if any(
+                            not self.is_point_idle((i, qudit))
+                            for i in range(region_bldr[qudit][1] + 1, point[0])
+                        ):
+                            valid_region = False
+                            break
+
+                        # Absorb Single-qudit gates
+                        index = point[0]
+                        while index < self.num_cycles - 1:
+                            if not self.is_point_idle((index + 1, qudit)):
+                                next_op = self[index + 1, qudit]
+                                if len(next_op.location) != 1:
+                                    break
+                            index += 1
+
+                        region_bldr[qudit] = CycleInterval(
+                            region_bldr[qudit][0],
+                            index,
+                        )
+
+                # Discard too large regions
+                if len(region_bldr) > num_qudits:
+                    continue
+
+                # Discard invalid regions
+                if not valid_region:
+                    continue
+
+                if need_to_fully_check:
+                    if not self.is_valid_region(region_bldr):
                         continue
-                    op: Operation = self[cycle_index, qudit_index]
 
-                    # Gates already in region stop the half_wire
-                    if (cycle_index, op) in node[1]:
-                        break
+                new_region = CircuitRegion(region_bldr)
 
-                    # Gates already accounted for stop the half_wire
-                    if (cycle_index, op) in absorbed_gates:
-                        break
+                # Check uniqueness
+                if new_region in seen:
+                    continue
 
-                    if (cycle_index, op) in [(c, o) for h, c, o in branches]:
-                        break
+                # Check filter
+                if filter is not None and not filter(new_region):
+                    continue
 
-                    # Absorb single-qudit gates
-                    if len(op.location) == 1:
-                        absorbed_gates.add((cycle_index, op))
-                        continue
-
-                    # Operations that are too large stop the half_wire
-                    if len(op.location.union(node[2])) > num_qudits:
-                        break
-
-                    # Otherwise branch on the operation
-                    branches.add((i, cycle_index, op))
-
-                    # Track state of half wire right before branch
-                    prev_point = CircuitPoint(cycle_index - step, qudit_index)
-                    before_branch_half_wires[i] = (prev_point, half_wire[1])
-                    break
-
-            # Compute children and extend frontier
-            for half_wire_index, cycle_index, op in branches:
-
-                child_half_wires = [
-                    half_wire
-                    for i, half_wire in before_branch_half_wires.items()
-                    if half_wire_index != i
-                ]
-
-                qudit = node[0][half_wire_index][0].qudit
-                direction = node[0][half_wire_index][1]
-                left_expansion = [
-                    (CircuitPoint(cycle_index, qudit_index), 'left')
-                    for qudit_index in op.location
-                    if qudit != qudit_index or direction == 'left'
-                ]
-                right_expansion = [
-                    (CircuitPoint(cycle_index, qudit_index), 'right')
-                    for qudit_index in op.location
-                    if qudit != qudit_index or direction == 'right'
-                ]
-                expansion = left_expansion + right_expansion
-
-                # Branch/Gate not taken
-                frontier.append((
-                    child_half_wires,
-                    node[1] | absorbed_gates,
-                    node[2],
-                    node[3],
-                ))
-
-                # Branch/Gate taken
-                op_points = {CircuitPoint(cycle_index, q) for q in op.location}
-                frontier.append((
-                    list(set(child_half_wires + expansion)),
-                    node[1] | absorbed_gates | {(cycle_index, op)},
-                    node[2].union(op.location),
-                    node[3] | op_points,
-                ))
-
-            # Append terminal node to handle absorbed gates with no branches
-            if len(node[1] | absorbed_gates) != len(node[1]):
-                frontier.append(([], node[1] | absorbed_gates, *node[2:]))
+                # Expand frontier
+                frontier.append(new_region)
+                seen.add(new_region)
 
         return best_region
 
