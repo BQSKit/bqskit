@@ -326,16 +326,11 @@ class Worker:
         self._cancelled_task_ids.add(addr)
 
         # Remove all tasks that are children of `addr` from initialized tasks
-        error = None
         for key, task in self._tasks.items():
             if task.is_descendant_of(addr):
                 for mailbox_id in self._tasks[key].owned_mailboxes:
                     self._mailboxes.pop(mailbox_id)
-                try:
-                    task.cancel()
-                except Exception as e:
-                    if error is None:
-                        error = e
+                task.cancel()
         self._tasks = {
             a: t for a, t in self._tasks.items()
             if not t.is_descendant_of(addr)
@@ -347,9 +342,6 @@ class Worker:
             if not t.is_descendant_of(addr)
         ]
 
-        # if there was an error earlier, raise it now
-        if error is not None:
-            raise error
 
     def _get_next_ready_task(self) -> RuntimeTask | None:
         """Return the next ready task if one exists, otherwise None."""
