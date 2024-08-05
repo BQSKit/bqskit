@@ -328,9 +328,9 @@ class Worker:
         # Remove all tasks that are children of `addr` from initialized tasks
         for key, task in self._tasks.items():
             if task.is_descendant_of(addr):
+                task.cancel()
                 for mailbox_id in self._tasks[key].owned_mailboxes:
                     self._mailboxes.pop(mailbox_id)
-                task.cancel()
         self._tasks = {
             a: t for a, t in self._tasks.items()
             if not t.is_descendant_of(addr)
@@ -341,7 +341,6 @@ class Worker:
             t for t in self._delayed_tasks
             if not t.is_descendant_of(addr)
         ]
-
 
     def _get_next_ready_task(self) -> RuntimeTask | None:
         """Return the next ready task if one exists, otherwise None."""
@@ -500,7 +499,8 @@ class Worker:
             fnarg,
             RuntimeAddress(self._id, mailbox_id, 0),
             self._active_task.comp_task_id,
-            self._active_task.breadcrumbs + (self._active_task.return_address,),
+            self._active_task.breadcrumbs +
+            (self._active_task.return_address,),
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
         )
