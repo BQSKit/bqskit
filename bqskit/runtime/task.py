@@ -104,6 +104,10 @@ class RuntimeTask:
     def cancel(self) -> None:
         """Ask the coroutine to gracefully exit."""
         if self.coro is not None:
+            # If this call to "close" raises a RuntimeError,
+            # it is likely a blanket try/accept catching the
+            # error used to stop the coroutine, preventing
+            # it from stopping correctly.
             self.coro.close()
         else:
             raise RuntimeError('Task was cancelled with None coroutine.')
