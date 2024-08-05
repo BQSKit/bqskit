@@ -498,9 +498,9 @@ class Worker:
         task = RuntimeTask(
             fnarg,
             RuntimeAddress(self._id, mailbox_id, 0),
-            self._active_task.comp_task_id,
-            self._active_task.breadcrumbs +
-            (self._active_task.return_address,),
+            + self._active_task.comp_task_id,
+            self._active_task.breadcrumbs
+            + (self._active_task.return_address,),
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
         )
