@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
+import numpy.typing as npt
 
 from bqskit.qis.unitary.meta import UnitaryMeta
 from bqskit.utils.typing import is_real_number
@@ -151,4 +152,8 @@ class Unitary(metaclass=UnitaryMeta):
         return np.allclose(unitary_matrix, hermitian_conjugate)
 
 
-RealVector = Union[Sequence[float], np.ndarray]
+RealVector = Union[
+    Sequence[float],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float32],
+]
