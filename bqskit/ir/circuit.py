@@ -2293,7 +2293,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
                 for qudit in op.location:
                     if qudit not in region_bldr:
                         region_bldr[qudit] = CycleInterval(point[0], point[0])
-                        need_to_fully_check = True 
+                        need_to_fully_check = True
 
                     elif point[0] < region_bldr[qudit][0]:
                         # Check for gates in the middle not in region
