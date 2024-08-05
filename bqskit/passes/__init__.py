@@ -44,6 +44,7 @@ synthesis pass to convert the circuit to native gates.
     ExhaustiveGateRemovalPass
     IterativeScanningGateRemovalPass
     ScanningGateRemovalPass
+    TreeScanningGateRemovalPass
     SubstitutePass
 
 .. rubric:: Retargeting Passes
@@ -259,6 +260,7 @@ from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
 from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
+from bqskit.passes.processing.treescan import TreeScanningGateRemovalPass
 from bqskit.passes.retarget.auto import AutoRebase2QuditGatePass
 from bqskit.passes.retarget.general import GeneralSQDecomposition
 from bqskit.passes.retarget.two import Rebase2QuditGatePass
@@ -332,6 +334,7 @@ __all__ = [
     'UpdateDataPass',
     'ToU3Pass',
     'ScanningGateRemovalPass',
+    'TreeScanningGateRemovalPass',
     'SimpleLayerGenerator',
     'AStarHeuristic',
     'GreedyHeuristic',
