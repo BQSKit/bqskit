@@ -73,6 +73,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CUGate
     FSIMGate
     PauliGate
+    PauliZGate
     PhasedXZGate
     RSU3Gate
     RXGate
