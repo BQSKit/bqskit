@@ -89,7 +89,7 @@ class CycleInterval(Tuple[int, int]):
                 'Expected positive integers, got {lower} and {upper}.',
             )
 
-        return super().__new__(cls, (lower, upper))  # type: ignore
+        return super().__new__(cls, (lower, upper))
 
     @property
     def lower(self) -> int:

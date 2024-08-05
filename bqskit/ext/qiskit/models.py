@@ -23,7 +23,7 @@ def model_from_backend(backend: BackendV1) -> MachineModel:
     num_qudits = config.n_qubits
     gate_set = _basis_gate_str_to_bqskit_gate(config.basis_gates)
     coupling_map = list({tuple(sorted(e)) for e in config.coupling_map})
-    return MachineModel(num_qudits, coupling_map, gate_set)  # type: ignore
+    return MachineModel(num_qudits, coupling_map, gate_set)
 
 
 def _basis_gate_str_to_bqskit_gate(basis_gates: list[str]) -> set[Gate]:

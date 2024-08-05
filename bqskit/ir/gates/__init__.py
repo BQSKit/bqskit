@@ -100,6 +100,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :template: autosummary/gate.rst
 
     ControlledGate
+    PowerGate
     DaggerGate
     EmbeddedGate
     FrozenParameterGate

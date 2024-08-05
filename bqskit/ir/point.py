@@ -66,7 +66,7 @@ class CircuitPoint(Tuple[int, int]):
         else:
             raise TypeError('Expected two integer arguments.')
 
-        return super().__new__(cls, (cycle, qudit))  # type: ignore
+        return super().__new__(cls, (cycle, qudit))
 
     @property
     def cycle(self) -> int:
