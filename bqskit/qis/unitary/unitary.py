@@ -60,9 +60,8 @@ class Unitary(metaclass=UnitaryMeta):
 
         acm = 1
         for radix in self.radixes:
-            acm *= radix
+            acm *= int(radix)
         return acm
-
 
     @abc.abstractmethod
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
