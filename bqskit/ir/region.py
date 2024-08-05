@@ -187,6 +187,11 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         """Return true if this region is empty."""
         return len(self) == 0
 
+    @property
+    def num_qudits(self) -> int:
+        """Return the number of qudits in this region."""
+        return len(self)
+
     def shift_left(self, amount_to_shift: int) -> CircuitRegion:
         """
         Shift the region to the left by `amount_to_shift`.
@@ -291,6 +296,10 @@ class CircuitRegion(Mapping[int, CycleInterval]):
             'Expected either CircuitPoint or CircuitRegion, got %s.'
             % type(other),
         )
+
+    def copy(self) -> CircuitRegion:
+        """Return a deep copy of this region."""
+        return CircuitRegion(self._intervals)
 
     def __contains__(self, other: object) -> bool:
         if is_integer(other):

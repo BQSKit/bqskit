@@ -92,6 +92,27 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         return False
 
+    def is_linear(self) -> bool:
+        """Return true if the graph is linearly connected."""
+        if self.num_qudits < 2:
+            return False
+
+        num_deg_1 = 0
+        for node_neighbors in self._adj:
+            if len(node_neighbors) == 1:
+                num_deg_1 += 1
+
+            elif len(node_neighbors) == 0:
+                return False
+
+            elif len(node_neighbors) > 2:
+                return False
+
+        if num_deg_1 != 2:
+            return False
+
+        return True
+
     def get_neighbors_of(self, qudit: int) -> list[int]:
         """Return the qudits adjacent to `qudit`."""
         return list(self._adj[qudit])
