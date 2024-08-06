@@ -54,7 +54,14 @@ class Unitary(metaclass=UnitaryMeta):
         if hasattr(self, '_dim'):
             return self._dim
 
-        return int(np.prod(self.radixes))
+        # return int(np.prod(self.radixes))
+        # Above line removed due to failure to handle overflow and
+        # underflows for large dimensions.
+
+        acm = 1
+        for radix in self.radixes:
+            acm *= int(radix)
+        return acm
 
     @abc.abstractmethod
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
