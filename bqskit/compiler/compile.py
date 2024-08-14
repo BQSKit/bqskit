@@ -669,7 +669,7 @@ def build_workflow(
     """Build a BQSKit Off-the-Shelf workflow, see :func:`compile` for info."""
     if model is None:
         model = MachineModel(input.num_qudits, radixes=input.radixes)
-    
+
     # Use a registered workflow if model is found in the registry for a given
     # optimization_level
     for machine_model in workflow_registry:

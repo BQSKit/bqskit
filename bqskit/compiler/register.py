@@ -1,20 +1,3 @@
-"""This module defines a global `worflow_registery` to modify workflows."""
-from __future__ import annotations
-
-from typing import Optional
-
-import logging
-
-from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.basepass import BasePass
-from bqskit.compiler.workflow import WorkflowLike
-from bqskit.compiler.workflow import Workflow
-
-
-_logger = logging.getLogger(__name__)
-
-
-workflow_registry: dict[MachineModel, dict[int, WorkflowLike]] = {}
 """
 The workflow_registry enables MachineModel specific workflows to be registered
 for used in the `bqskit.compile` method.
@@ -30,12 +13,26 @@ Examples:
     ...
     new_circuit = compile(circuit, model_t, optimization_level=level)
 """
+from __future__ import annotations
+
+import logging
+
+from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.workflow import Workflow
+from bqskit.compiler.workflow import WorkflowLike
+
+
+_logger = logging.getLogger(__name__)
+
+
+workflow_registry: dict[MachineModel, dict[int, Workflow]] = {}
 
 
 def register_workflow(
     machine: MachineModel,
     workflow: WorkflowLike,
-    optimization_level: Optional[int] = 1,
+    optimization_level: int = 1,
 ) -> None:
     """
     Register a workflow for a given machine model.
@@ -47,11 +44,11 @@ def register_workflow(
             be executed if the MachineModel in a call to `compile` matches
             `machine`. If `machine` is already registered, a warning will be
             logged.
-        
-        optimization_level (Optional[int]): The optimization level with 
+
+        optimization_level (Optional[int]): The optimization level with
             which to register the workflow. If no level is provided, the
             Workflow will be registered as level 1. (Default: 1)
-    
+
     Raises:
         TypeError: If `machine` is not a MachineModel.
 
@@ -60,9 +57,8 @@ def register_workflow(
     if not isinstance(machine, MachineModel):
         m = f'`machine` must be a MachineModel, got {type(machine)}.'
         raise TypeError(m)
-    
-    if isinstance(workflow, BasePass):
-        workflow = Workflow(workflow)
+
+    workflow = Workflow(workflow)
 
     for p in workflow:
         if not isinstance(p, BasePass):
@@ -78,3 +74,5 @@ def register_workflow(
             m += f'{optimization_level}.'
             _logger.warn(m)
         workflow_registry[machine].update({optimization_level: workflow})
+    else:
+        workflow_registry[machine] = {optimization_level: workflow}
