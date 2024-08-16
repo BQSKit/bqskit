@@ -1,12 +1,12 @@
 """
-The workflow_registry enables MachineModel specific workflows to be registered
-for used in the `bqskit.compile` method.
+The workflow_registry enables MachineModel or GateSet specific workflows to be
+registered for used in the `bqskit.compile` method.
 
 The workflow_registry maps MachineModels a dictionary of Workflows which
 are indexed by optimization level. This object should not be accessed directly
 by the user, but instead through the `register_workflow` function.
 
-Examples:
+Example:
     model_t = SpecificMachineModel(num_qudits, radixes)
     workflow = [QuickPartitioner(3), NewFangledOptimization()]
     register_workflow(model_t, workflow, level)
@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
@@ -26,11 +27,11 @@ from bqskit.compiler.workflow import WorkflowLike
 _logger = logging.getLogger(__name__)
 
 
-workflow_registry: dict[MachineModel, dict[int, Workflow]] = {}
+workflow_registry: dict[MachineModel | GateSet, dict[int, Workflow]] = {}
 
 
 def register_workflow(
-    machine: MachineModel,
+    machine_or_gateset: MachineModel | GateSet,
     workflow: WorkflowLike,
     optimization_level: int = 1,
 ) -> None:
@@ -38,7 +39,9 @@ def register_workflow(
     Register a workflow for a given machine model.
 
     Args:
-        machine (MachineModel): The machine to register the workflow for.
+        machine_or_gateset (MachineModel | GateSet): A MachineModel or GateSet
+            to register the workflow for. If a circuit is compiled targeting
+            this machine or gate set, the registered workflow will be used.
 
         workflow (list[BasePass]): The workflow or list of passes that whill
             be executed if the MachineModel in a call to `compile` matches
@@ -50,12 +53,14 @@ def register_workflow(
             Workflow will be registered as level 1. (Default: 1)
 
     Raises:
-        TypeError: If `machine` is not a MachineModel.
+        TypeError: If `machine_or_gateset` is not a MachineModel or GateSet.
 
         TypeError: If `workflow` is not a list of BasePass objects.
     """
-    if not isinstance(machine, MachineModel):
-        m = f'`machine` must be a MachineModel, got {type(machine)}.'
+    if not isinstance(machine_or_gateset, MachineModel) and not \
+            isinstance(machine_or_gateset, GateSet):
+        m = '`machine_or_gateset` must be a MachineModel or '
+        m += f'GateSet, got {type(machine_or_gateset)}.'
         raise TypeError(m)
 
     workflow = Workflow(workflow)
@@ -67,12 +72,12 @@ def register_workflow(
             raise TypeError(m)
 
     global workflow_registry
-
-    if machine in workflow_registry:
-        if optimization_level in workflow_registry[machine]:
-            m = f'Overwritting workflow for {machine} at level '
-            m += f'{optimization_level}.'
+    new_workflow = workflow_registry[machine_or_gateset]
+    if machine_or_gateset in workflow_registry:
+        if optimization_level in workflow_registry[machine_or_gateset]:
+            m = f'Overwritting workflow for {machine_or_gateset} '
+            m += f'at level {optimization_level}.'
             _logger.warn(m)
-        workflow_registry[machine].update({optimization_level: workflow})
+        workflow_registry[machine_or_gateset].update(new_workflow)
     else:
-        workflow_registry[machine] = {optimization_level: workflow}
+        workflow_registry[machine_or_gateset] = new_workflow

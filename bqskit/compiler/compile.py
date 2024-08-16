@@ -13,6 +13,7 @@ from typing import Union
 import numpy as np
 
 from bqskit.compiler.compiler import Compiler
+from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.register import workflow_registry
@@ -672,11 +673,15 @@ def build_workflow(
 
     # Use a registered workflow if model is found in the registry for a given
     # optimization_level
-    for machine_model in workflow_registry:
-        gate_set_match = machine_model.gate_set == model.gate_set
-        opt_lvl_found = optimization_level in workflow_registry[machine_model]
-        if gate_set_match and opt_lvl_found:
-            return workflow_registry[machine_model][optimization_level]
+    for machine_or_gateset in workflow_registry:
+        if isinstance(machine_or_gateset, GateSet):
+            gate_set = machine_or_gateset
+        else:
+            gate_set = machine_or_gateset.gate_set
+        gs_match = gate_set == model.gate_set
+        ol_found = optimization_level in workflow_registry[machine_or_gateset]
+        if gs_match and ol_found:
+            return workflow_registry[machine_or_gateset][optimization_level]
 
     if isinstance(input, Circuit):
         if input.num_qudits > max_synthesis_size:
