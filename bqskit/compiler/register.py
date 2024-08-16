@@ -19,10 +19,10 @@ import logging
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.gateset import GateSet
+from bqskit.compiler.gateset import GateSetLike
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
-
 from bqskit.ir.gate import Gate
 
 _logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ workflow_registry: dict[MachineModel | GateSet, dict[int, Workflow]] = {}
 
 
 def register_workflow(
-    machine_or_gateset: MachineModel | GateSet,
+    machine_or_gateset: MachineModel | GateSetLike,
     workflow: WorkflowLike,
     optimization_level: int = 1,
 ) -> None:
@@ -40,9 +40,10 @@ def register_workflow(
     Register a workflow for a given machine model.
 
     Args:
-        machine_or_gateset (MachineModel | GateSet): A MachineModel or GateSet
-            to register the workflow for. If a circuit is compiled targeting
-            this machine or gate set, the registered workflow will be used.
+        machine_or_gateset (MachineModel | GateSetLike): A MachineModel or
+            GateSetLike to register the workflow under. If a circuit is
+            compiled targeting this machine or gate set, the registered
+            workflow will be used.
 
         workflow (list[BasePass]): The workflow or list of passes that whill
             be executed if the MachineModel in a call to `compile` matches
@@ -59,6 +60,8 @@ def register_workflow(
         TypeError: If `workflow` is not a list of BasePass objects.
     """
     if not isinstance(machine_or_gateset, MachineModel):
+        if isinstance(machine_or_gateset, Gate):
+            machine_or_gateset = [machine_or_gateset]
         if all(isinstance(g, Gate) for g in machine_or_gateset):
             machine_or_gateset = GateSet(machine_or_gateset)
         else:
