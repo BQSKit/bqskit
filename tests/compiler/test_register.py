@@ -15,6 +15,8 @@ from bqskit.ir import Gate
 from bqskit.ir.gates import CZGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import RZGate
+from bqskit.ir.gates import U3Gate
+from bqskit.passes import QSearchSynthesisPass
 from bqskit.passes import QuickPartitioner
 from bqskit.passes import ScanningGateRemovalPass
 
@@ -98,3 +100,15 @@ class TestRegisterWorkflow:
         assert result.gate_counts != circuit.gate_counts
         result.unfold_all()
         assert result.gate_counts == circuit.gate_counts
+
+    def test_custom_opt_level(self) -> None:
+        gateset = [CZGate(), HGate(), RZGate()]
+        num_qudits = 3
+        machine = MachineModel(num_qudits, gate_set=gateset)
+        workflow = [QSearchSynthesisPass()]
+        register_workflow(gateset, workflow, 2)
+        circuit = simple_circuit(num_qudits, gateset)
+        result = compile(circuit, machine, optimization_level=2)
+        assert result.get_unitary() == circuit.get_unitary()
+        assert result.gate_counts != circuit.gate_counts
+        assert U3Gate() in result.gate_set
