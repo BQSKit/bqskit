@@ -23,6 +23,7 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 
+from bqskit.ir.gate import Gate
 
 _logger = logging.getLogger(__name__)
 
@@ -57,11 +58,13 @@ def register_workflow(
 
         TypeError: If `workflow` is not a list of BasePass objects.
     """
-    if not isinstance(machine_or_gateset, MachineModel) and not \
-            isinstance(machine_or_gateset, GateSet):
-        m = '`machine_or_gateset` must be a MachineModel or '
-        m += f'GateSet, got {type(machine_or_gateset)}.'
-        raise TypeError(m)
+    if not isinstance(machine_or_gateset, MachineModel):
+        if all(isinstance(g, Gate) for g in machine_or_gateset):
+            machine_or_gateset = GateSet(machine_or_gateset)
+        else:
+            m = '`machine_or_gateset` must be a MachineModel or '
+            m += f'GateSet, got {type(machine_or_gateset)}.'
+            raise TypeError(m)
 
     workflow = Workflow(workflow)
 
@@ -72,7 +75,7 @@ def register_workflow(
             raise TypeError(m)
 
     global workflow_registry
-    new_workflow = workflow_registry[machine_or_gateset]
+    new_workflow = {optimization_level: workflow}
     if machine_or_gateset in workflow_registry:
         if optimization_level in workflow_registry[machine_or_gateset]:
             m = f'Overwritting workflow for {machine_or_gateset} '
