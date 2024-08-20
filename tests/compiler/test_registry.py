@@ -9,9 +9,9 @@ from numpy import allclose
 
 from bqskit.compiler import compile
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.register import _workflow_registry
-from bqskit.compiler.register import clear_registry
-from bqskit.compiler.register import register_workflow
+from bqskit.compiler.registry import _workflow_registry
+from bqskit.compiler.registry import clear_registry
+from bqskit.compiler.registry import register_workflow
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir import Circuit

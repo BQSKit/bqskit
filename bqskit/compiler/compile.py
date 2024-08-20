@@ -16,7 +16,7 @@ from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
-from bqskit.compiler.register import _workflow_registry
+from bqskit.compiler.registry import _workflow_registry
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
