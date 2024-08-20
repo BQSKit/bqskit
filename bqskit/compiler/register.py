@@ -1,8 +1,8 @@
 """
-The workflow_registry enables MachineModel or GateSet specific workflows to be
+The _workflow_registry enables MachineModel or GateSet specific workflows to be
 registered for used in the `bqskit.compile` method.
 
-The workflow_registry maps MachineModels a dictionary of Workflows which
+The _workflow_registry maps MachineModels a dictionary of Workflows which
 are indexed by optimization level. This object should not be accessed directly
 by the user, but instead through the `register_workflow` function.
 
@@ -28,7 +28,7 @@ from bqskit.ir.gate import Gate
 _logger = logging.getLogger(__name__)
 
 
-workflow_registry: dict[MachineModel | GateSet, dict[int, Workflow]] = {}
+_workflow_registry: dict[MachineModel | GateSet, dict[int, Workflow]] = {}
 
 
 def register_workflow(
@@ -77,13 +77,23 @@ def register_workflow(
             m += f'{type(p)}.'
             raise TypeError(m)
 
-    global workflow_registry
+    global _workflow_registry
     new_workflow = {optimization_level: workflow}
-    if machine_or_gateset in workflow_registry:
-        if optimization_level in workflow_registry[machine_or_gateset]:
+    if machine_or_gateset in _workflow_registry:
+        if optimization_level in _workflow_registry[machine_or_gateset]:
             m = f'Overwritting workflow for {machine_or_gateset} '
             m += f'at level {optimization_level}.'
             _logger.warn(m)
-        workflow_registry[machine_or_gateset].update(new_workflow)
+        _workflow_registry[machine_or_gateset].update(new_workflow)
     else:
-        workflow_registry[machine_or_gateset] = new_workflow
+        _workflow_registry[machine_or_gateset] = new_workflow
+
+
+def clear_registry() -> None:
+    """
+    Clear the workflow registry.
+
+    This will remove all registered workflows from the registry.
+    """
+    global _workflow_registry
+    _workflow_registry.clear()
