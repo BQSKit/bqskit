@@ -51,7 +51,7 @@ from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
 from bqskit.passes.mapping.setmodel import ExtractModelConnectivityPass
-from bqskit.passes.mapping.setmodel import RestoreModelConnevtivityPass
+from bqskit.passes.mapping.setmodel import RestoreModelConnectivityPass
 from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
 from bqskit.passes.mapping.verify import PAMVerificationSequence
@@ -1011,7 +1011,7 @@ def build_multi_qudit_retarget_workflow(
                         optimization_level,
                         synthesis_epsilon,
                     ),
-                    RestoreModelConnevtivityPass(),
+                    RestoreModelConnectivityPass(),
                 ],
                 AutoRebase2QuditGatePass(3, 5, synthesis_epsilon),
             ),
@@ -1256,7 +1256,7 @@ def build_seqpam_mapping_optimization_workflow(
                 PAMRoutingPass(),
                 post_pam_seq,
                 UnfoldPass(),
-                RestoreModelConnevtivityPass(),
+                RestoreModelConnectivityPass(),
 
                 LogPass('Recaching permutation-aware synthesis results.'),
                 SubtopologySelectionPass(block_size),

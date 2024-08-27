@@ -10,6 +10,7 @@ from bqskit.ext.qiskit import qiskit_to_bqskit
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.gates.constant.cx import CNOTGate
+from bqskit.ir.gates.constant.ecr import ECRGate
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u1q import U1qGate
@@ -523,3 +524,14 @@ def test_U1Q_gate() -> None:
     assert circuit.num_operations == 2
     assert circuit[0, 0].gate == U1qGate()
     assert circuit[1, 0].gate == U1qGate()
+
+
+def test_ECR_gate() -> None:
+    input = """
+        OPENQASM 2.0;
+        qreg q[2];
+        ecr q[0],q[1];
+    """
+    circuit = OPENQASM2Language().decode(input)
+    assert circuit.num_operations == 1
+    assert circuit[0, 0].gate == ECRGate()

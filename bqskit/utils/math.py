@@ -8,6 +8,7 @@ import numpy.typing as npt
 import scipy as sp
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.qis.unitary.unitary import RealVector
 
 
@@ -19,7 +20,7 @@ def dexpmv(
 
     User must provide M and its derivative dM. If the argument dM is a
     vector of partials then dF will be the respective partial vector.
-    This is done using a Pade Approximat with scaling and squaring.
+    This is done using a Pade Approximation with scaling and squaring.
 
     Args:
         M (np.ndarray): Matrix to exponentiate.
@@ -168,6 +169,36 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
     return np.array(X)
 
 
+def pauliz_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
+    """
+    Computes a Pauli Z expansion of the diagonal hermitian matrix H.
+
+    Args:
+        H (np.ndarray): The (N, N) diagonal hermitian matrix to expand.
+
+    Returns:
+        np.ndarray: The coefficients of a Pauli Z expansion for H,
+        i.e., x dot Sigma = H where Sigma contains Pauli Z matrices of
+        same size of H.
+
+    Note:
+        This assumes the input is diagonal but of shape (N, N). No check is
+        done for hermicity. The output is undefined on non-hermitian inputs.
+    """
+    diag_H = np.diag(np.diag(H))
+    if not np.allclose(H, diag_H):
+        msg = 'H must be a diagonal matrix.'
+        raise ValueError(msg)
+    # Change basis of H to Pauli Basis (solve for coefficients -> X)
+    n = int(np.log2(len(H)))
+    paulizs = PauliZMatrices(n)
+    flatten_paulizs = [np.diag(pauli) for pauli in paulizs]
+    flatten_H = np.diag(H)
+    A = np.stack(flatten_paulizs, axis=-1)
+    X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
+    return np.array(X)
+
+
 def compute_su_generators(n: int) -> npt.NDArray[np.complex128]:
     """
     Computes the Lie algebra generators for SU(n).
@@ -257,3 +288,24 @@ def canonical_unitary(
     correction_phase = 0 - std_phase
     std_correction = np.exp(1j * correction_phase)
     return std_correction * special_unitary
+
+
+def diagonal_distance(unitary: npt.NDArray[np.complex128]) -> float:
+    """
+    Compute how diagonal a unitary is.
+
+    The diagonal distance measures how closely a unitary can be approx-
+    imately inverted by a diagonal unitary. A unitary is approximately
+    inverted when the Hilbert-Schmidt distance to the identity is less
+    than some threshold.
+
+    Args:
+        unitary (np.ndarray): The unitary matrix to check.
+
+    Returns:
+        float: The Hilbert-Schmidt distance to the nearest diagonal.
+    """
+    eps = unitary - np.diag(np.diag(unitary))
+    eps2 = eps * eps.conj()
+    distance = abs(np.sqrt(eps2.sum(-1).max()))
+    return distance

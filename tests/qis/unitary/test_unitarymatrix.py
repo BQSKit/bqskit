@@ -216,3 +216,24 @@ class TestClosedOperations:
             out2 = a * u
             assert out2 is not u
             assert not isinstance(out2, UnitaryMatrix)
+
+
+@given(unitaries(), integers(min_value=-10, max_value=10))
+def test_ipower(u: UnitaryMatrix, n: int) -> None:
+    out = u.ipower(n)
+    if n == 0:
+        assert out == UnitaryMatrix.identity(u.dim, u.radixes)
+    elif n == 1:
+        assert out == u
+    elif n == -1:
+        assert out == u.dagger
+    elif n < 0:
+        acm = u.dagger
+        for _ in range(-n - 1):
+            acm = acm @ u.dagger
+        assert out == acm
+    else:
+        acm = u
+        for _ in range(n - 1):
+            acm = acm @ u
+        assert out == acm

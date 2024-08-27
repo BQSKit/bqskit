@@ -433,4 +433,8 @@ class StateVector(NDArrayOperatorsMixin):
         return repr(self._vec)
 
 
-StateLike = Union[StateVector, np.ndarray, Sequence[Union[int, float, complex]]]
+StateLike = Union[
+    StateVector,
+    npt.NDArray[np.complex128],
+    Sequence[Union[int, float, complex]],
+]

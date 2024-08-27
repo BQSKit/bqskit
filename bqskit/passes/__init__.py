@@ -28,6 +28,7 @@ synthesis pass to convert the circuit to native gates.
     :toctree: autogen
     :recursive:
 
+    DiagonalSynthesisPass
     LEAPSynthesisPass
     QSearchSynthesisPass
     QFASTDecompositionPass
@@ -43,6 +44,7 @@ synthesis pass to convert the circuit to native gates.
     ExhaustiveGateRemovalPass
     IterativeScanningGateRemovalPass
     ScanningGateRemovalPass
+    TreeScanningGateRemovalPass
     SubstitutePass
 
 .. rubric:: Retargeting Passes
@@ -129,7 +131,7 @@ are involved the qubit mapping process.
     PAMRoutingPass
     EmbedAllPermutationsPass
     ExtractModelConnectivityPass
-    RestoreModelConnevtivityPass
+    RestoreModelConnectivityPass
 
 
 .. rubric:: PAM Verification Passes
@@ -234,11 +236,12 @@ from bqskit.passes.mapping.embed import EmbedAllPermutationsPass
 from bqskit.passes.mapping.layout.pam import PAMLayoutPass
 from bqskit.passes.mapping.layout.sabre import GeneralizedSabreLayoutPass
 from bqskit.passes.mapping.placement.greedy import GreedyPlacementPass
+from bqskit.passes.mapping.placement.static import StaticPlacementPass
 from bqskit.passes.mapping.placement.trivial import TrivialPlacementPass
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.mapping.routing.sabre import GeneralizedSabreRoutingPass
 from bqskit.passes.mapping.setmodel import ExtractModelConnectivityPass
-from bqskit.passes.mapping.setmodel import RestoreModelConnevtivityPass
+from bqskit.passes.mapping.setmodel import RestoreModelConnectivityPass
 from bqskit.passes.mapping.setmodel import SetModelPass
 from bqskit.passes.mapping.topology import SubtopologySelectionPass
 from bqskit.passes.mapping.verify import CalculatePAMErrorsPass
@@ -257,6 +260,7 @@ from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
 from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
+from bqskit.passes.processing.treescan import TreeScanningGateRemovalPass
 from bqskit.passes.retarget.auto import AutoRebase2QuditGatePass
 from bqskit.passes.retarget.general import GeneralSQDecomposition
 from bqskit.passes.retarget.two import Rebase2QuditGatePass
@@ -318,6 +322,7 @@ __all__ = [
     'ScanPartitioner',
     'QuickPartitioner',
     'SynthesisPass',
+    'DiagonalSynthesisPass',
     'LEAPSynthesisPass',
     'QSearchSynthesisPass',
     'QFASTDecompositionPass',
@@ -329,6 +334,7 @@ __all__ = [
     'UpdateDataPass',
     'ToU3Pass',
     'ScanningGateRemovalPass',
+    'TreeScanningGateRemovalPass',
     'SimpleLayerGenerator',
     'AStarHeuristic',
     'GreedyHeuristic',
@@ -364,6 +370,7 @@ __all__ = [
     'GeneralizedSabreLayoutPass',
     'GreedyPlacementPass',
     'TrivialPlacementPass',
+    'StaticPlacementPass',
     'GeneralizedSabreRoutingPass',
     'SetModelPass',
     'U3Decomposition',
@@ -398,7 +405,7 @@ __all__ = [
     'GeneralSQDecomposition',
     'StructureAnalysisPass',
     'ExtractModelConnectivityPass',
-    'RestoreModelConnevtivityPass',
+    'RestoreModelConnectivityPass',
     'TagPAMBlockDataPass',
     'CalculatePAMErrorsPass',
     'UnTagPAMBlockDataPass',
