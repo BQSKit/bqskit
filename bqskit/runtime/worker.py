@@ -378,7 +378,11 @@ class Worker:
             if not t.is_descendant_of(addr)
         ]
 
-    def _handle_communicate(self, addrs: list[RuntimeAddress], msg: Any) -> None:
+    def _handle_communicate(
+        self,
+        addrs: list[RuntimeAddress],
+        msg: Any,
+    ) -> None:
         for task_addr in addrs:
             if task_addr not in self._tasks:
                 continue
@@ -763,7 +767,7 @@ def start_worker(
     set_blas_thread_counts(num_blas_threads)
 
     # Enforce no default logging
-    logging.lastResort = logging.NullHandler()  # type: ignore # typeshed#11770
+    logging.lastResort = logging.NullHandler()
     logging.getLogger().handlers.clear()
 
     # Pin worker to cpu
