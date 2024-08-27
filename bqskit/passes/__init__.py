@@ -195,6 +195,7 @@ algorithms extend circuit templates.
     :toctree: autogen
     :recursive:
 
+    DiscreteLayerGenerator
     FourParamGenerator
     MiddleOutLayerGenerator
     SeedLayerGenerator
@@ -274,6 +275,7 @@ from bqskit.passes.rules.u3 import U3Decomposition
 from bqskit.passes.rules.zxzxz import ZXZXZDecomposition
 from bqskit.passes.search.frontier import Frontier
 from bqskit.passes.search.generator import LayerGenerator
+from bqskit.passes.search.generators.discrete import DiscreteLayerGenerator
 from bqskit.passes.search.generators.fourparam import FourParamGenerator
 from bqskit.passes.search.generators.middleout import MiddleOutLayerGenerator
 from bqskit.passes.search.generators.seed import SeedLayerGenerator
@@ -341,6 +343,7 @@ __all__ = [
     'DijkstraHeuristic',
     'Frontier',
     'LayerGenerator',
+    'DiscreteLayerGenerator',
     'HeuristicFunction',
     'SeedLayerGenerator',
     'BlockConversionPass',
