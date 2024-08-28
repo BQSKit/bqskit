@@ -1,7 +1,13 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-import numpy as np
+from math import sqrt
+
+from numpy import array
+from numpy import complex128
+from numpy import exp
+from numpy import pi
+from numpy import zeros
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
@@ -67,22 +73,22 @@ class HGate(ConstantGate, QuditGate):
 
         # Calculate unitary
         if radix == 2:
-            matrix = np.array(
+            matrix = array(
                 [
-                    [np.sqrt(2) / 2, np.sqrt(2) / 2],
-                    [np.sqrt(2) / 2, -np.sqrt(2) / 2],
+                    [sqrt(2) / 2, sqrt(2) / 2],
+                    [sqrt(2) / 2, -sqrt(2) / 2],
                 ],
-                dtype=np.complex128,
+                dtype=complex128,
             )
             self._utry = UnitaryMatrix(matrix)
 
         else:
-            matrix = np.zeros([radix] * 2, dtype=np.complex128)
-            omega = np.exp(2j * np.pi / radix)
+            matrix = zeros([radix] * 2, dtype=complex128)
+            omega = exp(2j * pi / radix)
             for i in range(radix):
                 for j in range(i, radix):
                     val = omega ** (i * j)
                     matrix[i, j] = val
                     matrix[j, i] = val
-            matrix *= 1 / np.sqrt(radix)
+            matrix *= 1 / sqrt(radix)
             self._utry = UnitaryMatrix(matrix, self.radixes)
