@@ -34,7 +34,7 @@ _workflow_registry: dict[MachineModel | GateSet, dict[int, Workflow]] = {}
 def register_workflow(
     machine_or_gateset: MachineModel | GateSetLike,
     workflow: WorkflowLike,
-    optimization_level: int = 1,
+    optimization_level: int,
 ) -> None:
     """
     Register a workflow for a given machine model.
@@ -50,9 +50,9 @@ def register_workflow(
             `machine`. If `machine` is already registered, a warning will be
             logged.
 
-        optimization_level (Optional[int]): The optimization level with
-            which to register the workflow. If no level is provided, the
-            Workflow will be registered as level 1. (Default: 1)
+        optimization_level ptional[int): The optimization level with which
+            to register the workflow. If no level is provided, the Workflow
+            will be registered as level 1.
 
     Raises:
         TypeError: If `machine_or_gateset` is not a MachineModel or GateSet.
