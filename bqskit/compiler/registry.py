@@ -71,12 +71,6 @@ def register_workflow(
 
     workflow = Workflow(workflow)
 
-    for p in workflow:
-        if not isinstance(p, BasePass):
-            m = 'All elements of `workflow` must be BasePass objects. Got '
-            m += f'{type(p)}.'
-            raise TypeError(m)
-
     global _workflow_registry
     new_workflow = {optimization_level: workflow}
     if machine_or_gateset in _workflow_registry:
