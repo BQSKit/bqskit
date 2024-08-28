@@ -135,7 +135,11 @@ class RuntimeTask:
             # it is likely a blanket try/accept catching the
             # error used to stop the coroutine, preventing
             # it from stopping correctly.
-            self.coro.close()
+            try:
+                self.coro.close()
+            except ValueError:
+                # Coroutine is running and cannot be closed.
+                pass
         else:
             raise RuntimeError('Task was cancelled with None coroutine.')
 

@@ -38,11 +38,11 @@ class Sleep1Pass(BasePass):
         data['key'] = '1'
 
 
-class Sleep3Pass(BasePass):
+class Sleep9Pass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         circuit.append_gate(ZGate(), 0)
-        time.sleep(0.3)
-        data['key'] = '3'
+        time.sleep(0.9)
+        data['key'] = '9'
 
 
 def pick_z(c1: Circuit, c2: Circuit) -> bool:
@@ -66,7 +66,7 @@ def test_parallel_do_no_passes() -> None:
 
 
 def test_parallel_do_pick_first(compiler: Compiler) -> None:
-    passes: list[list[BasePass]] = [[Sleep3Pass()], [Sleep1Pass()]]
+    passes: list[list[BasePass]] = [[Sleep9Pass()], [Sleep1Pass()]]
     pd_pass = ParallelDo(passes, pick_z, True)
     _, data = compiler.compile(Circuit(1), pd_pass, True)
     assert data['key'] == '1'
