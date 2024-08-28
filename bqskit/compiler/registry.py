@@ -1,31 +1,14 @@
-"""
-The _workflow_registry enables MachineModel or GateSet specific workflows to be
-registered for used in the `bqskit.compile` method.
-
-The _workflow_registry maps MachineModels a dictionary of Workflows which
-are indexed by optimization level. This object should not be accessed directly
-by the user, but instead through the `register_workflow` function.
-
-Example:
-    model_t = SpecificMachineModel(num_qudits, radixes)
-    workflow = [QuickPartitioner(3), NewFangledOptimization()]
-    register_workflow(model_t, workflow, level)
-    ...
-    new_circuit = compile(circuit, model_t, optimization_level=level)
-"""
+"""Register GateSet or MachineModel specific default workflows."""
 from __future__ import annotations
 
-import logging
+import warnings
 
-from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.gateset import GateSetLike
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.gate import Gate
-
-_logger = logging.getLogger(__name__)
 
 
 _workflow_registry: dict[MachineModel | GateSet, dict[int, Workflow]] = {}
@@ -38,6 +21,12 @@ def register_workflow(
 ) -> None:
     """
     Register a workflow for a given machine model.
+
+    The _workflow_registry enables MachineModel or GateSet specific workflows
+    to be registered for use in the `bqskit.compile` method. _workflow_registry
+    maps MachineModels a dictionary of Workflows which are indexed by 
+    optimization level. This object should not be accessed directly by the user,
+    but instead through the `register_workflow` function.
 
     Args:
         machine_or_gateset (MachineModel | GateSetLike): A MachineModel or
@@ -54,10 +43,17 @@ def register_workflow(
             to register the workflow. If no level is provided, the Workflow
             will be registered as level 1.
 
+    Example:
+        model_t = SpecificMachineModel(num_qudits, radixes)
+        workflow = [QuickPartitioner(3), NewFangledOptimization()]
+        register_workflow(model_t, workflow, level)
+        ...
+        new_circuit = compile(circuit, model_t, optimization_level=level)
+
     Raises:
         TypeError: If `machine_or_gateset` is not a MachineModel or GateSet.
 
-        TypeError: If `workflow` is not a list of BasePass objects.
+        Warning: If a workflow for a given optimization_level is overwritten.
     """
     if not isinstance(machine_or_gateset, MachineModel):
         if isinstance(machine_or_gateset, Gate):
@@ -75,9 +71,11 @@ def register_workflow(
     new_workflow = {optimization_level: workflow}
     if machine_or_gateset in _workflow_registry:
         if optimization_level in _workflow_registry[machine_or_gateset]:
-            m = f'Overwritting workflow for {machine_or_gateset} '
-            m += f'at level {optimization_level}.'
-            _logger.warn(m)
+            m = f'Overwritting workflow for {machine_or_gateset} at level '
+            m += f'{optimization_level}. If multiple Namespace packages are '
+            m += 'installed, ensure that their __init__.py files do not '
+            m += 'attempt to overwrite the same default Workflows.'
+            warnings.warn(m)
         _workflow_registry[machine_or_gateset].update(new_workflow)
     else:
         _workflow_registry[machine_or_gateset] = new_workflow
