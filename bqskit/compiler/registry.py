@@ -24,7 +24,7 @@ def register_workflow(
 
     The _workflow_registry enables MachineModel or GateSet specific workflows
     to be registered for use in the `bqskit.compile` method. _workflow_registry
-    maps MachineModels a dictionary of Workflows which are indexed by 
+    maps MachineModels a dictionary of Workflows which are indexed by
     optimization level. This object should not be accessed directly by the user,
     but instead through the `register_workflow` function.
 
@@ -79,13 +79,3 @@ def register_workflow(
         _workflow_registry[machine_or_gateset].update(new_workflow)
     else:
         _workflow_registry[machine_or_gateset] = new_workflow
-
-
-def clear_registry() -> None:
-    """
-    Clear the workflow registry.
-
-    This will remove all registered workflows from the registry.
-    """
-    global _workflow_registry
-    _workflow_registry.clear()
