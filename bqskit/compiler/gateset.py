@@ -233,7 +233,7 @@ class GateSet(SuperType):
 
     def __hash__(self) -> int:
         """Hash of the GateSet."""
-        return self.__repr__().__hash__()
+        return hash(tuple(sorted([g.name for g in self._gates])))
 
 
 GateSetLike = Union[GateSet, Iterable[Gate], Gate]
