@@ -13,7 +13,6 @@ from typing import Union
 import numpy as np
 
 from bqskit.compiler.compiler import Compiler
-from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.registry import _compile_registry
