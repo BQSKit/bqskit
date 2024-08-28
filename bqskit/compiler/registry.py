@@ -45,7 +45,7 @@ def register_workflow(
             compiled targeting this machine or gate set, the registered
             workflow will be used.
 
-        workflow (list[BasePass]): The workflow or list of passes that whill
+        workflow (list[BasePass]): The workflow or list of passes that will
             be executed if the MachineModel in a call to `compile` matches
             `machine`. If `machine` is already registered, a warning will be
             logged.
