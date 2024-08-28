@@ -34,7 +34,7 @@ class ParallelDo(BasePass):
         self,
         pass_sequences: Iterable[WorkflowLike],
         less_than: Callable[[Circuit, Circuit], bool],
-        pick_fisrt: bool = False,
+        pick_first: bool = False,
     ) -> None:
         """
         Construct a ParallelDo.
@@ -63,7 +63,7 @@ class ParallelDo(BasePass):
 
         self.workflows = [Workflow(p) for p in pass_sequences]
         self.less_than = less_than
-        self.pick_first = pick_fisrt
+        self.pick_first = pick_first
 
         if len(self.workflows) == 0:
             raise ValueError('Must specify at least one workflow.')

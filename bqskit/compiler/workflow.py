@@ -10,6 +10,8 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
+import dill
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_iterable
@@ -39,6 +41,7 @@ class Workflow(BasePass, Sequence[BasePass]):
         """
         if isinstance(passes, Workflow):
             self._passes: list[BasePass] = copy.deepcopy(passes._passes)
+            self._name: str = name if name else copy.deepcopy(passes._name)
             return
 
         if isinstance(passes, BasePass):
@@ -117,6 +120,12 @@ class Workflow(BasePass, Sequence[BasePass]):
 
     def __getitem__(self, _key: int | slice) -> BasePass | list[BasePass]:
         return self._passes.__getitem__(_key)
+
+    def __getstate__(self) -> bytes:
+        return dill.dumps(self.__dict__, recurse=True)
+
+    def __setstate__(self, state: bytes) -> None:
+        self.__dict__.update(dill.loads(state))
 
 
 WorkflowLike = Union[Workflow, Iterable[BasePass], BasePass]

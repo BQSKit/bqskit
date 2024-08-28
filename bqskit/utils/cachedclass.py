@@ -63,7 +63,8 @@ class CachedClass:
         _instances = cls._instances  # type: ignore
 
         if _instances.get(key, None) is None:
-            _logger.debug(
+            _logger.log(
+                1,
                 (
                     'Creating cached instance for class: %s,'
                     ' with args %s, and kwargs %s'
