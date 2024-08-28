@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import pickle
 import warnings
 from typing import Any
 from typing import Callable
@@ -16,6 +17,7 @@ from typing import overload
 from typing import Sequence
 from typing import TYPE_CHECKING
 
+import dill
 import numpy as np
 import numpy.typing as npt
 
@@ -1074,33 +1076,8 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
         raise ValueError('No such operation exists in the circuit.')
 
-    def append(self, op: Operation) -> int:
-        """
-        Append `op` to the end of the circuit and return its cycle index.
-
-        Args:
-            op (Operation): The operation to append.
-
-        Returns:
-            int: The cycle index of the appended operation.
-
-        Raises:
-            ValueError: If `op` cannot be placed on the circuit due to
-                either an invalid location or gate radix mismatch.
-
-        Notes:
-            Due to the circuit being represented as a matrix,
-            `circuit.append(op)` does not imply `op` is last in simulation
-            order but it implies `op` is in the last cycle of circuit.
-
-        Examples:
-            >>> from bqskit.ir.gates import HGate
-            >>> circ = Circuit(1)
-            >>> op = Operation(HGate(), [0])
-            >>> circ.append(op) # Appends a Hadamard gate to qudit 0.
-        """
-        self.check_valid_operation(op)
-        cycle_index = self._find_available_or_append_cycle(op.location)
+    def _append(self, op: Operation, cycle_index: int) -> None:
+        """Append the operation to the circuit at the specified cycle."""
         point = CircuitPoint(cycle_index, op.location[0])
 
         prevs: dict[int, CircuitPoint | None] = {i: None for i in op.location}
@@ -1135,6 +1112,34 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             self._gate_info[op.gate] = 0
         self._gate_info[op.gate] += 1
 
+    def append(self, op: Operation) -> int:
+        """
+        Append `op` to the end of the circuit and return its cycle index.
+
+        Args:
+            op (Operation): The operation to append.
+
+        Returns:
+            int: The cycle index of the appended operation.
+
+        Raises:
+            ValueError: If `op` cannot be placed on the circuit due to
+                either an invalid location or gate radix mismatch.
+
+        Notes:
+            Due to the circuit being represented as a matrix,
+            `circuit.append(op)` does not imply `op` is last in simulation
+            order but it implies `op` is in the last cycle of circuit.
+
+        Examples:
+            >>> from bqskit.ir.gates import HGate
+            >>> circ = Circuit(1)
+            >>> op = Operation(HGate(), [0])
+            >>> circ.append(op) # Appends a Hadamard gate to qudit 0.
+        """
+        self.check_valid_operation(op)
+        cycle_index = self._find_available_or_append_cycle(op.location)
+        self._append(op, cycle_index)
         return cycle_index
 
     def append_gate(
@@ -2753,17 +2758,9 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             :class:`~bqskit.compiler.compiler.Compiler` directly.
         """
         from bqskit.compiler.compiler import Compiler
-        from bqskit.compiler.passdata import PassData
-        from bqskit.compiler.task import CompilationTask
-
-        pass_data = PassData(self)
-        if data is not None:
-            pass_data.update(data)
 
         with Compiler() as compiler:
-            task = CompilationTask(self, [compiler_pass])
-            task.data = pass_data
-            task_id = compiler.submit(task)
+            task_id = compiler.submit(self, [compiler_pass], data=data)
             self.become(compiler.result(task_id))  # type: ignore
 
     def instantiate(
@@ -3277,4 +3274,73 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         circuit.append_gate(op.gate, list(range(circuit.num_qudits)), op.params)
         return circuit
 
+    def __reduce__(self) -> tuple[
+        Callable[
+            [int, tuple[int, ...], list[tuple[bool, bytes]], bytes],
+            Circuit,
+        ],
+        tuple[int, tuple[int, ...], list[tuple[bool, bytes]], bytes],
+    ]:
+        """Return the pickle state of the circuit."""
+        serialized_gates: list[tuple[bool, bytes]] = []
+        gate_table = {}
+        for gate in self.gate_set:
+            gate_table[gate] = len(serialized_gates)
+            if gate.__class__.__module__.startswith('bqskit'):
+                serialized_gates.append((False, pickle.dumps(gate)))
+            else:
+                serialized_gates.append((True, dill.dumps(gate, recurse=True)))
+
+        cycles: list[list[tuple[int, tuple[int, ...], list[float]]]] = []
+        last_cycle = -1
+        for cycle, op in self.operations_with_cycles():
+
+            if cycle != last_cycle:
+                last_cycle = cycle
+                cycles.append([])
+
+            marshalled_op = (
+                gate_table[op.gate],
+                op.location._location,
+                op.params,
+            )
+            cycles[-1].append(marshalled_op)
+
+        data = (
+            self.num_qudits,
+            self.radixes,
+            serialized_gates,
+            pickle.dumps(cycles),
+        )
+        return (rebuild_circuit, data)
+
     # endregion
+
+
+def rebuild_circuit(
+    num_qudits: int,
+    radixes: tuple[int, ...],
+    serialized_gates: list[tuple[bool, bytes]],
+    serialized_cycles: bytes,
+) -> Circuit:
+    """Rebuild a circuit from a pickle state."""
+    circuit = Circuit(num_qudits, radixes)
+
+    gate_table = {}
+    for i, (is_dill, serialized_gate) in enumerate(serialized_gates):
+        if is_dill:
+            gate = dill.loads(serialized_gate)
+        else:
+            gate = pickle.loads(serialized_gate)
+        gate_table[i] = gate
+
+    cycles = pickle.loads(serialized_cycles)
+    for i, cycle in enumerate(cycles):
+        circuit._append_cycle()
+        for marshalled_op in cycle:
+            gate = gate_table[marshalled_op[0]]
+            location = marshalled_op[1]
+            params = marshalled_op[2]
+            circuit._append(Operation(gate, location, params), i)
+
+    return circuit

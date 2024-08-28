@@ -62,6 +62,8 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.interval import CycleInterval
 from bqskit.ir.interval import IntervalLike
 from bqskit.ir.iterator import CircuitIterator
+from bqskit.ir.lang import register_language as _register_language
+from bqskit.ir.lang.qasm2 import OPENQASM2Language as _qasm
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.ir.operation import Operation
@@ -70,6 +72,11 @@ from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
 from bqskit.ir.structure import CircuitStructure
+
+
+# Register supported languages
+_register_language('qasm', _qasm())
+
 
 __all__ = [
     'Operation',

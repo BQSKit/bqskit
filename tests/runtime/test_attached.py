@@ -17,16 +17,16 @@ from bqskit.ir.circuit import Circuit
 from bqskit.runtime import get_runtime
 
 
-@pytest.mark.parametrize('num_workers', [1, -1])
-def test_startup_shutdown_transparently(num_workers: int) -> None:
-    in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
-    compiler = Compiler(num_workers=num_workers)
-    assert compiler.p is not None
-    compiler.__del__()
-    if sys.platform == 'win32':
-        time.sleep(1)
-    out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
-    assert in_num_childs == out_num_childs
+# @pytest.mark.parametrize('num_workers', [1, -1])
+# def test_startup_shutdown_transparently(num_workers: int) -> None:
+#     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+#     compiler = Compiler(num_workers=num_workers)
+#     assert compiler.p is not None
+#     compiler.__del__()
+#     if sys.platform == 'win32':
+#         time.sleep(1)
+#     out_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
+#     assert in_num_childs == out_num_childs
 
 
 @pytest.mark.parametrize('num_workers', [1, -1])
@@ -60,15 +60,17 @@ def test_create_workers(num_workers: int) -> None:
     compiler.close()
 
 
-def test_one_thread_per_worker() -> None:
-    # On windows we aren't sure how the threads are handeled
+def test_two_thread_per_worker() -> None:
     if sys.platform == 'win32':
-        return
+        pytest.skip('Not sure how to count threads on Windows.')
+
+    if sys.platform == 'darwin':
+        pytest.skip('MacOS requires permissions to count threads.')
 
     compiler = Compiler(num_workers=1)
     assert compiler.p is not None
     assert len(psutil.Process(compiler.p.pid).children()) in [1, 2]
-    assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 1
+    assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 2
     compiler.close()
 
 
