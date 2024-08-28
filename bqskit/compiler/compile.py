@@ -16,7 +16,7 @@ from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
-from bqskit.compiler.registry import _workflow_registry
+from bqskit.compiler.registry import _compile_registry
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
@@ -673,15 +673,9 @@ def build_workflow(
 
     # Use a registered workflow if model is found in the registry for a given
     # optimization_level
-    for machine_or_gateset in _workflow_registry:
-        if isinstance(machine_or_gateset, GateSet):
-            gate_set = machine_or_gateset
-        else:
-            gate_set = machine_or_gateset.gate_set
-        gs_match = gate_set == model.gate_set
-        ol_found = optimization_level in _workflow_registry[machine_or_gateset]
-        if gs_match and ol_found:
-            return _workflow_registry[machine_or_gateset][optimization_level]
+    if model in _compile_registry:
+        if optimization_level in _compile_registry[model]:
+            return _compile_registry[model][optimization_level]
 
     if isinstance(input, Circuit):
         if input.num_qudits > max_synthesis_size:
