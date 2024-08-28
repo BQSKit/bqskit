@@ -9,7 +9,7 @@ from numpy import allclose
 
 from bqskit.compiler import compile
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.registry import _workflow_registry
+from bqskit.compiler.registry import _compile_registry
 from bqskit.compiler.registry import register_workflow
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
@@ -73,45 +73,29 @@ class TestRegisterWorkflow:
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
-        # global _workflow_registry
-        _workflow_registry.clear()
+        # global _compile_registry
+        _compile_registry.clear()
 
     def test_register_workflow(self) -> None:
-        global _workflow_registry
-        assert _workflow_registry == {}
+        global _compile_registry
+        assert _compile_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
         machine = MachineModel(num_qudits, gate_set=gateset)
         workflow = [QuickPartitioner(), ScanningGateRemovalPass()]
         register_workflow(machine, workflow, 1)
-        assert machine in _workflow_registry
-        assert 1 in _workflow_registry[machine]
-        assert workflow_match(_workflow_registry[machine][1], workflow)
+        assert machine in _compile_registry
+        assert 1 in _compile_registry[machine]
+        assert workflow_match(_compile_registry[machine][1], workflow)
 
     def test_custom_compile_machine(self) -> None:
-        global _workflow_registry
-        assert _workflow_registry == {}
+        global _compile_registry
+        assert _compile_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
         machine = MachineModel(num_qudits, gate_set=gateset)
         workflow = [QuickPartitioner(2)]
         register_workflow(machine, workflow, 1)
-        circuit = simple_circuit(num_qudits, gateset)
-        result = compile(circuit, machine)
-        assert unitary_match(result, circuit)
-        assert result.num_operations > 0
-        assert result.gate_counts != circuit.gate_counts
-        result.unfold_all()
-        assert result.gate_counts == circuit.gate_counts
-
-    def test_custom_compile_gateset(self) -> None:
-        global _workflow_registry
-        assert _workflow_registry == {}
-        gateset = [CZGate(), HGate(), RZGate()]
-        num_qudits = 3
-        machine = MachineModel(num_qudits, gate_set=gateset)
-        workflow = [QuickPartitioner(2)]
-        register_workflow(gateset, workflow, 1)
         circuit = simple_circuit(num_qudits, gateset)
         result = compile(circuit, machine)
         assert unitary_match(result, circuit)
@@ -121,13 +105,13 @@ class TestRegisterWorkflow:
         assert result.gate_counts == circuit.gate_counts
 
     def test_custom_opt_level(self) -> None:
-        global _workflow_registry
-        assert _workflow_registry == {}
+        global _compile_registry
+        assert _compile_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
         machine = MachineModel(num_qudits, gate_set=gateset)
         workflow = [QSearchSynthesisPass()]
-        register_workflow(gateset, workflow, 2)
+        register_workflow(machine, workflow, 2)
         circuit = simple_circuit(num_qudits, gateset)
         result = compile(circuit, machine, optimization_level=2)
         assert unitary_match(result, circuit)
