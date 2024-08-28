@@ -159,6 +159,12 @@ class DiscreteLayerGenerator(LayerGenerator):
         singles = [gate for gate in self.gateset if gate.num_qudits == 1]
         multis = [gate for gate in self.gateset if gate.num_qudits > 1]
 
+        def add_to_successors(circuit: Circuit) -> None:
+            h = self.hash_circuit_structure(circuit)
+            if h not in hashes:
+                successors.append(circuit)
+                hashes.add(h)
+
         for gate in singles:
             for qudit in range(circuit.num_qudits):
                 if self.cancels_something(circuit, gate, (qudit,)):
@@ -169,19 +175,13 @@ class DiscreteLayerGenerator(LayerGenerator):
                 successor = circuit.copy()
                 successor.append_gate(gate, [qudit])
 
-                h = hash_circuit_structure(successor)
-                if h not in hashes:
-                    successors.append(successor)
-                    hashes.add(h)
+                add_to_successors(successor)
 
                 if self.double_headed:
                     successor = circuit.copy()
                     op = Operation(gate, [qudit])
                     successor.insert(0, op)
-                    h = hash_circuit_structure(successor)
-                    if h not in hashes:
-                        successors.append(successor)
-                        hashes.add(h)
+                    add_to_successors(successor)
 
         for gate in multis:
             for edge in coupling_graph:
@@ -189,25 +189,18 @@ class DiscreteLayerGenerator(LayerGenerator):
                     continue
                 successor = circuit.copy()
                 successor.append_gate(gate, edge)
-                h = hash_circuit_structure(successor)
-                if h not in hashes:
-                    successors.append(successor)
-                    hashes.add(h)
+                add_to_successors(successor)
 
                 if self.double_headed:
                     successor = circuit.copy()
                     op = Operation(gate, edge)
                     successor.insert(0, op)
-                    h = hash_circuit_structure(successor)
-                    if h not in hashes:
-                        successors.append(successor)
-                        hashes.add(h)
+                    add_to_successors(successor)
 
         return successors
 
-
-def hash_circuit_structure(circuit: Circuit) -> int:
-    hashes = []
-    for op in circuit:
-        hashes.append(hash(op))
-    return hash(tuple(hashes))
+    def hash_circuit_structure(self, circuit: Circuit) -> int:
+        hashes = []
+        for op in circuit:
+            hashes.append(hash(op))
+        return hash(tuple(hashes))
