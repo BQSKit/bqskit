@@ -73,7 +73,7 @@ class TestRegisterWorkflow:
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
-        global _workflow_registry
+        # global _workflow_registry
         _workflow_registry.clear()
 
     def test_register_workflow(self) -> None:
