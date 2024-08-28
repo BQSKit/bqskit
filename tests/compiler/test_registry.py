@@ -7,7 +7,7 @@ from random import choice
 import pytest
 from numpy import allclose
 
-from bqskit.compiler import compile
+from bqskit.compiler.compile import compile
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.registry import _compile_registry
 from bqskit.compiler.registry import register_workflow
