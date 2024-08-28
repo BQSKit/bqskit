@@ -19,14 +19,14 @@ def register_workflow(
     """
     Register a workflow for a given MachineModel.
 
-    The _compile_registry enables MachineModel specific workflows to be 
+    The _compile_registry enables MachineModel specific workflows to be
     registered for use in the `bqskit.compile` method. _compile_registry maps
     MachineModels a dictionary of Workflows which are indexed by optimization
-    level. This object should not be accessed directly by the user, but 
+    level. This object should not be accessed directly by the user, but
     instead through the `register_workflow` function.
 
     Args:
-        key (MachineModel): A MachineModel to register the workflow under. 
+        key (MachineModel): A MachineModel to register the workflow under.
             If a circuit is compiled targeting this machine or gate set, the
             registered workflow will be used.
 
