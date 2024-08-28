@@ -7,7 +7,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import HGate
 from bqskit.ir.gates import TGate
-from bqskit.passes.search.generators import DiscreteLayerGenerator
+from bqskit.passes.search.generators.discrete import DiscreteLayerGenerator
 
 
 class TestDiscreteLayerGenerator:
