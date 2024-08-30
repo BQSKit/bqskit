@@ -231,5 +231,9 @@ class GateSet(SuperType):
         """Detailed representation of the GateSet."""
         return self._gates.__repr__().replace('frozenset', 'GateSet')
 
+    def __hash__(self) -> int:
+        """Hash of the GateSet."""
+        return hash(tuple(sorted([g.name for g in self._gates])))
+
 
 GateSetLike = Union[GateSet, Iterable[Gate], Gate]
