@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from math import sqrt
+from math import pi
 
 from numpy import array
 from numpy import complex128
 from numpy import exp
-from numpy import pi
 from numpy import zeros
 
 from bqskit.ir.gates.constantgate import ConstantGate
