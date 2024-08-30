@@ -1,8 +1,8 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-from math import sqrt
 from math import pi
+from math import sqrt
 
 from numpy import array
 from numpy import complex128
