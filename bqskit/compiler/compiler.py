@@ -4,6 +4,7 @@ from __future__ import annotations
 import atexit
 import functools
 import logging
+import pickle
 import signal
 import subprocess
 import sys
@@ -439,9 +440,16 @@ class Compiler:
             msg, payload = self.conn.recv()
 
             if msg == RuntimeMessage.LOG:
-                logger = logging.getLogger(payload.name)
-                if logger.isEnabledFor(payload.levelno):
-                    logger.handle(payload)
+                record = pickle.loads(payload)
+                if isinstance(record, logging.LogRecord):
+                    logger = logging.getLogger(record.name)
+                    if logger.isEnabledFor(record.levelno):
+                        logger.handle(record)
+                else:
+                    name, levelno, msg = record
+                    logger = logging.getLogger(name)
+                    logger.log(levelno, msg)
+
 
             elif msg == RuntimeMessage.ERROR:
                 raise RuntimeError(payload)

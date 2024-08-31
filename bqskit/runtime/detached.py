@@ -409,7 +409,7 @@ class DetachedServer(ServerBase):
         # still cancel here incase the client catches the error and
         # resubmits a job.
 
-    def handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
+    def handle_log(self, log_payload: tuple[int, bytes]) -> None:
         """Forward logs to appropriate client."""
         tid = log_payload[0]
         if tid not in self.mailbox_to_task_dict:
