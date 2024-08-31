@@ -313,7 +313,15 @@ class Compiler:
         return task.task_id
 
     def status(self, task_id: uuid.UUID) -> CompilationStatus:
-        """Retrieve the status of the specified task."""
+        """
+        Retrieve the status of the specified task.
+
+        Args:
+            task_id (uuid.UUID): The ID of the task to check.
+
+        Returns:
+            CompilationStatus: The status of the task.
+        """
         msg, payload = self._send_recv(RuntimeMessage.STATUS, task_id)
         if msg != RuntimeMessage.STATUS:
             raise RuntimeError(f'Unexpected message type: {msg}.')
