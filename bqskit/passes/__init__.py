@@ -138,6 +138,10 @@ are involved the qubit mapping process.
 
 These passes either perform upper-bound error analysis of the PAM process.
 
+.. autosummary::
+    :toctree: autogen
+    :recursive:
+
     TagPAMBlockDataPass
     CalculatePAMErrorsPass
     UnTagPAMBlockDataPass
