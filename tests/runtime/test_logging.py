@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import pickle
 from io import StringIO
+from typing import Any
 
 import pytest
 
@@ -143,9 +144,11 @@ def test_using_external_logging(server_compiler: Compiler) -> None:
     logger.removeHandler(handler)
     logger.setLevel(logging.WARNING)
 
+
 class ExternalWithArgsPass(BasePass):
-    async def run(self, circuit, pass_data):
-        logging.getLogger("dummy2").debug('int %d', 1)
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        logging.getLogger('dummy2').debug('int %d', 1)
+
 
 def test_external_logging_with_args(server_compiler: Compiler) -> None:
     logger = logging.getLogger('dummy2')
@@ -161,22 +164,23 @@ def test_external_logging_with_args(server_compiler: Compiler) -> None:
 
 
 class NonSerializable:
-    def __reduce__(self):
-        raise pickle.PicklingError("This class is not serializable")
-    def __str__(self):
-        return "NonSerializable"
+    def __reduce__(self) -> str | tuple[Any, ...]:
+        raise pickle.PicklingError('This class is not serializable')
+
+    def __str__(self) -> str:
+        return 'NonSerializable'
 
 
 class ExternalWithNonSerializableArgsPass(BasePass):
-    async def run(self, circuit, pass_data):
-        logging.getLogger("dummy2").debug(
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        logging.getLogger('dummy2').debug(
             'NonSerializable %s',
-            NonSerializable()
+            NonSerializable(),
         )
 
 
 def test_external_logging_with_nonserializable_args(
-    server_compiler: Compiler
+    server_compiler: Compiler,
 ) -> None:
     logger = logging.getLogger('dummy2')
     logger.setLevel(logging.DEBUG)

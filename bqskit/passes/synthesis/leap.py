@@ -223,7 +223,7 @@ class LEAPSynthesisPass(SynthesisPass):
 
                 if dist < self.success_threshold:
                     _logger.debug(
-                        f'Successful synthesis with {layer + 1} layers.'
+                        f'Successful synthesis with {layer + 1} layers.',
                     )
                     if self.store_partial_solutions:
                         data['psols'] = psols

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-import pickle
 import os
+import pickle
 import signal
 import sys
 import time

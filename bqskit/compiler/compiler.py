@@ -450,7 +450,6 @@ class Compiler:
                     logger = logging.getLogger(name)
                     logger.log(levelno, msg)
 
-
             elif msg == RuntimeMessage.ERROR:
                 raise RuntimeError(payload)
 

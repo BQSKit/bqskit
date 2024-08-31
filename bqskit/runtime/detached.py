@@ -8,7 +8,6 @@ import socket
 import time
 import uuid
 from dataclasses import dataclass
-from logging import LogRecord
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
 from threading import Thread
@@ -263,7 +262,7 @@ class DetachedServer(ServerBase):
         tasks_to_pop = []
         for (task, (tid, other_conn)) in self.tasks.items():
             if other_conn == conn:
-               tasks_to_pop.append((task_id, tid))
+                tasks_to_pop.append((task_id, tid))
 
         for task_id, tid in tasks_to_pop:
             self.tasks.pop(task_id)
