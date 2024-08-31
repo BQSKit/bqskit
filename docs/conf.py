@@ -75,8 +75,8 @@ autodoc_type_aliases = {
 #     'IntervalLike': 'bqskit.ir.IntervalLike',
 # }
 # napoleon_type_aliases = autodoc_type_aliases
-autodoc_typehints = 'description'
-autodoc_typehints_description_target = 'documented'
+autodoc_typehints = 'both'
+autodoc_typehints_description_target = 'all'
 autoclass_content = 'class'
 nbsphinx_output_prompt = 'Out[%s]:'
 
