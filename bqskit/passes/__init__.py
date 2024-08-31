@@ -28,7 +28,7 @@ synthesis pass to convert the circuit to native gates.
     :toctree: autogen
     :recursive:
 
-    DiagonalSynthesisPass
+    WalshDiagonalSynthesisPass
     LEAPSynthesisPass
     QSearchSynthesisPass
     QFASTDecompositionPass
@@ -289,6 +289,7 @@ from bqskit.passes.search.heuristic import HeuristicFunction
 from bqskit.passes.search.heuristics.astar import AStarHeuristic
 from bqskit.passes.search.heuristics.dijkstra import DijkstraHeuristic
 from bqskit.passes.search.heuristics.greedy import GreedyHeuristic
+from bqskit.passes.synthesis.diagonal import WalshDiagonalSynthesisPass
 from bqskit.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.passes.synthesis.pas import PermutationAwareSynthesisPass
 from bqskit.passes.synthesis.qfast import QFASTDecompositionPass
@@ -326,7 +327,7 @@ __all__ = [
     'ScanPartitioner',
     'QuickPartitioner',
     'SynthesisPass',
-    'DiagonalSynthesisPass',
+    'WalshDiagonalSynthesisPass',
     'LEAPSynthesisPass',
     'QSearchSynthesisPass',
     'QFASTDecompositionPass',
