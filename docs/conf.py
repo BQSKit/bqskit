@@ -38,6 +38,7 @@ extensions = [
     'myst_parser',
     'jupyter_sphinx',
     'nbsphinx',
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -75,8 +76,8 @@ autodoc_type_aliases = {
 #     'IntervalLike': 'bqskit.ir.IntervalLike',
 # }
 # napoleon_type_aliases = autodoc_type_aliases
-autodoc_typehints = 'both'
-autodoc_typehints_description_target = 'all'
+autodoc_typehints = 'description'
+autodoc_typehints_description_target = 'documented'
 autoclass_content = 'class'
 nbsphinx_output_prompt = 'Out[%s]:'
 
