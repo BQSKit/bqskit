@@ -168,6 +168,8 @@ class DiscreteLayerGenerator(LayerGenerator):
 
         for gate in singles:
             for qudit in range(circuit.num_qudits):
+                if gate.radixes[0] != circuit.radixes[qudit]:
+                    continue
                 if self.cancels_something(circuit, gate, (qudit,)):
                     continue
                 if isinstance(gate, TGate):
@@ -187,6 +189,9 @@ class DiscreteLayerGenerator(LayerGenerator):
         for gate in multis:
             for edge in coupling_graph:
                 if self.cancels_something(circuit, gate, edge):
+                    continue
+                qudit_radixes = [circuit.radixes[q] for q in edge]
+                if gate.radixes != qudit_radixes:
                     continue
                 successor = circuit.copy()
                 successor.append_gate(gate, edge)
