@@ -522,3 +522,16 @@ def test_gate_set_repr() -> None:
         repr(gate_set) == 'GateSet({CNOTGate, U3Gate})'
         or repr(gate_set) == 'GateSet({U3Gate, CNOTGate})'
     )
+
+
+def test_gate_set_hash() -> None:
+    gate_set_1 = GateSet({CNOTGate(), U3Gate()})
+    gate_set_2 = GateSet({U3Gate(), CNOTGate()})
+    gate_set_3 = GateSet({U3Gate(), CNOTGate(), RZGate()})
+
+    h1 = hash(gate_set_1)
+    h2 = hash(gate_set_2)
+    h3 = hash(gate_set_3)
+
+    assert h1 == h2
+    assert h1 != h3

@@ -90,6 +90,12 @@ class Workflow(BasePass, Sequence[BasePass]):
         """The name of the pass."""
         return self._name or self.__class__.__name__
 
+    @staticmethod
+    def is_workflow(workflow: WorkflowLike) -> bool:
+        if not is_iterable(workflow):
+            return isinstance(workflow, BasePass)
+        return all(isinstance(p, BasePass) for p in workflow)
+
     def __str__(self) -> str:
         name_seq = f'Workflow: {self.name}\n\t'
         pass_strs = [
