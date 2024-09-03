@@ -46,7 +46,7 @@ class DiscreteLayerGenerator(LayerGenerator):
                 both appending and prepending gates. (Default: False)
 
         Raises:
-            TypeError: If the gateset is not a sequence.
+            ValueError: If the gateset is not a sequence.
 
             TypeError: If the gateset contains a parameterized gate.
 
@@ -54,7 +54,7 @@ class DiscreteLayerGenerator(LayerGenerator):
         """
         if not is_sequence(gateset):
             m = f'Expected sequence of gates, got {type(gateset)}.'
-            raise TypeError(m)
+            raise ValueError(m)
 
         radix = gateset[0].radixes[0]
         for gate in gateset:
