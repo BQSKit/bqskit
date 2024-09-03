@@ -50,7 +50,7 @@ class DiscreteLayerGenerator(LayerGenerator):
 
             TypeError: If the gateset contains a parameterized gate.
 
-            TypeError: If the radices of gates are different.
+            ValueError: If the radices of gates are different.
         """
         if not is_sequence(gateset):
             m = f'Expected sequence of gates, got {type(gateset)}.'
@@ -66,7 +66,7 @@ class DiscreteLayerGenerator(LayerGenerator):
                 if rad != radix:
                     m = f'Radix mismatch on gate: {gate}. '
                     m += f'Expected {radix}, got {rad}.'
-                    raise TypeError(m)
+                    raise ValueError(m)
         self.gateset = gateset
         self.double_headed = double_headed
 
