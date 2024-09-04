@@ -625,8 +625,11 @@ def compile(
         if isinstance(typed_input, Circuit):
             in_circuit = typed_input
 
+        elif isinstance(typed_input, UnitaryMatrix):
+            in_circuit = Circuit.from_unitary(typed_input)
+
         else:
-            in_circuit = Circuit(1)
+            in_circuit = Circuit(typed_input.num_qudits, typed_input.radixes)
 
         # Perform the compilation
         out, data = compiler.compile(in_circuit, workflow, True)
