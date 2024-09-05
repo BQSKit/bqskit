@@ -14,11 +14,37 @@ _compile_stateprep_registry: dict[MachineModel, dict[int, Workflow]] = {}
 _compile_statemap_registry: dict[MachineModel, dict[int, Workflow]] = {}
 
 
+def model_registered_target_types(key: MachineModel) -> list[str]:
+    """
+    Return a list of target_types for which key is registered.
+
+    Args:
+        key (MachineModel): A MachineModel to check for.
+
+    Returns:
+        (list[str]): If `key` has been registered in any of the registry, the
+            name of that target type will be contained in this list.
+    """
+    global _compile_circuit_registry
+    global _compile_unitary_registry
+    global _compile_stateprep_registry
+    global _compile_statemap_registry
+    registered_types = []
+    if key in _compile_circuit_registry:
+        registered_types.append('circuit')
+    if key in _compile_unitary_registry:
+        registered_types.append('unitary')
+    if key in _compile_stateprep_registry:
+        registered_types.append('stateprep')
+    if key in _compile_statemap_registry:
+        registered_types.append('statemap')
+    return registered_types
+
 def register_workflow(
     key: MachineModel,
     workflow: WorkflowLike,
     optimization_level: int,
-    target_type: str,
+    target_type: str = 'circuit',
 ) -> None:
     """
     Register a workflow for a given MachineModel.
@@ -38,17 +64,18 @@ def register_workflow(
             be executed if the MachineModel in a call to `compile` matches
             `key`. If `key` is already registered, a warning will be logged.
 
-        optimization_level (Optional[int]): The optimization level with which
-            to register the workflow. If no level is provided, the Workflow
-            will be registered as level 1.
+        optimization_level (int): The optimization level with which to 
+            register the workflow. If no level is provided, the Workflow will
+            be registered as level 1.
 
         target_type (str): Register a workflow for targets of this type. Must
             be 'circuit', 'unitary', 'stateprep', or 'statemap'.
+            (Default: 'circuit')
 
     Example:
         model_t = SpecificMachineModel(num_qudits, radixes)
         workflow = [QuickPartitioner(3), NewFangledOptimization()]
-        register_workflow(model_t, workflow, level)
+        register_workflow(model_t, workflow, level, 'circuit')
         ...
         new_circuit = compile(circuit, model_t, optimization_level=level)
 
