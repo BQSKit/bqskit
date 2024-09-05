@@ -40,6 +40,7 @@ def model_registered_target_types(key: MachineModel) -> list[str]:
         registered_types.append('statemap')
     return registered_types
 
+
 def register_workflow(
     key: MachineModel,
     workflow: WorkflowLike,
@@ -64,7 +65,7 @@ def register_workflow(
             be executed if the MachineModel in a call to `compile` matches
             `key`. If `key` is already registered, a warning will be logged.
 
-        optimization_level (int): The optimization level with which to 
+        optimization_level (int): The optimization level with which to
             register the workflow. If no level is provided, the Workflow will
             be registered as level 1.
 
