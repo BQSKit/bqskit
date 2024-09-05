@@ -18,6 +18,7 @@ from bqskit.compiler.registry import _compile_circuit_registry
 from bqskit.compiler.registry import _compile_statemap_registry
 from bqskit.compiler.registry import _compile_stateprep_registry
 from bqskit.compiler.registry import _compile_unitary_registry
+from bqskit.compiler.registry import model_registered_target_types
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
@@ -675,6 +676,8 @@ def build_workflow(
     if model is None:
         model = MachineModel(input.num_qudits, radixes=input.radixes)
 
+    model_registered_types = model_registered_target_types(model)
+
     if isinstance(input, Circuit):
         if input.num_qudits > max_synthesis_size:
             if any(
@@ -696,6 +699,11 @@ def build_workflow(
         if model in _compile_circuit_registry:
             if optimization_level in _compile_circuit_registry[model]:
                 return _compile_circuit_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _circuit_workflow(
             model,
@@ -718,6 +726,11 @@ def build_workflow(
         if model in _compile_unitary_registry:
             if optimization_level in _compile_unitary_registry[model]:
                 return _compile_unitary_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _synthesis_workflow(
             input,
@@ -741,6 +754,11 @@ def build_workflow(
         if model in _compile_stateprep_registry:
             if optimization_level in _compile_stateprep_registry[model]:
                 return _compile_stateprep_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _stateprep_workflow(
             input,
@@ -764,6 +782,11 @@ def build_workflow(
         if model in _compile_statemap_registry:
             if optimization_level in _compile_statemap_registry[model]:
                 return _compile_statemap_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _statemap_workflow(
             input,
