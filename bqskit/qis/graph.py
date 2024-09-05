@@ -11,10 +11,10 @@ from typing import Collection
 from typing import Iterable
 from typing import Iterator
 from typing import List
+from typing import Mapping
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
-from typing import Mapping
 
 import numpy as np
 
@@ -88,7 +88,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if num_qudits is not None and num_qudits < 0:
             raise ValueError(
                 'Expected nonnegative num_qudits,'
-                f' got {num_qudits}.'
+                f' got {num_qudits}.',
             )
 
         if not CouplingGraph.is_valid_coupling_graph(remote_edges):
@@ -150,7 +150,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         if num_qudits is not None and calc_num_qudits > num_qudits:
             raise ValueError(
-                'Edges between invalid qudits or num_qudits too small.'
+                'Edges between invalid qudits or num_qudits too small.',
             )
 
         if isinstance(graph, CouplingGraph):
@@ -192,6 +192,69 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         for (q1, q2), weight in edge_weights_overrides.items():
             self._mat[q1][q2] = weight
             self._mat[q2][q1] = weight
+
+    def is_distributed(self) -> bool:
+        """Return true if the graph represents multiple connected QPUs."""
+        return len(self._remote_edges) > 0
+
+    def qpu_count(self) -> int:
+        """Return the number of connected QPUs."""
+        return len(self.get_qpu_to_qudit_map())
+
+    def get_individual_qpu_graphs(self) -> list[CouplingGraph]:
+        """Return a list of individual QPU graphs."""
+        if not self.is_distributed():
+            return [self]
+
+        qpu_to_qudit = self.get_qpu_to_qudit_map()
+        return [self.get_subgraph(qpu) for qpu in qpu_to_qudit]
+
+    def get_qpu_to_qudit_map(self) -> list[list[int]]:
+        """Return a mapping of QPU indices to qudit indices."""
+        # TODO: Cache this?
+        seen = set()
+        qpus = []
+        for qudit in range(self.num_qudits):
+            if qudit in seen:
+                continue
+            qpu = []
+            frontier = {qudit}
+            while len(frontier) > 0:
+                node = frontier.pop()
+                qpu.append(node)
+                seen.add(node)
+                for neighbor in self._adj[node]:
+                    if (node, neighbor) in self._remote_edges:
+                        continue
+                    if (neighbor, node) in self._remote_edges:
+                        continue
+                    if neighbor not in seen:
+                        frontier.add(neighbor)
+            qpus.append(qpu)
+        # TODO: Assumes that the individual qpus are connected
+        # If seen is not everything, throw an error?
+        return qpus
+
+    def get_qudit_to_qpu_map(self) -> dict[int, int]:
+        """Return a mapping of qudit indices to QPU indices."""
+        qpu_to_qudit = self.get_qpu_to_qudit_map()
+        qudit_to_qpu = {}
+        for qpu, qudits in enumerate(qpu_to_qudit):
+            for qudit in qudits:
+                qudit_to_qpu[qudit] = qpu
+        return qudit_to_qpu
+
+    def get_qpu_connectivity(self) -> list[list[int]]:
+        """Return the adjacency list of the QPUs."""
+        qpu_to_qudit = self.get_qpu_to_qudit_map()
+        qudit_to_qpu = self.get_qudit_to_qpu_map()
+        qpu_adj = [set() for _ in range(len(qpu_to_qudit))]
+        for q1, q2 in self._remote_edges:
+            qpu1 = qudit_to_qpu[q1]
+            qpu2 = qudit_to_qpu[q2]
+            qpu_adj[qpu1].add(qpu2)
+            qpu_adj[qpu2].add(qpu1)
+        return qpu_adj
 
     def is_fully_connected(self) -> bool:
         """Return true if the graph is fully connected."""
