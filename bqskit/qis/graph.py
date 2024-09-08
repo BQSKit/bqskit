@@ -231,8 +231,13 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                     if neighbor not in seen:
                         frontier.add(neighbor)
             qpus.append(qpu)
-        # TODO: Assumes that the individual qpus are connected
-        # If seen is not everything, throw an error?
+
+        if len(seen) != self.num_qudits:
+            raise RuntimeError(
+                'Graph is not fully connected and pathological'
+                ' for distributed subroutines.'
+            )
+
         return qpus
 
     def get_qudit_to_qpu_map(self) -> dict[int, int]:
