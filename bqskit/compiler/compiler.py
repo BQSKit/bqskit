@@ -415,7 +415,12 @@ class Compiler:
         except Exception as e:
             self.conn = None
             self.close()
-            raise RuntimeError('Server connection unexpectedly closed.') from e
+            if isinstance(e, (EOFError, ConnectionResetError)):
+                raise RuntimeError('Server connection unexpectedly closed.')
+            else:
+                raise RuntimeError(
+                    'Server connection unexpectedly closed.',
+                ) from e
 
     def _send_recv(
         self,
