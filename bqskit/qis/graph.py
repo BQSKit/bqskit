@@ -6,11 +6,9 @@ import itertools as it
 import logging
 from random import shuffle
 from typing import Any
-from typing import cast
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
-from typing import List
 from typing import Mapping
 from typing import Tuple
 from typing import TYPE_CHECKING
@@ -24,7 +22,7 @@ if TYPE_CHECKING:
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_iterable, is_mapping
+from bqskit.utils.typing import is_iterable, is_mapping, is_real_number
 
 _logger = logging.getLogger(__name__)
 
@@ -37,9 +35,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         graph: CouplingGraphLike,
         num_qudits: int | None = None,
         remote_edges: Iterable[tuple[int, int]] = [],
-        default_weight: int = 1,
-        default_remote_weight: int = 100,
-        edge_weights_overrides: Mapping[tuple[int, int], int] = {},
+        default_weight: float = 1.0,
+        default_remote_weight: float = 100.0,
+        edge_weights_overrides: Mapping[tuple[int, int], float] = {},
     ) -> None:
         """
         Construct a new CouplingGraph.
@@ -56,13 +54,13 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 connect them. Notes, remote edges must specified both in
                 `graph` and here. (Default: [])
 
-            default_weight (int): The default weight of an edge in the
-                graph. (Default: 1)
+            default_weight (float): The default weight of an edge in the
+                graph. (Default: 1.0)
 
-            default_remote_weight (int): The default weight of a remote
-                edge in the graph. (Default: 100)
+            default_remote_weight (float): The default weight of a remote
+                edge in the graph. (Default: 100.0)
 
-            edge_weights_overrides (Mapping[tuple[int, int], int]): A mapping
+            edge_weights_overrides (Mapping[tuple[int, int], float]): A mapping
                 of edges to their weights. These override the defaults on
                 a case-by-case basis. (Default: {})
 
@@ -101,13 +99,13 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 ' All remote links must also be specified in the graph input.',
             )
 
-        if not isinstance(default_weight, int):
+        if not is_real_number(default_weight):
             raise TypeError(
                 'Expected integer for default_weight,'
                 f' got {type(default_weight)}',
             )
 
-        if not isinstance(default_remote_weight, int):
+        if not is_real_number(default_remote_weight):
             raise TypeError(
                 'Expected integer for default_remote_weight,'
                 f' got {type(default_remote_weight)}',
@@ -120,12 +118,12 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             )
 
         if any(
-            not isinstance(v, int)
+            not is_real_number(v)
             for v in edge_weights_overrides.values()
         ):
             invalids = [
                 v for v in edge_weights_overrides.values()
-                if not isinstance(v, int)
+                if not is_real_number(v)
             ]
             raise TypeError(
                 'Expected integer values for edge_weights_overrides,'
@@ -158,9 +156,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             self._edges: set[tuple[int, int]] = graph._edges
             self._remote_edges: set[tuple[int, int]] = graph._remote_edges
             self._adj: list[set[int]] = graph._adj
-            self._mat: list[list[int]] = graph._mat
-            self.default_weight: int = graph.default_weight
-            self.default_remote_weight: int = graph.default_remote_weight
+            self._mat: list[list[float]] = graph._mat
+            self.default_weight: float = graph.default_weight
+            self.default_remote_weight: float = graph.default_remote_weight
             return
 
         self.num_qudits = calc_num_qudits if num_qudits is None else num_qudits
@@ -185,7 +183,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             self._mat[q1][q2] = default_weight
             self._mat[q2][q1] = default_weight
 
-        for q1, q2 in self._remote_links:
+        for q1, q2 in self._remote_edges:
             self._mat[q1][q2] = default_remote_weight
             self._mat[q2][q1] = default_remote_weight
 
@@ -235,7 +233,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if len(seen) != self.num_qudits:
             raise RuntimeError(
                 'Graph is not fully connected and pathological'
-                ' for distributed subroutines.'
+                ' for distributed subroutines.',
             )
 
         return qpus
@@ -249,11 +247,11 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 qudit_to_qpu[qudit] = qpu
         return qudit_to_qpu
 
-    def get_qpu_connectivity(self) -> list[list[int]]:
+    def get_qpu_connectivity(self) -> list[set[int]]:
         """Return the adjacency list of the QPUs."""
         qpu_to_qudit = self.get_qpu_to_qudit_map()
         qudit_to_qpu = self.get_qudit_to_qpu_map()
-        qpu_adj = [set() for _ in range(len(qpu_to_qudit))]
+        qpu_adj: list[set[int]] = [set() for _ in range(len(qpu_to_qudit))]
         for q1, q2 in self._remote_edges:
             qpu1 = qudit_to_qpu[q1]
             qpu2 = qudit_to_qpu[q2]
@@ -339,12 +337,12 @@ class CouplingGraph(Collection[Tuple[int, int]]):
     def get_qudit_degrees(self) -> list[int]:
         return [len(l) for l in self._adj]
 
-    def all_pairs_shortest_path(self) -> list[list[int]]:
+    def all_pairs_shortest_path(self) -> list[list[float]]:
         """
         Calculate all pairs shortest path matrix using Floyd-Warshall.
 
         Returns:
-            D (list[list[int]]): D[i][j] is the length of the shortest
+            D (list[list[float]]): D[i][j] is the length of the shortest
                 path from i to j.
         """
         D = copy.deepcopy(self._mat)
@@ -352,7 +350,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             for i in range(self.num_qudits):
                 for j in range(self.num_qudits):
                     D[i][j] = min(D[i][j], D[i][k] + D[k][j])
-        return cast(List[List[int]], D)
+        return D
 
     def get_shortest_path_tree(self, source: int) -> list[tuple[int, ...]]:
         """Return shortest path from `source` to every node in `self`."""
