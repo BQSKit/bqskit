@@ -4,6 +4,7 @@ from __future__ import annotations
 import atexit
 import functools
 import logging
+import pickle
 import signal
 import subprocess
 import sys
@@ -312,7 +313,15 @@ class Compiler:
         return task.task_id
 
     def status(self, task_id: uuid.UUID) -> CompilationStatus:
-        """Retrieve the status of the specified task."""
+        """
+        Retrieve the status of the specified task.
+
+        Args:
+            task_id (uuid.UUID): The ID of the task to check.
+
+        Returns:
+            CompilationStatus: The status of the task.
+        """
         msg, payload = self._send_recv(RuntimeMessage.STATUS, task_id)
         if msg != RuntimeMessage.STATUS:
             raise RuntimeError(f'Unexpected message type: {msg}.')
@@ -439,9 +448,15 @@ class Compiler:
             msg, payload = self.conn.recv()
 
             if msg == RuntimeMessage.LOG:
-                logger = logging.getLogger(payload.name)
-                if logger.isEnabledFor(payload.levelno):
-                    logger.handle(payload)
+                record = pickle.loads(payload)
+                if isinstance(record, logging.LogRecord):
+                    logger = logging.getLogger(record.name)
+                    if logger.isEnabledFor(record.levelno):
+                        logger.handle(record)
+                else:
+                    name, levelno, msg = record
+                    logger = logging.getLogger(name)
+                    logger.log(levelno, msg)
 
             elif msg == RuntimeMessage.ERROR:
                 raise RuntimeError(payload)

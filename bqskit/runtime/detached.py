@@ -8,7 +8,6 @@ import socket
 import time
 import uuid
 from dataclasses import dataclass
-from logging import LogRecord
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
 from threading import Thread
@@ -256,8 +255,19 @@ class DetachedServer(ServerBase):
         """Disconnect a client connection from the runtime."""
         super().handle_disconnect(conn)
         tasks = self.clients.pop(conn)
+
         for task_id in tasks:
             self.handle_cancel_comp_task(task_id)
+
+        tasks_to_pop = []
+        for (task, (tid, other_conn)) in self.tasks.items():
+            if other_conn == conn:
+                tasks_to_pop.append((task_id, tid))
+
+        for task_id, tid in tasks_to_pop:
+            self.tasks.pop(task_id)
+            self.mailbox_to_task_dict.pop(tid)
+
         _logger.info('Unregistered client.')
 
     def handle_new_comp_task(
@@ -386,6 +396,9 @@ class DetachedServer(ServerBase):
             raise RuntimeError(error_payload)
 
         tid = error_payload[0]
+        if tid not in self.mailbox_to_task_dict:
+            return  # Silently discard errors from cancelled tasks
+
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.ERROR, error_payload[1]))
         # TODO: Broadcast cancel to all tasks with compilation task id tid
@@ -395,9 +408,12 @@ class DetachedServer(ServerBase):
         # still cancel here incase the client catches the error and
         # resubmits a job.
 
-    def handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
+    def handle_log(self, log_payload: tuple[int, bytes]) -> None:
         """Forward logs to appropriate client."""
         tid = log_payload[0]
+        if tid not in self.mailbox_to_task_dict:
+            return  # Silently discard logs from cancelled tasks
+
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.LOG, log_payload[1]))
 

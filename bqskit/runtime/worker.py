@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import pickle
 import signal
 import sys
 import time
@@ -225,7 +226,15 @@ class Worker:
                             record.msg += con_str
                             record.msg += ']'
                         tid = active_task.comp_task_id
-                        self._conn.send((RuntimeMessage.LOG, (tid, record)))
+                        try:
+                            serial = pickle.dumps(record)
+                        except (pickle.PicklingError, TypeError):
+                            serial = pickle.dumps((
+                                record.name,
+                                record.levelno,
+                                record.getMessage(),
+                            ))
+                        self._conn.send((RuntimeMessage.LOG, (tid, serial)))
             return record
 
         logging.setLogRecordFactory(record_factory)

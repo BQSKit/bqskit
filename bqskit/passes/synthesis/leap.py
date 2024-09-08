@@ -196,7 +196,7 @@ class LEAPSynthesisPass(SynthesisPass):
 
         # Evalute initial layer
         if best_dist < self.success_threshold:
-            _logger.debug('Successful synthesis.')
+            _logger.debug('Successful synthesis with 0 layers.')
             return initial_layer
 
         # Main loop
@@ -222,7 +222,9 @@ class LEAPSynthesisPass(SynthesisPass):
                 dist = self.cost.calc_cost(circuit, utry)
 
                 if dist < self.success_threshold:
-                    _logger.debug('Successful synthesis.')
+                    _logger.debug(
+                        f'Successful synthesis with {layer + 1} layers.',
+                    )
                     if self.store_partial_solutions:
                         data['psols'] = psols
                     return circuit
