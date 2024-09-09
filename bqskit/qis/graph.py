@@ -141,16 +141,6 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 'specified in the graph input.',
             )
 
-        calc_num_qudits = 0
-        for q1, q2 in self._edges:
-            calc_num_qudits = max(calc_num_qudits, max(q1, q2))
-        calc_num_qudits += 1
-
-        if num_qudits is not None and calc_num_qudits > num_qudits:
-            raise ValueError(
-                'Edges between invalid qudits or num_qudits too small.',
-            )
-
         if isinstance(graph, CouplingGraph):
             self.num_qudits: int = graph.num_qudits
             self._edges: set[tuple[int, int]] = graph._edges
@@ -160,6 +150,16 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             self.default_weight: float = graph.default_weight
             self.default_remote_weight: float = graph.default_remote_weight
             return
+
+        calc_num_qudits = 0
+        for q1, q2 in graph:
+            calc_num_qudits = max(calc_num_qudits, max(q1, q2))
+        calc_num_qudits += 1
+
+        if num_qudits is not None and calc_num_qudits > num_qudits:
+            raise ValueError(
+                'Edges between invalid qudits or num_qudits too small.',
+            )
 
         self.num_qudits = calc_num_qudits if num_qudits is None else num_qudits
         self._edges = {g if g[0] <= g[1] else (g[1], g[0]) for g in graph}
@@ -191,6 +191,30 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             self._mat[q1][q2] = weight
             self._mat[q2][q1] = weight
 
+    def get_qpu_to_qudit_map(self) -> list[list[int]]:
+        """Return a mapping of QPU indices to qudit indices."""
+        if not hasattr(self, '_qpu_to_qudit'):
+            seen = set()
+            self._qpu_to_qudit = []
+            for qudit in range(self.num_qudits):
+                if qudit in seen:
+                    continue
+                qpu = []
+                frontier = {qudit}
+                while len(frontier) > 0:
+                    node = frontier.pop()
+                    qpu.append(node)
+                    seen.add(node)
+                    for neighbor in self._adj[node]:
+                        if (node, neighbor) in self._remote_edges:
+                            continue
+                        if (neighbor, node) in self._remote_edges:
+                            continue
+                        if neighbor not in seen:
+                            frontier.add(neighbor)
+                self._qpu_to_qudit.append(qpu)
+        return self._qpu_to_qudit
+
     def is_distributed(self) -> bool:
         """Return true if the graph represents multiple connected QPUs."""
         return len(self._remote_edges) > 0
@@ -207,45 +231,14 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         qpu_to_qudit = self.get_qpu_to_qudit_map()
         return [self.get_subgraph(qpu) for qpu in qpu_to_qudit]
 
-    def get_qpu_to_qudit_map(self) -> list[list[int]]:
-        """Return a mapping of QPU indices to qudit indices."""
-        # TODO: Cache this?
-        seen = set()
-        qpus = []
-        for qudit in range(self.num_qudits):
-            if qudit in seen:
-                continue
-            qpu = []
-            frontier = {qudit}
-            while len(frontier) > 0:
-                node = frontier.pop()
-                qpu.append(node)
-                seen.add(node)
-                for neighbor in self._adj[node]:
-                    if (node, neighbor) in self._remote_edges:
-                        continue
-                    if (neighbor, node) in self._remote_edges:
-                        continue
-                    if neighbor not in seen:
-                        frontier.add(neighbor)
-            qpus.append(qpu)
-
-        if len(seen) != self.num_qudits:
-            raise RuntimeError(
-                'Graph is not fully connected and pathological'
-                ' for distributed subroutines.',
-            )
-
-        return qpus
-
-    def get_qudit_to_qpu_map(self) -> dict[int, int]:
+    def get_qudit_to_qpu_map(self) -> list[int]:
         """Return a mapping of qudit indices to QPU indices."""
         qpu_to_qudit = self.get_qpu_to_qudit_map()
         qudit_to_qpu = {}
         for qpu, qudits in enumerate(qpu_to_qudit):
             for qudit in qudits:
                 qudit_to_qpu[qudit] = qpu
-        return qudit_to_qpu
+        return list(qudit_to_qpu.values())
 
     def get_qpu_connectivity(self) -> list[set[int]]:
         """Return the adjacency list of the QPUs."""
