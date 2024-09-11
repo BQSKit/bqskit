@@ -66,8 +66,7 @@ def register_workflow(
             `key`. If `key` is already registered, a warning will be logged.
 
         optimization_level (int): The optimization level with which to
-            register the workflow. If no level is provided, the Workflow will
-            be registered as level 1.
+            register the workflow.
 
         target_type (str): Register a workflow for targets of this type. Must
             be 'circuit', 'unitary', 'stateprep', or 'statemap'.
