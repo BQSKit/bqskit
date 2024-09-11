@@ -137,6 +137,7 @@ class CircuitGate(Gate):
                     ', '.join([str(p) for p in params]),
                     ', q'.join([str(q) for q in op.location]),
                 ).replace('()', '')
+            param_index += op.num_params
         ret += '}\n'
         return ret
 

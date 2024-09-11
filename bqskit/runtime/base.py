@@ -410,7 +410,13 @@ class ServerBase:
             if outgoing[0].closed:
                 continue
 
-            outgoing[0].send((outgoing[1], outgoing[2]))
+            try:
+                outgoing[0].send((outgoing[1], outgoing[2]))
+            except (EOFError, ConnectionResetError):
+                self.handle_disconnect(outgoing[0])
+                _logger.warning('Connection reset while sending message.')
+                continue
+
             if _logger.isEnabledFor(logging.DEBUG):
                 to = self.get_to_string(outgoing[0])
                 _logger.debug(f'Sent message {outgoing[1].name} to {to}.')
