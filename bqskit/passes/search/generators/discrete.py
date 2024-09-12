@@ -60,6 +60,9 @@ class DiscreteLayerGenerator(LayerGenerator):
             ValueError: If the gateset contains a parameterized gate.
 
             ValueError: If the radices of gates are different.
+        
+        TODO:
+            Check universality of gateset.
         """
         if not is_sequence(gateset):
             m = f'Expected sequence of gates, got {type(gateset)}.'
