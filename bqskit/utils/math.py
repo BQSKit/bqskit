@@ -298,7 +298,7 @@ def diagonal_distance(unitary: npt.NDArray[np.complex128]) -> float:
     imately inverted by a diagonal unitary. A unitary is approximately
     inverted when the Hilbert-Schmidt distance to the identity is less
     than some threshold.
-    
+
     A proof of correctness can be found in the appendix of:
     https://arxiv.org/abs/2409.00433
 
