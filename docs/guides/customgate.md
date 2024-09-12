@@ -182,3 +182,7 @@ class MyGate(Gate, DifferentiableUnitary):
 ```
 
 The `get_grad` method should return a 3D array, where the first index is the parameter index. `get_grad(params)[i]` should return the gradient of the unitary with respect to the `i`-th parameter. The gradient should be a matrix of the same shape as the unitary matrix, where each element is the derivative of the unitary matrix element with respect to the parameter.
+
+## Working with QASM
+
+If you want to use your gate in QASM, you will need to define the `_qasm_name` attribute. This is the name of the gate in QASM. However, some gates require special qasm definitions to be included at the top of a qasm file. This can be achieved by defining the [`get_qasm_gate_def`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.get_qasm_gate_def.html#bqskit.ir.Gate.get_qasm_gate_def) method. This method returns a string, which will be included as-is at the top of every qasm file that uses the gate.
