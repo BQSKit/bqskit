@@ -1,4 +1,4 @@
-# Distributing BQSKit Across a Cluster
+# Distribute BQSKit Across a Cluster
 
 This guide describes how to launch a BQSKit Runtime Server in detached mode on
 one or more computers, connect to it, and perform compilations on the server.
