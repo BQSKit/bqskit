@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Callable
 from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
@@ -34,7 +35,7 @@ class DiscreteLayerGenerator(LayerGenerator):
         self,
         gateset: Sequence[Gate] = [HGate(), TGate(), CNOTGate()],
         double_headed: bool = False,
-        dividing_gate_type = PauliZGate,
+        dividing_gate_type: Callable[[int], Gate] = PauliZGate,
     ) -> None:
         """
         Construct a DiscreteLayerGenerator.
