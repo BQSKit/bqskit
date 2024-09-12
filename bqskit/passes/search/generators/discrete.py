@@ -26,7 +26,8 @@ class DiscreteLayerGenerator(LayerGenerator):
     """
     The DiscreteLayerGenerator class.
 
-    Expands circuits using only discrete gates.
+    Expands circuits using only discrete gates. This is a non-reinforcement
+    learning version of diagonalizing in https://arxiv.org/abs/2409.00433.
     """
 
     def __init__(
