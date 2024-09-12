@@ -18,8 +18,11 @@ you will need to install the `pytket` package.
 
     Aspen11Model
     AspenM2Model
+    ANKAA2Model
+    ANKAA9Q3Model
     H1_1Model
     H1_2Model
+    H2_1Model
     Sycamore23Model
     SycamoreModel
     model_from_backend
@@ -64,8 +67,11 @@ from bqskit.ext.qiskit.translate import bqskit_to_qiskit
 from bqskit.ext.qiskit.translate import qiskit_to_bqskit
 from bqskit.ext.quantinuum import H1_1Model
 from bqskit.ext.quantinuum import H1_2Model
+from bqskit.ext.quantinuum import H2_1Model
 from bqskit.ext.qutip.translate import bqskit_to_qutip
 from bqskit.ext.qutip.translate import qutip_to_bqskit
+from bqskit.ext.rigetti import ANKAA2Model
+from bqskit.ext.rigetti import ANKAA9Q3Model
 from bqskit.ext.rigetti import Aspen11Model
 from bqskit.ext.rigetti import AspenM2Model
 from bqskit.ext.supermarq import supermarq_critical_depth
@@ -95,6 +101,9 @@ __all__ = [
     'AspenM2Model',
     'H1_1Model',
     'H1_2Model',
+    'H2_1Model',
+    'ANKAA2Model',
+    'ANKAA9Q3Model',
     'Sycamore23Model',
     'SycamoreModel',
 ]

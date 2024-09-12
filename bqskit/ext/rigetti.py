@@ -3,12 +3,15 @@ from __future__ import annotations
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.gates.constant.cz import CZGate
+from bqskit.ir.gates.constant.iswap import ISwapGate
 from bqskit.ir.gates.constant.sx import SXGate
 from bqskit.ir.gates.constant.x import XGate
 from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.qis.graph import CouplingGraph
 
 rigetti_gate_set = {SXGate(), XGate(), RZGate(), CZGate()}
+
+ankaa_gate_set = {SXGate(), XGate(), RZGate(), CZGate(), ISwapGate()}
 
 _aspen_11_coupling_graph = CouplingGraph([
     # Ring 1
@@ -79,10 +82,20 @@ for l in _vertical_connections:
 _aspen_m2_coupling_graph = CouplingGraph(_links)
 """Retrieved August 31, 2022: https://qcs.rigetti.com/qpus."""
 
+_ankaa_9q_3_coupling_graph = CouplingGraph.grid(3, 3)
+"""Retrieved September 11, 2024: https://qcs.rigetti.com/qpus."""
+
+_ankaa_2_coupling_graph = CouplingGraph.grid(7, 12)
+"""Retrieved September 11, 2024: https://qcs.rigetti.com/qpus."""
+
 Aspen11Model = MachineModel(40, _aspen_11_coupling_graph, rigetti_gate_set)
 """A BQSKit MachineModel for Rigetti's Aspen-11 quantum processor."""
 
 AspenM2Model = MachineModel(80, _aspen_m2_coupling_graph, rigetti_gate_set)
 """A BQSKit MachineModel for Rigetti's Aspen-M-2 quantum processor."""
+
+ANKAA2Model = MachineModel(84, _ankaa_2_coupling_graph, ankaa_gate_set)
+
+ANKAA9Q3Model = MachineModel(9, _ankaa_9q_3_coupling_graph, ankaa_gate_set)
 
 __all__ = ['Aspen11Model', 'AspenM2Model']

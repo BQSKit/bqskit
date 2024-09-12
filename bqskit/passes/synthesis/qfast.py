@@ -164,7 +164,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
             if dist < self.success_threshold:
                 self.finalize(circuit, utry, instantiate_options)
-                _logger.info('Successful synthesis.')
+                _logger.info(f'Successful synthesis with {depth} layers.')
                 return circuit
 
             # Expand or restrict head

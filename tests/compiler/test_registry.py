@@ -9,7 +9,10 @@ from numpy import allclose
 
 from bqskit.compiler.compile import compile
 from bqskit.compiler.machine import MachineModel
-from bqskit.compiler.registry import _compile_registry
+from bqskit.compiler.registry import _compile_circuit_registry
+from bqskit.compiler.registry import _compile_statemap_registry
+from bqskit.compiler.registry import _compile_stateprep_registry
+from bqskit.compiler.registry import _compile_unitary_registry
 from bqskit.compiler.registry import register_workflow
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
@@ -74,28 +77,58 @@ class TestRegisterWorkflow:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # global _compile_registry
-        _compile_registry.clear()
+        _compile_circuit_registry.clear()
+        _compile_unitary_registry.clear()
+        _compile_statemap_registry.clear()
+        _compile_stateprep_registry.clear()
 
     def test_register_workflow(self) -> None:
-        global _compile_registry
-        assert _compile_registry == {}
+        global _compile_circuit_registry
+        global _compile_unitary_registry
+        global _compile_statemap_registry
+        global _compile_stateprep_registry
+        assert _compile_circuit_registry == {}
+        assert _compile_unitary_registry == {}
+        assert _compile_statemap_registry == {}
+        assert _compile_stateprep_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
         machine = MachineModel(num_qudits, gate_set=gateset)
-        workflow = [QuickPartitioner(), ScanningGateRemovalPass()]
-        register_workflow(machine, workflow, 1)
-        assert machine in _compile_registry
-        assert 1 in _compile_registry[machine]
-        assert workflow_match(_compile_registry[machine][1], workflow)
+        circuit_workflow = [QuickPartitioner(), ScanningGateRemovalPass()]
+        other_workflow = [QuickPartitioner(), QSearchSynthesisPass()]
+        register_workflow(machine, circuit_workflow, 1, 'circuit')
+        register_workflow(machine, other_workflow, 1, 'unitary')
+        register_workflow(machine, other_workflow, 1, 'statemap')
+        register_workflow(machine, other_workflow, 1, 'stateprep')
+        assert machine in _compile_circuit_registry
+        assert 1 in _compile_circuit_registry[machine]
+        assert workflow_match(
+            _compile_circuit_registry[machine][1], circuit_workflow,
+        )
+        assert machine in _compile_unitary_registry
+        assert 1 in _compile_unitary_registry[machine]
+        assert workflow_match(
+            _compile_unitary_registry[machine][1], other_workflow,
+        )
+        assert machine in _compile_statemap_registry
+        assert 1 in _compile_statemap_registry[machine]
+        assert workflow_match(
+            _compile_statemap_registry[machine][1], other_workflow,
+        )
+        assert machine in _compile_stateprep_registry
+        assert 1 in _compile_stateprep_registry[machine]
+        assert workflow_match(
+            _compile_stateprep_registry[machine][1], other_workflow,
+        )
 
     def test_custom_compile_machine(self) -> None:
-        global _compile_registry
-        assert _compile_registry == {}
+        global _compile_circuit_registry
+        assert _compile_circuit_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
         machine = MachineModel(num_qudits, gate_set=gateset)
         workflow = [QuickPartitioner(2)]
-        register_workflow(machine, workflow, 1)
+        register_workflow(machine, workflow, 1, 'circuit')
         circuit = simple_circuit(num_qudits, gateset)
         result = compile(circuit, machine)
         assert unitary_match(result, circuit)
@@ -105,13 +138,13 @@ class TestRegisterWorkflow:
         assert result.gate_counts == circuit.gate_counts
 
     def test_custom_opt_level(self) -> None:
-        global _compile_registry
-        assert _compile_registry == {}
+        global _compile_circuit_registry
+        assert _compile_circuit_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
         machine = MachineModel(num_qudits, gate_set=gateset)
         workflow = [QSearchSynthesisPass()]
-        register_workflow(machine, workflow, 2)
+        register_workflow(machine, workflow, 2, 'circuit')
         circuit = simple_circuit(num_qudits, gateset)
         result = compile(circuit, machine, optimization_level=2)
         assert unitary_match(result, circuit)
