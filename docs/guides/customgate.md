@@ -38,7 +38,7 @@ attributes are required:
 - [`_num_qudits`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.num_qudits.html#bqskit.ir.Gate.num_qudits): The number of qudits the gate acts on.
 - [`_num_params`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.num_params.html#bqskit.ir.Gate.num_params): The number of parameters the gate takes.
 - [`_radixes`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.radixes.html#bqskit.ir.Gate.radixes): The radixes of the qudits this gate acts on. This is a tuple of integers, where each integer is the radix of the corresponding qudit. For example, `(2, 2)` would be a 2-qubit gate, `(3, 3)` would be a 2-qutrit gate, and `(2, 3, 3)` would be a gate that acts on a qubit and two qutrits.
-- [`_name`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.name.html#bqskit.ir.Gate.name): The name of the gate. This used during print operations.
+- [`_name`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.name.html#bqskit.ir.Gate.name): The name of the gate. This is used during print operations.
 - [`_qasm_name`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.qasm_name.html#bqskit.ir.Gate.qasm_name): The name of the gate in QASM. (Qubit only gates, should use lowercase, optional)
 
 Additionally, you will need to override the abstract method [`get_unitary`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.qis.Unitary.get_unitary.html#bqskit.qis.Unitary.get_unitary). This method maps the parameters of the gate to a unitary matrix.
@@ -68,7 +68,7 @@ class MyGate(Gate):
         )
 ```
 
-Note that the `params` argument is a [`RealVector`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.qis.RealVector.html#bqskit.qis.RealVector) object, which is an alias for many types of float arrays. There is a helper method in the [`Gate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.html#bqskit.ir.Gate) class hierarchy called [`check_parameters`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.qis.Unitary.check_parameters.html#bqskit.qis.Unitary.check_parameters) that can be used to validate the parameters before using them. This will check for the correct types and lengths of the parameters:
+Note the `params` argument is a [`RealVector`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.qis.RealVector.html#bqskit.qis.RealVector) object, which is an alias for many types of float arrays. There is a helper method in the [`Gate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.html#bqskit.ir.Gate) class hierarchy called [`check_parameters`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.qis.Unitary.check_parameters.html#bqskit.qis.Unitary.check_parameters) that can be used to validate the parameters before using them. This will check for the correct types and lengths of the parameters:
 
 ```python
 ...
@@ -111,9 +111,9 @@ class MyGateTensor(Gate):
         #       the most efficient method for your gate.
 ```
 
-This style is helpful when the gate's attributes are dependent on the constructor arguments. The `get_unitary` method should be implemented in the same way as before.
+This style is helpful when the gate's attributes are dependent on the constructor arguments.
 
-The last way to define the attributes is through methods. The corresponding property names can be found on the [`Gate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.html#bqskit.ir.Gate) class. The following example computers the gate name of `MyGateTensor` through the `name` property:
+The last way to define the attributes is through methods. The corresponding property names can be found on the [`Gate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.html#bqskit.ir.Gate) class. The following example computes the gate name of `MyGateTensor` through the `name` property:
 
 ```python
 ...
@@ -128,13 +128,13 @@ class MyGateTensor(Gate):
 
 ## Utilizing Helper Classes
 
-BQSKit provides some helper classes to simplify the process of defining gates. In the first example of this guide, we used the `ConstantGate` and `QubitGate` helper classes. To use these helper subclasses, we will subclass them instead of `Gate`. The following are the current helper classes available:
+BQSKit provides some helper classes to simplify the process of defining gates. In the first example of this guide, we used the [`ConstantGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.ConstantGate.html#bqskit.ir.ConstantGate) and [`QubitGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.QubitGate.html#bqskit.ir.QubitGate) helper classes. To use these helper subclasses, we will subclass them instead of [`Gate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.Gate.html#bqskit.ir.Gate). The following are the available helper classes:
 
-- [`ConstantGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.ConstantGate.html#bqskit.ir.ConstantGate): A gate that has a fixed unitary matrix with no parameters. This will automatically set `_num_params` to 0, and swap the `get_unitary` method for a `_utry` variable. Additionally, these gates are made to be differentiable trivially.
-- [`QubitGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.QubitGate.html#bqskit.ir.QubitGate): A gate that acts only on qubits. This defines `_radixes` to be all `2`s.
-- [`QutritGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.QutritGate.html#bqskit.ir.QutritGate): A gate that acts on qutrits. This defines `_radixes` to be all `3`s.
-- [`QuditGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.QuditGate.html#bqskit.ir.QuditGate): A gate that acts on qudits of the same radix. This swaps the `_radixes` requirement for a `_radix` requirement. This is useful for gates that act on qudits of the same radix, but not necessarily only qubits or qutrits.
-- [`ComposedGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.ComposedGate.html#bqskit.ir.ComposedGate): A gate that is composed of other gates. This provides methods to dynamically determine if the gate is differentiable or optimizable via other means.
+- [`ConstantGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.gates.ConstantGate.html#bqskit.ir.gates.ConstantGate): A gate that has a fixed unitary matrix with no parameters. This will automatically set `_num_params` to 0, and swap the `get_unitary` method for a `_utry` attribute. Additionally, these gates have the trivial differentiable implementations provided.
+- [`QubitGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.gates.QubitGate.html#bqskit.ir.gates.QubitGate): A gate that acts only on qubits. This defines `_radixes` to be all `2`s.
+- [`QutritGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.gates.QutritGate.html#bqskit.ir.gates.QutritGate): A gate that acts on qutrits. This defines `_radixes` to be all `3`s.
+- [`QuditGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.gates.QuditGate.html#bqskit.ir.gates.QuditGate): A gate that acts on qudits of the same radix. This swaps the `_radixes` requirement for a required `_radix` attribute. This is useful for gates that act on qudits of the same radix, but not necessarily only qubits or qutrits.
+- [`ComposedGate`](https://bqskit.readthedocs.io/en/latest/source/autogen/bqskit.ir.gates.ComposedGate.html#bqskit.ir.gates.ComposedGate): A gate that is composed of other gates. This provides methods to dynamically determine if the gate is differentiable or optimizable via other means.
 
 ## Differentiable Gates
 
