@@ -11,7 +11,6 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.passes.synthesis.target import SetTargetPass
 
 __all__ = [
-    'WalshDiagonalSynthesisPass',
     'LEAPSynthesisPass',
     'QFASTDecompositionPass',
     'QPredictDecompositionPass',
@@ -19,4 +18,5 @@ __all__ = [
     'SynthesisPass',
     'SetTargetPass',
     'PermutationAwareSynthesisPass',
+    'WalshDiagonalSynthesisPass',
 ]
