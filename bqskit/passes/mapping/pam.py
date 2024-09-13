@@ -277,7 +277,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         cg: CouplingGraph,
         F: set[CircuitPoint],
         pi: list[int],
-        D: list[list[int]],
+        D: list[list[float]],
         E: set[CircuitPoint],
         qudits: Sequence[int],
     ) -> tuple[tuple[int, ...], Circuit, tuple[int, ...]]:
@@ -366,7 +366,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         circuit: Circuit,
         F: set[CircuitPoint],
         pi: list[int],
-        D: list[list[int]],
+        D: list[list[float]],
         perm: tuple[Sequence[int], Sequence[int]],
         E: set[CircuitPoint],
     ) -> float:
