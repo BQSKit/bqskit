@@ -16,11 +16,10 @@ def test_get_unitary(thetas: list[float]) -> None:
     Test the get_unitary method of the MCRZGate class.
     Use the default target qubit.
     '''
-    # Assert that len(thetas) is a power of 2
-    assert (len(thetas) & (len(thetas) - 1)) == 0
-
+    # Ensure that len(thetas) is a power of 2
     # There are 2 ** (n - 1) parameters
-    num_qudits = np.log2(len(thetas)) + 1
+    num_qudits = int(np.log2(len(thetas))) + 1
+    thetas = thetas[:2 ** (num_qudits - 1)]
     mcry = MCRZGate(num_qudits=num_qudits)
     block_unitaries = [RZGate().get_unitary([theta]) for theta in thetas]
     blocked_unitary = block_diag(*block_unitaries)
@@ -33,21 +32,27 @@ def test_get_unitary_target_select(target_qubit: int) -> None:
     Test the get_unitary method of the MCRZGate class when
     the target qubit is set.
     '''
-    # Create an MCRY gate with 6 qubits and random parameters
-    mcry = MCRZGate(num_qudits=6, target_qubit=target_qubit)
-    thetas = list(np.random.rand(2 ** 5) * 2 * np.pi)
+    # Create an MCRZ gate with 6 qubits and random parameters
+    num_qudits = 6
+    mcry = MCRZGate(num_qudits=num_qudits, target_qubit=target_qubit)
+    thetas = list(np.random.rand(2 ** (num_qudits - 1)) * 2 * np.pi)
 
     # Create the block diagonal matrix
     block_unitaries = [RZGate().get_unitary([theta]) for theta in thetas]
     blocked_unitary = block_diag(*block_unitaries)
 
-    # Apply a permutation to the block diagonal matrix
+    # Apply a permutation transformation 
+    # to the block diagonal matrix
     # Swap the target qubit with the last qubit
-    perm = np.arange(6)
-    perm[-1], perm[target_qubit] = perm[target_qubit], perm[-1]
-    perm_gate = PermutationGate(6, perm) 
+    # perm = np.arange(num_qudits)
+    perm = list(range(num_qudits))
+    for i in range(target_qubit, num_qudits):
+        perm[i] = i + 1
+    perm[-1] = target_qubit
 
-    full_utry = perm_gate.get_unitary() @ blocked_unitary
+    perm_gate = PermutationGate(num_qudits, perm) 
+
+    full_utry = perm_gate.get_unitary().conj().T @ blocked_unitary @ perm_gate.get_unitary()
 
     dist = mcry.get_unitary(thetas).get_distance_from(full_utry)
     assert dist < 1e-7

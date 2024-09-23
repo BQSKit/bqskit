@@ -51,14 +51,14 @@ class MCRYGate(
 
     _qasm_name = 'mcry'
 
-    def __init__(self, num_qudits: int, controlled_qubit: int = -1) -> None:
+    def __init__(self, num_qudits: int, target_qubit: int = -1) -> None:
         self._num_qudits = num_qudits
         # 1 param for each configuration of the selec qubits
         self._num_params = 2 ** (num_qudits - 1)
         # By default, the controlled qubit is the last qubit
         if target_qubit == -1:
             target_qubit = num_qudits - 1
-        self.controlled_qubit = controlled_qubit
+        self.controlled_qubit = target_qubit
         super().__init__()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
