@@ -157,7 +157,7 @@ class MCRYGate(
         multiplexed gate.
 
         This is used in the decomposition of both
-        the MCRY and MCRZ gates. See :class:`MGDPass` for more info.
+        the MCRY and MCRZ gates.
         """
         new_num_params = len(params) // 2
         left_params = np.zeros(new_num_params)
