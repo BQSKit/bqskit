@@ -4,31 +4,31 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
+from bqskit.ir.gates.parameterized.mcry import get_indices
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
-from bqskit.ir.gates.parameterized.mcry import get_indices
-from typing import Any
+
 
 class MCRZGate(
     QubitGate,
     DifferentiableUnitary,
     CachedClass,
-    LocallyOptimizableUnitary
+    LocallyOptimizableUnitary,
 ):
     """
     A gate representing a multiplexed Z rotation. A multiplexed Z rotation
     uses n - 1 qubits as select qubits and applies a Z rotation to the target.
     If the target qubit is the last qubit, then the unitary is block diagonal.
-    Each block is a 2x2 RZ matrix with parameter theta. 
+    Each block is a 2x2 RZ matrix with parameter theta.
 
     Since there are n - 1 select qubits, there are 2^(n-1) parameters (thetas).
 
     We allow the target qubit to be specified to any qubit, and the other qubits
-    maintain their order. Qubit 0 is the most significant qubit. 
+    maintain their order. Qubit 0 is the most significant qubit.
 
 
     Why is 0 the MSB? Typically, in the QSD diagram, we see the block drawn
@@ -40,11 +40,14 @@ class MCRZGate(
 
     _qasm_name = 'mcrz'
 
-    def __init__(self, num_qudits: int, target_qubit: int = -1) -> None:
-        '''
-        Create a new MCRZGate with `num_qudits` qubits and 
-        `target_qubit` as the target qubit. We then have 2^(n-1) parameters
-        for this gate.
+    def __init__(
+        self,
+        num_qudits: int,
+        target_qubit: int = -1,
+    ) -> None:
+        """
+        Create a new MCRZGate with `num_qudits` qubits and `target_qubit` as the
+        target qubit. We then have 2^(n-1) parameters for this gate.
 
         For Example:
         `num_qudits` = 3, `target_qubit` = 1
@@ -56,7 +59,7 @@ class MCRZGate(
 
         If the input vector is |1x0> then the selection is 01, and
         RZ(theta_1) is applied to the target qubit.
-        '''
+        """
         self._num_qudits = num_qudits
         # 1 param for each configuration of the selec qubits
         self._num_params = 2 ** (num_qudits - 1)
@@ -69,7 +72,12 @@ class MCRZGate(
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
-        matrix = np.zeros((2 ** self.num_qudits, 2 ** self.num_qudits), dtype=np.complex128)
+        matrix = np.zeros(
+            (
+                2 ** self.num_qudits,
+                2 ** self.num_qudits,
+            ), dtype=np.complex128,
+        )
         for i, param in enumerate(params):
             pos = np.exp(1j * param / 2)
             neg = np.exp(-1j * param / 2)
@@ -90,27 +98,37 @@ class MCRZGate(
         See :class:`DifferentiableUnitary` for more info.
         """
         self.check_parameters(params)
-        matrix = np.zeros((2 ** self.num_qudits, 2 ** self.num_qudits), dtype=np.complex128)
+        orig_utry = self.get_unitary(params).numpy
+        grad = []
+
+        # For each parameter, calculate the derivative
+        # with respect to that parameter
         for i, param in enumerate(params):
-            dpos = 1j / 2 * np.exp(1j * param / 2)
-            dneg = -1j / 2 * np.exp(-1j * param / 2)
+            dcos = -np.sin(param / 2) / 2
+            dsin = -1j * np.cos(param / 2) / 2
 
             # Again, get indices based on target qubit.
             x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
 
-            matrix[x1, x1] = dpos
-            matrix[x2, x2] = dneg
+            matrix = orig_utry.copy()
 
-        return UnitaryMatrix(matrix)
+            matrix[x1, x1] = dcos
+            matrix[x2, x2] = dcos
+            matrix[x2, x1] = dsin
+            matrix[x1, x2] = -1 * dsin
 
+            grad.append(matrix)
+
+        return np.array(grad)
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
         Return the optimal parameters with respect to an environment matrix.
+
         See :class:`LocallyOptimizableUnitary` for more info.
         """
         self.check_env_matrix(env_matrix)
-        thetas = [0] * self.num_params
+        thetas: list[float] = [0] * self.num_params
 
         for i in range(self.num_params):
             x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
@@ -127,4 +145,4 @@ class MCRZGate(
     def name(self) -> str:
         """The name of this gate, with the number of qudits appended."""
         base_name = getattr(self, '_name', self.__class__.__name__)
-        return f"{base_name}_{self.num_qudits}"
+        return f'{base_name}_{self.num_qudits}'
