@@ -10,17 +10,20 @@ from bqskit.qis import UnitaryMatrix
 
 
 def create_random_unitary_circ(num_qudits: int):
-    '''
-    Create a Circuit with a random VariableUnitaryGate.
-    '''
+    """Create a Circuit with a random VariableUnitaryGate."""
     circuit = Circuit(num_qudits)
     utry = UnitaryMatrix.random(num_qudits)
-    utry_params = np.concatenate((np.real(utry._utry).flatten(),
-                                  np.imag(utry._utry).flatten()))
-    circuit.append_gate(VariableUnitaryGate(num_qudits),
-                        list(range(num_qudits)),
-                        utry_params)
+    utry_params = np.concatenate((
+        np.real(utry._utry).flatten(),
+        np.imag(utry._utry).flatten(),
+    ))
+    circuit.append_gate(
+        VariableUnitaryGate(num_qudits),
+        list(range(num_qudits)),
+        utry_params,
+    )
     return circuit
+
 
 class TestQSD:
     def test_three_qubit_qsd(self, compiler: Compiler) -> None:
