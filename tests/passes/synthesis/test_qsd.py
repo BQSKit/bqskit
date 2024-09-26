@@ -9,7 +9,7 @@ from bqskit.passes import FullQSDPass
 from bqskit.qis import UnitaryMatrix
 
 
-def create_random_unitary_circ(num_qudits: int):
+def create_random_unitary_circ(num_qudits: int) -> Circuit:
     """Create a Circuit with a random VariableUnitaryGate."""
     circuit = Circuit(num_qudits)
     utry = UnitaryMatrix.random(num_qudits)
