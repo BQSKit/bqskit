@@ -105,8 +105,12 @@ class MPRYGate(
         """
         self.check_parameters(params)
 
-        orig_utry = self.get_unitary(params).numpy
-        grad = []
+        grad = np.zeros(
+            (
+                len(params), 2 ** self.num_qudits,
+                2 ** self.num_qudits,
+            ), dtype=np.complex128,
+        )
 
         # For each parameter, calculate the derivative
         # with respect to that parameter
@@ -117,16 +121,12 @@ class MPRYGate(
             # Again, get indices based on target qubit.
             x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
 
-            matrix = orig_utry.copy()
+            grad[i, x1, x1] = dcos
+            grad[i, x2, x2] = dcos
+            grad[i, x2, x1] = dsin
+            grad[i, x1, x2] = -1 * dsin
 
-            matrix[x1, x1] = dcos
-            matrix[x2, x2] = dcos
-            matrix[x2, x1] = dsin
-            matrix[x1, x2] = -1 * dsin
-
-            grad.append(matrix)
-
-        return np.array(grad)
+        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
