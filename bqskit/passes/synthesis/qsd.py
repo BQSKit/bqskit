@@ -18,8 +18,8 @@ from bqskit.ir.gates.constant import CNOTGate
 from bqskit.ir.gates.parameterized import RYGate
 from bqskit.ir.gates.parameterized import RZGate
 from bqskit.ir.gates.parameterized import VariableUnitaryGate
-from bqskit.ir.gates.parameterized.mcry import MCRYGate
-from bqskit.ir.gates.parameterized.mcrz import MCRZGate
+from bqskit.ir.gates.parameterized.mpry import MPRYGate
+from bqskit.ir.gates.parameterized.mprz import MPRZGate
 from bqskit.ir.operation import Operation
 from bqskit.passes.processing import ScanningGateRemovalPass
 from bqskit.passes.processing import TreeScanningGateRemovalPass
@@ -115,7 +115,7 @@ class FullQSDPass(BasePass):
 
 class MGDPass(BasePass):
     """
-    A pass performing one round of decomposition of the MCRY and MCRZ gates in a
+    A pass performing one round of decomposition of the MPRY and MPRZ gates in a
     circuit.
 
     References:
@@ -142,19 +142,19 @@ class MGDPass(BasePass):
         """
 
         # Final level of decomposition decomposes to RY or RZ gate
-        gate: MCRYGate | MCRZGate | RYGate | RZGate = MCRZGate(
+        gate: MPRYGate | MPRZGate | RYGate | RZGate = MPRZGate(
             op.num_qudits - 1,
             op.num_qudits - 2,
         )
         if (op.num_qudits > 2):
-            if isinstance(op.gate, MCRYGate):
-                gate = MCRYGate(op.num_qudits - 1, op.num_qudits - 2)
-        elif (isinstance(op.gate, MCRYGate)):
+            if isinstance(op.gate, MPRYGate):
+                gate = MPRYGate(op.num_qudits - 1, op.num_qudits - 2)
+        elif (isinstance(op.gate, MPRYGate)):
             gate = RYGate()
         else:
             gate = RZGate()
 
-        left_params, right_params = MCRYGate.get_decomposition(op.params)
+        left_params, right_params = MPRYGate.get_decomposition(op.params)
 
         # Construct Circuit
         circ = Circuit(op.gate.num_qudits)
@@ -169,7 +169,7 @@ class MGDPass(BasePass):
         return circ
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        """Decompose all MCRY and MCRZ gates in the circuit one level."""
+        """Decompose all MPRY and MPRZ gates in the circuit one level."""
         gates = []
         pts = []
         locations = []
@@ -178,7 +178,7 @@ class MGDPass(BasePass):
 
         # Gather all of the multiplexed operations
         for cyc, op in all_ops:
-            if isinstance(op.gate, MCRYGate) or isinstance(op.gate, MCRZGate):
+            if isinstance(op.gate, MPRYGate) or isinstance(op.gate, MPRZGate):
                 num_ops += 1
                 gates.append(op)
                 pts.append((cyc, op.location[0]))
@@ -286,7 +286,7 @@ class QSDPass(BasePass):
 
         # Create Multi Controlled Z Gate
         z_params: RealVector = np.array(-2 * np.angle(np.diag(D)).flatten())
-        z_gate = MCRZGate(len(all_qubits), u1.num_qudits)
+        z_gate = MPRZGate(len(all_qubits), u1.num_qudits)
 
         # Create right gate
         right_gate, right_params = QSDPass.create_unitary_gate(UnitaryMatrix(V))
@@ -330,7 +330,7 @@ class QSDPass(BasePass):
         assert (len(theta_y) == u.shape[0] / 2)
 
         # Create the multiplexed circuit
-        # This generates 2 circuits that multipex U,V with an MCRY gate
+        # This generates 2 circuits that multipex U,V with an MPRY gate
         controlled_qubit = u.num_qudits - 1
         select_qubits = list(range(0, u.num_qudits - 1))
         all_qubits = list(range(u.num_qudits))
@@ -346,7 +346,7 @@ class QSDPass(BasePass):
             ],
             select_qubits,
         )
-        gate_2 = MCRYGate(u.num_qudits, controlled_qubit)
+        gate_2 = MPRYGate(u.num_qudits, controlled_qubit)
 
         circ_1.append_gate(gate_2, CircuitLocation(all_qubits), 2 * theta_y)
         circ_1.append_circuit(
