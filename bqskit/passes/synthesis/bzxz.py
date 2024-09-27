@@ -152,7 +152,7 @@ class BlockZXZPass(BasePass):
 
         Args:
             min_qudit_size (int): Performs a decomposition on all gates
-                with widht > min_qudit_size
+                with width > min_qudit_size
         """
         self.min_qudit_size = min_qudit_size
 
