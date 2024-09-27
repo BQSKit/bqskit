@@ -1,10 +1,10 @@
-"""This module implements the MCRZGate."""
+"""This module implements the MPRZGate."""
 from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.ir.gates.parameterized.mcry import get_indices
+from bqskit.ir.gates.parameterized.mpry import get_indices
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
@@ -13,7 +13,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class MCRZGate(
+class MPRZGate(
     QubitGate,
     DifferentiableUnitary,
     CachedClass,
@@ -38,7 +38,7 @@ class MCRZGate(
     See this paper: https://arxiv.org/pdf/quant-ph/0406176
     """
 
-    _qasm_name = 'mcrz'
+    _qasm_name = 'mprz'
 
     def __init__(
         self,
@@ -46,7 +46,7 @@ class MCRZGate(
         target_qubit: int = -1,
     ) -> None:
         """
-        Create a new MCRZGate with `num_qudits` qubits and `target_qubit` as the
+        Create a new MPRZGate with `num_qudits` qubits and `target_qubit` as the
         target qubit. We then have 2^(n-1) parameters for this gate.
 
         For Example:
