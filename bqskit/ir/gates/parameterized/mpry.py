@@ -1,4 +1,4 @@
-"""This module implements the MCRYGate."""
+"""This module implements the MPRYGate."""
 from __future__ import annotations
 
 import numpy as np
@@ -32,7 +32,7 @@ def get_indices(
     return left + right, left + shift + right
 
 
-class MCRYGate(
+class MPRYGate(
     QubitGate,
     DifferentiableUnitary,
     CachedClass,
@@ -52,7 +52,7 @@ class MCRYGate(
     See this paper: https://arxiv.org/pdf/quant-ph/0406176
     """
 
-    _qasm_name = 'mcry'
+    _qasm_name = 'mpry'
 
     def __init__(
         self,
@@ -156,8 +156,7 @@ class MCRYGate(
         Get the corresponding parameters for one level of decomposition of a
         multiplexed gate.
 
-        This is used in the decomposition of both
-        the MCRY and MCRZ gates. See :class:`MGDPass` for more info.
+        This is used in the decomposition of both the MPRY and MPRZ gates.
         """
         new_num_params = len(params) // 2
         left_params = np.zeros(new_num_params)
