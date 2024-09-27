@@ -1,4 +1,4 @@
-"""This module tests the U1Gate class."""
+"""This module tests the MPRZGate class."""
 from __future__ import annotations
 
 import numpy as np
@@ -9,8 +9,8 @@ from hypothesis.strategies import lists
 from scipy.linalg import block_diag
 
 from bqskit.ir.gates.constant import PermutationGate
-from bqskit.ir.gates.parameterized import MCRYGate
-from bqskit.ir.gates.parameterized import RYGate
+from bqskit.ir.gates.parameterized import MPRZGate
+from bqskit.ir.gates.parameterized import RZGate
 
 
 @given(
@@ -24,7 +24,7 @@ from bqskit.ir.gates.parameterized import RYGate
 )
 def test_get_unitary(thetas: list[float]) -> None:
     """
-    Test the get_unitary method of the MCRYGate class.
+    Test the get_unitary method of the MPRZGate class.
 
     Use the default target qubit.
     """
@@ -32,24 +32,24 @@ def test_get_unitary(thetas: list[float]) -> None:
     # There are 2 ** (n - 1) parameters
     num_qudits = int(np.log2(len(thetas))) + 1
     thetas = thetas[:2 ** (num_qudits - 1)]
-    mcry = MCRYGate(num_qudits=num_qudits)
-    block_unitaries = [RYGate().get_unitary([theta]) for theta in thetas]
+    MPRy = MPRZGate(num_qudits=num_qudits)
+    block_unitaries = [RZGate().get_unitary([theta]) for theta in thetas]
     blocked_unitary = block_diag(*block_unitaries)
-    dist = mcry.get_unitary(thetas).get_distance_from(blocked_unitary)
+    dist = MPRy.get_unitary(thetas).get_distance_from(blocked_unitary)
     assert dist < 1e-7
 
 
 @given(integers(min_value=0, max_value=4))
 def test_get_unitary_target_select(target_qubit: int) -> None:
-    """Test the get_unitary method of the MCRYGate class when the target qubit
+    """Test the get_unitary method of the MPRZGate class when the target qubit
     is set."""
-    # Create an MCRY gate with 6 qubits and random parameters
+    # Create an MPRZ gate with 6 qubits and random parameters
     num_qudits = 6
-    mcry = MCRYGate(num_qudits=num_qudits, target_qubit=target_qubit)
+    MPRy = MPRZGate(num_qudits=num_qudits, target_qubit=target_qubit)
     thetas = list(np.random.rand(2 ** (num_qudits - 1)) * 2 * np.pi)
 
     # Create the block diagonal matrix
-    block_unitaries = [RYGate().get_unitary([theta]) for theta in thetas]
+    block_unitaries = [RZGate().get_unitary([theta]) for theta in thetas]
     blocked_unitary = block_diag(*block_unitaries)
 
     # Apply a permutation transformation
@@ -63,8 +63,8 @@ def test_get_unitary_target_select(target_qubit: int) -> None:
 
     perm_gate = PermutationGate(num_qudits, perm)
 
-    full_utry = perm_gate.get_unitary().conj(
-    ).T @ blocked_unitary @ perm_gate.get_unitary()
+    full_utry = (perm_gate.get_unitary().conj().T 
+                 @ blocked_unitary @ perm_gate.get_unitary())
 
-    dist = mcry.get_unitary(thetas).get_distance_from(full_utry)
+    dist = MPRy.get_unitary(thetas).get_distance_from(full_utry)
     assert dist < 1e-7
