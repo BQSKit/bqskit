@@ -59,7 +59,7 @@ class DiagonalGate(
         )
 
         for i, ind in enumerate(range(1, 2 ** self.num_qudits)):
-            grad[ind][i][i] = 1j * np.exp(1j * params[ind])
+            grad[i][ind][ind] = 1j * np.exp(1j * params[i])
 
         return grad
 
