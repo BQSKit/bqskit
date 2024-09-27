@@ -99,8 +99,12 @@ class MPRZGate(
         """
         self.check_parameters(params)
 
-        grad = np.zeros((len(params), 2 ** self.num_qudits, 
-                         2 ** self.num_qudits), dtype=np.complex128)
+        grad = np.zeros(
+            (
+                len(params), 2 ** self.num_qudits,
+                2 ** self.num_qudits,
+            ), dtype=np.complex128,
+        )
 
         # For each parameter, calculate the derivative
         # with respect to that parameter
