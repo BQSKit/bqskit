@@ -98,28 +98,23 @@ class MPRZGate(
         See :class:`DifferentiableUnitary` for more info.
         """
         self.check_parameters(params)
-        orig_utry = self.get_unitary(params).numpy
-        grad = []
+
+        grad = np.zeros((len(params), 2 ** self.num_qudits, 
+                         2 ** self.num_qudits), dtype=np.complex128)
 
         # For each parameter, calculate the derivative
         # with respect to that parameter
         for i, param in enumerate(params):
-            dcos = -np.sin(param / 2) / 2
-            dsin = -1j * np.cos(param / 2) / 2
+            dpos = 1j * np.exp(1j * param / 2) / 2
+            dneg = -1j * np.exp(-1j * param / 2) / 2
 
             # Again, get indices based on target qubit.
             x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
 
-            matrix = orig_utry.copy()
+            grad[i, x1, x1] = dpos
+            grad[i, x2, x2] = dneg
 
-            matrix[x1, x1] = dcos
-            matrix[x2, x2] = dcos
-            matrix[x2, x1] = dsin
-            matrix[x1, x2] = -1 * dsin
-
-            grad.append(matrix)
-
-        return np.array(grad)
+        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
