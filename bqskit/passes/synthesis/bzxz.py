@@ -20,7 +20,7 @@ from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates.constant import HGate
 from bqskit.ir.gates.constant import IdentityGate
 from bqskit.ir.gates.constant import ZGate
-from bqskit.ir.gates.parameterized.mcrz import MCRZGate
+from bqskit.ir.gates.parameterized.mprz import MPRZGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.passes.processing.extract_diagonal import ExtractDiagonalPass
@@ -232,7 +232,7 @@ class BlockZXZPass(BasePass):
         most significant qubit.
 
         We return the Unitary Matrices V and W and the parameters for the
-        corresponding MCRZ gate.
+        corresponding MPRZ gate.
         """
         # U can be decomposed into U = (I otimes V )(D otimes D†)(I otimes W )
 
@@ -245,7 +245,7 @@ class BlockZXZPass(BasePass):
         # We can then multiply to solve for W
         W = D @ V.conj().T @ U_2
 
-        # We can use d to find the parameters for the MCRZ gate.
+        # We can use d to find the parameters for the MPRZ gate.
         # Note than because and Rz does exp(-i * theta / 2), we must
         # multiply by -2.
         d_params: list[float] = list(np.angle(d) * -2)
@@ -291,8 +291,8 @@ class BlockZXZPass(BasePass):
         wc_gate, wc_params = QSDPass.create_unitary_gate(WC)
         circ.append_gate(wc_gate, CircuitLocation(select_qubits), wc_params)
 
-        # Add decomposed MCRZ gate circuit.
-        # Since the MCRZ gate circuit sets the target qubit as qubit
+        # Add decomposed MPRZ gate circuit.
+        # Since the MPRZ gate circuit sets the target qubit as qubit
         # num_qudits - 1, we must shift the qubits to the left
         shifted_qubits = all_qubits[1:] + all_qubits[0:1]
         circ.append_circuit(
@@ -313,9 +313,9 @@ class BlockZXZPass(BasePass):
         )
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
 
-        # The central MCRZ_gate. We set the target to the controlled qubit,
+        # The central MPRZ_gate. We set the target to the controlled qubit,
         # so there is no need to shift
-        z_gate = MCRZGate(len(all_qubits), 0)
+        z_gate = MPRZGate(len(all_qubits), 0)
         circ.append_gate(z_gate, CircuitLocation(all_qubits), BZ_params)
 
         # Now add the decomposed B-tilde gates VB and a Hadamard
@@ -326,7 +326,7 @@ class BlockZXZPass(BasePass):
         )
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
 
-        # Add the decomposed MCRZ gate circuit again on shifted qubits
+        # Add the decomposed MPRZ gate circuit again on shifted qubits
         circ.append_circuit(
             MGDPass.decompose_mpx_two_levels(
                 decompose_ry=False,
