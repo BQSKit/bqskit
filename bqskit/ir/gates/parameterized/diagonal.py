@@ -51,16 +51,17 @@ class DiagonalGate(
         """
         self.check_parameters(params)
 
-        mat = np.eye(2 ** self.num_qudits, dtype=np.complex128)
-
-        for i in range(1, 2 ** self.num_qudits):
-            mat[i][i] = 1j * np.exp(1j * params[i - 1])
-
-        return np.array(
-            [
-                mat,
-            ], dtype=np.complex128,
+        grad = np.zeros(
+            (
+                len(params), 2 ** self.num_qudits,
+                2 ** self.num_qudits,
+            ), dtype=np.complex128,
         )
+
+        for i, ind in enumerate(range(1, 2 ** self.num_qudits)):
+            grad[ind][i][i] = 1j * np.exp(1j * params[ind])
+
+        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
