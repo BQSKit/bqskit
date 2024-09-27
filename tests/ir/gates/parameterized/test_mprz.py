@@ -63,8 +63,10 @@ def test_get_unitary_target_select(target_qubit: int) -> None:
 
     perm_gate = PermutationGate(num_qudits, perm)
 
-    full_utry = (perm_gate.get_unitary().conj().T 
-                 @ blocked_unitary @ perm_gate.get_unitary())
+    full_utry = (
+        perm_gate.get_unitary().conj().T
+        @ blocked_unitary @ perm_gate.get_unitary()
+    )
 
     dist = MPRy.get_unitary(thetas).get_distance_from(full_utry)
     assert dist < 1e-7
