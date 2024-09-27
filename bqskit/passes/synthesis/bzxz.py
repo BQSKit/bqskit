@@ -17,12 +17,9 @@ from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
-from bqskit.ir.gates.constant import CNOTGate
 from bqskit.ir.gates.constant import HGate
 from bqskit.ir.gates.constant import IdentityGate
 from bqskit.ir.gates.constant import ZGate
-from bqskit.ir.gates.parameterized import RZGate
-from bqskit.ir.gates.parameterized.mcry import MCRYGate
 from bqskit.ir.gates.parameterized.mcrz import MCRZGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
@@ -301,10 +298,10 @@ class BlockZXZPass(BasePass):
         circ.append_circuit(
             MGDPass.decompose_mpx_two_levels(
                 decompose_ry=False,
-                params=CZ_params, 
+                params=CZ_params,
                 num_qudits=orig_u.num_qudits,
-                drop_last_cnot=True
-                ),
+                drop_last_cnot=True,
+            ),
             shifted_qubits,
         )
 
@@ -336,7 +333,7 @@ class BlockZXZPass(BasePass):
                 params=AZ_params,
                 num_qudits=orig_u.num_qudits,
                 reverse=True,
-                drop_last_cnot=True
+                drop_last_cnot=True,
             ),
             shifted_qubits,
         )

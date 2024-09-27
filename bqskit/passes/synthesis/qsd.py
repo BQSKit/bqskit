@@ -146,8 +146,8 @@ class MGDPass(BasePass):
         decompose_ry: bool,
         params: RealVector,
         num_qudits: int,
-        reverse: bool =False,
-        drop_last_cnot: bool =False,
+        reverse: bool = False,
+        drop_last_cnot: bool = False,
     ) -> Circuit:
         """
         Decompose Multiplexed Gate one level.
@@ -204,15 +204,15 @@ class MGDPass(BasePass):
         decompose_ry: bool,
         params: RealVector,
         num_qudits: int,
-        reverse: bool =False,
+        reverse: bool = False,
         drop_last_cnot: bool = False,
     ) -> Circuit:
         """
-        We decompose a multiplexed RZ gate 2 levels deep. This allows you to 
-        remove 2 CNOTs as per Figure 2 in 
+        We decompose a multiplexed RZ gate 2 levels deep. This allows you to
+        remove 2 CNOTs as per Figure 2 in
         https://arxiv.org/pdf/quant-ph/0406176.pdf.
-          
-        Furthermore, in the context of the Block ZXZ decomposition, you can 
+
+        Furthermore, in the context of the Block ZXZ decomposition, you can
         set `drop_last_cnot` to True. This CNOT gets merged into a central gate,
         which saves another 2 CNOTs. This is shown in section 5.2 of
         https://arxiv.org/pdf/2403.13692v1.pdf.
@@ -232,10 +232,12 @@ class MGDPass(BasePass):
 
         if num_qudits <= 2:
             # If you have less than 3 qubits, just decompose one level
-            return MGDPass.decompose_mpx_one_level(decompose_ry,
-                                                   params, 
-                                                   num_qudits,
-                                                   reverse)
+            return MGDPass.decompose_mpx_one_level(
+                decompose_ry,
+                params,
+                num_qudits,
+                reverse,
+            )
 
         # Get params for first decomposition of the MCRZ gate
         left_params, right_params = MCRYGate.get_decomposition(params)
@@ -292,7 +294,6 @@ class MGDPass(BasePass):
         ops: list[Operation] = []
         pts: list[CircuitPoint] = []
         locations: list[CircuitLocation] = []
-        num_ops = 0
         all_ops = list(circuit.operations_with_cycles(reverse=True))
 
         # Gather all of the multiplexed operations
@@ -308,7 +309,7 @@ class MGDPass(BasePass):
                     + loc[(op.gate.target_qubit + 1):]
                     + [loc[op.gate.target_qubit]]
                 )
-                locations.append(loc)
+                locations.append(CircuitLocation(loc))
 
         if len(ops) > 0:
             # Do a bulk QSDs -> circs
@@ -317,15 +318,17 @@ class MGDPass(BasePass):
                     MGDPass.decompose_mpx_two_levels(
                         isinstance(op.gate, MCRYGate),
                         op.params,
-                        op.num_qudits) for op in ops
-                        ]
+                        op.num_qudits,
+                    ) for op in ops
+                ]
             else:
                 circs = [
                     MGDPass.decompose_mpx_one_level(
                         isinstance(op.gate, MCRYGate),
                         op.params,
-                        op.num_qudits) for op in ops
-                        ]
+                        op.num_qudits,
+                    ) for op in ops
+                ]
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [
                 Operation(x, locations[i], x._circuit.params)
