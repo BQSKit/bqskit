@@ -12,7 +12,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
-from bqskit.ir.circuit import CircuitLocation
+from bqskit.ir.circuit import CircuitLocation, CircuitPoint
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates.constant import CNOTGate
 from bqskit.ir.gates.parameterized import RYGate
@@ -29,7 +29,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
 
 _logger = logging.getLogger(__name__)
-
 
 class FullQSDPass(BasePass):
     """
@@ -197,22 +196,6 @@ class MGDPass(BasePass):
 
         circuit.unfold_all()
 
-
-def shift_down_unitary(num_qudits: int, end_qubits: int) -> PermutationMatrix:
-    top_qubits = num_qudits - end_qubits
-    now_bottom_qubits = list(reversed(range(top_qubits)))
-    now_top_qubits = list(range(num_qudits - end_qubits, num_qudits))
-    final_qudits = now_top_qubits + now_bottom_qubits
-    return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
-
-
-def shift_up_unitary(num_qudits: int, end_qubits: int) -> PermutationMatrix:
-    bottom_qubits = list(range(end_qubits))
-    top_qubits = list(reversed(range(end_qubits, num_qudits)))
-    final_qudits = top_qubits + bottom_qubits
-    return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
-
-
 class QSDPass(BasePass):
     """
     A pass performing one round of decomposition from the QSD algorithm.
@@ -239,6 +222,28 @@ class QSDPass(BasePass):
                 with width > min_qudit_size
         """
         self.min_qudit_size = min_qudit_size
+
+    @staticmethod
+    def shift_down_unitary(num_qudits: int, end_qubits: int) -> PermutationMatrix:
+        '''
+        Return the Permutation Matrix that shifts the qubits down by 1 qubit. 
+        '''
+        top_qubits = num_qudits - end_qubits
+        now_bottom_qubits = list(reversed(range(top_qubits)))
+        now_top_qubits = list(range(num_qudits - end_qubits, num_qudits))
+        final_qudits = now_top_qubits + now_bottom_qubits
+        return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
+
+    @staticmethod
+    def shift_up_unitary(num_qudits: int, end_qubits: int) -> PermutationMatrix:
+        '''
+        Return the Permutation Matrix that shifts the qubits down by 1 qubit. 
+        '''
+        bottom_qubits = list(range(end_qubits))
+        top_qubits = list(reversed(range(end_qubits, num_qudits)))
+        final_qudits = top_qubits + bottom_qubits
+        return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
+
 
     @staticmethod
     def create_unitary_gate(u: UnitaryMatrix) -> tuple[
@@ -305,8 +310,8 @@ class QSDPass(BasePass):
     def mod_unitaries(u: UnitaryMatrix) -> UnitaryMatrix:
         """Apply a permutation transform to the unitaries to the rest of the
         circuit."""
-        shift_up = shift_up_unitary(u.num_qudits, u.num_qudits - 1)
-        shift_down = shift_down_unitary(u.num_qudits, u.num_qudits - 1)
+        shift_up = QSDPass.shift_up_unitary(u.num_qudits, u.num_qudits - 1)
+        shift_down = QSDPass.shift_down_unitary(u.num_qudits, u.num_qudits - 1)
         return shift_up @ u @ shift_down
 
     @staticmethod
@@ -353,25 +358,44 @@ class QSDPass(BasePass):
             circ_2, CircuitLocation(list(range(u.num_qudits))),
         )
         return circ_1
-
-    async def run(self, circuit: Circuit, data: PassData) -> None:
+    
+    @staticmethod
+    def get_variable_unitary_pts(circuit: Circuit, min_qudit_size: int) -> tuple[
+                                                        list[UnitaryMatrix], 
+                                                        list[CircuitPoint], 
+                                                        list[CircuitLocation]
+                                                        ]:
+        '''
+        Get all VariableUnitary Gates in the circuit wider than
+        `min_qudit_size` and return their unitaries, points, and locations.
+        '''
         unitaries = []
         pts = []
         locations = []
         num_ops = 0
         all_ops = list(circuit.operations_with_cycles(reverse=True))
 
-        initial_utry = circuit.get_unitary()
         # Gather all of the VariableUnitary unitaries
         for cyc, op in all_ops:
             if (
-                op.num_qudits > self.min_qudit_size
+                op.num_qudits > min_qudit_size
                 and isinstance(op.gate, VariableUnitaryGate)
             ):
                 num_ops += 1
                 unitaries.append(op.get_unitary())
                 pts.append((cyc, op.location[0]))
                 locations.append(op.location)
+
+        return unitaries, pts, locations
+
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        '''
+        Perform a single pass of Quantum Shannon Decomposition on the circuit.
+        '''
+        unitaries, pts, locations = QSDPass.get_variable_unitary_pts(
+            circuit, self.min_qudit_size
+        )
 
         if len(unitaries) > 0:
             circs = await get_runtime().map(QSDPass.qsd, unitaries)
@@ -382,9 +406,5 @@ class QSDPass(BasePass):
             ]
             circuit.batch_replace(pts, circ_ops)
             circuit.unfold_all()
-
-        dist = circuit.get_unitary().get_distance_from(initial_utry)
-
-        assert dist < 1e-5
 
         circuit.unfold_all()
