@@ -46,6 +46,7 @@ synthesis pass to convert the circuit to native gates.
     ScanningGateRemovalPass
     TreeScanningGateRemovalPass
     SubstitutePass
+    FullCircuitAwareIndividualDecomposition
 
 .. rubric:: Retargeting Passes
 
@@ -262,6 +263,7 @@ from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
 from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
+from bqskit.passes.processing.full_circuit_aware_decomposition import FullCircuitAwareIndividualDecomposition
 from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.processing.substitute import SubstitutePass
@@ -342,6 +344,7 @@ __all__ = [
     'ToU3Pass',
     'ScanningGateRemovalPass',
     'TreeScanningGateRemovalPass',
+    'FullCircuitAwareIndividualDecomposition',
     'DiscreteLayerGenerator',
     'SimpleLayerGenerator',
     'AStarHeuristic',
