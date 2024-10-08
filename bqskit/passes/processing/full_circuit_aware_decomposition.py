@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from enum import Enum
 from typing import Any
 from typing import Callable
@@ -14,7 +15,6 @@ from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
-from bqskit.passes import QSearchSynthesisPass
 from bqskit.passes import SynthesisPass
 from bqskit.passes.search.generators import WideLayerGenerator
 from bqskit.qis.state.state import StateVector
@@ -22,6 +22,9 @@ from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
+# from bqskit.passes import QSearchSynthesisPass
+
+_logger = logging.getLogger(__name__)
 
 
 class DecompositionOrder(Enum):
@@ -90,10 +93,12 @@ class CircuitWideAwareLayerGenerator(WideLayerGenerator):
             if mg.num_qudits > len(self.location_to_grow):
                 continue
             for loc in cg.get_subgraphs_of_size(mg.num_qudits):
+                translated_loc = [self.location_to_grow[i] for i in loc]
+
                 successor = circuit.copy()
-                successor.insert_gate(self.cycle_to_grow, mg, loc)
+                successor.insert_gate(self.cycle_to_grow, mg, translated_loc)
                 if self.single_qudit_gate is not None:
-                    for q in loc:
+                    for q in translated_loc:
                         successor.insert_gate(
                             self.cycle_to_grow, self.single_qudit_gate, q,
                         )
@@ -106,6 +111,8 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
 
     def __init__(
         self,
+        synthesis_pass_class: type[SynthesisPass],
+        # synthesis_pass_class: type[SynthesisPass] = QSearchSynthesisPass,
         decompositionOrder: DecompositionOrder = DecompositionOrder.LeftToRight,
         multi_qudit_gates: GateSetLike = VariableUnitaryGate(3),
         single_qudit_gate: Gate | None = VariableUnitaryGate(1),
@@ -114,7 +121,7 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
         instantiate_options: dict[str, Any] = {},
         collection_filter: Callable[[Operation], bool] | None = None,
         synthesis_options: dict[str, Any] = {},
-        synthesis_pass_class: type[SynthesisPass] = QSearchSynthesisPass,
+
     ):
 
         if not is_real_number(success_threshold):
@@ -208,11 +215,6 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
 
-        print(
-            f'In FullCircuitAwareIndividualDecomposition with '
-            f'{self.decompositionOrder}',
-        )
-
         grow_from_left = self.decompositionOrder in [
             DecompositionOrder.LeftToRight, DecompositionOrder.TowardsMiddle,
         ]
@@ -220,13 +222,21 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
             self.decompositionOrder == DecompositionOrder.TowardsMiddle
         )
 
+        _logger.debug(
+            f'Starting FullCircuitAwareIndividualDecomposition with '
+            f'{self.decompositionOrder}, {should_alternate = } '
+            f'{grow_from_left = }',
+        )
+
         for cycle, op in circuit.operations_with_cycles():
             if self.collection_filter(op):
                 first_cycle_to_decompose_on_the_left = cycle
+                break
 
         for cycle, op in circuit.operations_with_cycles(reverse=True):
             if self.collection_filter(op):
                 first_cycle_to_decompose_on_the_right = cycle
+                break
 
         cycle_in_circuit = [
             first_cycle_to_decompose_on_the_right,
@@ -244,15 +254,15 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
             assert len(current_cycle) == 1
             current_location = current_cycle[0].location
 
-            orig_number_of_cycles = len(circuit)
-
-            print(
-                f'Will remove operation {op} in cycle {current_cycle_index} at'
-                f' location {current_location}, and decompose it'
-                f' to {self.multi_qudit_gates}',
+            _logger.debug(
+                f'Will remove operation {current_cycle[0]} in cycle '
+                f'{current_cycle_index} at  location {current_location}, and '
+                f' decompose it to {self.multi_qudit_gates}',
             )
 
             circuit.pop_cycle(current_cycle_index)
+
+            orig_number_of_cycles = len(circuit)
 
             layer_gen = CircuitWideAwareLayerGenerator(
                 circuit,
@@ -278,24 +288,39 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
 
             dist = self.cost(circuit, data.target)
 
-            print(
+            _logger.debug(
                 f'The decomposing in iteration {iteration} added {cycles_add}'
                 f' gates and the current dist is {dist:.6e}.',
             )
 
             step = 1 if grow_from_left else -1
             next_cycle_to_grow = current_cycle_index + \
-                (cycles_add if grow_from_left else 0)
+                (cycles_add if grow_from_left else -1)
 
-            while not self.collection_filter(circuit[next_cycle_to_grow][0]):
+            _logger.debug(
+                f'{new_number_of_cycles = } {next_cycle_to_grow = } {step = }',
+            )
+
+            # Find the next gate to decompose
+            while (
+                next_cycle_to_grow < new_number_of_cycles
+                or next_cycle_to_grow >= 0
+            ):
+
+                if self.collection_filter(circuit[next_cycle_to_grow][0]):
+                    break  # We found the gate to decompose
                 next_cycle_to_grow += step
-                if (
-                    next_cycle_to_grow > new_number_of_cycles
-                    or next_cycle_to_grow < 0
-                ):
-                    more_cycles_to_grow = False
-                    break
+            else:
+                _logger.debug('Will stop as reached end.')
+                more_cycles_to_grow = False
+
             cycle_in_circuit[grow_from_left] = next_cycle_to_grow
+
+            # Need to push the right pointer with the number of cycles added.
+            # TODO: consider using pointers to actual gates and not cycle
+            # numbers to avoid this.
+            if grow_from_left:
+                cycle_in_circuit[False] += cycles_add
 
             # Making sure that when the direction is towards the middle,
             # that the two pointers don't pass each other
@@ -305,7 +330,7 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
             if should_alternate:
                 grow_from_left = not grow_from_left
 
-        print(
+        _logger.debug(
             f'Decomposition finished after {iteration} iterations'
             f' with distance {dist:.6e}.',
         )
