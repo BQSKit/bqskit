@@ -20,8 +20,8 @@ repos:
     -   id: fix-byte-order-marker
     -   id: fix-encoding-pragma
         args: ['--remove']
--   repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+-   repo: https://github.com/s-weigand/docformatter
+    rev: 1ec30b7
     hooks:
     -   id: docformatter
         args:
