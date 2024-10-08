@@ -40,6 +40,7 @@ from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
+from bqskit.qis.unitary import RealVector
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.utils.typing import is_integer
@@ -256,6 +257,24 @@ def gates(
     assume(gate.num_params <= 128)
 
     return gate
+
+
+@composite
+def gates_and_params(
+    draw: Any,
+    radixes: Sequence[int] | int | None = None,
+    constant: bool | None = None,
+) -> tuple[Gate, RealVector]:
+    """Hypothesis strategy for generating gates and parameters."""
+    gate = draw(gates(radixes, constant))
+    params = draw(
+        lists(
+            floats(allow_nan=False, allow_infinity=False, width=16),
+            min_size=gate.num_params,
+            max_size=gate.num_params,
+        ),
+    )
+    return gate, params
 
 
 @composite

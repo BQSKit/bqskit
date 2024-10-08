@@ -363,7 +363,7 @@ class GeneralizedSabreAlgorithm():
         circuit: Circuit,
         F: set[CircuitPoint],
         E: set[CircuitPoint],
-        D: list[list[int]],
+        D: list[list[float]],
         cg: CouplingGraph,
         pi: list[int],
         decay: list[float],
@@ -416,7 +416,7 @@ class GeneralizedSabreAlgorithm():
         circuit: Circuit,
         F: set[CircuitPoint],
         pi: list[int],
-        D: list[list[int]],
+        D: list[list[float]],
         swap: tuple[int, int],
         decay: list[float],
         E: set[CircuitPoint],
@@ -475,7 +475,7 @@ class GeneralizedSabreAlgorithm():
         self,
         logical_qudits: Sequence[int],
         pi: list[int],
-        D: list[list[int]],
+        D: list[list[float]],
     ) -> float:
         """Calculate the expected number of swaps to connect logical qudits."""
         min_term = np.inf
@@ -493,7 +493,7 @@ class GeneralizedSabreAlgorithm():
         logical_qudits: Sequence[int],
         cg: CouplingGraph,
         pi: list[int],
-        D: list[list[int]],
+        D: list[list[float]],
     ) -> Iterator[tuple[int, int]]:
         """Yield the swaps necessary to bring some of the qudits together."""
         center_qudit = min(

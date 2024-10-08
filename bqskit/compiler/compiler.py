@@ -4,17 +4,18 @@ from __future__ import annotations
 import atexit
 import functools
 import logging
+import pickle
 import signal
 import subprocess
 import sys
 import time
 import uuid
-import warnings
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from subprocess import Popen
 from types import FrameType
 from typing import Literal
+from typing import MutableMapping
 from typing import overload
 from typing import TYPE_CHECKING
 
@@ -71,6 +72,7 @@ class Compiler:
         num_workers: int = -1,
         runtime_log_level: int = logging.WARNING,
         worker_port: int = default_worker_port,
+        num_blas_threads: int = 1,
     ) -> None:
         """
         Construct a Compiler object.
@@ -99,30 +101,42 @@ class Compiler:
             worker_port (int): The optional port to pass to an attached
                 runtime. See :obj:`~bqskit.runtime.attached.AttachedServer`
                 for more info.
+
+            num_blas_threads (int): The number of threads to use in the
+                BLAS libraries on the worker nodes. (Defaults to 1)
         """
         self.p: Popen | None = None  # type: ignore
         self.conn: Connection | None = None
 
-        atexit.register(self.close)
+        _compiler_instances.add(self)
 
         if ip is None:
             ip = 'localhost'
-            self._start_server(num_workers, runtime_log_level, worker_port)
+            self._start_server(
+                num_workers,
+                runtime_log_level,
+                worker_port,
+                num_blas_threads,
+            )
 
-        self._connect_to_server(ip, port)
+        self._connect_to_server(ip, port, self.p is not None)
 
     def _start_server(
         self,
         num_workers: int,
         runtime_log_level: int,
         worker_port: int,
+        num_blas_threads: int,
     ) -> None:
         """
         Start an attached serer with `num_workers` workers.
 
         See :obj:`~bqskit.runtime.attached.AttachedServer` for more info.
         """
-        params = f'{num_workers}, {runtime_log_level}, {worker_port=}'
+        params = f'{num_workers}, '
+        params += f'log_level={runtime_log_level}, '
+        params += f'{worker_port=}, '
+        params += f'{num_blas_threads=}, '
         import_str = 'from bqskit.runtime.attached import start_attached_server'
         launch_str = f'{import_str}; start_attached_server({params})'
         if sys.platform == 'win32':
@@ -132,24 +146,45 @@ class Compiler:
         self.p = Popen([sys.executable, '-c', launch_str], creationflags=flags)
         _logger.debug('Starting runtime server process.')
 
-    def _connect_to_server(self, ip: str, port: int) -> None:
+    def _connect_to_server(self, ip: str, port: int, attached: bool) -> None:
         """Connect to a runtime server at `ip` and `port`."""
         max_retries = 8
         wait_time = .25
-        for _ in range(max_retries):
+        current_retry = 0
+        while current_retry < max_retries or attached:
             try:
                 family = 'AF_INET' if sys.platform == 'win32' else None
                 conn = Client((ip, port), family)
             except ConnectionRefusedError:
+                if wait_time > 4:
+                    _logger.warning(
+                        'Connection refused by runtime server.'
+                        ' Retrying in %s seconds.', wait_time,
+                    )
+                if wait_time > 16 and attached:
+                    _logger.warning(
+                        'Connection is still refused by runtime server.'
+                        ' This may be due to the server not being started.'
+                        ' You may want to check the server logs, by starting'
+                        ' the compiler with "runtime_log_level" set. You'
+                        ' can also try launching the bqskit runtime in'
+                        ' detached mode. See the bqskit runtime documentation'
+                        ' for more information:'
+                        ' https://bqskit.readthedocs.io/en/latest/guides/'
+                        'distributing.html',
+                    )
                 time.sleep(wait_time)
                 wait_time *= 2
+                current_retry += 1
             else:
                 self.conn = conn
                 handle = functools.partial(sigint_handler, compiler=self)
                 self.old_signal = signal.signal(signal.SIGINT, handle)
                 if self.conn is None:
                     raise RuntimeError('Connection unexpectedly none.')
-                self.conn.send((RuntimeMessage.CONNECT, None))
+                msg, payload = self._send_recv(RuntimeMessage.CONNECT, sys.path)
+                if msg != RuntimeMessage.READY:
+                    raise RuntimeError(f'Unexpected message type: {msg}.')
                 _logger.debug('Successfully connected to runtime server.')
                 return
         raise RuntimeError('Client connection refused')
@@ -221,28 +256,25 @@ class Compiler:
         # Reset interrupt signal handler and remove exit handler
         if hasattr(self, 'old_signal'):
             signal.signal(signal.SIGINT, self.old_signal)
+            del self.old_signal
 
-    def __del__(self) -> None:
-        self.close()
-        atexit.unregister(self.close)
-        _logger.debug('Compiler successfully shutdown.')
+        _compiler_instances.discard(self)
+        _logger.debug('Compiler has been closed.')
 
     def submit(
         self,
-        task_or_circuit: CompilationTask | Circuit,
-        workflow: WorkflowLike | None = None,
+        circuit: Circuit,
+        workflow: WorkflowLike,
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
+        data: MutableMapping[str, Any] | None = None,
     ) -> uuid.UUID:
         """
         Submit a compilation job to the Compiler.
 
         Args:
-            task_or_circuit (CompilationTask | Circuit): The task to compile,
-                or the input circuit. If a task is specified, no other
-                argument should be specified. If a task is not specified,
-                the circuit must be paired with a workflow argument.
+            circuit (Circuit): The input circuit to be compiled.
 
             workflow (WorkflowLike): The compilation job submitted
                 is defined by executing this workflow on the input circuit.
@@ -262,91 +294,48 @@ class Compiler:
                 tasks equal opportunity to log.
 
         Returns:
-            (uuid.UUID): The ID of the generated task in the system. This
+            uuid.UUID: The ID of the generated task in the system. This
                 ID can be used to check the status of, cancel, and request
                 the result of the task.
         """
         # Build CompilationTask
-        if isinstance(task_or_circuit, CompilationTask):
-            if workflow is not None:
-                raise ValueError(
-                    'Cannot specify workflow and task.'
-                    ' Either specify a workflow and circuit or a task alone.',
-                )
-
-            task = task_or_circuit
-
-        else:
-            if workflow is None:
-                m = 'Must specify workflow when providing a circuit to submit.'
-                raise TypeError(m)
-
-            task = CompilationTask(task_or_circuit, Workflow(workflow))
+        task = CompilationTask(circuit, Workflow(workflow))
 
         # Set task configuration
         task.request_data = request_data
         task.logging_level = logging_level or self._discover_lowest_log_level()
         task.max_logging_depth = max_logging_depth
+        if data is not None:
+            task.data.update(data)
 
         # Submit task to runtime
         self._send(RuntimeMessage.SUBMIT, task)
         return task.task_id
 
-    def status(self, task_id: CompilationTask | uuid.UUID) -> CompilationStatus:
-        """Retrieve the status of the specified task."""
-        if isinstance(task_id, CompilationTask):
-            warnings.warn(
-                'Request a status from a CompilationTask is deprecated.\n'
-                ' Instead, pass a task ID to request a status.\n'
-                ' `compiler.submit` returns a task id, and you can get an\n'
-                ' ID from a task via `task.task_id`.\n'
-                ' This warning will turn into an error in a future update.',
-                DeprecationWarning,
-            )
-            task_id = task_id.task_id
-        assert isinstance(task_id, uuid.UUID)
+    def status(self, task_id: uuid.UUID) -> CompilationStatus:
+        """
+        Retrieve the status of the specified task.
 
+        Args:
+            task_id (uuid.UUID): The ID of the task to check.
+
+        Returns:
+            CompilationStatus: The status of the task.
+        """
         msg, payload = self._send_recv(RuntimeMessage.STATUS, task_id)
         if msg != RuntimeMessage.STATUS:
             raise RuntimeError(f'Unexpected message type: {msg}.')
         return payload
 
-    def result(
-        self,
-        task_id: CompilationTask | uuid.UUID,
-    ) -> Circuit | tuple[Circuit, PassData]:
+    def result(self, task_id: uuid.UUID) -> Circuit | tuple[Circuit, PassData]:
         """Block until the task is finished, return its result."""
-        if isinstance(task_id, CompilationTask):
-            warnings.warn(
-                'Request a result from a CompilationTask is deprecated.'
-                ' Instead, pass a task ID to request a result.\n'
-                ' `compiler.submit` returns a task id, and you can get an\n'
-                ' ID from a task via `task.task_id`.\n'
-                ' This warning will turn into an error in a future update.',
-                DeprecationWarning,
-            )
-            task_id = task_id.task_id
-        assert isinstance(task_id, uuid.UUID)
-
         msg, payload = self._send_recv(RuntimeMessage.REQUEST, task_id)
         if msg != RuntimeMessage.RESULT:
             raise RuntimeError(f'Unexpected message type: {msg}.')
         return payload
 
-    def cancel(self, task_id: CompilationTask | uuid.UUID) -> bool:
+    def cancel(self, task_id: uuid.UUID) -> bool:
         """Cancel the execution of a task in the system."""
-        if isinstance(task_id, CompilationTask):
-            warnings.warn(
-                'Cancelling a CompilationTask is deprecated. Instead,'
-                ' Instead, pass a task ID to cancel a task.\n'
-                ' `compiler.submit` returns a task id, and you can get an\n'
-                ' ID from a task via `task.task_id`.\n'
-                ' This warning will turn into an error in a future update.',
-                DeprecationWarning,
-            )
-            task_id = task_id.task_id
-        assert isinstance(task_id, uuid.UUID)
-
         msg, _ = self._send_recv(RuntimeMessage.CANCEL, task_id)
         if msg != RuntimeMessage.CANCEL:
             raise RuntimeError(f'Unexpected message type: {msg}.')
@@ -355,63 +344,51 @@ class Compiler:
     @overload
     def compile(
         self,
-        task_or_circuit: CompilationTask,
-    ) -> Circuit | tuple[Circuit, PassData]:
-        ...
-
-    @overload
-    def compile(
-        self,
-        task_or_circuit: Circuit,
+        circuit: Circuit,
         workflow: WorkflowLike,
         request_data: Literal[False] = ...,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
+        data: MutableMapping[str, Any] | None = ...,
     ) -> Circuit:
         ...
 
     @overload
     def compile(
         self,
-        task_or_circuit: Circuit,
+        circuit: Circuit,
         workflow: WorkflowLike,
         request_data: Literal[True],
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
+        data: MutableMapping[str, Any] | None = ...,
     ) -> tuple[Circuit, PassData]:
         ...
 
     @overload
     def compile(
         self,
-        task_or_circuit: Circuit,
+        circuit: Circuit,
         workflow: WorkflowLike,
         request_data: bool,
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
+        data: MutableMapping[str, Any] | None = ...,
     ) -> Circuit | tuple[Circuit, PassData]:
         ...
 
     def compile(
         self,
-        task_or_circuit: CompilationTask | Circuit,
-        workflow: WorkflowLike | None = None,
+        circuit: Circuit,
+        workflow: WorkflowLike,
         request_data: bool = False,
         logging_level: int | None = None,
         max_logging_depth: int = -1,
+        data: MutableMapping[str, Any] | None = None,
     ) -> Circuit | tuple[Circuit, PassData]:
         """Submit a task, wait for its results; see :func:`submit` for more."""
-        if isinstance(task_or_circuit, CompilationTask):
-            warnings.warn(
-                'Manually constructing and compiling CompilationTasks'
-                ' is deprecated. Instead, call compile directly with'
-                ' your input circuit and workflow. This warning will'
-                ' turn into an error in a future update.',
-                DeprecationWarning,
-            )
-
         task_id = self.submit(
-            task_or_circuit,
+            circuit,
             workflow,
             request_data,
             logging_level,
@@ -438,7 +415,12 @@ class Compiler:
         except Exception as e:
             self.conn = None
             self.close()
-            raise RuntimeError('Server connection unexpectedly closed.') from e
+            if isinstance(e, (EOFError, ConnectionResetError)):
+                raise RuntimeError('Server connection unexpectedly closed.')
+            else:
+                raise RuntimeError(
+                    'Server connection unexpectedly closed.',
+                ) from e
 
     def _send_recv(
         self,
@@ -471,9 +453,15 @@ class Compiler:
             msg, payload = self.conn.recv()
 
             if msg == RuntimeMessage.LOG:
-                logger = logging.getLogger(payload.name)
-                if logger.isEnabledFor(payload.levelno):
-                    logger.handle(payload)
+                record = pickle.loads(payload)
+                if isinstance(record, logging.LogRecord):
+                    logger = logging.getLogger(record.name)
+                    if logger.isEnabledFor(record.levelno):
+                        logger.handle(record)
+                else:
+                    name, levelno, msg = record
+                    logger = logging.getLogger(name)
+                    logger.log(levelno, msg)
 
             elif msg == RuntimeMessage.ERROR:
                 raise RuntimeError(payload)
@@ -530,3 +518,12 @@ def sigint_handler(signum: int, frame: FrameType, compiler: Compiler) -> None:
     _logger.critical('Compiler interrupted.')
     compiler.close()
     raise KeyboardInterrupt
+
+
+_compiler_instances: set[Compiler] = set()
+
+
+@atexit.register
+def _cleanup_compiler_instances() -> None:
+    for compiler in list(_compiler_instances):
+        compiler.close()

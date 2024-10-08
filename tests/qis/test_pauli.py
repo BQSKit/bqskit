@@ -10,6 +10,7 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from bqskit.qis.pauli import PauliMatrices
+from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.test.types import invalid_type_test
 from bqskit.utils.test.types import valid_type_test
@@ -796,6 +797,475 @@ class TestPauliMatricesFromString:
         pauli_mats: list[npt.NDArray[np.complex128]],
     ) -> None:
         paulis = PauliMatrices.from_string(pauli_str)
+        assert isinstance(paulis, list)
+        assert all(isinstance(pauli, np.ndarray) for pauli in paulis)
+        assert len(paulis) == len(pauli_mats)
+        assert all(self.in_array(pauli, pauli_mats) for pauli in paulis)
+
+
+class TestPauliZMatricesConstructor:
+    def in_array(self, needle: Any, haystack: Any) -> bool:
+        for elem in haystack:
+            if np.allclose(elem, needle):
+                return True
+
+        return False
+
+    @invalid_type_test(PauliZMatrices)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @given(integers(max_value=-1))
+    def test_invalid_value(self, size: int) -> None:
+        with pytest.raises(ValueError):
+            PauliZMatrices(size)
+
+    def test_size_1(self) -> None:
+        num_qubits = 1
+        paulis = PauliZMatrices(num_qubits)
+        assert len(paulis) == 2 ** num_qubits
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(I, paulis)
+        assert self.in_array(Z, paulis)
+
+    def test_size_2(self) -> None:
+        num_qubits = 2
+        paulis = PauliZMatrices(num_qubits)
+        assert len(paulis) == 2 ** num_qubits
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(Z, Z), paulis)
+        assert self.in_array(np.kron(Z, I), paulis)
+        assert self.in_array(np.kron(I, Z), paulis)
+        assert self.in_array(np.kron(I, I), paulis)
+
+    def test_size_3(self) -> None:
+        num_qubits = 3
+        paulis = PauliZMatrices(num_qubits)
+        assert len(paulis) == 2 ** num_qubits
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(Z, np.kron(Z, Z)), paulis)
+        assert self.in_array(np.kron(Z, np.kron(Z, I)), paulis)
+        assert self.in_array(np.kron(Z, np.kron(I, Z)), paulis)
+        assert self.in_array(np.kron(Z, np.kron(I, I)), paulis)
+        assert self.in_array(np.kron(I, np.kron(Z, Z)), paulis)
+        assert self.in_array(np.kron(I, np.kron(Z, I)), paulis)
+        assert self.in_array(np.kron(I, np.kron(I, Z)), paulis)
+        assert self.in_array(np.kron(I, np.kron(I, I)), paulis)
+
+
+class TestPauliZMatricesGetProjectionMatrices:
+    def in_array(self, needle: Any, haystack: Any) -> bool:
+        for elem in haystack:
+            if np.allclose(elem, needle):
+                return True
+
+        return False
+
+    @valid_type_test(PauliZMatrices(1).get_projection_matrices)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(PauliZMatrices(1).get_projection_matrices)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @pytest.mark.parametrize('invalid_qubit', [-5, -2, 4, 10])
+    def test_invalid_value_1(self, invalid_qubit: int) -> None:
+        paulis = PauliZMatrices(4)
+        with pytest.raises(ValueError):
+            paulis.get_projection_matrices([invalid_qubit])
+
+    @pytest.mark.parametrize('invalid_q_set', [[0, 0], [0, 1, 2, 4]])
+    def test_invalid_value_2(self, invalid_q_set: list[int]) -> None:
+        paulis = PauliZMatrices(4)
+        with pytest.raises(ValueError):
+            paulis.get_projection_matrices(invalid_q_set)
+
+    def test_proj_3_0(self) -> None:
+        num_qubits = 3
+        qubit_proj = 0
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+
+    def test_proj_3_1(self) -> None:
+        num_qubits = 3
+        qubit_proj = 1
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+
+    def test_proj_3_2(self) -> None:
+        num_qubits = 3
+        qubit_proj = 2
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+
+    def test_proj_4_0(self) -> None:
+        num_qubits = 4
+        qubit_proj = 0
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
+
+    def test_proj_4_1(self) -> None:
+        num_qubits = 4
+        qubit_proj = 1
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(np.kron(I, Z), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
+
+    def test_proj_4_2(self) -> None:
+        num_qubits = 4
+        qubit_proj = 2
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), Z), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
+
+    def test_proj_4_3(self) -> None:
+        num_qubits = 4
+        qubit_proj = 3
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_proj])
+        assert len(projs) == 2
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), Z), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
+
+    def test_proj_3_01(self) -> None:
+        num_qubits = 3
+        qubit_pro1 = 0
+        qubit_pro2 = 1
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 4
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+
+    def test_proj_3_02(self) -> None:
+        num_qubits = 3
+        qubit_pro1 = 0
+        qubit_pro2 = 2
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 4
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
+
+    def test_proj_3_12(self) -> None:
+        num_qubits = 3
+        qubit_pro1 = 1
+        qubit_pro2 = 2
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 4
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
+
+    def test_proj_3_012(self) -> None:
+        num_qubits = 3
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([0, 1, 2])
+        assert len(projs) == 8
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(I, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(I, I), I), projs)
+        assert self.in_array(np.kron(np.kron(I, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(I, I), Z), projs)
+
+        assert self.in_array(np.kron(np.kron(Z, Z), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), I), projs)
+        assert self.in_array(np.kron(np.kron(Z, Z), Z), projs)
+        assert self.in_array(np.kron(np.kron(Z, I), Z), projs)
+
+    def test_proj_4_02(self) -> None:
+        num_qubits = 4
+        qubit_pro1 = 0
+        qubit_pro2 = 2
+        paulis = PauliZMatrices(num_qubits)
+        projs = paulis.get_projection_matrices([qubit_pro1, qubit_pro2])
+        assert len(projs) == 4
+
+        I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
+        Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), I), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(Z, I), Z), I), projs)
+        assert self.in_array(np.kron(np.kron(np.kron(I, I), Z), I), projs)
+
+
+class TestPauliZMatricesDotProduct:
+    @pytest.mark.parametrize('invalid_alpha', [[1.1] * i for i in range(2)])
+    def test_invalid_value(self, invalid_alpha: RealVector) -> None:
+        with pytest.raises(ValueError):
+            PauliZMatrices(1).dot_product(invalid_alpha)
+
+    @pytest.mark.parametrize(
+        'alpha, prod', [
+            ([1, 0], PauliZMatrices.I),
+            ([0, 1], PauliZMatrices.Z),
+            ([1, 1], PauliZMatrices.I + PauliZMatrices.Z),
+        ],
+    )
+    def test_size_1(self, alpha: RealVector, prod: npt.NDArray[Any]) -> None:
+        assert np.allclose(PauliZMatrices(1).dot_product(alpha), prod)
+
+    @pytest.mark.parametrize(
+        'alpha, prod', [
+            (
+                [1, 0, 0, 0],
+                np.kron(PauliZMatrices.I, PauliZMatrices.I),
+            ),
+            (
+                [0, 1, 0, 0],
+                np.kron(PauliZMatrices.I, PauliZMatrices.Z),
+            ),
+            (
+                [0, 0, 1, 0],
+                np.kron(PauliZMatrices.Z, PauliZMatrices.I),
+            ),
+            (
+                [0, 0, 0, 1],
+                np.kron(PauliZMatrices.Z, PauliZMatrices.Z),
+            ),
+            (
+                [1, 0, 0, 1],
+                np.kron(PauliZMatrices.I, PauliZMatrices.I)
+                + np.kron(PauliZMatrices.Z, PauliZMatrices.Z),
+            ),
+            (
+                [1.8, 0, 0, 91.7],
+                1.8 * np.kron(PauliZMatrices.I, PauliZMatrices.I)
+                + 91.7 * np.kron(PauliZMatrices.Z, PauliZMatrices.Z),
+            ),
+        ],
+    )
+    def test_size_2(
+        self, alpha: RealVector,
+        prod: npt.NDArray[np.complex128],
+    ) -> None:
+        assert np.allclose(PauliZMatrices(2).dot_product(alpha), prod)
+
+
+class TestPauliZMatricesFromString:
+    def in_array(self, needle: Any, haystack: Any) -> bool:
+        for elem in haystack:
+            if not needle.shape == elem.shape:
+                continue
+            if np.allclose(elem, needle):
+                return True
+
+        return False
+
+    @valid_type_test(PauliZMatrices.from_string)
+    def test_valid_type(self) -> None:
+        pass
+
+    @invalid_type_test(PauliZMatrices.from_string)
+    def test_invalid_type(self) -> None:
+        pass
+
+    @pytest.mark.parametrize(
+        'invalid_str', [
+            'ABC',
+            'IXYZA',
+            '\t AIXYZ  ,, \n\r\tabc\t',
+            'IXYZ+',
+            'IXYZ, IXA',
+            'WXYZ, XYZ',
+        ],
+    )
+    def test_invalid_value(self, invalid_str: str) -> None:
+        with pytest.raises(ValueError):
+            PauliZMatrices.from_string(invalid_str)
+
+    @pytest.mark.parametrize(
+        'pauli_str, pauli_mat', [
+            (
+                'IZZ',
+                np.kron(
+                    np.kron(
+                        PauliZMatrices.I,
+                        PauliZMatrices.Z,
+                    ),
+                    PauliZMatrices.Z,
+                ),
+            ),
+            (
+                'ZIZ',
+                np.kron(
+                    np.kron(
+                        PauliZMatrices.Z,
+                        PauliZMatrices.I,
+                    ),
+                    PauliZMatrices.Z,
+                ),
+            ),
+            (
+                'ZZI',
+                np.kron(
+                    np.kron(
+                        PauliZMatrices.Z,
+                        PauliZMatrices.Z,
+                    ),
+                    PauliZMatrices.I,
+                ),
+            ),
+            ('\t ZZ  ,,\n\r\t\t', np.kron(PauliZMatrices.Z, PauliZMatrices.Z)),
+        ],
+    )
+    def test_single(
+        self,
+        pauli_str: str,
+        pauli_mat: npt.NDArray[np.complex128],
+    ) -> None:
+        assert isinstance(PauliZMatrices.from_string(pauli_str), np.ndarray)
+        assert np.allclose(
+            np.array(PauliZMatrices.from_string(pauli_str)),
+            pauli_mat,
+        )
+
+    @pytest.mark.parametrize(
+        'pauli_str, pauli_mats', [
+            (
+                'IIZ, IIZ', [
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.I,
+                            PauliZMatrices.I,
+                        ),
+                        PauliZMatrices.Z,
+                    ),
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.I,
+                            PauliZMatrices.I,
+                        ),
+                        PauliZMatrices.Z,
+                    ),
+                ],
+            ),
+            (
+                'ZIZ, ZZI', [
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.Z,
+                            PauliZMatrices.I,
+                        ),
+                        PauliZMatrices.Z,
+                    ),
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.Z,
+                            PauliZMatrices.Z,
+                        ),
+                        PauliZMatrices.I,
+                    ),
+                ],
+            ),
+            (
+                'IIZ, IZI, ZZZ', [
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.I,
+                            PauliZMatrices.I,
+                        ),
+                        PauliZMatrices.Z,
+                    ),
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.I,
+                            PauliZMatrices.Z,
+                        ),
+                        PauliZMatrices.I,
+                    ),
+                    np.kron(
+                        np.kron(
+                            PauliZMatrices.Z,
+                            PauliZMatrices.Z,
+                        ),
+                        PauliZMatrices.Z,
+                    ),
+                ],
+            ),
+        ],
+    )
+    def test_multi(
+        self, pauli_str: str,
+        pauli_mats: list[npt.NDArray[np.complex128]],
+    ) -> None:
+        paulis = PauliZMatrices.from_string(pauli_str)
         assert isinstance(paulis, list)
         assert all(isinstance(pauli, np.ndarray) for pauli in paulis)
         assert len(paulis) == len(pauli_mats)

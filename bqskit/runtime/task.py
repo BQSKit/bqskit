@@ -6,6 +6,8 @@ import logging
 from typing import Any
 from typing import Coroutine
 
+import dill
+
 from bqskit.runtime.address import RuntimeAddress
 
 
@@ -34,18 +36,26 @@ class RuntimeTask:
         breadcrumbs: tuple[RuntimeAddress, ...],
         logging_level: int | None = None,
         max_logging_depth: int = -1,
+        task_name: str | None = None,
+        log_context: dict[str, str] = {},
     ) -> None:
         """Create the task with a new id and return address."""
         RuntimeTask.task_counter += 1
         self.task_id = RuntimeTask.task_counter
 
-        self.fnargs = fnargs
+        self.serialized_fnargs = dill.dumps(fnargs)
+        self._fnargs: tuple[Any, Any, Any] | None = None
+        self._name = fnargs[0].__name__ if task_name is None else task_name
         """Tuple of function pointer, arguments, and keyword arguments."""
 
         self.return_address = return_address
-        """Where the result of this task should be sent."""
+        """
+        Where the result of this task should be sent.
 
-        self.logging_level = logging_level
+        This doubles as a unique system-wide id for the task.
+        """
+
+        self.logging_level = logging_level or 0
         """Logs with levels >= to this get emitted, if None always emit."""
 
         self.comp_task_id = comp_task_id
@@ -60,9 +70,6 @@ class RuntimeTask:
         self.coro: Coroutine[Any, Any, Any] | None = None
         """The coroutine containing this tasks code."""
 
-        # self.send: Any = None
-        # """A register that both the coroutine and task have access to."""
-
         self.desired_box_id: int | None = None
         """When waiting on a mailbox, this stores that mailbox's id."""
 
@@ -71,6 +78,19 @@ class RuntimeTask:
 
         self.wake_on_next: bool = False
         """Set to true if this task should wake immediately on a result."""
+
+        self.log_context: dict[str, str] = log_context
+        """Additional context to be logged with this task."""
+
+        self.msg_buffer: list[Any] = []
+
+    @property
+    def fnargs(self) -> tuple[Any, Any, Any]:
+        """Return the function pointer, arguments, and keyword arguments."""
+        if self._fnargs is None:
+            self._fnargs = dill.loads(self.serialized_fnargs)
+        assert self._fnargs is not None  # for type checker
+        return self._fnargs
 
     def step(self, send_val: Any = None) -> Any:
         """Execute one step of the task."""
@@ -87,7 +107,9 @@ class RuntimeTask:
             self.max_logging_depth < 0
             or len(self.breadcrumbs) <= self.max_logging_depth
         ):
-            logging.getLogger().setLevel(0)
+            logging.getLogger().setLevel(self.logging_level)
+        else:
+            logging.getLogger().setLevel(100)
 
         # Execute a task step
         to_return = self.coro.send(send_val)
@@ -97,9 +119,29 @@ class RuntimeTask:
 
         return to_return
 
+    @property
+    def unique_id(self) -> RuntimeAddress:
+        """Return the task's system-wide unique id."""
+        return self.return_address
+
     def start(self) -> None:
         """Initialize the task."""
         self.coro = self.run()
+
+    def cancel(self) -> None:
+        """Ask the coroutine to gracefully exit."""
+        if self.coro is not None:
+            # If this call to "close" raises a RuntimeError,
+            # it is likely a blanket try/accept catching the
+            # error used to stop the coroutine, preventing
+            # it from stopping correctly.
+            try:
+                self.coro.close()
+            except ValueError:
+                # Coroutine is running and cannot be closed.
+                pass
+        else:
+            raise RuntimeError('Task was cancelled with None coroutine.')
 
     async def run(self) -> Any:
         """Task coroutine wrapper."""
@@ -110,3 +152,11 @@ class RuntimeTask:
     def is_descendant_of(self, addr: RuntimeAddress) -> bool:
         """Return true if `addr` identifies a parent (or this) task."""
         return addr == self.return_address or addr in self.breadcrumbs
+
+    def __str__(self) -> str:
+        """Return a string representation of the task."""
+        return f'{self._name}'
+
+    def __repr__(self) -> str:
+        """Return a string representation of the task."""
+        return f'<RuntimeTask {self.unique_id} {self._name}>'

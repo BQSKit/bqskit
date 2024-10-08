@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import warnings
 from typing import Any
 from typing import Literal
@@ -10,11 +11,14 @@ from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
-import numpy as np
-
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
+from bqskit.compiler.registry import _compile_circuit_registry
+from bqskit.compiler.registry import _compile_statemap_registry
+from bqskit.compiler.registry import _compile_stateprep_registry
+from bqskit.compiler.registry import _compile_unitary_registry
+from bqskit.compiler.registry import model_registered_target_types
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
@@ -582,7 +586,7 @@ def compile(
         if error_threshold is not None:
             for i, data in enumerate(datas):
                 error = data.error
-                nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
+                nonsq_error = 1 - math.sqrt(max(1 - (error * error), 0))
                 if nonsq_error > error_threshold:
                     warnings.warn(
                         'Upper bound on error is greater than set threshold:'
@@ -622,8 +626,11 @@ def compile(
         if isinstance(typed_input, Circuit):
             in_circuit = typed_input
 
+        elif isinstance(typed_input, UnitaryMatrix):
+            in_circuit = Circuit.from_unitary(typed_input)
+
         else:
-            in_circuit = Circuit(1)
+            in_circuit = Circuit(typed_input.num_qudits, typed_input.radixes)
 
         # Perform the compilation
         out, data = compiler.compile(in_circuit, workflow, True)
@@ -631,7 +638,7 @@ def compile(
         # Log error if necessary
         if error_threshold is not None:
             error = data.error
-            nonsq_error = 1 - np.sqrt(max(1 - (error * error), 0))
+            nonsq_error = 1 - math.sqrt(max(1 - (error * error), 0))
             if nonsq_error > error_threshold:
                 warnings.warn(
                     'Upper bound on error is greater than set threshold:'
@@ -669,6 +676,8 @@ def build_workflow(
     if model is None:
         model = MachineModel(input.num_qudits, radixes=input.radixes)
 
+    model_registered_types = model_registered_target_types(model)
+
     if isinstance(input, Circuit):
         if input.num_qudits > max_synthesis_size:
             if any(
@@ -685,6 +694,16 @@ def build_workflow(
                     'Unable to compile circuit with gate larger than'
                     ' max_synthesis_size.\nConsider adjusting it.',
                 )
+        # Use a registered workflow if model is found in the circuit registry
+        # for a given optimization_level
+        if model in _compile_circuit_registry:
+            if optimization_level in _compile_circuit_registry[model]:
+                return _compile_circuit_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _circuit_workflow(
             model,
@@ -702,6 +721,16 @@ def build_workflow(
                 'Unable to compile unitary with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
+        # Use a registered workflow if model is found in the unitary registry
+        # for a given optimization_level
+        if model in _compile_unitary_registry:
+            if optimization_level in _compile_unitary_registry[model]:
+                return _compile_unitary_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _synthesis_workflow(
             input,
@@ -720,6 +749,16 @@ def build_workflow(
                 'Unable to compile states with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
+        # Use a registered workflow if model is found in the stateprep registry
+        # for a given optimization_level
+        if model in _compile_stateprep_registry:
+            if optimization_level in _compile_stateprep_registry[model]:
+                return _compile_stateprep_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _stateprep_workflow(
             input,
@@ -738,6 +777,16 @@ def build_workflow(
                 'Unable to compile state systems with size larger than'
                 ' max_synthesis_size.\nConsider adjusting it.',
             )
+        # Use a registered workflow if model is found in the statemap registry
+        # for a given optimization_level
+        if model in _compile_statemap_registry:
+            if optimization_level in _compile_statemap_registry[model]:
+                return _compile_statemap_registry[model][optimization_level]
+        elif len(model_registered_types) > 0:
+            m = f'MachineModel {model} is registered for inputs of type in '
+            m += f'{model_registered_types}, but input is {type(input)}. '
+            m += f'You may need to register a Workflow for type {type(input)}.'
+            warnings.warn(m)
 
         return _statemap_workflow(
             input,

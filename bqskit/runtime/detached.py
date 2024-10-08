@@ -8,17 +8,16 @@ import socket
 import time
 import uuid
 from dataclasses import dataclass
-from logging import LogRecord
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
 from threading import Thread
 from typing import Any
 from typing import cast
 from typing import List
+from typing import Optional
 from typing import Sequence
+from typing import Tuple
 
-from bqskit.compiler.status import CompilationStatus
-from bqskit.compiler.task import CompilationTask
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
 from bqskit.runtime.base import import_tests_package
@@ -30,25 +29,7 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
 
-def listen(server: DetachedServer, port: int) -> None:
-    """Listening thread listens for client connections."""
-    listener = Listener(('0.0.0.0', port))
-    while server.running:
-        client = listener.accept()
-
-        if server.running:
-            # We check again that the server is running before registering
-            # the client because dummy data is sent to unblock
-            # listener.accept() during server shutdown
-            server.clients[client] = set()
-            server.sel.register(
-                client,
-                selectors.EVENT_READ,
-                MessageDirection.CLIENT,
-            )
-            server.logger.debug('Connected and registered new client.')
-
-    listener.close()
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -115,9 +96,30 @@ class DetachedServer(ServerBase):
 
         # Start client listener
         self.port = port
-        self.listen_thread = Thread(target=listen, args=(self, port))
+        self.listen_thread = Thread(target=self.listen, args=(port,))
+        self.listen_thread.daemon = True
         self.listen_thread.start()
-        self.logger.info(f'Started client listener on port {self.port}.')
+        _logger.info(f'Started client listener on port {self.port}.')
+
+    def listen(self, port: int) -> None:
+        """Listening thread listens for client connections."""
+        listener = Listener(('0.0.0.0', port))
+        while self.running:
+            client = listener.accept()
+
+            if self.running:
+                # We check again that the server is running before registering
+                # the client because dummy data is sent to unblock
+                # listener.accept() during server shutdown
+                self.clients[client] = set()
+                self.sel.register(
+                    client,
+                    selectors.EVENT_READ,
+                    MessageDirection.CLIENT,
+                )
+                _logger.debug('Connected and registered new client.')
+
+        listener.close()
 
     def handle_message(
         self,
@@ -130,14 +132,14 @@ class DetachedServer(ServerBase):
         if direction == MessageDirection.CLIENT:
 
             if msg == RuntimeMessage.CONNECT:
-                pass
+                paths = cast(List[str], payload)
+                self.handle_connect(conn, paths)
 
             elif msg == RuntimeMessage.DISCONNECT:
                 self.handle_disconnect(conn)
 
             elif msg == RuntimeMessage.SUBMIT:
-                ctask = cast(CompilationTask, payload)
-                self.handle_new_comp_task(conn, ctask)
+                self.handle_new_comp_task(conn, payload)
 
             elif msg == RuntimeMessage.REQUEST:
                 request = cast(uuid.UUID, payload)
@@ -176,24 +178,33 @@ class DetachedServer(ServerBase):
                 self.handle_log(payload)
 
             elif msg == RuntimeMessage.CANCEL:
-                self.broadcast_cancel(payload)
+                self.broadcast(msg, payload)
 
             elif msg == RuntimeMessage.SHUTDOWN:
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                num_idle = cast(int, payload)
-                self.handle_waiting(conn, num_idle)
+                p = cast(Tuple[int, Optional[RuntimeAddress]], payload)
+                num_idle, read_receipt = p
+                self.handle_waiting(conn, num_idle, read_receipt)
 
             elif msg == RuntimeMessage.UPDATE:
                 task_diff = cast(int, payload)
                 self.conn_to_employee_dict[conn].num_tasks += task_diff
+
+            elif msg == RuntimeMessage.COMMUNICATE:
+                self.broadcast(msg, payload)
 
             else:
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 
         else:
             raise RuntimeError(f'Unexpected message from {direction.name}.')
+
+    def handle_connect(self, conn: Connection, paths: list[str]) -> None:
+        """Handle a client connection request."""
+        self.handle_importpath(paths)
+        self.outgoing.put((conn, RuntimeMessage.READY, None))
 
     def handle_system_error(self, error_str: str) -> None:
         """
@@ -208,6 +219,13 @@ class DetachedServer(ServerBase):
         # Sleep to ensure clients receive error message before shutdown
         time.sleep(1)
 
+    def get_to_string(self, conn: Connection) -> str:
+        """Return a string representation of the connection."""
+        if conn in self.clients:
+            return 'CLIENT'
+
+        return self.conn_to_employee_dict[conn].recipient_string
+
     def handle_shutdown(self) -> None:
         """Shutdown the runtime."""
         super().handle_shutdown()
@@ -219,7 +237,7 @@ class DetachedServer(ServerBase):
             except Exception:
                 pass
         self.clients.clear()
-        self.logger.debug('Cleared clients.')
+        _logger.debug('Cleared clients.')
 
         # Close listener (hasattr checked for attachedserver shutdown)
         if hasattr(self, 'listen_thread') and self.listen_thread.is_alive():
@@ -231,27 +249,39 @@ class DetachedServer(ServerBase):
             dummy_socket.connect(('localhost', self.port))
             dummy_socket.close()
             self.listen_thread.join()
-            self.logger.debug('Joined listening thread.')
+            _logger.debug('Joined listening thread.')
 
     def handle_disconnect(self, conn: Connection) -> None:
         """Disconnect a client connection from the runtime."""
         super().handle_disconnect(conn)
         tasks = self.clients.pop(conn)
+
         for task_id in tasks:
             self.handle_cancel_comp_task(task_id)
-        self.logger.info('Unregistered client.')
+
+        tasks_to_pop = []
+        for (task, (tid, other_conn)) in self.tasks.items():
+            if other_conn == conn:
+                tasks_to_pop.append((task_id, tid))
+
+        for task_id, tid in tasks_to_pop:
+            self.tasks.pop(task_id)
+            self.mailbox_to_task_dict.pop(tid)
+
+        _logger.info('Unregistered client.')
 
     def handle_new_comp_task(
         self,
         conn: Connection,
-        task: CompilationTask,
+        task: Any,  # Explicitly not CompilationTask to avoid early import
     ) -> None:
         """Convert a :class:`CompilationTask` into an internal one."""
+        from bqskit.compiler.task import CompilationTask
         mailbox_id = self._get_new_mailbox_id()
         self.tasks[task.task_id] = (mailbox_id, conn)
         self.mailbox_to_task_dict[mailbox_id] = task.task_id
         self.mailboxes[mailbox_id] = ServerMailbox()
-        self.logger.info(f'New CompilationTask: {task.task_id}.')
+        _logger.info(f'New CompilationTask: {task.task_id}.')
 
         self.clients[conn].add(task.task_id)
 
@@ -279,7 +309,7 @@ class DetachedServer(ServerBase):
 
         if box.ready:
             # If the result has already arrived, ship it to the client.
-            self.logger.info(f'Responding to request for task {request}.')
+            _logger.info(f'Responding to request for task {request}.')
             self.outgoing.put((conn, RuntimeMessage.RESULT, box.result))
             self.mailboxes.pop(mailbox_id)
             self.clients[conn].remove(request)
@@ -294,6 +324,7 @@ class DetachedServer(ServerBase):
 
     def handle_status(self, conn: Connection, request: uuid.UUID) -> None:
         """Inform the client if the task is finished or not."""
+        from bqskit.compiler.status import CompilationStatus
         if request not in self.clients[conn] or request not in self.tasks:
             # This task is unknown to the system
             m = (conn, RuntimeMessage.STATUS, CompilationStatus.UNKNOWN)
@@ -309,7 +340,7 @@ class DetachedServer(ServerBase):
 
     def handle_cancel_comp_task(self, request: uuid.UUID) -> None:
         """Cancel a compilation task in the system."""
-        self.logger.info(f'Cancelling: {request}.')
+        _logger.info(f'Cancelling: {request}.')
 
         # Remove task from server data
         mailbox_id, client_conn = self.tasks[request]
@@ -319,7 +350,7 @@ class DetachedServer(ServerBase):
 
         # Forward internal cancel messages
         addr = RuntimeAddress(-1, mailbox_id, 0)
-        self.broadcast_cancel(addr)
+        self.broadcast(RuntimeMessage.CANCEL, addr)
 
         # Acknowledge the client's cancel request
         if not client_conn.closed:
@@ -340,10 +371,10 @@ class DetachedServer(ServerBase):
             box = self.mailboxes[mailbox_id]
             box.result = result.result
             t_id = self.mailbox_to_task_dict[mailbox_id]
-            self.logger.info(f'Finished: {t_id}.')
+            _logger.info(f'Finished: {t_id}.')
 
             if box.client_waiting:
-                self.logger.info(f'Responding to request for task {t_id}.')
+                _logger.info(f'Responding to request for task {t_id}.')
                 m = (self.tasks[t_id][1], RuntimeMessage.RESULT, box.result)
                 self.outgoing.put(m)
                 self.clients[self.tasks[t_id][1]].remove(t_id)
@@ -365,12 +396,24 @@ class DetachedServer(ServerBase):
             raise RuntimeError(error_payload)
 
         tid = error_payload[0]
+        if tid not in self.mailbox_to_task_dict:
+            return  # Silently discard errors from cancelled tasks
+
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.ERROR, error_payload[1]))
+        # TODO: Broadcast cancel to all tasks with compilation task id tid
+        # But avoid double broadcasting it. If the client crashes due to
+        # this error, which it may not, then we will quickly process
+        # a handle_disconnect and call the cancel anyways. We should
+        # still cancel here incase the client catches the error and
+        # resubmits a job.
 
-    def handle_log(self, log_payload: tuple[int, LogRecord]) -> None:
+    def handle_log(self, log_payload: tuple[int, bytes]) -> None:
         """Forward logs to appropriate client."""
         tid = log_payload[0]
+        if tid not in self.mailbox_to_task_dict:
+            return  # Silently discard logs from cancelled tasks
+
         conn = self.tasks[self.mailbox_to_task_dict[tid]][1]
         self.outgoing.put((conn, RuntimeMessage.LOG, log_payload[1]))
 
@@ -413,9 +456,16 @@ def start_server() -> None:
     ipports = parse_ipports(args.managers)
 
     # Set up logging
-    _logger = logging.getLogger('bqskit-runtime')
-    _logger.setLevel([30, 20, 10, 1][min(args.verbose, 3)])
-    _logger.addHandler(logging.StreamHandler())
+    log_level = [30, 20, 10, 1][min(args.verbose, 3)]
+    logging.getLogger().setLevel(log_level)
+    _handler = logging.StreamHandler()
+    _handler.setLevel(0)
+    _fmt_header = '%(asctime)s.%(msecs)03d - %(levelname)-8s |'
+    _fmt_message = ' %(module)s: %(message)s'
+    _fmt = _fmt_header + _fmt_message
+    _formatter = logging.Formatter(_fmt, '%H:%M:%S')
+    _handler.setFormatter(_formatter)
+    logging.getLogger().addHandler(_handler)
 
     # Import tests package recursively
     if args.import_tests:

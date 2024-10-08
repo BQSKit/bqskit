@@ -6,11 +6,10 @@ import itertools as it
 import logging
 from random import shuffle
 from typing import Any
-from typing import cast
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
-from typing import List
+from typing import Mapping
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_iterable
+from bqskit.utils.typing import is_iterable, is_mapping, is_real_number
 
 _logger = logging.getLogger(__name__)
 
@@ -33,31 +32,143 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
     def __init__(
         self,
-        graph: Iterable[tuple[int, int]],
+        graph: CouplingGraphLike,
         num_qudits: int | None = None,
+        remote_edges: Iterable[tuple[int, int]] = [],
+        default_weight: float = 1.0,
+        default_remote_weight: float = 100.0,
+        edge_weights_overrides: Mapping[tuple[int, int], float] = {},
     ) -> None:
-        if isinstance(graph, CouplingGraph):
-            self.num_qudits: int = graph.num_qudits
-            self._edges: set[tuple[int, int]] = graph._edges
-            self._adj: list[set[int]] = graph._adj
-            return
+        """
+        Construct a new CouplingGraph.
 
+        Args:
+            graph (CouplingGraphLike): The undirected graph edges.
+
+            num_qudits (int | None): The number of qudits in the graph. If
+                None, the number of qudits is inferred from the maximum seen
+                in the edge list. (Default: None)
+
+            remote_edges (Iterable[tuple[int, int]]): The edges that cross
+                QPU chip boundaries. Distributed QPUs will have remote links
+                connect them. Notes, remote edges must specified both in
+                `graph` and here. (Default: [])
+
+            default_weight (float): The default weight of an edge in the
+                graph. (Default: 1.0)
+
+            default_remote_weight (float): The default weight of a remote
+                edge in the graph. (Default: 100.0)
+
+            edge_weights_overrides (Mapping[tuple[int, int], float]): A mapping
+                of edges to their weights. These override the defaults on
+                a case-by-case basis. (Default: {})
+
+        Raises:
+            ValueError: If `num_qudits` is too small for the edges in `graph`.
+
+            ValueError: If `num_qudits` is less than zero.
+
+            ValueError: If any edge in `remote_edges` is not in `graph`.
+
+            ValueError: If any edge in `edge_weights_overrides` is not in
+                `graph`.
+        """
         if not CouplingGraph.is_valid_coupling_graph(graph):
             raise TypeError('Invalid coupling graph.')
 
+        if num_qudits is not None and not is_integer(num_qudits):
+            raise TypeError(
+                'Expected integer for num_qudits,'
+                f' got {type(num_qudits)}',
+            )
+
+        if num_qudits is not None and num_qudits < 0:
+            raise ValueError(
+                'Expected nonnegative num_qudits,'
+                f' got {num_qudits}.',
+            )
+
+        if not CouplingGraph.is_valid_coupling_graph(remote_edges):
+            raise TypeError('Invalid remote links.')
+
+        if any(edge not in graph for edge in remote_edges):
+            invalids = [e for e in remote_edges if e not in graph]
+            raise ValueError(
+                f'Remote links {invalids} not in graph.'
+                ' All remote links must also be specified in the graph input.',
+            )
+
+        if not is_real_number(default_weight):
+            raise TypeError(
+                'Expected integer for default_weight,'
+                f' got {type(default_weight)}',
+            )
+
+        if not is_real_number(default_remote_weight):
+            raise TypeError(
+                'Expected integer for default_remote_weight,'
+                f' got {type(default_remote_weight)}',
+            )
+
+        if not is_mapping(edge_weights_overrides):
+            raise TypeError(
+                'Expected mapping for edge_weights_overrides,'
+                f' got {type(edge_weights_overrides)}',
+            )
+
+        if any(
+            not is_real_number(v)
+            for v in edge_weights_overrides.values()
+        ):
+            invalids = [
+                v for v in edge_weights_overrides.values()
+                if not is_real_number(v)
+            ]
+            raise TypeError(
+                'Expected integer values for edge_weights_overrides,'
+                f' got non-integer values: {invalids}.',
+            )
+
+        if any(edge not in graph for edge in edge_weights_overrides):
+            invalids = [
+                e for e in edge_weights_overrides
+                if e not in graph
+            ]
+            raise ValueError(
+                f'Edges {invalids} from edge_weights_overrides are not in '
+                'the graph. All edge_weights_overrides must also be '
+                'specified in the graph input.',
+            )
+
+        if isinstance(graph, CouplingGraph):
+            self.num_qudits: int = graph.num_qudits
+            self._edges: set[tuple[int, int]] = graph._edges
+            self._remote_edges: set[tuple[int, int]] = graph._remote_edges
+            self._adj: list[set[int]] = graph._adj
+            self._mat: list[list[float]] = graph._mat
+            self.default_weight: float = graph.default_weight
+            self.default_remote_weight: float = graph.default_remote_weight
+            return
+
+        calc_num_qudits = 0
+        for q1, q2 in graph:
+            calc_num_qudits = max(calc_num_qudits, max(q1, q2))
+        calc_num_qudits += 1
+
+        if num_qudits is not None and calc_num_qudits > num_qudits:
+            raise ValueError(
+                'Edges between invalid qudits or num_qudits too small.',
+            )
+
+        self.num_qudits = calc_num_qudits if num_qudits is None else num_qudits
         self._edges = {g if g[0] <= g[1] else (g[1], g[0]) for g in graph}
-
-        calced_num_qudits = 0
-        for q1, q2 in self._edges:
-            calced_num_qudits = max(calced_num_qudits, max(q1, q2))
-        calced_num_qudits += 1
-
-        if num_qudits is None:
-            self.num_qudits = calced_num_qudits
-        elif calced_num_qudits > num_qudits:
-            raise ValueError('Edges between invalid qudits.')
-        else:
-            self.num_qudits = num_qudits
+        self._remote_edges = {
+            e if e[0] <= e[1] else (e[1], e[0])
+            for e in remote_edges
+        }
+        self.default_weight = default_weight
+        self.default_remote_weight = default_remote_weight
 
         self._adj = [set() for _ in range(self.num_qudits)]
         for q1, q2 in self._edges:
@@ -69,8 +180,77 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             for _ in range(self.num_qudits)
         ]
         for q1, q2 in self._edges:
-            self._mat[q1][q2] = 1
-            self._mat[q2][q1] = 1
+            self._mat[q1][q2] = default_weight
+            self._mat[q2][q1] = default_weight
+
+        for q1, q2 in self._remote_edges:
+            self._mat[q1][q2] = default_remote_weight
+            self._mat[q2][q1] = default_remote_weight
+
+        for (q1, q2), weight in edge_weights_overrides.items():
+            self._mat[q1][q2] = weight
+            self._mat[q2][q1] = weight
+
+    def get_qpu_to_qudit_map(self) -> list[list[int]]:
+        """Return a mapping of QPU indices to qudit indices."""
+        if not hasattr(self, '_qpu_to_qudit'):
+            seen = set()
+            self._qpu_to_qudit = []
+            for qudit in range(self.num_qudits):
+                if qudit in seen:
+                    continue
+                qpu = []
+                frontier = {qudit}
+                while len(frontier) > 0:
+                    node = frontier.pop()
+                    qpu.append(node)
+                    seen.add(node)
+                    for neighbor in self._adj[node]:
+                        if (node, neighbor) in self._remote_edges:
+                            continue
+                        if (neighbor, node) in self._remote_edges:
+                            continue
+                        if neighbor not in seen:
+                            frontier.add(neighbor)
+                self._qpu_to_qudit.append(qpu)
+        return self._qpu_to_qudit
+
+    def is_distributed(self) -> bool:
+        """Return true if the graph represents multiple connected QPUs."""
+        return len(self._remote_edges) > 0
+
+    def qpu_count(self) -> int:
+        """Return the number of connected QPUs."""
+        return len(self.get_qpu_to_qudit_map())
+
+    def get_individual_qpu_graphs(self) -> list[CouplingGraph]:
+        """Return a list of individual QPU graphs."""
+        if not self.is_distributed():
+            return [self]
+
+        qpu_to_qudit = self.get_qpu_to_qudit_map()
+        return [self.get_subgraph(qpu) for qpu in qpu_to_qudit]
+
+    def get_qudit_to_qpu_map(self) -> list[int]:
+        """Return a mapping of qudit indices to QPU indices."""
+        qpu_to_qudit = self.get_qpu_to_qudit_map()
+        qudit_to_qpu = {}
+        for qpu, qudits in enumerate(qpu_to_qudit):
+            for qudit in qudits:
+                qudit_to_qpu[qudit] = qpu
+        return list(qudit_to_qpu.values())
+
+    def get_qpu_connectivity(self) -> list[set[int]]:
+        """Return the adjacency list of the QPUs."""
+        qpu_to_qudit = self.get_qpu_to_qudit_map()
+        qudit_to_qpu = self.get_qudit_to_qpu_map()
+        qpu_adj: list[set[int]] = [set() for _ in range(len(qpu_to_qudit))]
+        for q1, q2 in self._remote_edges:
+            qpu1 = qudit_to_qpu[q1]
+            qpu2 = qudit_to_qpu[q2]
+            qpu_adj[qpu1].add(qpu2)
+            qpu_adj[qpu2].add(qpu1)
+        return qpu_adj
 
     def is_fully_connected(self) -> bool:
         """Return true if the graph is fully connected."""
@@ -91,6 +271,27 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 return True
 
         return False
+
+    def is_linear(self) -> bool:
+        """Return true if the graph is linearly connected."""
+        if self.num_qudits < 2:
+            return False
+
+        num_deg_1 = 0
+        for node_neighbors in self._adj:
+            if len(node_neighbors) == 1:
+                num_deg_1 += 1
+
+            elif len(node_neighbors) == 0:
+                return False
+
+            elif len(node_neighbors) > 2:
+                return False
+
+        if num_deg_1 != 2:
+            return False
+
+        return True
 
     def get_neighbors_of(self, qudit: int) -> list[int]:
         """Return the qudits adjacent to `qudit`."""
@@ -129,12 +330,12 @@ class CouplingGraph(Collection[Tuple[int, int]]):
     def get_qudit_degrees(self) -> list[int]:
         return [len(l) for l in self._adj]
 
-    def all_pairs_shortest_path(self) -> list[list[int]]:
+    def all_pairs_shortest_path(self) -> list[list[float]]:
         """
         Calculate all pairs shortest path matrix using Floyd-Warshall.
 
         Returns:
-            D (list[list[int]]): D[i][j] is the length of the shortest
+            D (list[list[float]]): D[i][j] is the length of the shortest
                 path from i to j.
         """
         D = copy.deepcopy(self._mat)
@@ -142,7 +343,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             for i in range(self.num_qudits):
                 for j in range(self.num_qudits):
                     D[i][j] = min(D[i][j], D[i][k] + D[k][j])
-        return cast(List[List[int]], D)
+        return D
 
     def get_shortest_path_tree(self, source: int) -> list[tuple[int, ...]]:
         """Return shortest path from `source` to every node in `self`."""

@@ -73,6 +73,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     CUGate
     FSIMGate
     PauliGate
+    PauliZGate
     PhasedXZGate
     RSU3Gate
     RXGate
@@ -99,6 +100,7 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     :template: autosummary/gate.rst
 
     ControlledGate
+    PowerGate
     DaggerGate
     EmbeddedGate
     FrozenParameterGate

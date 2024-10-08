@@ -1,6 +1,7 @@
 """This package implements synthesis passes and synthesis related classes."""
 from __future__ import annotations
 
+from bqskit.passes.synthesis.diagonal import WalshDiagonalSynthesisPass
 from bqskit.passes.synthesis.leap import LEAPSynthesisPass
 from bqskit.passes.synthesis.pas import PermutationAwareSynthesisPass
 from bqskit.passes.synthesis.qfast import QFASTDecompositionPass
@@ -17,4 +18,5 @@ __all__ = [
     'SynthesisPass',
     'SetTargetPass',
     'PermutationAwareSynthesisPass',
+    'WalshDiagonalSynthesisPass',
 ]
