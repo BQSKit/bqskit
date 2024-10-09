@@ -11,6 +11,8 @@ from bqskit.ir.gates.parameterized.cry import CRYGate
 from bqskit.ir.gates.parameterized.crz import CRZGate
 from bqskit.ir.gates.parameterized.cu import CUGate
 from bqskit.ir.gates.parameterized.fsim import FSIMGate
+from bqskit.ir.gates.parameterized.mpry import MPRYGate
+from bqskit.ir.gates.parameterized.mprz import MPRZGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.pauliz import PauliZGate
 from bqskit.ir.gates.parameterized.phasedxz import PhasedXZGate
@@ -41,6 +43,8 @@ __all__ = [
     'CRZGate',
     'CUGate',
     'FSIMGate',
+    'MPRYGate',
+    'MPRZGate',
     'PauliGate',
     'PauliZGate',
     'PhasedXZGate',
