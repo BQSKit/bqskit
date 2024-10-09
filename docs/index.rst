@@ -28,6 +28,7 @@ our `tutorial series. <https://github.com/BQSKit/bqskit-tutorial/>`_
    guides/customgate.md
    guides/custompass.md
    guides/distributing.md
+   guides/usegpus.md
 
 .. toctree::
    :caption: API Reference
