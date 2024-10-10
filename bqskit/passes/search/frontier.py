@@ -68,6 +68,15 @@ class Frontier:
         elem = heapq.heappop(self._frontier)
         return elem.circuit, elem.extra_data
 
+    def batch_pop(
+            self,
+            max_frontier_pop_size: int,
+    ) -> list[tuple[Circuit, Any]]:
+        """Pop a batch of the top circuits."""
+        pop_size = min(max_frontier_pop_size, len(self._frontier))
+
+        return [self.pop() for _ in range(pop_size)]
+
     def empty(self) -> bool:
         """Return true if the frontier is empty."""
         return len(self._frontier) == 0
