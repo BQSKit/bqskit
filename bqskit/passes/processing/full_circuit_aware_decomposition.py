@@ -303,8 +303,8 @@ class FullCircuitAwareIndividualDecomposition(BasePass):
 
             # Find the next gate to decompose
             while (
-                next_cycle_to_grow < new_number_of_cycles
-                or next_cycle_to_grow >= 0
+                (next_cycle_to_grow < new_number_of_cycles)
+                and (next_cycle_to_grow >= 0)
             ):
 
                 if self.collection_filter(circuit[next_cycle_to_grow][0]):
