@@ -260,7 +260,7 @@ class DetachedServer(ServerBase):
             self.handle_cancel_comp_task(task_id)
 
         tasks_to_pop = []
-        for (task, (tid, other_conn)) in self.tasks.items():
+        for (task_id, (tid, other_conn)) in self.tasks.items():
             if other_conn == conn:
                 tasks_to_pop.append((task_id, tid))
 
