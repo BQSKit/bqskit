@@ -72,7 +72,7 @@ Finally, use a compiler instance to execute the passes, and then print the stati
 from bqskit.compiler import Compiler
 
 with Compiler(num_workers=1) as compiler:
-    
+
     out_circuit = compiler.compile(in_circuit, passes)
 
     print(
@@ -110,7 +110,7 @@ with Compiler('localhost') as compiler:
 
 
 ### Single Server Multiple GPUs Setup
-This section of the guide explains the main concepts in the [single_server_env.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/single_server_env.sh) script template and how to use it. The script creates a GPU enabled BQSKit runtime and is easily configured for any system. 
+This section of the guide explains the main concepts in the [single_server_env.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/single_server_env.sh) script template and how to use it. The script creates a GPU enabled BQSKit runtime and is easily configured for any system.
 
 After you configure the template (replacing every  <> with an appropriate value) run it, and then in a seperate shell execute your python scirpt that uses this runtime enviorment.
 
@@ -210,7 +210,7 @@ sbatch init_multi_node_multi_gpu_slurm_run.sh
 
 The rest of this section exaplains in detail both of the scripts.
 
-#### init_multi_node_multi_gpu_slurm_run 
+#### init_multi_node_multi_gpu_slurm_run
 This is a SLURM batch script for running a multi-node BQSKit task across multiple GPUs. It manages job submission, environment setup, launching the BQSKit server and workers on different nodes, and the execution of the main application.
 
 1. Job configuration and logging - this is a standard SLURM SBATCH header.
