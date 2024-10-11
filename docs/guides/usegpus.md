@@ -266,7 +266,7 @@ server_pid=$!
 uname -a >> $scratch_dir/server_${SLURM_JOB_ID}_started
 ```
 
-6. Executing the main application, that will connect to the BQSKit runtime
+6. Executing the main application that will connect to the BQSKit runtime
 ```bash
 python <Your command>
 ```
