@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 import logging
+import pickle
+from os import mkdir
+from os.path import exists
+from os.path import join
 from typing import Any
 from typing import Callable
 
@@ -12,6 +16,7 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.utils.typing import is_real_number
+
 _logger = logging.getLogger(__name__)
 
 
@@ -29,6 +34,7 @@ class ScanningGateRemovalPass(BasePass):
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         instantiate_options: dict[str, Any] = {},
         collection_filter: Callable[[Operation], bool] | None = None,
+        checkpoint_proj: str | None = None,
     ) -> None:
         """
         Construct a ScanningGateRemovalPass.
@@ -94,6 +100,9 @@ class ScanningGateRemovalPass(BasePass):
             'cost_fn_gen': self.cost,
         }
         self.instantiate_options.update(instantiate_options)
+        self.checkpoint_proj = checkpoint_proj
+        if (self.checkpoint_proj and not exists(self.checkpoint_proj)):
+            mkdir(self.checkpoint_proj)
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
@@ -108,7 +117,45 @@ class ScanningGateRemovalPass(BasePass):
 
         circuit_copy = circuit.copy()
         reverse_iter = not self.start_from_left
-        for cycle, op in circuit.operations_with_cycles(reverse=reverse_iter):
+
+        start_ind = 0
+        iterator = circuit.operations_with_cycles(reverse=reverse_iter)
+        all_ops = [x for x in iterator]
+
+        # Things needed for saving data
+        if self.checkpoint_proj:
+            block_num: str = data.get('block_num', '0')
+            save_data_file = join(
+                self.checkpoint_proj,
+                f'block_{block_num}.data',
+            )
+            save_circuit_file = join(
+                self.checkpoint_proj, f'block_{block_num}.pickle',
+            )
+            if exists(save_data_file):
+                _logger.debug(f'Reloading block {block_num}!')
+                # Reload ind from previous stop
+                with open(save_data_file, 'rb') as df:
+                    new_data = pickle.load(df)
+                    data.update(new_data)
+                with open(save_circuit_file, 'rb') as cf:
+                    circuit_copy = pickle.load(cf)
+                start_ind = data.get('ind', 0)
+                if start_ind >= len(all_ops):
+                    all_ops = []
+                    _logger.debug('Block is already finished!')
+                else:
+                    all_ops = all_ops[start_ind:]
+                    _logger.debug('starting at ', start_ind)
+            else:
+                # Initial checkpoint
+                with open(save_data_file, 'wb') as df:
+                    data['ind'] = 0
+                    pickle.dump(data, df)
+                with open(save_circuit_file, 'wb') as cf:
+                    pickle.dump(circuit_copy, cf)
+
+        for i, (cycle, op) in enumerate(all_ops):
 
             if not self.collection_filter(op):
                 _logger.debug(f'Skipping operation {op} at cycle {cycle}.')
@@ -131,6 +178,15 @@ class ScanningGateRemovalPass(BasePass):
             if self.cost(working_copy, target) < self.success_threshold:
                 _logger.debug('Successfully removed operation.')
                 circuit_copy = working_copy
+                # Create checkpoint
+                if self.checkpoint_proj:
+                    with open(save_circuit_file, 'wb') as cf:
+                        pickle.dump(circuit_copy, cf)
+
+            if self.checkpoint_proj:
+                with open(save_data_file, 'wb') as df:
+                    data['ind'] = i + start_ind + 1
+                    pickle.dump(data, df)
 
         circuit.become(circuit_copy)
 
