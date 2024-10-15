@@ -47,6 +47,7 @@ class LEAPSynthesisPass(SynthesisPass):
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
         store_partial_solutions: bool = False,
+        max_frontier_pop_size: int = 1,
         partials_per_depth: int = 25,
         min_prefix_size: int = 3,
         instantiate_options: dict[str, Any] = {},
@@ -79,6 +80,9 @@ class LEAPSynthesisPass(SynthesisPass):
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)
+            
+            max_frontier_pop_size (int): The maximum number of frontier
+                elements to evaluate in parallel. (Default: 1)
 
             partials_per_depth (int): The maximum number of partials
                 to store per search depth. No effect if
@@ -127,6 +131,12 @@ class LEAPSynthesisPass(SynthesisPass):
             raise ValueError(
                 'Expected max_layer to be positive, got %d.' % int(max_layer),
             )
+        
+        if not is_integer(max_frontier_pop_size):
+            raise TypeError(
+                'Expected max_frontier_pop_size to be an integer, got '
+                f'{type(max_frontier_pop_size)}.',
+            )
 
         if min_prefix_size is not None and not is_integer(min_prefix_size):
             raise TypeError(
@@ -158,6 +168,7 @@ class LEAPSynthesisPass(SynthesisPass):
         self.instantiate_options.update(instantiate_options)
         self.store_partial_solutions = store_partial_solutions
         self.partials_per_depth = partials_per_depth
+        self.max_frontier_pop_size = max_frontier_pop_size
 
     async def synthesize(
         self,
@@ -194,17 +205,24 @@ class LEAPSynthesisPass(SynthesisPass):
 
         _logger.debug(f'Search started, initial layer has cost: {best_dist}.')
 
-        # Evalute initial layer
+        # Evaluate initial layer
         if best_dist < self.success_threshold:
             _logger.debug('Successful synthesis with 0 layers.')
             return initial_layer
 
         # Main loop
         while not frontier.empty():
-            top_circuit, layer = frontier.pop()
+            batched_circuits_and_layers = frontier.batch_pop(
+                self.max_frontier_pop_size,
+            )
 
             # Generate successors
-            successors = layer_gen.gen_successors(top_circuit, data)
+            successors = []
+            layers = []
+            for circuit, layer in batched_circuits_and_layers:
+                single_successors = layer_gen.gen_successors(circuit, data)
+                successors.extend(single_successors)
+                layers.extend([layer] * len(single_successors))
 
             if len(successors) == 0:
                 continue
@@ -218,7 +236,7 @@ class LEAPSynthesisPass(SynthesisPass):
             )
 
             # Evaluate successors
-            for circuit in circuits:
+            for circuit, layer in zip(circuits, layers):
                 dist = self.cost.calc_cost(circuit, utry)
 
                 if dist < self.success_threshold:
