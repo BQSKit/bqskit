@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import numpy as np
+import scipy.linalg as la
 from hypothesis import given
 from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import lists
-from scipy.linalg import block_diag
 
 from bqskit.ir.gates.constant import PermutationGate
 from bqskit.ir.gates.parameterized import MPRZGate
@@ -34,7 +34,7 @@ def test_get_unitary(thetas: list[float]) -> None:
     thetas = thetas[:2 ** (num_qudits - 1)]
     MPRy = MPRZGate(num_qudits=num_qudits)
     block_unitaries = [RZGate().get_unitary([theta]) for theta in thetas]
-    blocked_unitary = block_diag(*block_unitaries)
+    blocked_unitary = la.block_diag(*block_unitaries)
     dist = MPRy.get_unitary(thetas).get_distance_from(blocked_unitary)
     assert dist < 1e-7
 
@@ -50,7 +50,7 @@ def test_get_unitary_target_select(target_qubit: int) -> None:
 
     # Create the block diagonal matrix
     block_unitaries = [RZGate().get_unitary([theta]) for theta in thetas]
-    blocked_unitary = block_diag(*block_unitaries)
+    blocked_unitary = la.block_diag(*block_unitaries)
 
     # Apply a permutation transformation
     # to the block diagonal matrix
