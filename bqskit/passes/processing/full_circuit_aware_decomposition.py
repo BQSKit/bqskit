@@ -65,13 +65,26 @@ class CircuitWideAwareLayerGenerator(WideLayerGenerator):
             target: UnitaryMatrix | StateVector | StateSystem,
             data: PassData,
     ) -> Circuit:
-        initial_circuit_to_grow = super().gen_initial_layer(target, data)
+        
+        if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
+            raise TypeError(
+                'Expected unitary or state, got %s.' % type(target),
+            )
 
-        if self.single_qudit_gate is not None:
-            self.full_circuit.insert_circuit(
+        if self.single_qudit_gate is None:
+            return self.full_circuit
+
+        for loc in self.location_to_grow:
+            if target.radixes[loc] != self.single_qudit_gate.radixes[0]:
+                raise ValueError(
+                    'Radix mismatch between target and single_qudit_gate.',
+                )
+
+        for loc in self.location_to_grow:
+            self.full_circuit.insert_gate(
                 self.cycle_to_grow,
-                initial_circuit_to_grow,
-                self.location_to_grow,
+                self.single_qudit_gate,
+                loc
             )
 
         return self.full_circuit
