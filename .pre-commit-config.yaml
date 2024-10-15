@@ -2,7 +2,7 @@ ci:
     skip: [mypy]
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -20,8 +20,8 @@ repos:
     -   id: fix-byte-order-marker
     -   id: fix-encoding-pragma
         args: ['--remove']
--   repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
+-   repo: https://github.com/s-weigand/docformatter
+    rev: 1ec30b7
     hooks:
     -   id: docformatter
         args:
@@ -66,7 +66,7 @@ repos:
       args:
         - --in-place
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.1
+    rev: v1.11.2
     hooks:
     - id: mypy
       exclude: tests/qis/test_pauli.py
