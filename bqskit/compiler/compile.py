@@ -93,6 +93,9 @@ from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_real_number
 
+from bqskit.passes.io.checkpoint import SaveCheckpointPass
+from bqskit.passes.io.checkpoint import LoadCheckpointPass
+
 if TYPE_CHECKING:
     from bqskit.compiler.basepass import BasePass
 
@@ -1281,6 +1284,10 @@ def build_seqpam_mapping_optimization_workflow(
     return Workflow(
         IfThenElsePass(
             NotPredicate(WidthPredicate(2)),
+            # Commented out initial block to avoid presynthesis assuming full connectivity
+            # Full connectivity ensures mapping scores are equivalent, so blocks are chosen
+            # based solely on synthesis cost. Thus changing the heuristic does not have
+            # the desired effect.
             [
                 LogPass('Caching permutation-aware synthesis results.'),
                 ExtractModelConnectivityPass(),
@@ -1308,6 +1315,9 @@ def build_seqpam_mapping_optimization_workflow(
                 UnfoldPass(),
                 RestoreModelConnectivityPass(),
 
+            # For testing start here, since this is the first point at which both 
+            # parts of the heuristic come into play. 
+            
                 LogPass('Recaching permutation-aware synthesis results.'),
                 SubtopologySelectionPass(block_size),
                 QuickPartitioner(block_size),
@@ -1328,13 +1338,17 @@ def build_seqpam_mapping_optimization_workflow(
                         ),
                     ),
                 ),
-                LogPass('Performing permutation-aware mapping.'),
-                ApplyPlacement(),
-                PAMLayoutPass(num_layout_passes),
-                PAMRoutingPass(0.1),
-                post_pam_seq,
-                ApplyPlacement(),
-                UnfoldPass(),
+                SaveCheckpointPass(r'checkpoints/opt_level_1/qaoa12.pkl'),
+
+            #[
+            #    LoadCheckpointPass(r'checkpoints/opt_level_1/qft4.pkl'),
+            #    LogPass('Performing permutation-aware mapping.'),
+            #    ApplyPlacement(),
+            #    PAMLayoutPass(num_layout_passes),
+            #    PAMRoutingPass(0.1),
+            #    post_pam_seq,
+            #    ApplyPlacement(),
+            #    UnfoldPass(),
             ],
         ),
         name='SeqPAM Mapping',

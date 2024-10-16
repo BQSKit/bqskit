@@ -54,5 +54,6 @@ class LoadCheckpointPass(BasePass):
         with open(self.checkpoint_filename, 'rb') as f:
             checkpoint = pickle.load(f)
             circuit.become(checkpoint[0])
-            data.clear()
-            data.update(checkpoint[1])
+            new_data = PassData(circuit)
+            new_data.update(checkpoint[1])
+            data.become(new_data)
