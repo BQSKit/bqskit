@@ -93,8 +93,11 @@ from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_real_number
 
+# My additions
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
 from bqskit.passes.io.checkpoint import LoadCheckpointPass
+
+import os
 
 if TYPE_CHECKING:
     from bqskit.compiler.basepass import BasePass
@@ -1210,6 +1213,8 @@ def build_seqpam_mapping_optimization_workflow(
     num_layout_passes: int = 3,
     block_size: int = 3,
     error_sim_size: int | None = None,
+    mode: str | None = None,
+    checkpoint_path: str = "checkpoint.pkl",
 ) -> Workflow:
     """
     Build a Sequential-Permutation-Aware Mapping and Optimizing Workflow.
@@ -1242,6 +1247,16 @@ def build_seqpam_mapping_optimization_workflow(
             errors on. If None, then no error analysis is performed.
             (Default: None)
 
+        mode (str | None): The input and output modes for the algorithm.
+            'base' applies the typical sequence of pre-optimization,
+            block synthesis, layout, and routing. 'save' saves a checkpoint
+            after synthesis.'load' loads that checkpoint and applies
+            layout and routing. If None, defaults to base. (Default: None)
+
+        checkpoint_path (str | None): The path to write checkpoints to or
+            read checkpints from, depending on mode
+            (Default: 'checkpoint.pkl')
+
     Raises:
         ValueError: If block_size < 2.
 
@@ -1265,6 +1280,21 @@ def build_seqpam_mapping_optimization_workflow(
             f'Expected error_sim_size >= block_size, got {error_sim_size}.',
         )
 
+    if mode is not None and not isinstance(mode, str):
+        raise TypeError(
+            f'Expected string for mode, got {type(mode)}.',
+        )
+    
+    if not (mode is None or mode == 'base' or mode == 'save' or mode == 'load'):
+        raise ValueError(
+            f'Expected mode None, \'base\', \'save\' or \'load\'; got \'{mode}\'.',
+        )
+
+    if checkpoint_path is not None and not isinstance(checkpoint_path, str):
+        raise TypeError(
+            f'Expected string for mode, got {type(checkpoint_path)}.',
+        )
+
     qsearch = QSearchSynthesisPass(
         success_threshold=synthesis_epsilon,
         instantiate_options=get_instantiate_options(optimization_level),
@@ -1281,75 +1311,99 @@ def build_seqpam_mapping_optimization_workflow(
     else:
         post_pam_seq = NOOPPass()
 
+    # Base pass list inside the outermost IfThenElsePass
+    interior_pass_list = [
+        LogPass('Caching permutation-aware synthesis results.'),
+        ExtractModelConnectivityPass(),
+        QuickPartitioner(block_size),
+        ForEachBlockPass(
+            IfThenElsePass(
+                WidthPredicate(4),
+                EmbedAllPermutationsPass(
+                    inner_synthesis=qsearch,
+                    input_perm=True,
+                    output_perm=False,
+                    vary_topology=False,
+                ),
+                EmbedAllPermutationsPass(
+                    inner_synthesis=leap,
+                    input_perm=True,
+                    output_perm=False,
+                    vary_topology=False,
+                ),
+            ),
+        ),
+        LogPass('Preoptimizing with permutation-aware mapping.'),
+        PAMRoutingPass(),
+        post_pam_seq,
+        UnfoldPass(),
+        RestoreModelConnectivityPass(),
+    
+        LogPass('Recaching permutation-aware synthesis results.'),
+        SubtopologySelectionPass(block_size),
+        QuickPartitioner(block_size),
+        ForEachBlockPass(
+            IfThenElsePass(
+                WidthPredicate(4),
+                EmbedAllPermutationsPass(
+                    inner_synthesis=qsearch,
+                    input_perm=False,
+                    output_perm=True,
+                    vary_topology=True,
+                ),
+                EmbedAllPermutationsPass(
+                    inner_synthesis=leap,
+                    input_perm=False,
+                    output_perm=True,
+                    vary_topology=True,
+                ),
+            ),
+        ),
+    ]
+
+    # Build adjustment to base interior_pass_list according to mode
+    if mode is None or mode == 'base':
+
+        append_pass_list = [
+            LogPass('Performing permutation-aware mapping.'),
+            ApplyPlacement(),
+            PAMLayoutPass(num_layout_passes),
+            PAMRoutingPass(0.1),
+            post_pam_seq,
+            ApplyPlacement(),
+            UnfoldPass(),
+        ]
+
+    elif mode == 'save':
+        
+        append_pass_list = [
+            LogPass('Saving checkpoint.'),
+            SaveCheckpointPass(f'{checkpoint_path}')
+        ]
+
+    elif mode == 'load':
+
+        interior_pass_list.clear()
+
+        append_pass_list = [
+            LogPass('Loading checkpoint.'),
+            LoadCheckpointPass(f'{checkpoint_path}'),
+
+            LogPass('Performing permutation-aware mapping.'),
+            ApplyPlacement(),
+            PAMLayoutPass(num_layout_passes),
+            PAMRoutingPass(0.1),
+            post_pam_seq,
+            ApplyPlacement(),
+            UnfoldPass(),
+        ]
+
+    interior_pass_list = interior_pass_list + append_pass_list
+
     return Workflow(
         IfThenElsePass(
             NotPredicate(WidthPredicate(2)),
-            # Commented out initial block to avoid presynthesis assuming full connectivity
-            # Full connectivity ensures mapping scores are equivalent, so blocks are chosen
-            # based solely on synthesis cost. Thus changing the heuristic does not have
-            # the desired effect.
-            [
-                LogPass('Caching permutation-aware synthesis results.'),
-                ExtractModelConnectivityPass(),
-                QuickPartitioner(block_size),
-                ForEachBlockPass(
-                    IfThenElsePass(
-                        WidthPredicate(4),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=qsearch,
-                            input_perm=True,
-                            output_perm=False,
-                            vary_topology=False,
-                        ),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=leap,
-                            input_perm=True,
-                            output_perm=False,
-                            vary_topology=False,
-                        ),
-                    ),
-                ),
-                LogPass('Preoptimizing with permutation-aware mapping.'),
-                PAMRoutingPass(),
-                post_pam_seq,
-                UnfoldPass(),
-                RestoreModelConnectivityPass(),
-
-            # For testing start here, since this is the first point at which both 
-            # parts of the heuristic come into play. 
-            
-                LogPass('Recaching permutation-aware synthesis results.'),
-                SubtopologySelectionPass(block_size),
-                QuickPartitioner(block_size),
-                ForEachBlockPass(
-                    IfThenElsePass(
-                        WidthPredicate(4),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=qsearch,
-                            input_perm=False,
-                            output_perm=True,
-                            vary_topology=True,
-                        ),
-                        EmbedAllPermutationsPass(
-                            inner_synthesis=leap,
-                            input_perm=False,
-                            output_perm=True,
-                            vary_topology=True,
-                        ),
-                    ),
-                ),
-                SaveCheckpointPass(r'checkpoints/opt_level_1/qaoa12.pkl'),
-
-            #[
-            #    LoadCheckpointPass(r'checkpoints/opt_level_1/qft4.pkl'),
-            #    LogPass('Performing permutation-aware mapping.'),
-            #    ApplyPlacement(),
-            #    PAMLayoutPass(num_layout_passes),
-            #    PAMRoutingPass(0.1),
-            #    post_pam_seq,
-            #    ApplyPlacement(),
-            #    UnfoldPass(),
-            ],
+            interior_pass_list,
         ),
         name='SeqPAM Mapping',
     )
