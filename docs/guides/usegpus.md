@@ -11,12 +11,12 @@ First, you will need to install `bqskit-qfactor-jax`. This can easily done by us
 pip install bqskit-qfactor-jax
 ```
 
-This command will install also all the dependencies including BQSKit and JAX with GPU support.
+This command will also install all the dependencies including BQSKit and JAX with GPU support.
 
 ## Optimizing a Circuit Using QFactor-Sample and the Gate Deletion Flow
 This section explains how to optimize a quantum circuit using QFactor-Sample and the gate deletion flow.
 
-First we load the circuit to be optimized using the Circuit class.
+First, we load the circuit to be optimized using the Circuit class.
 ```python
 from bqskit import Circuit
 
@@ -24,7 +24,7 @@ from bqskit import Circuit
 in_circuit = Circuit.from_file("circuit_to_opt.qasm")
 ```
 
-Then we create the instniator instance, and set the number of multistarts to 32.
+Then we create the instantiator instance and set the number of multistarts to 32.
 ```python
 from qfactorjax.qfactor_sample_jax import QFactorSampleJax
 
@@ -89,9 +89,9 @@ For other usage examples, please refer to the [examples directory](https://githu
 
 ## Setting Up a Multi-GPU Environment
 
-To run BQSKit with multiple GPUs, you need to set up the BQSKit runtime properly. Each worker should be assigned to a specific GPU by leveragig NVIDIA's CUDA_VISIBLE_DEVICES enviorment variable. Several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on a single server ( or interactive node on a cluster) or using SBATCH on several nodes. You can find scripts to help you set up the runtime in this [link](https://github.com/BQSKit/bqskit-qfactor-jax/tree/main/examples/bqskit_env_scripts).
+To run BQSKit with multiple GPUs, you need to set up the BQSKit runtime properly. Each worker should be assigned to a specific GPU by leveraging NVIDIA's CUDA_VISIBLE_DEVICES environment variable. Several workers can use the same GPU by utilizing [NVIDIA's MPS](https://docs.nvidia.com/deploy/mps/). You can set up the runtime on a single server ( or interactive node on a cluster) or using SBATCH on several nodes. You can find scripts to help you set up the runtime in this [link](https://github.com/BQSKit/bqskit-qfactor-jax/tree/main/examples/bqskit_env_scripts).
 
-You may configure the number of GPUs to use on each server and also the number of workers on each GPU. If you use too many workers on the same GPU, you will run out of memory and experince an out-of-memory exception. If you are using QFactor, you may use the following table as a starting configuration and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. If you are using QFactor-Sample, start with a single worker and increase if the memory premits it. You can use the `nvidia-smi` command to check the GPU usage during execution; it specifies the utilization of the memory and the execution units.
+You may configure the number of GPUs to use on each server and also the number of workers on each GPU. If you use too many workers on the same GPU, you will run out of memory and experience an out-of-memory exception. If you are using QFactor, you may use the following table as a starting configuration and adjust the number of workers according to your specific circuit, unitary size, and GPU performance. If you are using QFactor-Sample, start with a single worker and increase if the memory permits it. You can use the `nvidia-smi` command to check the GPU usage during execution; it specifies the utilization of the memory and the execution units.
 
 | Unitary Size   | Workers per GPU |
 |----------------|------------------|
@@ -101,7 +101,7 @@ You may configure the number of GPUs to use on each server and also the number o
 | 7              | 2                |
 | 8 and more     | 1                |
 
-Make sure that in your Python script you are creating the compiler object with the appropriate IP address. When running on the same node as the server, you can use \`localhost\` as the IP address.
+Make sure that in your Python script, you are creating the compiler object with the appropriate IP address. When running on the same node as the server, you can use \`localhost\` as the IP address.
 
 ```python
 with Compiler('localhost') as compiler:
@@ -110,12 +110,12 @@ with Compiler('localhost') as compiler:
 
 
 ### Single Server Multiple GPUs Setup
-This section of the guide explains the main concepts in the [single_server_env.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/single_server_env.sh) script template and how to use it. The script creates a GPU enabled BQSKit runtime and is easily configured for any system.
+This section of the guide explains the main concepts in the [single_server_env.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/single_server_env.sh) script template and how to use it. The script creates a GPU-enabled BQSKit runtime and is easily configured for any system.
 
-After you configure the template (replacing every  <> with an appropriate value) run it, and then in a seperate shell execute your python scirpt that uses this runtime enviorment.
+After you configure the template (replacing every  <> with an appropriate value) run it, and then in a separate shell execute your python script that uses this runtime environment.
 
-The enviorment script has the following parts:
-1. Variable configuration - choosing the number of GPUs to use, and the number of workrs per GPU. Moreover, the scratch dir path is configured, later to be used for logging.
+The environment script has the following parts:
+1. Variable configuration - choosing the number of GPUs to use, and the number of workers per GPU. Moreover, the scratch dir path is configured and later used for logging.
 ```bash
 #!/bin/bash
 hostname=$(uname -n)
@@ -149,7 +149,7 @@ wait_for_server_to_connect(){
     done
 }
 ```
-3. Creating the log directory, and deleting any old log files that conflicts with the current run logs.
+3. Creating the log directory, and deleting any old log files that conflict with the current run logs.
 ```bash
 mkdir -p $scratch_dir/bqskit_logs
 
@@ -162,7 +162,7 @@ echo "Will start bqskit runtime with id $unique_id gpus = $amount_of_gpus and wo
 rm -f $manager_log_file
 rm -f $server_log_file
 ```
-4. Starting NVIDA MPS to allow an efficient execution of multiple works on a single GPU.
+4. Starting NVIDA MPS to allow efficient execution of multiple works on a single GPU.
 ```bash
 echo "Starting MPS server"
 nvidia-cuda-mps-control -d
@@ -175,7 +175,7 @@ bqskit-manager -x -n$total_amount_of_workers -vvv &> $manager_log_file &
 manager_pid=$!
 wait_for_outgoing_thread_in_manager_log
 ```
-6. Starting the BQSKit server indicating that there is a single manager in the current server. Waiting untill the server connects to the manager before continuing to start the workers.
+6. Starting the BQSKit server indicating that there is a single manager in the current server. Waiting until the server connects to the manager before continuing to start the workers.
 ```bash
 echo "starting BQSKit server"
 bqskit-server $hostname -vvv &>> $server_log_file &
@@ -183,7 +183,7 @@ server_pid=$!
 
 wait_for_server_to_connect
 ```
-7. Starting the workrs, each seeing only a specific GPU.
+7. Starting the workers, each seeing only a specific GPU.
 ```bash
 echo "Starting $total_amount_of_workers workers on $amount_of_gpus gpus"
 for (( gpu_id=0; gpu_id<$amount_of_gpus; gpu_id++ ))
@@ -200,15 +200,15 @@ echo quit | nvidia-cuda-mps-control
 ```
 
 
-### Multis-Server Multi-GPU Enviorment Setup
+### Multis-Server Multi-GPU Environment Setup
 
-This section of the guide explains the main concepts in the [init_multi_node_multi_gpu_slurm_run.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/init_multi_node_multi_gpu_slurm_run.sh) [run_workers_and_managers.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/run_workers_and_managers.sh) scripts and how to use them. After configuring the scripts (updating every <>), place both of them in the same directory and initate a an SBATCH command. These scripts assume a SLURM enviorment, but can be easily ported to other disterbutation systems.
+This section of the guide explains the main concepts in the [init_multi_node_multi_gpu_slurm_run.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/init_multi_node_multi_gpu_slurm_run.sh) [run_workers_and_managers.sh](https://github.com/BQSKit/bqskit-qfactor-jax/blob/main/examples/bqskit_env_scripts/run_workers_and_managers.sh) scripts and how to use them. After configuring the scripts (updating every <>), place both of them in the same directory and initiate an SBATCH command. These scripts assume a SLURM environment but can be easily ported to other distribution systems.
 
 ```bash
 sbatch init_multi_node_multi_gpu_slurm_run.sh
 ```
 
-The rest of this section exaplains in detail both of the scripts.
+The rest of this section explains both of the scripts in detail.
 
 #### init_multi_node_multi_gpu_slurm_run
 This is a SLURM batch script for running a multi-node BQSKit task across multiple GPUs. It manages job submission, environment setup, launching the BQSKit server and workers on different nodes, and the execution of the main application.
@@ -227,9 +227,9 @@ This is a SLURM batch script for running a multi-node BQSKit task across multipl
 scratch_dir=<temp_dir>
 ```
 
-2. Shell environment setup - Please consulte with your HPC system admin to choose the apropriate modules to load that will enable you to JAX on NVDIA's GPUs. You may use NERSC's Perlmutter [documentation](https://docs.nersc.gov/development/languages/python/using-python-perlmutter/#jax) as a reference.
+2. Shell environment setup - Please consult with your HPC system admin to choose the appropriate modules to load that will enable you to JAX on NVDIA's GPUs. You may use NERSC's Perlmutter [documentation](https://docs.nersc.gov/development/languages/python/using-python-perlmutter/#jax) as a reference.
 ```bash
-### load any modules needed and activate the conda enviorment
+### load any modules needed and activate the conda environment
 module load <module1>
 module load <module2>
 conda activate <conda-env-name>
@@ -257,9 +257,9 @@ while [ "$(cat "$managers_started_file" | wc -l)" -lt "$n" ]; do
 done
 ```
 
-5. Starting the BQSKit server on the main node, and using SLURM's `SLURM_JOB_NODELIST` enviorment variable to indicate the BQSKit server the hostnames of the managers.
+5. Starting the BQSKit server on the main node, and using SLURM's `SLURM_JOB_NODELIST` environment variable to indicate the BQSKit server the hostnames of the managers.
 ```bash
-echo "starting BQSKit server on main node"
+echo "starting BQSKit server on the main node"
 bqskit-server $(scontrol show hostnames "$SLURM_JOB_NODELIST" | tr '\n' ' ') &> $scratch_dir/bqskit_logs/server_${SLURM_JOB_ID}.log &
 server_pid=$!
 
@@ -334,7 +334,7 @@ stop_mps_servers() {
 }
 ```
 
-Finaly, the script chekcs if GPUs are not needed, it spwans the manager with its default behaviour, else suing the "-x" argument, it indicates to the manager to wait for connecting workers.
+Finally, the script checks if GPUs are not needed, it spawns the manager with its default behavior, else using the "-x" argument, it indicates to the manager to wait for connecting workers.
 ```bash
 if [ $amount_of_gpus -eq 0 ]; then
     echo "Will run manager on node $node_id with n args of $amount_of_workers_per_gpu"
