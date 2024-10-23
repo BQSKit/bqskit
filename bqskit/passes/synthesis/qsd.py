@@ -13,6 +13,7 @@ from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.circuit import CircuitLocation
+from bqskit.ir.circuit import CircuitPoint
 from bqskit.ir.gates import CircuitGate
 from bqskit.ir.gates.constant import CNOTGate
 from bqskit.ir.gates.parameterized import RYGate
@@ -97,7 +98,7 @@ class FullQSDPass(BasePass):
         # Instantiate the helper QSD pass
         self.qsd = QSDPass(min_qudit_size=min_qudit_size)
         # Instantiate the helper Multiplex Gate Decomposition pass
-        self.mgd = MGDPass()
+        self.mgd = MGDPass(decompose_twice=False)
         self.perform_scan = perform_scan
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
@@ -129,64 +130,205 @@ class MGDPass(BasePass):
         https://arxiv.org/pdf/quant-ph/0406176.pdf
     """
 
-    @staticmethod
-    def decompose(op: Operation) -> Circuit:
+    def __init__(self, decompose_twice: bool = True) -> None:
         """
-        Return the decomposed circuit from one operation of a multiplexed gate.
+        The MGDPass decomposes all MPRY and MPRZ gates in a circuit.
 
         Args:
-            op (Operation): The operation to decompose.
+            decompose_twice (bool): Whether to decompose the MPRZ gate twice.
+            This will save 2 CNOT gates in the decomposition. If false,
+            the pass will only decompose one level. (Default: True)
+        """
+        self.decompose_twice = decompose_twice
+
+    @staticmethod
+    def decompose_mpx_one_level(
+        decompose_ry: bool,
+        params: RealVector,
+        num_qudits: int,
+        reverse: bool = False,
+        drop_last_cnot: bool = False,
+    ) -> Circuit:
+        """
+        Decompose Multiplexed Gate one level.
+
+        Args:
+            params (RealVector): The parameters for the original MPRZ gate
+            num_qudits (int): The number of qudits in the MPRZ gate
+            reverse (bool): Whether to reverse the order of the gates (you can
+            decompose the gates in either order to get the same result)
+            drop_last_cnot (bool): Whether to drop the last CNOT gate. This
+            should be set if you are doing a 2 level decomposition to save 2
+            CNOT gates.
 
         Returns:
-            Circuit: The decomposed circuit.
+            Circuit: The circuit that decomposes the MPRZ gate
         """
 
-        # Final level of decomposition decomposes to RY or RZ gate
-        gate: MPRYGate | MPRZGate | RYGate | RZGate = MPRZGate(
-            op.num_qudits - 1,
-            op.num_qudits - 2,
+        new_gate: MPRZGate | MPRYGate | RZGate | RYGate = RZGate()
+        if decompose_ry:
+            new_gate = RYGate()
+
+        if (num_qudits >= 3):
+            if decompose_ry:
+                new_gate = MPRYGate(num_qudits - 1, num_qudits - 2)
+            else:
+                # Remove 1 qubit, last qubit is controlled
+                new_gate = MPRZGate(num_qudits - 1, num_qudits - 2)
+
+        left_params, right_params = MPRYGate.get_decomposition(params)
+        circ = Circuit(num_qudits)
+        new_gate_location = list(range(1, num_qudits))
+        cx_location = (0, num_qudits - 1)
+
+        ops = [
+            Operation(new_gate, new_gate_location, left_params),
+            Operation(CNOTGate(), cx_location),
+            Operation(new_gate, new_gate_location, right_params),
+            Operation(CNOTGate(), cx_location),
+        ]
+
+        if drop_last_cnot:
+            ops.pop()
+
+        if reverse:
+            ops.reverse()
+
+        for op in ops:
+            circ.append(op)
+
+        return circ
+
+    @staticmethod
+    def decompose_mpx_two_levels(
+        decompose_ry: bool,
+        params: RealVector,
+        num_qudits: int,
+        reverse: bool = False,
+        drop_last_cnot: bool = False,
+    ) -> Circuit:
+        """
+        We decompose a multiplexed RZ gate 2 levels deep. This allows you to
+        remove 2 CNOTs as per Figure 2 in
+        https://arxiv.org/pdf/quant-ph/0406176.pdf.
+
+        Furthermore, in the context of the Block ZXZ decomposition, you can
+        set `drop_last_cnot` to True. This CNOT gets merged into a central gate,
+        which saves another 2 CNOTs. This is shown in section 5.2 of
+        https://arxiv.org/pdf/2403.13692v1.pdf.
+
+        Args:
+            decompose_ry (bool): Whether to decompose the MPRY gate
+            params (RealVector): The parameters for the original MPR gate
+            num_qudits (int): The number of qudits in the MPR gate
+            reverse (bool): Whether to reverse the order of the gates (you can
+            decompose the gates in either order to get the same result)
+            drop_last_cnot (bool): Whether to drop the last CNOT gate (only
+            should be set to True if you are doing section 5.2 optimization)
+
+        Returns:
+            Circuit: The circuit that decomposes the MPR gate
+        """
+
+        if num_qudits <= 2:
+            # If you have less than 3 qubits, just decompose one level
+            return MGDPass.decompose_mpx_one_level(
+                decompose_ry,
+                params,
+                num_qudits,
+                reverse,
+            )
+
+        # Get params for first decomposition of the MPRZ gate
+        left_params, right_params = MPRYGate.get_decomposition(params)
+
+        # Decompose the MPRZ gate into 2 MPRZ gates, dropping the last CNOT
+        # Also Reverse the circuit for the right side in order to do the
+        # optimization in section 5.2
+        circ_left = MGDPass.decompose_mpx_one_level(
+            decompose_ry,
+            left_params,
+            num_qudits - 1,
+            reverse,
+            drop_last_cnot=True,
         )
-        if (op.num_qudits > 2):
-            if isinstance(op.gate, MPRYGate):
-                gate = MPRYGate(op.num_qudits - 1, op.num_qudits - 2)
-        elif (isinstance(op.gate, MPRYGate)):
-            gate = RYGate()
-        else:
-            gate = RZGate()
 
-        left_params, right_params = MPRYGate.get_decomposition(op.params)
+        circ_right = MGDPass.decompose_mpx_one_level(
+            decompose_ry,
+            right_params,
+            num_qudits - 1,
+            not reverse,
+            drop_last_cnot=True,
+        )
 
-        # Construct Circuit
-        circ = Circuit(op.gate.num_qudits)
-        new_gate_location = list(range(1, op.gate.num_qudits))
-        cx_location = (0, op.gate.num_qudits - 1)
-        # print(type(gate), gate.num_qudits, new_gate_location)
-        circ.append_gate(gate, new_gate_location, left_params)
-        circ.append_gate(CNOTGate(), cx_location)
-        circ.append_gate(gate, new_gate_location, right_params)
-        circ.append_gate(CNOTGate(), cx_location)
+        # Now, construct the circuit.
+        # This will generate the original MPRZ gate with the target qubit
+        # set as qubit num_qudits - 1
+        circ = Circuit(num_qudits)
+        cx_location_big = (0, num_qudits - 1)
+
+        ops: list[Circuit | Operation] = [
+            circ_left,
+            Operation(CNOTGate(), cx_location_big),
+            circ_right,
+            Operation(CNOTGate(), cx_location_big),
+        ]
+
+        # We can remove the last CNOT gate as per section 5.2
+        if drop_last_cnot:
+            ops.pop()
+
+        if reverse:
+            ops.reverse()
+
+        for op in ops:
+            if isinstance(op, Operation):
+                circ.append(op)
+            else:
+                circ.append_circuit(op, list(range(1, num_qudits)))
 
         return circ
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Decompose all MPRY and MPRZ gates in the circuit one level."""
-        gates = []
-        pts = []
-        locations = []
-        num_ops = 0
+        ops: list[Operation] = []
+        pts: list[CircuitPoint] = []
+        locations: list[CircuitLocation] = []
         all_ops = list(circuit.operations_with_cycles(reverse=True))
 
         # Gather all of the multiplexed operations
         for cyc, op in all_ops:
             if isinstance(op.gate, MPRYGate) or isinstance(op.gate, MPRZGate):
-                num_ops += 1
-                gates.append(op)
-                pts.append((cyc, op.location[0]))
-                locations.append(op.location)
+                ops.append(op)
+                pts.append(CircuitPoint((cyc, op.location[0])))
+                # Adjust location based on current target, move target to last
+                # qudit
+                loc = list(op.location)
+                loc = (
+                    loc[0:op.gate.target_qubit]
+                    + loc[(op.gate.target_qubit + 1):]
+                    + [loc[op.gate.target_qubit]]
+                )
+                locations.append(CircuitLocation(loc))
 
-        if len(gates) > 0:
+        if len(ops) > 0:
             # Do a bulk QSDs -> circs
-            circs = [MGDPass.decompose(gate) for gate in gates]
+            if self.decompose_twice:
+                circs = [
+                    MGDPass.decompose_mpx_two_levels(
+                        isinstance(op.gate, MPRYGate),
+                        op.params,
+                        op.num_qudits,
+                    ) for op in ops
+                ]
+            else:
+                circs = [
+                    MGDPass.decompose_mpx_one_level(
+                        isinstance(op.gate, MPRYGate),
+                        op.params,
+                        op.num_qudits,
+                    ) for op in ops
+                ]
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [
                 Operation(x, locations[i], x._circuit.params)
@@ -196,21 +338,6 @@ class MGDPass(BasePass):
             circuit.unfold_all()
 
         circuit.unfold_all()
-
-
-def shift_down_unitary(num_qudits: int, end_qubits: int) -> PermutationMatrix:
-    top_qubits = num_qudits - end_qubits
-    now_bottom_qubits = list(reversed(range(top_qubits)))
-    now_top_qubits = list(range(num_qudits - end_qubits, num_qudits))
-    final_qudits = now_top_qubits + now_bottom_qubits
-    return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
-
-
-def shift_up_unitary(num_qudits: int, end_qubits: int) -> PermutationMatrix:
-    bottom_qubits = list(range(end_qubits))
-    top_qubits = list(reversed(range(end_qubits, num_qudits)))
-    final_qudits = top_qubits + bottom_qubits
-    return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
 
 
 class QSDPass(BasePass):
@@ -239,6 +366,31 @@ class QSDPass(BasePass):
                 with width > min_qudit_size
         """
         self.min_qudit_size = min_qudit_size
+
+    @staticmethod
+    def shift_down_unitary(
+        num_qudits: int,
+        end_qubits: int,
+    ) -> PermutationMatrix:
+        """Return the Permutation Matrix that shifts the qubits down by 1
+        qubit."""
+        top_qubits = num_qudits - end_qubits
+        now_bottom_qubits = list(reversed(range(top_qubits)))
+        now_top_qubits = list(range(num_qudits - end_qubits, num_qudits))
+        final_qudits = now_top_qubits + now_bottom_qubits
+        return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
+
+    @staticmethod
+    def shift_up_unitary(
+        num_qudits: int,
+        end_qubits: int,
+    ) -> PermutationMatrix:
+        """Return the Permutation Matrix that shifts the qubits down by 1
+        qubit."""
+        bottom_qubits = list(range(end_qubits))
+        top_qubits = list(reversed(range(end_qubits, num_qudits)))
+        final_qudits = top_qubits + bottom_qubits
+        return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
 
     @staticmethod
     def create_unitary_gate(u: UnitaryMatrix) -> tuple[
@@ -305,8 +457,8 @@ class QSDPass(BasePass):
     def mod_unitaries(u: UnitaryMatrix) -> UnitaryMatrix:
         """Apply a permutation transform to the unitaries to the rest of the
         circuit."""
-        shift_up = shift_up_unitary(u.num_qudits, u.num_qudits - 1)
-        shift_down = shift_down_unitary(u.num_qudits, u.num_qudits - 1)
+        shift_up = QSDPass.shift_up_unitary(u.num_qudits, u.num_qudits - 1)
+        shift_down = QSDPass.shift_down_unitary(u.num_qudits, u.num_qudits - 1)
         return shift_up @ u @ shift_down
 
     @staticmethod
@@ -354,24 +506,38 @@ class QSDPass(BasePass):
         )
         return circ_1
 
-    async def run(self, circuit: Circuit, data: PassData) -> None:
-        unitaries = []
-        pts = []
-        locations = []
+    @staticmethod
+    def get_variable_unitary_pts(
+        circuit: Circuit,
+        min_qudit_size: int,
+    ) -> tuple[list[UnitaryMatrix], list[CircuitPoint], list[CircuitLocation]]:
+        """Get all VariableUnitary Gates in the circuit wider than
+        `min_qudit_size` and return their unitaries, points, and locations."""
+        unitaries: list[UnitaryMatrix] = []
+        pts: list[CircuitPoint] = []
+        locations: list[CircuitLocation] = []
         num_ops = 0
         all_ops = list(circuit.operations_with_cycles(reverse=True))
 
-        initial_utry = circuit.get_unitary()
         # Gather all of the VariableUnitary unitaries
         for cyc, op in all_ops:
             if (
-                op.num_qudits > self.min_qudit_size
+                op.num_qudits > min_qudit_size
                 and isinstance(op.gate, VariableUnitaryGate)
             ):
                 num_ops += 1
                 unitaries.append(op.get_unitary())
-                pts.append((cyc, op.location[0]))
+                pts.append(CircuitPoint((cyc, op.location[0])))
                 locations.append(op.location)
+
+        return unitaries, pts, locations
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """Perform a single pass of Quantum Shannon Decomposition on the
+        circuit."""
+        unitaries, pts, locations = QSDPass.get_variable_unitary_pts(
+            circuit, self.min_qudit_size,
+        )
 
         if len(unitaries) > 0:
             circs = await get_runtime().map(QSDPass.qsd, unitaries)
@@ -382,9 +548,5 @@ class QSDPass(BasePass):
             ]
             circuit.batch_replace(pts, circ_ops)
             circuit.unfold_all()
-
-        dist = circuit.get_unitary().get_distance_from(initial_utry)
-
-        assert dist < 1e-5
 
         circuit.unfold_all()
