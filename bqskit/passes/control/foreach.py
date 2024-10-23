@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import Callable
+from typing import Callable, List
+import pickle
+from os.path import join, exists
+from pathlib import Path
 
-from bqskit.compiler.basepass import _sub_do_work
+# from bqskit.compiler.basepass import _sub_do_work
+from collections import Counter
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
@@ -13,9 +17,13 @@ from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
+from bqskit.ir.gate import Gate
+from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates.constant.unitary import ConstantUnitaryGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
+from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
@@ -60,9 +68,14 @@ class ForEachBlockPass(BasePass):
         self,
         loop_body: WorkflowLike,
         calculate_error_bound: bool = False,
+        error_cost_gen: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: ReplaceFilterFn | str = 'always',
         batch_size: int | None = None,
+        blocks_to_run: List[int] = [],
+        allocate_error: bool = False,
+        allocate_error_gate: Gate = CNOTGate(),
+        allocate_skew_factor: int = 3
     ) -> None:
         """
         Construct a ForEachBlockPass.
@@ -127,6 +140,11 @@ class ForEachBlockPass(BasePass):
                 Defaults to 'always'.  #TODO: address importability
 
             batch_size (int): (Deprecated).
+
+            blocks_to_run (List[int]):
+                A list of blocks to run the ForEachBlockPass body on. By default
+                you run on all blocks. This is mainly used with checkpointing, 
+                where some blocks have already finished while others have not.
         """
         if batch_size is not None:
             import warnings
@@ -140,7 +158,11 @@ class ForEachBlockPass(BasePass):
         self.collection_filter = collection_filter or default_collection_filter
         self.replace_filter = replace_filter or default_replace_filter
         self.workflow = Workflow(loop_body)
-
+        self.blocks_to_run = sorted(blocks_to_run)
+        self.allocate_error = allocate_error
+        self.allocate_error_gate = allocate_error_gate
+        self.allocate_skew_factor = allocate_skew_factor
+        self.error_cost_gen = error_cost_gen
         if not callable(self.collection_filter):
             raise TypeError(
                 'Expected callable method that maps Operations to booleans for'
@@ -165,21 +187,36 @@ class ForEachBlockPass(BasePass):
         else:
             replace_filter = self.replace_filter
 
+        should_checkpoint = 'checkpoint_dir' in data
+        checkpoint_dir = data.get('checkpoint_dir', "")
+
         # Make room in data for block data
         if self.key not in data:
             data[self.key] = []
 
         # Collect blocks
         blocks: list[tuple[int, Operation]] = []
-        for cycle, op in circuit.operations_with_cycles():
-            if self.collection_filter(op):
+        if (len(self.blocks_to_run) == 0):
+            # TODO: This is buggy, need to fix to work with collection filter
+            self.blocks_to_run = list(range(circuit.num_operations))
+
+        block_ids = self.blocks_to_run.copy()
+        next_id = block_ids.pop(0)
+        for i, (cycle, op) in enumerate(circuit.operations_with_cycles()):
+            if self.collection_filter(op) and i == next_id:
                 blocks.append((cycle, op))
+                try:
+                    next_id = block_ids.pop(0)
+                except IndexError:
+                    # No more blocks to run on
+                    break
 
         # No blocks, no work
         if len(blocks) == 0:
             data[self.key].append([])
             return
-
+        
+        # print("NUMBER OF BLOCKS", len(blocks))
         # Get the machine model
         model = data.model
         coupling_graph = data.connectivity
@@ -187,42 +224,88 @@ class ForEachBlockPass(BasePass):
         # Preprocess blocks
         subcircuits: list[Circuit] = []
         block_datas: list[PassData] = []
+        block_gates = []
         for i, (cycle, op) in enumerate(blocks):
+            # Check if checkpoint exists:
+            # Need to zero pad block ids for consistency
+            num_digits = len(str(circuit.num_operations))
+            block_num = str(self.blocks_to_run[i]).zfill(num_digits)
+            save_data_file = join(checkpoint_dir, f'block_{block_num}.data')
+            save_circuit_file = join(checkpoint_dir, f'block_{block_num}.pickle')
+            checkpoint_found = False
+            if should_checkpoint and exists(save_data_file):
+                _logger.debug(f'Loading block {i} from checkpoint.')
+                try:
+                    subcircuit = pickle.load(open(save_circuit_file, 'rb'))
+                    block_data = pickle.load(open(save_data_file, 'rb'))
+                    checkpoint_found = True
+                except Exception as e:
+                    print(f"Exception for file: {save_data_file}", e)
+                    checkpoint_found = False
+            
+            if not checkpoint_found:
+                # Form Subcircuit
+                if isinstance(op.gate, CircuitGate):
+                    subcircuit = op.gate._circuit.copy()
+                    subcircuit.set_params(op.params)
+                else:
+                    subcircuit = Circuit.from_operation(op)
 
-            # Form Subcircuit
-            if isinstance(op.gate, CircuitGate):
-                subcircuit = op.gate._circuit.copy()
-                subcircuit.set_params(op.params)
-            else:
-                subcircuit = Circuit.from_operation(op)
+                # Form Submodel
+                subradixes = [circuit.radixes[q] for q in op.location]
+                subnumbering = {op.location[i]: i for i in range(len(op.location))}
+                submodel = MachineModel(
+                    len(op.location),
+                    coupling_graph.get_subgraph(op.location, subnumbering),
+                    model.gate_set,
+                    subradixes,
+                )
 
-            # Form Submodel
-            subradixes = [circuit.radixes[q] for q in op.location]
-            subnumbering = {op.location[i]: i for i in range(len(op.location))}
-            submodel = MachineModel(
-                len(op.location),
-                coupling_graph.get_subgraph(op.location, subnumbering),
-                model.gate_set,
-                subradixes,
-            )
+                # We are cubing here so that blocks with more CNOT gates 
+                # are given more error budget
 
-            # Form Subdata
-            block_data: PassData = PassData(subcircuit)
-            block_data['subnumbering'] = subnumbering
-            block_data['model'] = submodel
-            block_data['point'] = CircuitPoint(cycle, op.location[0])
-            block_data['calculate_error_bound'] = self.calculate_error_bound
-            for key in data:
-                if key.startswith(self.pass_down_key_prefix):
-                    block_data[key] = data[key]
-                elif key.startswith(
-                    self.pass_down_block_specific_key_prefix,
-                ) and i in data[key]:
-                    block_data[key] = data[key][i]
-            block_data.seed = data.seed
+                # Form Subdata
+                block_data: PassData = PassData(subcircuit)
+                block_data['subnumbering'] = subnumbering
+                block_data['model'] = submodel
+                block_data['point'] = CircuitPoint(cycle, op.location[0])
+                block_data['calculate_error_bound'] = self.calculate_error_bound
+                block_data['block_num'] = block_num
+                for key in data:
+                    if key.startswith(self.pass_down_key_prefix):
+                        block_data[key] = data[key]
+                    elif key.startswith(
+                        self.pass_down_block_specific_key_prefix,
+                    ) and i in data[key]:
+                        block_data[key] = data[key][i]
+                block_data.seed = data.seed
 
+                if should_checkpoint:
+                    # Create checkpoint directory if it doesn't exist
+                    # Dump initial subcircuit and block in it
+                    Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+                    pickle.dump(block_data, open(save_data_file, 'wb'))
+                    pickle.dump(subcircuit, open(save_circuit_file, 'wb'))
+
+            # Change next subdirectory
+            if should_checkpoint:
+                # Update checkpoint dir, circ file, and data file
+                block_data["checkpoint_dir"] = join(checkpoint_dir, f'block_{block_num}')
+                block_data["checkpoint_circ_file"] = save_circuit_file
+                block_data["checkpoint_data_file"] = save_data_file
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
+            # TODO: This is expensive, need to find a better way to do this
+            unfolded_circ = subcircuit.copy()
+            unfolded_circ.unfold_all()
+            skewed_gates = unfolded_circ.count(self.allocate_error_gate) ** self.allocate_skew_factor
+            block_gates.append(skewed_gates)
+
+        # Assign error as percentage of block
+        total_gates = sum(block_gates)
+        if self.allocate_error:
+            for i in range(len(block_datas)):
+                block_datas[i]["error_percentage_allocated"] = block_gates[i] * data.get("error_percentage_allocated", 1) / total_gates 
 
         # Do the work
         results = await get_runtime().map(
@@ -230,6 +313,7 @@ class ForEachBlockPass(BasePass):
             [self.workflow] * len(subcircuits),
             subcircuits,
             block_datas,
+            cost=self.error_cost_gen,
         )
 
         # Unpack results
@@ -272,6 +356,23 @@ class ForEachBlockPass(BasePass):
         if self.calculate_error_bound:
             _logger.debug(f'New circuit error is {data.error}.')
 
+
+async def _sub_do_work(
+    workflow: Workflow,
+    circuit: Circuit,
+    data: PassData,
+    cost: CostFunctionGenerator,
+) -> tuple[Circuit, PassData]:
+    """Execute a sequence of passes on circuit."""
+    if 'calculate_error_bound' in data and data['calculate_error_bound']:
+        old_utry = circuit.get_unitary()
+
+    await workflow.run(circuit, data)
+
+    if 'calculate_error_bound' in data and data['calculate_error_bound']:
+        data.error = cost.calc_cost(circuit, old_utry)
+
+    return circuit, data
 
 def default_collection_filter(op: Operation) -> bool:
     return isinstance(
