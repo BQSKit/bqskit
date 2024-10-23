@@ -5,12 +5,12 @@ import logging
 from typing import Any
 from typing import Callable
 
-from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
+from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
@@ -18,7 +18,7 @@ from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
 
-class TreeScanningGateRemovalPass(BasePass):
+class TreeScanningGateRemovalPass(ScanningGateRemovalPass):
     """
     The TreeScanningGateRemovalPass class.
 
