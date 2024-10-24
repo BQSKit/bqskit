@@ -63,13 +63,14 @@ class PassData(MutableMapping[str, Any]):
     def target(self) -> StateVector | UnitaryMatrix | StateSystem:
         """Return the current target unitary or state."""
         if isinstance(self._target, Circuit):
-            self._target = self._target.get_unitary()
+            if self._target.num_qudits <= 8:
+                self._target = self._target.get_unitary()
 
         return self._target
 
     @target.setter
-    def target(self, _val: StateVector | UnitaryMatrix | StateSystem) -> None:
-        if not isinstance(_val, (StateVector, UnitaryMatrix, StateSystem)):
+    def target(self, _val: StateVector | UnitaryMatrix | StateSystem | Circuit) -> None:
+        if not isinstance(_val, (StateVector, UnitaryMatrix, StateSystem, Circuit)):
             raise TypeError(
                 f'Cannot assign type {type(_val)} to target.'
                 ' Expected either a StateVector, StateSystem,'
@@ -251,24 +252,6 @@ class PassData(MutableMapping[str, Any]):
         in_resv = self._reserved_keys.__contains__(_o)
         in_data = self._data.__contains__(_o)
         return in_resv or in_data
-
-    def update(self, other: Any = (), /, **kwds: Any) -> None:
-        """Update the data with key-values pairs from `other` and `kwds`."""
-        if isinstance(other, PassData):
-            for key in other:
-                # Handle target specially to avoid circuit evaluation
-                if key == 'target':
-                    self._target = other._target
-                    continue
-
-                self[key] = other[key]
-
-            for key, value in kwds.items():
-                self[key] = value
-
-            return
-
-        super().update(other, **kwds)
 
     def copy(self) -> PassData:
         """Returns a deep copy of the data."""
