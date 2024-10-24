@@ -33,7 +33,6 @@ def contains_subdirectory_with_os_listdir(directory):
             return True
     return False
 
-
 class SaveIntermediatePass(BasePass):
     """
     The SaveIntermediate class.
@@ -228,9 +227,22 @@ class RestoreIntermediatePass(BasePass):
         circuit.become(new_circuit)
 
 class CheckpointRestartPass(BasePass):
+    '''
+    This pass is used to reload a checkpointed circuit. Checkpoints are useful
+    to restart a workflow from a certain point in the event of a crash or 
+    timeout.
+    '''
     def __init__(self, checkpoint_dir: str, 
                  default_passes: BasePass | Sequence[BasePass]) -> None:
-        """Group together one or more `passes`."""
+        """ 
+        Args:
+            checkpoint_dir (str): 
+                Path to the directory containing the checkpointed circuit.
+            default_passes (BasePass | Sequence[BasePass]): 
+                The passes to run if the checkpoint does not exist. Typically,
+                these will be the partitioning passes to set up the block 
+                structure.
+        """
         if not is_sequence(default_passes):
             default_passes = [cast(BasePass, default_passes)]
 
@@ -241,7 +253,11 @@ class CheckpointRestartPass(BasePass):
         self.default_passes = default_passes
     
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        """Perform the pass's operation, see :class:`BasePass` for more."""
+        """
+        Set's the `checkpoint_dir` attribute and restores the circuit from the
+        checkpoint if possible. If the checkpoint does not exist, the default
+        passes are run.
+        """
         # block_id = data.get("block_num", "0")
         data["checkpoint_dir"] = self.checkpoint_dir
         if not exists(join(self.checkpoint_dir, "circuit.pickle")):
@@ -253,7 +269,6 @@ class CheckpointRestartPass(BasePass):
         else:
             # Already checkpointed, restore
             _logger.info("Restoring from Checkpoint!")
-            print("RESTORING FROM CHECKPOINT")
             new_circuit = pickle.load(open(join(self.checkpoint_dir, "circuit.pickle"), "rb"))
             circuit.become(new_circuit)
             new_data = pickle.load(open(join(self.checkpoint_dir, "data.pickle"), "rb"))

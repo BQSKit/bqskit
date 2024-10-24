@@ -187,8 +187,12 @@ class ForEachBlockPass(BasePass):
         else:
             replace_filter = self.replace_filter
 
+        # If checkpoint_dir is defined in data, then we should checkpoint
+        # Note that checkpoint_dir is set in CheckpointRestartPass
         should_checkpoint = 'checkpoint_dir' in data
         checkpoint_dir = data.get('checkpoint_dir', "")
+        if should_checkpoint:
+            Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
 
         # Make room in data for block data
         if self.key not in data:
@@ -197,7 +201,6 @@ class ForEachBlockPass(BasePass):
         # Collect blocks
         blocks: list[tuple[int, Operation]] = []
         if (len(self.blocks_to_run) == 0):
-            # TODO: This is buggy, need to fix to work with collection filter
             self.blocks_to_run = list(range(circuit.num_operations))
 
         block_ids = self.blocks_to_run.copy()
@@ -216,7 +219,6 @@ class ForEachBlockPass(BasePass):
             data[self.key].append([])
             return
         
-        # print("NUMBER OF BLOCKS", len(blocks))
         # Get the machine model
         model = data.model
         coupling_graph = data.connectivity
@@ -226,7 +228,7 @@ class ForEachBlockPass(BasePass):
         block_datas: list[PassData] = []
         block_gates = []
         for i, (cycle, op) in enumerate(blocks):
-            # Check if checkpoint exists:
+            # Set up checkpoint data and circuit files
             # Need to zero pad block ids for consistency
             num_digits = len(str(circuit.num_operations))
             block_num = str(self.blocks_to_run[i]).zfill(num_digits)
@@ -234,15 +236,19 @@ class ForEachBlockPass(BasePass):
             save_circuit_file = join(checkpoint_dir, f'block_{block_num}.pickle')
             checkpoint_found = False
             if should_checkpoint and exists(save_data_file):
+                # If checkpointing, reload block data and circuit from 
+                # checkpoint if it exists
                 _logger.debug(f'Loading block {i} from checkpoint.')
                 try:
                     subcircuit = pickle.load(open(save_circuit_file, 'rb'))
                     block_data = pickle.load(open(save_data_file, 'rb'))
                     checkpoint_found = True
                 except Exception as e:
-                    print(f"Exception for file: {save_data_file}", e)
+                    # Problem reading the checkpointed files
+                    _logger.error(f"Exception for file: {save_data_file}", e)
                     checkpoint_found = False
             
+            # If no checkpoint found, form subcircuit and submodel
             if not checkpoint_found:
                 # Form Subcircuit
                 if isinstance(op.gate, CircuitGate):
@@ -261,16 +267,12 @@ class ForEachBlockPass(BasePass):
                     subradixes,
                 )
 
-                # We are cubing here so that blocks with more CNOT gates 
-                # are given more error budget
-
                 # Form Subdata
                 block_data: PassData = PassData(subcircuit)
                 block_data['subnumbering'] = subnumbering
                 block_data['model'] = submodel
                 block_data['point'] = CircuitPoint(cycle, op.location[0])
                 block_data['calculate_error_bound'] = self.calculate_error_bound
-                block_data['block_num'] = block_num
                 for key in data:
                     if key.startswith(self.pass_down_key_prefix):
                         block_data[key] = data[key]
@@ -280,32 +282,19 @@ class ForEachBlockPass(BasePass):
                         block_data[key] = data[key][i]
                 block_data.seed = data.seed
 
-                if should_checkpoint:
-                    # Create checkpoint directory if it doesn't exist
-                    # Dump initial subcircuit and block in it
-                    Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-                    pickle.dump(block_data, open(save_data_file, 'wb'))
-                    pickle.dump(subcircuit, open(save_circuit_file, 'wb'))
-
             # Change next subdirectory
             if should_checkpoint:
-                # Update checkpoint dir, circ file, and data file
+                # Blocks can have sub-blocks, so we need to change the ckpt dir
+                # for each block as a sub-folder of the main checkpoint dir
                 block_data["checkpoint_dir"] = join(checkpoint_dir, f'block_{block_num}')
                 block_data["checkpoint_circ_file"] = save_circuit_file
                 block_data["checkpoint_data_file"] = save_data_file
+                block_data['block_num'] = block_num
+                pickle.dump(block_data, open(save_data_file, 'wb'))
+                pickle.dump(subcircuit, open(save_circuit_file, 'wb'))
+
             subcircuits.append(subcircuit)
             block_datas.append(block_data)
-            # TODO: This is expensive, need to find a better way to do this
-            unfolded_circ = subcircuit.copy()
-            unfolded_circ.unfold_all()
-            skewed_gates = unfolded_circ.count(self.allocate_error_gate) ** self.allocate_skew_factor
-            block_gates.append(skewed_gates)
-
-        # Assign error as percentage of block
-        total_gates = sum(block_gates)
-        if self.allocate_error:
-            for i in range(len(block_datas)):
-                block_datas[i]["error_percentage_allocated"] = block_gates[i] * data.get("error_percentage_allocated", 1) / total_gates 
 
         # Do the work
         results = await get_runtime().map(
