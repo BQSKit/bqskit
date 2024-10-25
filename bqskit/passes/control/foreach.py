@@ -8,7 +8,7 @@ import pickle
 from os.path import join, exists
 from pathlib import Path
 
-# from bqskit.compiler.basepass import _sub_do_work
+from bqskit.compiler.basepass import _sub_do_work
 from collections import Counter
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -72,10 +72,7 @@ class ForEachBlockPass(BasePass):
         collection_filter: Callable[[Operation], bool] | None = None,
         replace_filter: ReplaceFilterFn | str = 'always',
         batch_size: int | None = None,
-        blocks_to_run: List[int] = [],
-        allocate_error: bool = False,
-        allocate_error_gate: Gate = CNOTGate(),
-        allocate_skew_factor: int = 3
+        blocks_to_run: List[int] = []
     ) -> None:
         """
         Construct a ForEachBlockPass.
@@ -159,9 +156,6 @@ class ForEachBlockPass(BasePass):
         self.replace_filter = replace_filter or default_replace_filter
         self.workflow = Workflow(loop_body)
         self.blocks_to_run = sorted(blocks_to_run)
-        self.allocate_error = allocate_error
-        self.allocate_error_gate = allocate_error_gate
-        self.allocate_skew_factor = allocate_skew_factor
         self.error_cost_gen = error_cost_gen
         if not callable(self.collection_filter):
             raise TypeError(
@@ -198,7 +192,7 @@ class ForEachBlockPass(BasePass):
         if self.key not in data:
             data[self.key] = []
 
-        # Collect blocks
+        # Collect blocks to run with
         blocks: list[tuple[int, Operation]] = []
         if (len(self.blocks_to_run) == 0):
             self.blocks_to_run = list(range(circuit.num_operations))
@@ -218,7 +212,7 @@ class ForEachBlockPass(BasePass):
         if len(blocks) == 0:
             data[self.key].append([])
             return
-        
+
         # Get the machine model
         model = data.model
         coupling_graph = data.connectivity
@@ -226,7 +220,6 @@ class ForEachBlockPass(BasePass):
         # Preprocess blocks
         subcircuits: list[Circuit] = []
         block_datas: list[PassData] = []
-        block_gates = []
         for i, (cycle, op) in enumerate(blocks):
             # Set up checkpoint data and circuit files
             # Need to zero pad block ids for consistency
@@ -301,8 +294,7 @@ class ForEachBlockPass(BasePass):
             _sub_do_work,
             [self.workflow] * len(subcircuits),
             subcircuits,
-            block_datas,
-            cost=self.error_cost_gen,
+            block_datas
         )
 
         # Unpack results
@@ -344,24 +336,6 @@ class ForEachBlockPass(BasePass):
         data.update_error_mul(error_sum)
         if self.calculate_error_bound:
             _logger.debug(f'New circuit error is {data.error}.')
-
-
-async def _sub_do_work(
-    workflow: Workflow,
-    circuit: Circuit,
-    data: PassData,
-    cost: CostFunctionGenerator,
-) -> tuple[Circuit, PassData]:
-    """Execute a sequence of passes on circuit."""
-    if 'calculate_error_bound' in data and data['calculate_error_bound']:
-        old_utry = circuit.get_unitary()
-
-    await workflow.run(circuit, data)
-
-    if 'calculate_error_bound' in data and data['calculate_error_bound']:
-        data.error = cost.calc_cost(circuit, old_utry)
-
-    return circuit, data
 
 def default_collection_filter(op: Operation) -> bool:
     return isinstance(
