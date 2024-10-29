@@ -524,7 +524,7 @@ class Worker:
             self._conn.send((RuntimeMessage.RESULT, packaged_result))
 
         # Remove task
-        self._tasks.pop(task.return_address)
+        self._tasks.pop(task.return_address, None)
 
         # Cancel any open tasks
         for mailbox_id in self._active_task.owned_mailboxes:
