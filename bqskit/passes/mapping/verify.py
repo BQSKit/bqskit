@@ -1,6 +1,8 @@
 """This module implements the PAMVerificationSequence and helper passes."""
 from __future__ import annotations
 
+import logging
+
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -16,6 +18,7 @@ from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import Sequence
 
+_logger = logging.getLogger(__name__)
 
 class TagPAMBlockDataPass(BasePass):
     """Tag the blocks with the PAM block data."""
@@ -80,6 +83,7 @@ class CalculatePAMErrorsPass(BasePass):
 
         # calculate error
         data.update_error_mul(current_unitary.get_distance_from(exact_unitary))
+        _logger.info(f' Panel error: {current_unitary.get_distance_from(exact_unitary)}')
 
 
 class UnTagPAMBlockDataPass(BasePass):
