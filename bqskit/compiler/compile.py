@@ -96,6 +96,7 @@ from bqskit.utils.typing import is_real_number
 # My additions
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
 from bqskit.passes.io.checkpoint import LoadCheckpointPass
+from bqskit.passes.rules.swap2cnot import SwapToCNOTPass
 
 import os
 
@@ -1369,10 +1370,10 @@ def build_seqpam_mapping_optimization_workflow(
             ApplyPlacement(),
             PAMLayoutPass(num_layout_passes),
             PAMRoutingPass(0.1),
-            SwapToCNOTPass(),
             post_pam_seq,
             ApplyPlacement(),
             UnfoldPass(),
+            SwapToCNOTPass(),
         ]
 
     elif mode == 'save':
@@ -1394,10 +1395,10 @@ def build_seqpam_mapping_optimization_workflow(
             ApplyPlacement(),
             PAMLayoutPass(num_layout_passes),
             PAMRoutingPass(0.1),
-            SwapToCNOTPass(),
             post_pam_seq,
             ApplyPlacement(),
             UnfoldPass(),
+            SwapToCNOTPass(),
         ]
 
     interior_pass_list = interior_pass_list + append_pass_list
