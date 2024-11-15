@@ -14,4 +14,4 @@ class CircuitDrawPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData):
         qc = bqskit_to_qiskit(circuit)
-        qc.draw(output='mpl', filename=self.marker+'.png', fold=-1)
+        qc.draw(output='mpl', filename=self.marker+'.jpg', scale=0.5, fold=-1)
