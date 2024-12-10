@@ -94,11 +94,13 @@ from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_real_number
 
 # My additions
+# ============================================================================
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
 from bqskit.passes.io.checkpoint import LoadCheckpointPass
 from bqskit.passes.rules.swap2cnot import SwapToCNOTPass
+# from bqskit.passes.io.circdraw import CircuitDrawPass
+# ============================================================================
 
-import os
 
 if TYPE_CHECKING:
     from bqskit.compiler.basepass import BasePass
@@ -1390,15 +1392,21 @@ def build_seqpam_mapping_optimization_workflow(
         append_pass_list = [
             LogPass('Loading checkpoint.'),
             LoadCheckpointPass(f'{checkpoint_path}'),
-
+            # CircuitDrawPass('0_pre_opt+block_synth'),
             LogPass('Performing permutation-aware mapping.'),
             ApplyPlacement(),
+            # CircuitDrawPass('1_post_placement_1'),
             PAMLayoutPass(num_layout_passes),
+            # CircuitDrawPass('2_post_layout'),
             PAMRoutingPass(0.1),
+            # CircuitDrawPass('3_post_routing'),
             post_pam_seq,
             ApplyPlacement(),
+            # CircuitDrawPass('4_post_pacement'),
             UnfoldPass(),
+            # CircuitDrawPass('5_post_unfold'),
             SwapToCNOTPass(),
+            # CircuitDrawPass('6_post_swap2cnot'),
         ]
 
     interior_pass_list = interior_pass_list + append_pass_list
