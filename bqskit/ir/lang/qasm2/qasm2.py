@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.language import Language
 from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.lang.qasm2.visitor import OPENQASMVisitor
-from bqskit.ir.gates.measure import MeasurementPlaceholder
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
@@ -35,7 +35,7 @@ class OPENQASM2Language(Language):
                 is_classical_register_present = True
 
             print(gate)
-            print("Gate definition:")
+            print('Gate definition:')
             print(gate.get_qasm_gate_def())
             source += gate.get_qasm_gate_def()
 

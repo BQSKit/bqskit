@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from qiskit import ClassicalRegister
+from qiskit import QuantumCircuit
+from qiskit import QuantumRegister
+
+from bqskit.ext import qiskit_to_bqskit
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import Reset
 from bqskit.ir.gates import U3Gate
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
-from bqskit.ext import qiskit_to_bqskit
-from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 
 
 class TestCircuitGates:
