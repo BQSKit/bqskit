@@ -22,6 +22,17 @@ class ScanningGateRemovalPass(BasePass):
     Starting from one side of the circuit, attempt to remove gates one-by-one.
     """
 
+    '''
+    This key can be set in the checkpoint to indicate that the pass has
+    finished.
+    '''
+    checkpoint_finish_key = "ScanningGateRemovalPass_finished"
+
+    '''
+    This key holds the data to restart/continue the pass from a checkpoint.
+    '''
+    checkpoint_data_key = "ScanningGateRemovalPass_data"
+
     def __init__(
         self,
         start_from_left: bool = True,
@@ -97,6 +108,9 @@ class ScanningGateRemovalPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+        if self.checkpoint_finished(data, 
+                                    ScanningGateRemovalPass.checkpoint_finish_key):
+            return
         instantiate_options = self.instantiate_options.copy()
         if 'seed' not in instantiate_options:
             instantiate_options['seed'] = data.seed
@@ -108,8 +122,19 @@ class ScanningGateRemovalPass(BasePass):
 
         circuit_copy = circuit.copy()
         reverse_iter = not self.start_from_left
-        for cycle, op in circuit.operations_with_cycles(reverse=reverse_iter):
 
+        # Restart the checkpoint from the start ind if we are checkpointing,
+        # otherwise start from the beginning.
+        start_ind = self.restart_checkpoint(data, 
+                                ScanningGateRemovalPass.checkpoint_data_key)
+        if start_ind is None:
+            start_ind = 0
+
+        operations = circuit.operations_with_cycles(reverse=reverse_iter)
+        for i, cycle_op in enumerate(operations):
+            if i < start_ind:
+                continue
+            cycle, op = cycle_op
             if not self.collection_filter(op):
                 _logger.debug(f'Skipping operation {op} at cycle {cycle}.')
                 continue
@@ -131,9 +156,15 @@ class ScanningGateRemovalPass(BasePass):
             if self.cost(working_copy, target) < self.success_threshold:
                 _logger.debug('Successfully removed operation.')
                 circuit_copy = working_copy
+                # Checkpoint the circuit here if set
+                data[ScanningGateRemovalPass.checkpoint_data_key] = start_ind
+                self.checkpoint_save(circuit_copy, data)
 
         circuit.become(circuit_copy)
 
+        self.finish_checkpoint(circuit, data, 
+                               ScanningGateRemovalPass.checkpoint_finish_key,
+                               remove_key=ScanningGateRemovalPass.checkpoint_data_key)
 
 def default_collection_filter(op: Operation) -> bool:
     return True
