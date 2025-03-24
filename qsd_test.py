@@ -77,8 +77,8 @@ if circ_type == "random":
     unitary = UnitaryMatrix.random(num_qudits)
 elif circ_type == "ccx":
     unitary = ccx_unitary
-elif circ_type == "qft":
-    unitary = pickle.load(open(f"unitaries/qft_{num_qudits}.unitary", "rb"))
+# elif circ_type == "qft":
+#     unitary = pickle.load(open(f"unitaries/qft_{num_qudits}.unitary", "rb"))
 
 for _ in range(1):
     circ = Circuit.from_unitary(unitary)
