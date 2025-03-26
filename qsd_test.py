@@ -1,4 +1,6 @@
 from bqskit.passes import FullQSDPass
+from bqskit.passes.synthesis.bzxz import FullBlockZXZPass
+
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.gates import *
@@ -63,29 +65,36 @@ for _ in range(1):
 
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
-    FullQSDPass(start_from_left=True, min_qudit_size=2)
+    # FullQSDPass(start_from_left=True, min_qudit_size=2)
+    FullBlockZXZPass(
+        start_from_left=True, min_qudit_size=2
+    )
 ]
 
 start = time.time()
 
 # Finally let's create create the compiler and execute the CompilationTask.
+results = []
 amount_of_workers = 2
 with Compiler(num_workers=amount_of_workers, runtime_log_level=logging.INFO) as compiler:
     start = time.time()
     compiled_circuit = compiler.compile(circuit, workflow)
     total_time = time.time() - start
+    cnot_count = compiled_circuit.gate_counts.get(CNOTGate(), 0)
     # compiled_circuit = compile(compiled_circuit, optimization_level=4, max_synthesis_size=3, compiler=compiler)
     # print(time.time() - start)
+    results.append({
+        'qubits': num_qudits,
+        'cnot_count': cnot_count,
+        'compile_time_sec': total_time
+    })
 
-gates = sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)
-
-print(dict(gates))
-
-gates = [x[1] for x in gates]
-
-
+# gates = sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)
+# print(dict(gates))
+# gates = [x[1] for x in gates]
 # print([type(x) for x in compiled_circuit.gate_counts.keys()])
 
+print(results)
 
 # scan_type = f"treescan{tree_depth}"
 # pickle.dump(compiled_circuit, open(f"{circ_type}_{num_qudits}_{scan_type}_{partition_depth}.pickle", "wb"))
@@ -95,7 +104,7 @@ utry_1 = compiled_circuit.get_unitary()
 utry_2 = circuit.get_unitary()
 
 cost_function = HilbertSchmidtResidualsGenerator()
-print(cost_function(compiled_circuit, circuit.get_unitary()))
+# print(cost_function(compiled_circuit, circuit.get_unitary()))
 
 # print(f"{circ_type}_{scan_type}, {num_qudits}, {partition_depth}, {total_time}, {gates[0]}, {gates[1]}, {gates[2]}, {gates[3]}")
 
