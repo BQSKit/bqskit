@@ -26,8 +26,7 @@ instantiate_options = {'min_iters': 0,
 
 # enable_logging(True)
 
-# Let's create a random 4-qubit unitary to synthesize and add it to a
-# circuit.
+# Let's create a random 4-qubit unitary to synthesize and add it to a circuit
 num_qudits = int(argv[2])
 circ_type = argv[1]
 # min_qudits = int(argv[3])
@@ -105,9 +104,7 @@ utry_2 = circuit.get_unitary()
 
 cost_function = HilbertSchmidtResidualsGenerator()
 # print(cost_function(compiled_circuit, circuit.get_unitary()))
-
 # print(f"{circ_type}_{scan_type}, {num_qudits}, {partition_depth}, {total_time}, {gates[0]}, {gates[1]}, {gates[2]}, {gates[3]}")
-
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 # print(utry_1)
