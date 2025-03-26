@@ -103,7 +103,7 @@ utry_1 = compiled_circuit.get_unitary()
 utry_2 = circuit.get_unitary()
 
 cost_function = HilbertSchmidtResidualsGenerator()
-# print(cost_function(compiled_circuit, circuit.get_unitary()))
+print(cost_function(compiled_circuit, circuit.get_unitary()))
 # print(f"{circ_type}_{scan_type}, {num_qudits}, {partition_depth}, {total_time}, {gates[0]}, {gates[1]}, {gates[2]}, {gates[3]}")
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
