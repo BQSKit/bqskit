@@ -7,7 +7,7 @@ from lark import Tree
 _OPENQASMPARSER = Lark(
     r"""
 ID: /[a-zA-Z][A-Za-z0-9_]*/
-REAL: /([0-9]+\.[0-9]*|[0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?/
+REAL:/([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][-+]?[0-9]+)?/
 NNINTEGER: /[1-9]+[0-9]*|0/
 PI: "pi"
 SIN: "sin"

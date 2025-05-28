@@ -535,3 +535,30 @@ def test_ECR_gate() -> None:
     circuit = OPENQASM2Language().decode(input)
     assert circuit.num_operations == 1
     assert circuit[0, 0].gate == ECRGate()
+
+@pytest.mark.parametrize(
+    'input_qasm',
+    [
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1e-4, 1e-10, 1e-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1E-4, 1E-10, 1E-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1e-4, -1e-10, -1e-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1E-4, -1E-10, -1E-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1e-4, 1.1e-10, 1.1e-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1E-4, 1.1E-10, 1.1E-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e-4, -1.1e-10, -1.1e-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1E-4, -1.1E-10, -1.1E-8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1e+4, 1e+10, 1e+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1E+4, 1E+10, 1E+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1e+4, -1e+10, -1e+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1E+4, -1E+10, -1E+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1e+4, 1.1e+10, 1.1e+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1E+4, 1.1E+10, 1.1E+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e+4, -1.1e+10, -1.1e+8) q[0];\n',
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e+4, -1.1e+10, -1.1e+8) q[0];\n',
+    ]
+)
+def test_decimal_angle(input_qasm: str) -> None:
+    circuit = OPENQASM2Language().decode(input_qasm)
+    u3_angles = input_qasm.split('u3(')[1].split(')')[0].split(',')
+    assert circuit.num_operations == 1
+    assert circuit.get_unitary() == U3Gate().get_unitary([float(angle) for angle in u3_angles])
