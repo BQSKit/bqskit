@@ -546,6 +546,14 @@ def test_ECR_gate() -> None:
             [1, 2.1, 3]
         ),
         (
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1e-4, 1e-10, 1e-8) q[0];\n',
+            [1e-4, 1e-10, 1e-8],
+        ),
+        (
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e+4, -1.1e+10, -1.1e+8) q[0];\n',
+            [-1.1e+4, -1.1e+10, -1.1e+8],
+        ),
+        (
             'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(0, 1, 2) q[0];\n',
             [0, 1, 2]
         ),
