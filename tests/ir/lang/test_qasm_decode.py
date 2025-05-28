@@ -6,6 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
+from numpy.testing import assert_almost_equal
+
 from bqskit.ext.qiskit import qiskit_to_bqskit
 from bqskit.ir.gates.barrier import BarrierPlaceholder
 from bqskit.ir.gates.circuitgate import CircuitGate
@@ -537,28 +539,24 @@ def test_ECR_gate() -> None:
     assert circuit[0, 0].gate == ECRGate()
 
 @pytest.mark.parametrize(
-    'input_qasm',
+    'angles',
     [
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1e-4, 1e-10, 1e-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1E-4, 1E-10, 1E-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1e-4, -1e-10, -1e-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1E-4, -1E-10, -1E-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1e-4, 1.1e-10, 1.1e-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1E-4, 1.1E-10, 1.1E-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e-4, -1.1e-10, -1.1e-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1E-4, -1.1E-10, -1.1E-8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1e+4, 1e+10, 1e+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1E+4, 1E+10, 1E+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1e+4, -1e+10, -1e+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1E+4, -1E+10, -1E+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1e+4, 1.1e+10, 1.1e+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.1E+4, 1.1E+10, 1.1E+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e+4, -1.1e+10, -1.1e+8) q[0];\n',
-        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(-1.1e+4, -1.1e+10, -1.1e+8) q[0];\n',
-    ]
+        [-0.1, 0.2, -0.3],
+        [1e-10, 1e-8, 2.2e-10],
+        [-1e+4, 1e+5, -1e+6],
+        [3.141592653589793, -2.718281828459045, 1.4142135623730951],
+        [1, 2, 3],
+        [1.0, 2.0, 3.0]
+    ],
 )
-def test_decimal_angle(input_qasm: str) -> None:
+def test_decimal_angle(angles: list[float]) -> None:
+    input_qasm = f"""
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[1];
+        u3({angles[0]}, {angles[1]}, {angles[2]}) q[0];
+    """
     circuit = OPENQASM2Language().decode(input_qasm)
-    u3_angles = input_qasm.split('u3(')[1].split(')')[0].split(',')
     assert circuit.num_operations == 1
-    assert circuit.get_unitary() == U3Gate().get_unitary([float(angle) for angle in u3_angles])
+    u3_params = circuit[0, 0].params
+    assert_almost_equal(u3_params, angles, decimal=8)
