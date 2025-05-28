@@ -200,7 +200,7 @@ class StateVector(NDArrayOperatorsMixin):
             radixes = [2] * num_qudits
         state = np.zeros(np.prod(radixes), dtype=np.complex128)
         state[0] = 1.0
-        return StateVector(state)
+        return StateVector(state, radixes)
 
     @staticmethod
     def random(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
