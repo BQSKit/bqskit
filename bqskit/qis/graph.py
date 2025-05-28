@@ -382,20 +382,42 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         location: CircuitLocationLike,
         renumbering: dict[int, int] | None = None,
     ) -> CouplingGraph:
-        """Returns the sub-coupling-graph with qudits in `location`."""
+        """Returns the subgraph of this CouplingGraph induced by `location`.
+
+        Parameters
+        ----------
+        location : CircuitLocationLike
+            The qudits to include in the subgraph.
+        renumbering : dict[int, int], optional
+            Mapping from original qudit indices to new indices. If not provided,
+            the original indices are preserved.
+
+        Returns
+        -------
+        CouplingGraph
+            The induced subgraph on the specified location.
+        """
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
         location = CircuitLocation(location)
+        location_set = set(location)
+
         if renumbering is None:
-            renumbering = {q: i for i, q in enumerate(location)}
+            renumbering = {q: q for q in location}
+
+        # Validate that renumbering only applies to qudits in location
+        if not location_set.issubset(renumbering):
+            raise ValueError("Renumbering must provide entries for all qudits in location.")
 
         subgraph = []
-        location_set = {loc for loc in location}
         for q_i in location:
-            for q_i_neighbor in location_set.intersection(self._adj[q_i]):
-                subgraph.append((renumbering[q_i], renumbering[q_i_neighbor]))
-        return CouplingGraph(subgraph, len(location))
+            for q_i_neighbor in self._adj[q_i]:
+                if q_i_neighbor in location_set:
+                    subgraph.append((renumbering[q_i], renumbering[q_i_neighbor]))
+
+        return CouplingGraph(subgraph, max(renumbering.values()) + 1)
+
 
     def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:
         """
