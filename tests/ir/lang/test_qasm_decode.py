@@ -535,3 +535,34 @@ def test_ECR_gate() -> None:
     circuit = OPENQASM2Language().decode(input)
     assert circuit.num_operations == 1
     assert circuit[0, 0].gate == ECRGate()
+
+
+@pytest.mark.parametrize(
+    "input_qasm, expected_angles",
+    [
+        (
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1, 2.1, 3) q[0];\n',
+            [1, 2.1, 3]
+        ),
+        (
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(0, 1, 2) q[0];\n',
+            [0, 1, 2]
+        ),
+        (
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nu3(1.0, 2.1, 3.0) q[0];\n',
+            [1.0, 2.1, 3.0]
+        ),
+    ]
+)
+def test_real_and_nninteger_unitary_exact(input_qasm: str, expected_angles: list[float]) -> None:
+    circuit = OPENQASM2Language().decode(input_qasm)
+
+    assert circuit.num_operations == 1, "Expected exactly one gate in the circuit."
+
+    expected_unitary = U3Gate().get_unitary(expected_angles)
+    actual_unitary = circuit.get_unitary()
+
+    assert actual_unitary == expected_unitary, (
+        f"Mismatch in unitary for angles {expected_angles}"
+    )
+    
