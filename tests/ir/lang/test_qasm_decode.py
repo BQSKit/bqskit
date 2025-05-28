@@ -5,6 +5,7 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
+import math
 
 from bqskit.ext.qiskit import qiskit_to_bqskit
 from bqskit.ir.gates.barrier import BarrierPlaceholder
@@ -559,10 +560,9 @@ def test_real_and_nninteger_unitary_exact(input_qasm: str, expected_angles: list
 
     assert circuit.num_operations == 1, "Expected exactly one gate in the circuit."
 
-    expected_unitary = U3Gate().get_unitary(expected_angles)
-    actual_unitary = circuit.get_unitary()
+    u3_gate = circuit[0].gate
+    actual_angles = u3_gate.params
 
-    assert actual_unitary == expected_unitary, (
-        f"Mismatch in unitary for angles {expected_angles}"
-    )
+    for i, (actual, expected) in enumerate(zip(actual_angles, expected_angles)):
+        assert math.isclose(actual, expected, rel_tol=1e-10, abs_tol=1e-12)
     
