@@ -250,27 +250,47 @@ class TestGraphGetSubgraphsOfSize:
 
 
 class TestMachineGetSubgraph:
-    def test_1(self) -> None:
+    def test_default_preserves_labels(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
-        l = coupling_graph.get_subgraph((0, 1, 2))
+        subgraph = coupling_graph.get_subgraph((0, 1, 2))
 
-        assert len(l) == 2
-        assert (0, 1) in l
-        assert (1, 2) in l
+        assert subgraph.num_qudits == 3 
+        assert (0, 1) in subgraph._edges
+        assert (1, 2) in subgraph._edges
+        assert len(subgraph._edges) == 2
 
-    def test_2(self) -> None:
+    def test_explicit_renumbering(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (0, 3), (2, 3)})
-        l = coupling_graph.get_subgraph((0, 1, 3))
+        subgraph = coupling_graph.get_subgraph((0, 1, 3), renumbering={0: 2, 1: 1, 3: 0})
 
-        assert len(l) == 2
-        assert (0, 1) in l
-        assert (0, 2) in l
+        # Edges after renumbering:
+        # (0, 1) -> (2, 1)
+        # (0, 3) -> (2, 0)
+        assert (2, 1) in subgraph._edges or (1, 2) in subgraph._edges
+        assert (2, 0) in subgraph._edges or (0, 2) in subgraph._edges
+        assert subgraph.num_qudits == 3
+        assert len(subgraph._edges) == 2
 
-    def test_invalid(self) -> None:
+    def test_incomplete_renumbering_raises(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
 
-        with pytest.raises(TypeError):
-            coupling_graph.get_subgraph('a')  # type: ignore
+        with pytest.raises(ValueError, match="Renumbering must provide entries for all qudits"):
+            coupling_graph.get_subgraph((0, 1, 2), renumbering={0: 0, 1: 1})  # Missing 2
+
+    def test_invalid_location_type_raises(self) -> None:
+        coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+
+        with pytest.raises(TypeError, match="Invalid location"):
+            coupling_graph.get_subgraph("a")  # type: ignore
+
+    def test_subgraph_matches_induced_edges(self) -> None:
+        coupling_graph = CouplingGraph({(0, 1), (0, 2), (1, 2), (2, 3)})
+        location = (0, 1, 2)
+        subgraph = coupling_graph.get_subgraph(location, renumbering={0: 0, 1: 1, 2: 2})
+
+        # Expected edges: (0,1), (0,2), (1,2)
+        expected = [(0, 1), (0, 2), (1, 2)]
+        assert sorted(subgraph._edges) == sorted(expected)
 
 
 def test_is_linear() -> None:

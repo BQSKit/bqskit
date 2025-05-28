@@ -377,6 +377,19 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         return [paths[i] for i in range(self.num_qudits)]
 
+    def _compute_induced_edges(
+            self, location: CircuitLocationLike
+    ) -> list[tuple[int, int]]:
+        if not isinstance(location, CircuitLocation):
+            location = CircuitLocation(location)
+
+        location_set = set(location)
+        return [
+            (min(q1, q2), max(q1, q2))
+            for q1, q2 in it.combinations(location, 2)
+            if (q1, q2) in self._edges or (q2, q1) in self._edges
+        ]
+
     def get_subgraph(
         self,
         location: CircuitLocationLike,
@@ -400,23 +413,17 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
-        location = CircuitLocation(location)
-        location_set = set(location)
+        edges = self._compute_induced_edges(location)
 
+        location = CircuitLocation(location)
         if renumbering is None:
             renumbering = {q: q for q in location}
 
-        # Validate that renumbering only applies to qudits in location
-        if not location_set.issubset(renumbering):
-            raise ValueError("Renumbering must provide entries for all qudits in location.")
+        if not set(location).issubset(renumbering):
+            raise ValueError("Renumbering must include all qubits in location.")
 
-        subgraph = []
-        for q_i in location:
-            for q_i_neighbor in self._adj[q_i]:
-                if q_i_neighbor in location_set:
-                    subgraph.append((renumbering[q_i], renumbering[q_i_neighbor]))
-
-        return CouplingGraph(subgraph, max(renumbering.values()) + 1)
+        remapped_edges = [(renumbering[q1], renumbering[q2]) for q1, q2 in edges]
+        return CouplingGraph(remapped_edges, max(renumbering.values()) + 1)
 
 
     def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:
@@ -713,17 +720,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             (list[tuple[int,int]]): The list of edges connecting vertices in
                 `location`.
         """
-        if not isinstance(location, CircuitLocation):
-            location = CircuitLocation(location)
-
-        if len(location) < 2:
-            raise ValueError('Invalid location size.')
-
-        subgraph = []
-        for q1, q2 in it.combinations(location, 2):
-            if (q1, q2) in self._edges or (q2, q1) in self._edges:
-                subgraph.append((min([q1, q2]), max([q1, q2])))
-        return subgraph
+        return self._compute_induced_edges(location)
 
     def relabel_subgraph(
         graph: CouplingGraphLike,
