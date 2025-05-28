@@ -46,6 +46,7 @@ class LEAPSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
+        timeout_layers: int = 10,
         store_partial_solutions: bool = False,
         partials_per_depth: int = 25,
         min_prefix_size: int = 3,
@@ -76,6 +77,10 @@ class LEAPSynthesisPass(SynthesisPass):
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                 to unlimited. (Default: None)
+
+            timeout_layers (int = 10): The maximum number of layers to
+                with no improvement before warning the user. This is
+                set to 10 by default.
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)
@@ -151,6 +156,7 @@ class LEAPSynthesisPass(SynthesisPass):
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
+        self.timeout_layers = timeout_layers
         self.min_prefix_size = min_prefix_size
         self.instantiate_options: dict[str, Any] = {
             'cost_fn_gen': self.cost,
@@ -251,6 +257,14 @@ class LEAPSynthesisPass(SynthesisPass):
                         frontier.clear()
                         if self.max_layer is None or layer + 1 < self.max_layer:
                             frontier.add(circuit, layer + 1)
+
+                layer_diff = abs(best_layer - layer)
+                if layer_diff % self.timeout_layers == 0 and layer_diff > 0:
+                    _logger.warning(
+                        f'No improvement after {self.timeout_layers} layers.'
+                        f' Current best circuit has {best_layer} layer'
+                        f'{"s" if best_layer != 1 else ""} and cost: {best_dist:.12e}.',
+                    )
 
                 if self.store_partial_solutions:
                     if layer not in psols:
