@@ -570,7 +570,6 @@ def test_real_and_nninteger_unitary_exact(input_qasm: str, expected_angles: list
 
     u3_gate = circuit[0].gate
     actual_angles = u3_gate.params
-
+    assert len(actual_angles) == len(expected_angles)
     for i, (actual, expected) in enumerate(zip(actual_angles, expected_angles)):
-        assert math.isclose(actual, expected, rel_tol=1e-10, abs_tol=1e-12)
-    
+        assert actual == expected
