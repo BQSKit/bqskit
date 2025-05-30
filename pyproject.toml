@@ -25,6 +25,8 @@ deps =
     qutip>=4.7.0
     pytket-qiskit
     tzdata
+    nbval
+    ipykernel
 commands =
     pytest {posargs}
 
