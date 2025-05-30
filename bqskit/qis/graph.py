@@ -382,40 +382,46 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         location: CircuitLocationLike,
         renumbering: dict[int, int] | None = None,
     ) -> CouplingGraph:
-        """Returns the subgraph of this CouplingGraph induced by `location`.
+        """
+        Returns a sub-coupling-graph induced by the qudits in `location`.
+
+        The method constructs a new CouplingGraph that contains only the qudits
+        specified in `location`, and only the edges between them that exist
+        in the original coupling graph. By default, the qudits are renumbered
+        to consecutive integers starting from 0 in the order they appear in `location`.
 
         Parameters
         ----------
         location : CircuitLocationLike
-            The qudits to include in the subgraph.
+            A list or iterable of qudit indices specifying which subset of the
+            original graph to extract.
+
         renumbering : dict[int, int], optional
-            Mapping from original qudit indices to new indices. If not provided,
-            the original indices are preserved.
+            A dictionary mapping each qudit index in `location` to a new index
+            in the returned subgraph. If not provided, the qudits are
+            automatically renumbered to consecutive integers starting from 0.
 
         Returns
         -------
         CouplingGraph
-            The induced subgraph on the specified location.
+            A new CouplingGraph object representing the induced subgraph, where
+            the nodes and edges correspond to those in the original graph,
+            but remapped according to `renumbering` if provided.
+
         """
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
         location = CircuitLocation(location)
-        location_set = set(location)
-
         if renumbering is None:
             renumbering = {q: i for i, q in enumerate(location)}
 
-        if not location_set.issubset(renumbering):
-            raise ValueError("Renumbering must include all qudits in location.")
-
         subgraph = []
+        location_set = {loc for loc in location}
         for q_i in location:
             for q_i_neighbor in location_set.intersection(self._adj[q_i]):
                 subgraph.append((renumbering[q_i], renumbering[q_i_neighbor]))
-
-        return CouplingGraph(subgraph, max(renumbering.values()) + 1)
-
+        return CouplingGraph(subgraph, len(location))
 
     def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:
         """
