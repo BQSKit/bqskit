@@ -272,6 +272,43 @@ class TestMachineGetSubgraph:
         with pytest.raises(TypeError):
             coupling_graph.get_subgraph('a')  # type: ignore
 
+    def test_default_renumbering(self) -> None:
+        cg = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+        sub = cg.get_subgraph([1, 2, 3])
+        # Should renumber 1->0, 2->1, 3->2
+        assert sub.num_qudits == 3
+        assert (0, 1) in sub
+        assert (1, 2) in sub
+        assert (0, 2) not in sub
+
+    def test_custom_renumbering(self) -> None:
+        cg = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+        renum = {1: 2, 2: 0, 3: 1}
+        sub = cg.get_subgraph([1, 2, 3], renumbering=renum)
+        # Should map 1->2, 2->0, 3->1
+        assert sub.num_qudits == 3
+        assert (2, 0) in sub
+        assert (0, 1) in sub
+        assert (2, 1) not in sub
+
+    def test_renumbering_missing_key(self) -> None:
+        cg = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+        renum = {1: 0, 2: 1}  # missing 3
+        with pytest.raises(ValueError):
+            cg.get_subgraph([1, 2, 3], renumbering=renum)
+
+    def test_renumbering_duplicate_value(self) -> None:
+        cg = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+        renum = {1: 0, 2: 0, 3: 1}  # duplicate 0
+        with pytest.raises(ValueError):
+            cg.get_subgraph([1, 2, 3], renumbering=renum)
+
+    def test_renumbering_value_out_of_range(self) -> None:
+        cg = CouplingGraph({(0, 1), (1, 2), (2, 3)})
+        renum = {1: 0, 2: 1, 3: 5}  # 5 is out of range for 3 qudits
+        with pytest.raises(ValueError):
+            cg.get_subgraph([1, 2, 3], renumbering=renum)
+
 
 def test_is_linear() -> None:
     coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
