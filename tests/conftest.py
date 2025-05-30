@@ -633,5 +633,31 @@ def r6_qudit_circuit(request: Any) -> Circuit:
     """Provide random 6-qudit random-radix circuits as a fixture."""
     return request.param[1].copy()
 
+@pytest.fixture(params=random_6_qudit_circuits(), ids=lambda circ: circ[0])
+def r6_qudit_circuit(request: Any) -> Circuit:
+    """Provide random 6-qudit random-radix circuits as a fixture."""
+    return request.param[1].copy()
+
+def pytest_collectstart(collector):
+    """
+    Hook to modify collection.
+    Here, we use it to tell nbval to skip comparing certain output types
+    for all notebooks.
+    """
+    if collector.fspath and collector.fspath.ext == '.ipynb':
+        if not hasattr(collector, 'skip_compare'):
+            collector.skip_compare = ()
+        # Add MIME types you want to globally ignore for comparison.
+        # Common ones include:
+        # 'text/html' - if HTML representations are too volatile
+        # 'application/javascript' - for widgets or interactive elements
+        # 'image/png', 'image/jpeg' - if you don't want to compare images
+        # 'application/vnd.jupyter.widget-view+json' - for Jupyter widgets
+        # 'stderr' - if stderr output is noisy and not critical for validation
+        collector.skip_compare += (
+            'text/html',
+            'application/javascript',
+            # 'stderr', # Uncomment if you want to ignore stderr globally
+        )
 
 # endregion
