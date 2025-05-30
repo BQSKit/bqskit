@@ -717,7 +717,17 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             (list[tuple[int,int]]): The list of edges connecting vertices in
                 `location`.
         """
-        return self._compute_induced_edges(location)
+        if not isinstance(location, CircuitLocation):
+            location = CircuitLocation(location)
+
+        if len(location) < 2:
+            raise ValueError('Invalid location size.')
+
+        subgraph = []
+        for q1, q2 in it.combinations(location, 2):
+            if (q1, q2) in self._edges or (q2, q1) in self._edges:
+                subgraph.append((min([q1, q2]), max([q1, q2])))
+        return subgraph
 
     def relabel_subgraph(
         graph: CouplingGraphLike,
