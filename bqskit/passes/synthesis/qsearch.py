@@ -30,8 +30,8 @@ class QSearchSynthesisPass(SynthesisPass):
     A pass implementing the QSearch A* synthesis algorithm.
 
     References:
-        Davis, Marc G., et al. “Towards Optimal Topology Aware Quantum
-        Circuit Synthesis.” 2020 IEEE International Conference on Quantum
+        Davis, Marc G., et al. "Towards Optimal Topology Aware Quantum
+        Circuit Synthesis." 2020 IEEE International Conference on Quantum
         Computing and Engineering (QCE). IEEE, 2020.
     """
 
@@ -42,6 +42,7 @@ class QSearchSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
+        timeout_layers: int = 10,
         store_partial_solutions: bool = False,
         partials_per_depth: int = 25,
         instantiate_options: dict[str, Any] = {},
@@ -71,6 +72,10 @@ class QSearchSynthesisPass(SynthesisPass):
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                 to unlimited. (Default: None)
+
+            timeout_layers (int): The maximum number of layers allowed
+                without improvement before a warning is issued to the
+                user. (Default: 10)
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)
@@ -130,6 +135,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
+        self.timeout_layers = timeout_layers
         self.instantiate_options: dict[str, Any] = {
             'cost_fn_gen': self.cost,
         }
@@ -163,6 +169,9 @@ class QSearchSynthesisPass(SynthesisPass):
         best_dist = self.cost.calc_cost(initial_layer, utry)
         best_circ = initial_layer
         best_layer = 0
+        # For warning logic
+        last_best_layer = 0
+        last_warning_layer = -1
 
         # Track partial solutions
         psols: dict[int, list[tuple[Circuit, float]]] = {}
@@ -213,6 +222,21 @@ class QSearchSynthesisPass(SynthesisPass):
                     best_dist = dist
                     best_circ = circuit
                     best_layer = layer + 1
+                    last_best_layer = layer + 1
+                    last_warning_layer = -1  # Reset warning flag
+                else:
+                    # Only warn once per stuck period
+                    if (
+                        self.timeout_layers > 0 and
+                        (layer + 1 - last_best_layer) >= self.timeout_layers and
+                        last_warning_layer < last_best_layer
+                    ):
+                        _logger.warning(
+                            f'No improvement after {self.timeout_layers} layers. '
+                            f'Current best circuit has {best_layer} layer'
+                            f'{{"s" if best_layer != 1 else ""}} and cost: {best_dist:.12e}.',
+                        )
+                        last_warning_layer = layer + 1
 
                 if self.store_partial_solutions:
                     if layer not in psols:
