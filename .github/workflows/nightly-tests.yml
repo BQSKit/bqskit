@@ -18,7 +18,7 @@ jobs:
       run: python -m pip install --upgrade virtualenv setuptools pip
 
     - name: Upgrade test dependencies
-      run: python -m pip install psutil pytest 'hypothesis[zoneinfo]' qiskit
+      run: python -m pip install psutil pytest 'hypothesis[zoneinfo]' qiskit nbval
 
     - name: Install BQSKit
       env:
@@ -29,3 +29,6 @@ jobs:
       env:
         NUMBER_RANDOM_CIRCUITS: 100
       run: pytest
+
+    - name: Run notebook tests
+      run: pytest --nbval examples/tutorials/
