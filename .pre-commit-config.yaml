@@ -21,7 +21,7 @@ repos:
     -   id: fix-encoding-pragma
         args: ['--remove']
 -   repo: https://github.com/s-weigand/docformatter
-    rev: 1ec30b7
+    rev: 886a032
     hooks:
     -   id: docformatter
         args:
