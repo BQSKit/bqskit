@@ -25,10 +25,6 @@ def model_registered_target_types(key: MachineModel) -> list[str]:
         (list[str]): If `key` has been registered in any of the registry, the
             name of that target type will be contained in this list.
     """
-    global _compile_circuit_registry
-    global _compile_unitary_registry
-    global _compile_stateprep_registry
-    global _compile_statemap_registry
     registered_types = []
     if key in _compile_circuit_registry:
         registered_types.append('circuit')
@@ -91,16 +87,12 @@ def register_workflow(
         raise ValueError(m)
 
     if target_type == 'circuit':
-        global _compile_circuit_registry
         _compile_registry = _compile_circuit_registry
     elif target_type == 'unitary':
-        global _compile_unitary_registry
         _compile_registry = _compile_unitary_registry
     elif target_type == 'stateprep':
-        global _compile_stateprep_registry
         _compile_registry = _compile_stateprep_registry
     else:
-        global _compile_statemap_registry
         _compile_registry = _compile_statemap_registry
 
     workflow = Workflow(workflow)

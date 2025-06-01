@@ -389,7 +389,7 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
             for control_level in control_levels[i]:
                 projection[control_level, control_level] = 1.0
 
-        return reduce(np.kron, elementary_projection_list)
+        return reduce(np.kron, elementary_projection_list)  # type: ignore
 
     @staticmethod
     def _check_and_type_control_parameters(
