@@ -79,8 +79,8 @@ class LEAPSynthesisPass(SynthesisPass):
                 to unlimited. (Default: None)
 
             timeout_layers (int): The maximum number of layers allowed
-            without improvement before a warning is issued to the
-            user. (Default: 10)
+                without improvement before a warning is issued to the
+                user. (Default: 10)
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)
@@ -205,6 +205,10 @@ class LEAPSynthesisPass(SynthesisPass):
             _logger.debug('Successful synthesis with 0 layers.')
             return initial_layer
 
+        # Record layers that have been warned about
+        # to avoid duplicate warnings
+        warned_layers: list[int] = []
+
         # Main loop
         while not frontier.empty():
             top_circuit, layer = frontier.pop()
@@ -272,10 +276,11 @@ class LEAPSynthesisPass(SynthesisPass):
                     frontier.add(circuit, layer + 1)
 
             layer_diff = abs(best_layer - layer)
-            if layer_diff % self.timeout_layers == 0 and layer_diff > 0:
+            if layer_diff % self.timeout_layers == 0 and layer_diff > 0 and layer not in warned_layers:
                 _logger.warning(
                     f'No improvement after {self.timeout_layers} layers.'
                 )
+                warned_layers.append(layer)
 
         _logger.warning('Frontier emptied.')
         _logger.warning(
