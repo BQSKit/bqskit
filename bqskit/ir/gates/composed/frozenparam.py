@@ -1,6 +1,8 @@
 """This module implements the FrozenParameterGate."""
 from __future__ import annotations
 
+import typing
+
 import numpy as np
 import numpy.typing as npt
 
@@ -162,7 +164,7 @@ class FrozenParameterGate(
         args = list(params)
         for idx in sorted(self.frozen_params):
             args.insert(idx, self.frozen_params[idx])
-        return args
+        return typing.cast(list[float], args)
 
 
 def with_frozen_params(

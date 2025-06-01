@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from typing import Iterator
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
@@ -169,7 +170,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         """The dimension of the square unitary matrix."""
         return self.shape[0]
 
-    def __iter__(self) -> int:
+    def __iter__(self) -> Iterator[npt.NDArray[np.complex128]]:
         """An iterator that iterates through the rows of the matrix."""
         return self._utry.__iter__()
 
@@ -194,7 +195,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         utry_acm = self.numpy
         radixes_acm = self.radixes
         for utry in utrys:
-            utry_acm = np.kron(utry_acm, utry.numpy)
+            utry_acm = np.kron(utry_acm, utry.numpy)  # type: ignore
             radixes_acm += utry.radixes
 
         return UnitaryMatrix(utry_acm, radixes_acm)

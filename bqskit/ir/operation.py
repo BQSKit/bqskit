@@ -1,6 +1,7 @@
 """This module implements the Operation class."""
 from __future__ import annotations
 
+import typing
 from typing import Any
 
 import numpy as np
@@ -64,7 +65,7 @@ class Operation(DifferentiableUnitary):
         self._num_qudits = gate.num_qudits
         self._gate = gate
         self._location = location
-        self._params = list(params)
+        self._params = typing.cast(list[float], list(params))
 
     @property
     def gate(self) -> Gate:
