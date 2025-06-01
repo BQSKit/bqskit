@@ -52,10 +52,9 @@ represents a pure quantum operation in matrix form.
 """
 from __future__ import annotations
 
-from bqskit.qis.graph import CouplingGraph
-from bqskit.qis.graph import CouplingGraphLike
-from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.permutation import PermutationMatrix
+from bqskit.qis.unitary import UnitaryBuilder
+from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.state import StateLike
 from bqskit.qis.state import StateVector
 from bqskit.qis.state import StateVectorMap
@@ -65,9 +64,22 @@ from bqskit.qis.unitary import DifferentiableUnitary
 from bqskit.qis.unitary import LocallyOptimizableUnitary
 from bqskit.qis.unitary import RealVector
 from bqskit.qis.unitary import Unitary
-from bqskit.qis.unitary import UnitaryBuilder
 from bqskit.qis.unitary import UnitaryLike
 from bqskit.qis.unitary import UnitaryMatrix
+
+
+def __getattr__(name: str) -> Any:
+    # Lazy imports # TODO: Fix circular imports in qis.graph properly 
+    if name == 'CouplingGraph':
+        from bqskit.qis.graph import CouplingGraph
+        return CouplingGraph
+
+    if name == 'CouplingGraphLike':
+        from bqskit.qis.graph import CouplingGraphLike
+        return CouplingGraphLike
+
+    raise AttributeError(f'module {__name__} has no attribute {name}')
+
 
 __all__ = [
     'Unitary',

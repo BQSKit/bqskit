@@ -19,7 +19,7 @@ os.environ['__SPHINX_BUILD__'] = 'True'
 # -- Project information -----------------------------------------------------
 
 project = 'BQSKit'
-copyright = '2022, Lawrence Berkeley National Laboratory'
+copyright = '2025, Lawrence Berkeley National Laboratory'
 author = 'BQSKit Development Team'
 
 
