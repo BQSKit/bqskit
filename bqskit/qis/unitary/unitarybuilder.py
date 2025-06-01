@@ -262,6 +262,7 @@ class UnitaryBuilder(Unitary):
 
         See :func:`apply_right` for more info.
         """
+        from bqskit.ir.location import CircuitLocation
         left_perm = list(cast(CircuitLocation, location))
         mid_perm = [x for x in range(self.num_qudits) if x not in left_perm]
         right_perm = [x + self.num_qudits for x in range(self.num_qudits)]
