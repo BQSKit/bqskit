@@ -42,7 +42,7 @@ class QSearchSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
-        timeout_layers: int = 10,
+        no_progress_layers_allowed: int = 10,
         store_partial_solutions: bool = False,
         partials_per_depth: int = 25,
         instantiate_options: dict[str, Any] = {},
@@ -73,7 +73,7 @@ class QSearchSynthesisPass(SynthesisPass):
                 success before termination. If left as None it will default
                 to unlimited. (Default: None)
 
-            timeout_layers (int): The maximum number of layers allowed
+            no_progress_layers_allowed (int): The maximum number of layers allowed
                 without improvement before a warning is issued to the
                 user. (Default: 10)
 
@@ -135,7 +135,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
-        self.timeout_layers = timeout_layers
+        self.no_progress_layers_allowed = no_progress_layers_allowed
         self.instantiate_options: dict[str, Any] = {
             'cost_fn_gen': self.cost,
         }
@@ -238,9 +238,9 @@ class QSearchSynthesisPass(SynthesisPass):
                     frontier.add(circuit, layer + 1)
 
             layer_diff = abs(best_layer - layer)
-            if layer_diff % self.timeout_layers == 0 and layer_diff > 0 and layer not in warned_layers:
+            if layer_diff % self.no_progress_layers_allowed == 0 and layer_diff > 0 and layer not in warned_layers:
                 _logger.warning(
-                    f'No improvement after {self.timeout_layers} layers.'
+                    f'No improvement after {self.no_progress_layers_allowed} layers.'
                 )
                 warned_layers.append(layer)
 
