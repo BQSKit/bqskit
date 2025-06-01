@@ -101,7 +101,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
                 PauliZMatrices(1),
             )
             for pauliz_n_1, pauliz_1 in matrices:
-                self.paulizs.append(np.kron(pauliz_n_1, pauliz_1))
+                self.paulizs.append(np.kron(pauliz_n_1, pauliz_1))  # type: ignore # noqa: E501
 
     def __iter__(self) -> Iterator[npt.NDArray[np.complex128]]:
         return self.paulizs.__iter__()
@@ -259,7 +259,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
             else:
                 acm = mat_dict[pauli_string[0]]
                 for char in pauli_string[1:]:
-                    acm = np.kron(acm, mat_dict[char])
+                    acm = np.kron(acm, mat_dict[char])  # type: ignore
                 pauliz_matrices.append(acm)
 
         if len(pauliz_matrices) == 1:
