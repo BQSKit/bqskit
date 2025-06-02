@@ -1,6 +1,9 @@
 """This module implements the MPRZGate."""
 from __future__ import annotations
 
+import typing
+from typing import Sequence
+
 import numpy as np
 import numpy.typing as npt
 
@@ -78,7 +81,7 @@ class MPRZGate(
                 2 ** self.num_qudits,
             ), dtype=np.complex128,
         )
-        for i, param in enumerate(params):
+        for i, param in enumerate(typing.cast(typing.Sequence[float], params)):
             pos = np.exp(1j * param / 2)
             neg = np.exp(-1j * param / 2)
 
@@ -108,7 +111,7 @@ class MPRZGate(
 
         # For each parameter, calculate the derivative
         # with respect to that parameter
-        for i, param in enumerate(params):
+        for i, param in enumerate(typing.cast(Sequence[float], params)):
             dpos = 1j * np.exp(1j * param / 2) / 2
             dneg = -1j * np.exp(-1j * param / 2) / 2
 

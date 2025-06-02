@@ -1,6 +1,8 @@
 """This module implements the MPRYGate."""
 from __future__ import annotations
 
+import typing
+
 import numpy as np
 import numpy.typing as npt
 
@@ -78,7 +80,7 @@ class MPRYGate(
                 2 ** self.num_qudits,
             ), dtype=np.complex128,
         )
-        for i, param in enumerate(params):
+        for i, param in enumerate(typing.cast(typing.Sequence[float], params)):
             cos = np.cos(param / 2)
             sin = np.sin(param / 2)
 
@@ -114,7 +116,7 @@ class MPRYGate(
 
         # For each parameter, calculate the derivative
         # with respect to that parameter
-        for i, param in enumerate(params):
+        for i, param in enumerate(typing.cast(typing.Sequence[float], params)):
             dcos = -np.sin(param / 2) / 2
             dsin = -1j * np.cos(param / 2) / 2
 
