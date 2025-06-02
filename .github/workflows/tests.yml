@@ -35,3 +35,8 @@ jobs:
       env:
         NUMBER_RANDOM_CIRCUITS: 100
       run: pytest --ignore=tests/compiler/compile --ignore=tests/passes/partitioning/test_parts.py --ignore=tests/passes/synthesis/test_qfast.py
+
+    - name: Run notebooks with nbval
+      run: |
+        pip install nbval
+        pytest --nbval-lax examples/tutorials/
