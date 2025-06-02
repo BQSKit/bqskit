@@ -73,9 +73,9 @@ class QSearchSynthesisPass(SynthesisPass):
                 success before termination. If left as None it will default
                 to unlimited. (Default: None)
 
-            no_progress_layers_allowed (int): The maximum number of layers allowed
-                without improvement before a warning is issued to the
-                user. (Default: 10)
+            no_progress_layers_allowed (int): The maximum number of layers
+                allowed without improvement before a warning is issued to
+                the user. (Default: 10)
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)
@@ -238,9 +238,13 @@ class QSearchSynthesisPass(SynthesisPass):
                     frontier.add(circuit, layer + 1)
 
             layer_diff = abs(best_layer - layer)
-            if layer_diff % self.no_progress_layers_allowed == 0 and layer_diff > 0 and layer not in warned_layers:
+            if (
+                layer_diff % self.no_progress_layers_allowed == 0
+                and layer_diff > 0
+                and layer not in warned_layers
+            ):
                 _logger.warning(
-                    f'No improvement after {self.no_progress_layers_allowed} layers.'
+                    f'No improvement after {self.no_progress_layers_allowed} layers.',
                 )
                 warned_layers.append(layer)
 
