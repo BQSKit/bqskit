@@ -101,7 +101,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
                 PauliMatrices(1),
             )
             for pauli_n_1, pauli_1 in matrices:
-                self.paulis.append(np.kron(pauli_n_1, pauli_1))
+                self.paulis.append(np.kron(pauli_n_1, pauli_1))  # type: ignore
 
     def __iter__(self) -> Iterator[npt.NDArray[np.complex128]]:
         return self.paulis.__iter__()
@@ -264,7 +264,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
             else:
                 acm = mat_dict[pauli_string[0]]
                 for char in pauli_string[1:]:
-                    acm = np.kron(acm, mat_dict[char])
+                    acm = np.kron(acm, mat_dict[char])  # type: ignore
                 pauli_matrices.append(acm)
 
         if len(pauli_matrices) == 1:
