@@ -5,6 +5,7 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
+from numpy.testing import assert_allclose
 
 from bqskit.ext.qiskit import qiskit_to_bqskit
 from bqskit.ir.gates.barrier import BarrierPlaceholder
@@ -535,3 +536,27 @@ def test_ECR_gate() -> None:
     circuit = OPENQASM2Language().decode(input)
     assert circuit.num_operations == 1
     assert circuit[0, 0].gate == ECRGate()
+
+
+@pytest.mark.parametrize(
+    'angles',
+    [
+        [-0.1, 0.2, -0.3],
+        [1e-10, 1e-8, 2.2e-10],
+        [-1e+4, 1e+5, -1e+6],
+        [3.141592653589793, -2.718281828459045, 1.4142135623730951],
+        [1, 2, 3],
+        [1.0, 2.0, 3.0],
+    ],
+)
+def test_decimal_angle(angles: list[float]) -> None:
+    input_qasm = f"""
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[1];
+        u3({angles[0]}, {angles[1]}, {angles[2]}) q[0];
+    """
+    circuit = OPENQASM2Language().decode(input_qasm)
+    assert circuit.num_operations == 1
+    u3_params = circuit[0, 0].params
+    assert_allclose(u3_params, angles)
