@@ -5,7 +5,6 @@ from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
-
 from numpy.testing import assert_allclose
 
 from bqskit.ext.qiskit import qiskit_to_bqskit
@@ -538,6 +537,7 @@ def test_ECR_gate() -> None:
     assert circuit.num_operations == 1
     assert circuit[0, 0].gate == ECRGate()
 
+
 @pytest.mark.parametrize(
     'angles',
     [
@@ -546,7 +546,7 @@ def test_ECR_gate() -> None:
         [-1e+4, 1e+5, -1e+6],
         [3.141592653589793, -2.718281828459045, 1.4142135623730951],
         [1, 2, 3],
-        [1.0, 2.0, 3.0]
+        [1.0, 2.0, 3.0],
     ],
 )
 def test_decimal_angle(angles: list[float]) -> None:
