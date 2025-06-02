@@ -244,7 +244,8 @@ class QSearchSynthesisPass(SynthesisPass):
                 and layer not in warned_layers
             ):
                 _logger.warning(
-                    f'No improvement after {self.no_progress_layers_allowed} layers.',
+                    'No improvement after '
+                    f'{self.no_progress_layers_allowed} layers.',
                 )
                 warned_layers.append(layer)
 
