@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_allclose
 
 from bqskit.ext.qiskit import qiskit_to_bqskit
 from bqskit.ir.gates.barrier import BarrierPlaceholder
@@ -559,4 +559,4 @@ def test_decimal_angle(angles: list[float]) -> None:
     circuit = OPENQASM2Language().decode(input_qasm)
     assert circuit.num_operations == 1
     u3_params = circuit[0, 0].params
-    assert_almost_equal(u3_params, angles, decimal=8)
+    assert_allclose(u3_params, angles)
