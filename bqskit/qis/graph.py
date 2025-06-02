@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import itertools as it
 import logging
+import warnings
 from random import shuffle
 from typing import Any
 from typing import Collection
@@ -717,6 +718,12 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             (list[tuple[int,int]]): The list of edges connecting vertices in
                 `location`.
         """
+        warnings.warn(
+        "get_induced_subgraph is deprecated and will be removed in a future release. "
+        "Use get_subgraph(location) instead.",
+        DeprecationWarning,
+        stacklevel=2,
+        )
         if not isinstance(location, CircuitLocation):
             location = CircuitLocation(location)
 

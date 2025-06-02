@@ -218,11 +218,11 @@ def filter_compatible_subgraphs(
     # Sort graphs by number of edge
     locations = graph.get_subgraphs_of_size(blocksize)
     induced_subgraphs: list[CouplingGraph] = sorted(
-        (
-            CouplingGraph(graph.get_induced_subgraph(l)).relabel_subgraph()
-            for l in locations
-        ),
-        key=lambda x: -len(x),
+    (
+        graph.get_subgraph(l).relabel_subgraph()
+        for l in locations
+    ),
+    key=lambda x: -len(x),
     )
     candidates = sorted(candidate_subgraphs, key=lambda x: len(x))
     dag = GraphDAG(candidates)
