@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import typing
 from typing import Any
 from typing import cast
 from typing import Iterator
@@ -200,7 +201,7 @@ class StateVector(NDArrayOperatorsMixin):
             radixes = [2] * num_qudits
         state = np.zeros(np.prod(radixes), dtype=np.complex128)
         state[0] = 1.0
-        return StateVector(state)
+        return StateVector(state, radixes)
 
     @staticmethod
     def random(num_qudits: int, radixes: Sequence[int] = []) -> StateVector:
@@ -367,7 +368,7 @@ class StateVector(NDArrayOperatorsMixin):
         """
         other = StateVector(other)
         dist = 1 - np.abs(np.conj(self) @ other) ** 2
-        return dist if dist > 0.0 else 0.0
+        return typing.cast(float, dist if dist > 0.0 else 0.0)
 
     def __array__(
         self,

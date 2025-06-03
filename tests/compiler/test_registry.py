@@ -83,10 +83,6 @@ class TestRegisterWorkflow:
         _compile_stateprep_registry.clear()
 
     def test_register_workflow(self) -> None:
-        global _compile_circuit_registry
-        global _compile_unitary_registry
-        global _compile_statemap_registry
-        global _compile_stateprep_registry
         assert _compile_circuit_registry == {}
         assert _compile_unitary_registry == {}
         assert _compile_statemap_registry == {}
@@ -122,7 +118,6 @@ class TestRegisterWorkflow:
         )
 
     def test_custom_compile_machine(self) -> None:
-        global _compile_circuit_registry
         assert _compile_circuit_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3
@@ -138,7 +133,6 @@ class TestRegisterWorkflow:
         assert result.gate_counts == circuit.gate_counts
 
     def test_custom_opt_level(self) -> None:
-        global _compile_circuit_registry
         assert _compile_circuit_registry == {}
         gateset = [CZGate(), HGate(), RZGate()]
         num_qudits = 3

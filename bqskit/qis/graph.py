@@ -19,9 +19,9 @@ import numpy as np
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
+    from bqskit.ir.location import CircuitLocationLike
 
 from bqskit.ir.location import CircuitLocation
-from bqskit.ir.location import CircuitLocationLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable, is_mapping, is_real_number
 
