@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import itertools as it
 import logging
+import warnings
 from random import shuffle
 from typing import Any
 from typing import Collection
@@ -382,14 +383,41 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         location: CircuitLocationLike,
         renumbering: dict[int, int] | None = None,
     ) -> CouplingGraph:
-        """Returns the sub-coupling-graph with qudits in `location`."""
+        """
+        Returns a sub-coupling-graph induced by the qudits in `location`.
+
+        The method constructs a new CouplingGraph that contains only the qudits
+        specified in `location`, and only the edges between them that exist
+        in the original coupling graph. By default, the qudits are renumbered
+        to consecutive integers starting from 0 in the order they appear in `location`.
+
+        Parameters
+        ----------
+        location : CircuitLocationLike
+            A list or iterable of qudit indices specifying which subset of the
+            original graph to extract.
+
+        renumbering : dict[int, int], optional
+            A dictionary mapping each qudit index in `location` to a new index
+            in the returned subgraph. If not provided, the qudits are
+            automatically renumbered to consecutive integers starting from 0.
+
+        Returns
+        -------
+        CouplingGraph
+            A new CouplingGraph object representing the induced subgraph, where
+            the nodes and edges correspond to those in the original graph,
+            but remapped according to `renumbering` if provided.
+
+        """
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
         location = CircuitLocation(location)
         if renumbering is None:
             renumbering = {q: i for i, q in enumerate(location)}
-
+        else:
+            renumbering = {q: renumbering[q] for q in location if q in renumbering}
         subgraph = []
         location_set = {loc for loc in location}
         for q_i in location:
@@ -691,6 +719,12 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             (list[tuple[int,int]]): The list of edges connecting vertices in
                 `location`.
         """
+        warnings.warn(
+        "get_induced_subgraph is deprecated and will be removed in a future release. "
+        "Use get_subgraph(location) instead.",
+        DeprecationWarning,
+        stacklevel=2,
+        )
         if not isinstance(location, CircuitLocation):
             location = CircuitLocation(location)
 
