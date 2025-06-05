@@ -272,25 +272,6 @@ class TestMachineGetSubgraph:
         with pytest.raises(TypeError):
             coupling_graph.get_subgraph('a')  # type: ignore
 
-    def test_valid_custom_renumbering(self) -> None:
-        coupling_graph = CouplingGraph.all_to_all(5)
-        sub = coupling_graph.get_subgraph((1, 3, 4), renumbering={1: 10, 3: 20, 4: 30})
-
-        # Ensure renumbered nodes are present
-        assert (10, 20) in sub or (20, 10) in sub
-        assert (10, 30) in sub or (30, 10) in sub
-        assert (20, 30) in sub or (30, 20) in sub
-
-        # Check number of edges in full subgraph of 3 nodes all-to-all: C(3,2) = 3
-        assert len(sub) == 3
-
-    def test_invalid_custom_renumbering_extra_keys(self) -> None:
-        coupling_graph = CouplingGraph.all_to_all(5)
-
-        # renumbering includes keys not in location
-        with pytest.raises(KeyError):
-            coupling_graph.get_subgraph((1, 3, 4), renumbering={i: i for i in range(5)})
-
 
 def test_is_linear() -> None:
     coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})

@@ -416,7 +416,8 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         location = CircuitLocation(location)
         if renumbering is None:
             renumbering = {q: i for i, q in enumerate(location)}
-
+        else:
+            renumbering = {q: renumbering[q] for q in location if q in renumbering}
         subgraph = []
         location_set = {loc for loc in location}
         for q_i in location:
