@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import itertools as it
 import logging
+import warnings
 from random import shuffle
 from typing import Any
 from typing import Collection
@@ -13,7 +14,6 @@ from typing import Mapping
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
@@ -401,16 +401,23 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         # Check if dictionary has len(location) elements
         if len(renumbering) != len(location):
-            raise ValueError(f'Size of renumbering dict must match '
-                             f'{len(location)}')
+            raise ValueError(
+                f'Size of renumbering dict must match {len(location)}'
+                )
         # Check if keys ofrenumbering match locations
         if not renumbering.keys() == set(location):
-            raise ValueError('Keys of renumbering must match qudits in location')
+            raise ValueError(
+                'Keys of renumbering must match qudits in location',
+            )
         # Check if values of renumbering form a permutation
-        if not (min(renumbering.values()) == 0 and
-                max(renumbering.values()) == len(location) - 1):
-            raise ValueError(f'Keys of renumbering do not form a permutation of '
-                             f'[0, {len(location)})')
+        if not (
+            min(renumbering.values()) == 0
+            and max(renumbering.values()) == len(location) - 1
+        ):
+            raise ValueError(
+                f'Keys of renumbering do not form a permutation of'
+                f' [0, {len(location)})'
+                )
 
         subgraph = []
         location_set = {loc for loc in location}
@@ -716,10 +723,10 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         (Deprecated)
         """
         warnings.warn(
-            'CouplingGraph.get_induced_subgraph is now deprecated because it '
-            'duplicates the functionality of CouplingGraph.get_subgraph. Please '
-            'use CouplingGraph.get_subgraph instead. This warning will become an'
-            ' error in the future.',
+            'CouplingGraph.get_induced_subgraph is now deprecated because it'
+            ' duplicates the functionality of CouplingGraph.get_subgraph.'
+            ' Please use CouplingGraph.get_subgraph instead. This warning will'
+            ' become an error in the future.',
             DeprecationWarning,
         )
         if not isinstance(location, CircuitLocation):
