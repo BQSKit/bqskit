@@ -732,6 +732,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             ' become an error in the future.',
             DeprecationWarning,
         )
+
         if not isinstance(location, CircuitLocation):
             location = CircuitLocation(location)
 
@@ -763,7 +764,19 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         Returns:
             (CouplingGraph): The relabeled CouplingGraph.
+
+        (Deprecated)
         """
+        warnings.warn(
+            'CouplingGraph.relabel_subgraph is now deprecated because it'
+            ' allows potentially invalid relabelings with respect to the'
+            ' assumption of qudits being labelled contiguously starting'
+            ' from 0 in CouplingGraph objects. Please use the get_subgraph'
+            ' method of CouplingGraph with a renumbering dict instead. This'
+            ' warning will become an error in the future.',
+            DeprecationWarning,
+        )
+
         if relabeling is None:
             vertices = set()
             for q1, q2 in graph:
