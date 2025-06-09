@@ -266,11 +266,41 @@ class TestMachineGetSubgraph:
         assert (0, 1) in l
         assert (0, 2) in l
 
-    def test_invalid(self) -> None:
+    def test_3(self) -> None:
+        coupling_graph = CouplingGraph({(0, 1), (1, 2), (0, 3), (2, 3)})
+        renumbering = {0: 1, 1: 2, 3: 0}
+        l = coupling_graph.get_subgraph((0, 1, 3), renumbering)
+
+        assert len(l) == 2
+        assert (0, 1) in l
+        assert (1, 2) in l
+
+    def test_invalid_1(self) -> None:
         coupling_graph = CouplingGraph({(0, 1), (1, 2), (2, 3)})
 
         with pytest.raises(TypeError):
             coupling_graph.get_subgraph('a')  # type: ignore
+
+    def test_invalid_2(self) -> None:
+        coupling_graph = CouplingGraph.all_to_all(5)
+
+        with pytest.raises(ValueError):
+            renumbering = {1: 1, 3: 3, 4: 4}
+            coupling_graph.get_subgraph((1, 3, 4), renumbering)  # type: ignore
+
+    def test_invalid_3(self) -> None:
+        coupling_graph = CouplingGraph.all_to_all(5)
+
+        with pytest.raises(ValueError):
+            renumbering = {0: 0, 1: 1, 2: 2}
+            coupling_graph.get_subgraph((1, 3, 4), renumbering)  # type: ignore
+
+    def test_invalid_4(self) -> None:
+        coupling_graph = CouplingGraph.all_to_all(5)
+
+        with pytest.raises(ValueError):
+            renumbering = {0: 0, 1: 1, 3: 3, 4: 4}
+            coupling_graph.get_subgraph((1, 3, 4), renumbering)  # type: ignore
 
 
 def test_is_linear() -> None:
