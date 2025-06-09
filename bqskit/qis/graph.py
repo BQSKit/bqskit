@@ -385,10 +385,11 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         renumbering: dict[int, int] | None = None,
     ) -> CouplingGraph:
         """
-        Returns the sub-coupling-graph with qudits in `location`. The qudits
-        in the returned sub-coupling-graph are by default renumbered to lie
-        in [0, `len(location)`), ordered in increasing order by the sequence
-        given in `location`. The qudits may be renumbered manually by
+        Returns the sub-coupling-graph with qudits in `location`.
+
+        The qudits in the returned sub-coupling-graph are by default renumbered
+        to lie in [0, `len(location)`), ordered in increasing order by the
+        sequence given in `location`. The qudits may be renumbered manually by
         `renumbering` but the renumbering must be a permutation of
         [0, `len(location)`).
         """
@@ -402,8 +403,8 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         # Check if dictionary has len(location) elements
         if len(renumbering) != len(location):
             raise ValueError(
-                f'Size of renumbering dict must match {len(location)}'
-                )
+                f'Size of renumbering dict must match {len(location)}',
+            )
         # Check if keys ofrenumbering match locations
         if not renumbering.keys() == set(location):
             raise ValueError(
@@ -416,8 +417,8 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         ):
             raise ValueError(
                 f'Keys of renumbering do not form a permutation of'
-                f' [0, {len(location)})'
-                )
+                f' [0, {len(location)})',
+            )
 
         subgraph = []
         location_set = {loc for loc in location}
