@@ -41,8 +41,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         edge_weights_overrides: Mapping[tuple[int, int], float] = {},
     ) -> None:
         """
-        Construct a new CouplingGraph. The qudits are assumed to be numbered
-        starting from 0.
+        Construct a new CouplingGraph.
 
         Args:
             graph (CouplingGraphLike): The undirected graph edges.
@@ -65,6 +64,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             edge_weights_overrides (Mapping[tuple[int, int], float]): A mapping
                 of edges to their weights. These override the defaults on
                 a case-by-case basis. (Default: {})
+
+        Notes:
+            The qudits are assumed to be numbered starting from 0.
 
         Raises:
             ValueError: If `num_qudits` is too small for the edges in `graph`.
@@ -405,7 +407,7 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             raise ValueError(
                 f'Size of renumbering dict must match {len(location)}',
             )
-        # Check if keys ofrenumbering match locations
+        # Check if keys of renumbering match locations
         if not renumbering.keys() == set(location):
             raise ValueError(
                 'Keys of renumbering must match qudits in location',
