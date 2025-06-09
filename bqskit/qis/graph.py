@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import itertools as it
 import logging
+import warnings
 from random import shuffle
 from typing import Any
 from typing import Collection
@@ -63,6 +64,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
             edge_weights_overrides (Mapping[tuple[int, int], float]): A mapping
                 of edges to their weights. These override the defaults on
                 a case-by-case basis. (Default: {})
+
+        Notes:
+            The qudits are assumed to be numbered starting from 0.
 
         Raises:
             ValueError: If `num_qudits` is too small for the edges in `graph`.
@@ -382,13 +386,41 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         location: CircuitLocationLike,
         renumbering: dict[int, int] | None = None,
     ) -> CouplingGraph:
-        """Returns the sub-coupling-graph with qudits in `location`."""
+        """
+        Returns the sub-coupling-graph with qudits in `location`.
+
+        The qudits in the returned sub-coupling-graph are by default renumbered
+        to lie in [0, `len(location)`), ordered in increasing order by the
+        sequence given in `location`. The qudits may be renumbered manually by
+        `renumbering` but the renumbering must be a permutation of
+        [0, `len(location)`).
+        """
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
 
         location = CircuitLocation(location)
         if renumbering is None:
             renumbering = {q: i for i, q in enumerate(location)}
+
+        # Check if dictionary has len(location) elements
+        if len(renumbering) != len(location):
+            raise ValueError(
+                f'Size of renumbering dict must match {len(location)}',
+            )
+        # Check if keys of renumbering match locations
+        if not renumbering.keys() == set(location):
+            raise ValueError(
+                'Keys of renumbering must match qudits in location',
+            )
+        # Check if values of renumbering form a permutation
+        if not (
+            min(renumbering.values()) == 0
+            and max(renumbering.values()) == len(location) - 1
+        ):
+            raise ValueError(
+                f'Keys of renumbering do not form a permutation of'
+                f' [0, {len(location)})',
+            )
 
         subgraph = []
         location_set = {loc for loc in location}
@@ -690,7 +722,17 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         Returns:
             (list[tuple[int,int]]): The list of edges connecting vertices in
                 `location`.
+
+        (Deprecated)
         """
+        warnings.warn(
+            'CouplingGraph.get_induced_subgraph is now deprecated because it'
+            ' duplicates the functionality of CouplingGraph.get_subgraph.'
+            ' Please use CouplingGraph.get_subgraph instead. This warning will'
+            ' become an error in the future.',
+            DeprecationWarning,
+        )
+
         if not isinstance(location, CircuitLocation):
             location = CircuitLocation(location)
 
@@ -722,7 +764,19 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         Returns:
             (CouplingGraph): The relabeled CouplingGraph.
+
+        (Deprecated)
         """
+        warnings.warn(
+            'CouplingGraph.relabel_subgraph is now deprecated because it'
+            ' allows potentially invalid relabelings with respect to the'
+            ' assumption of qudits being labelled contiguously starting'
+            ' from 0 in CouplingGraph objects. Please use the get_subgraph'
+            ' method of CouplingGraph with a renumbering dict instead. This'
+            ' warning will become an error in the future.',
+            DeprecationWarning,
+        )
+
         if relabeling is None:
             vertices = set()
             for q1, q2 in graph:
