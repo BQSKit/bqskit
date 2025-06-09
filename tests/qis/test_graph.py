@@ -286,21 +286,21 @@ class TestMachineGetSubgraph:
 
         with pytest.raises(ValueError):
             renumbering = {1: 1, 3: 3, 4: 4}
-            coupling_graph.get_subgraph((1, 3, 4), renumbering)  # type: ignore
+            coupling_graph.get_subgraph((1, 3, 4), renumbering)
 
     def test_invalid_3(self) -> None:
         coupling_graph = CouplingGraph.all_to_all(5)
 
         with pytest.raises(ValueError):
             renumbering = {0: 0, 1: 1, 2: 2}
-            coupling_graph.get_subgraph((1, 3, 4), renumbering)  # type: ignore
+            coupling_graph.get_subgraph((1, 3, 4), renumbering)
 
     def test_invalid_4(self) -> None:
         coupling_graph = CouplingGraph.all_to_all(5)
 
         with pytest.raises(ValueError):
             renumbering = {0: 0, 1: 1, 3: 3, 4: 4}
-            coupling_graph.get_subgraph((1, 3, 4), renumbering)  # type: ignore
+            coupling_graph.get_subgraph((1, 3, 4), renumbering)
 
 
 def test_is_linear() -> None:
