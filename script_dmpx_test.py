@@ -33,16 +33,16 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
 
     # 3. Copied workflow to synthesize (decompose) gates using FullBlockZXZ
     workflow = [
-        # FullBlockZXZPass(
-        #     start_from_left=True,
-        #     min_qudit_size=min_qudit_size,
-        #     perform_extract=perform_extract,
-        #     decompose_all=decompose_all
-        # )
-        BlockZXZPass(
+        FullBlockZXZPass(
+            start_from_left=True,
             min_qudit_size=min_qudit_size,
+            perform_extract=perform_extract,
             decompose_all=decompose_all
         )
+        # BlockZXZPass(
+        #     min_qudit_size=min_qudit_size,
+        #     decompose_all=decompose_all
+        # )
     ]
 
     with Compiler(num_workers=1, runtime_log_level=logging.INFO) as compiler:
@@ -63,12 +63,19 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
             print("\nAll VariableUnitaryGates were decomposed!")
 
         # compiled = get_runtime().map(synthesize_unoptimized_gates, unoptimized_variable_unitaries)
-        compiled = get_runtime().submit(synthesize_unoptimized_gates, unoptimized_variable_unitaries) # await 
+        compiled = asyncio.run(
+            synthesize_unoptimized_gates(
+                circuit=compiled,
+                min_qudit_size=min_qudit_size,
+                perform_extract=perform_extract,
+                decompose_all=decompose_all
+            )
+        )
 
         unoptimized_variable_unitaries = [(op.gate.num_qudits, op.location) for op in circuit if isinstance(op.gate, VariableUnitaryGate) and op.gate.num_qudits > min_qudit_size]
         num_remaining_vus = sum(1 for _ in unoptimized_variable_unitaries)
         print(f"\nUnoptimized VariableUnitaryGates (After Replacement): {num_remaining_vus}")
-        if num_remaining_vus != 0:
+        if unoptimized_variable_unitaries:
             for size, loc in unoptimized_variable_unitaries:
                     print(f" - {size}-qubit VU at location {loc}")
         else:
@@ -76,54 +83,55 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
 
         # --------------------------------------------------------------------------------------
 
-        gate_counter = Counter()
-        variable_unitary_2q = 0
-        variable_unitary_3q = 0
-        variable_unitary_4q = 0
-        variable_unitary_5q = 0
+        if unoptimized_variable_unitaries:
+            gate_counter = Counter()
+            variable_unitary_2q = 0
+            variable_unitary_3q = 0
+            variable_unitary_4q = 0
+            variable_unitary_5q = 0
 
-        for op in compiled:
-            g = op.gate # get specific gate
-            try:
-                if isinstance(g, CNOTGate):
-                    gate_counter["Actual CNOT Count"] += 1
-                if isinstance(g, VariableUnitaryGate):
-                    if g.num_qudits == 2:
-                        variable_unitary_2q += 1 
-                    elif g.num_qudits == 3:
-                        variable_unitary_3q += 1 
-                    elif g.num_qudits == 4:
-                        variable_unitary_4q += 1
-                    elif g.num_qudits == 5:
-                        variable_unitary_5q += 1
-                    else:
-                        variable_unitary_2q += 0
-            except Exception:
-                gate_counter[type(g).__name__] += 1
+            for op in compiled:
+                g = op.gate # get specific gate
+                try:
+                    if isinstance(g, CNOTGate):
+                        gate_counter["Actual CNOT Count"] += 1
+                    if isinstance(g, VariableUnitaryGate):
+                        if g.num_qudits == 2:
+                            variable_unitary_2q += 1 
+                        elif g.num_qudits == 3:
+                            variable_unitary_3q += 1 
+                        elif g.num_qudits == 4:
+                            variable_unitary_4q += 1
+                        elif g.num_qudits == 5:
+                            variable_unitary_5q += 1
+                        else:
+                            variable_unitary_2q += 0
+                except Exception:
+                    gate_counter[type(g).__name__] += 1
 
-        gate_counter.setdefault("Actual CNOT Count", 0)
+            gate_counter.setdefault("Actual CNOT Count", 0)
 
-        result = {
-            "decompose_all": True,
-            "qubits": num_qudits,
-            "min_qudit_size": min_qudit_size,
-            "perform_extract": perform_extract,
-            "2 Qubit Variable Unitaries": variable_unitary_2q,
-            "3 Qubit Variable Unitaries": variable_unitary_3q,
-            "4 Qubit Variable Unitaries": variable_unitary_4q,
-            "5 Qubit Variable Unitaries": variable_unitary_5q,
-            # "CNOT TLB": round(CNOT_Theoretical_Lower_Bound, 2),
-            "compile_time_sec": round(duration, 4),
-            "hilbert_cost": "N/A",
-        }
-        result.update(gate_counter)
+            result = {
+                "decompose_all": True,
+                "qubits": num_qudits,
+                "min_qudit_size": min_qudit_size,
+                "perform_extract": perform_extract,
+                "2 Qubit Variable Unitaries": variable_unitary_2q,
+                "3 Qubit Variable Unitaries": variable_unitary_3q,
+                "4 Qubit Variable Unitaries": variable_unitary_4q,
+                "5 Qubit Variable Unitaries": variable_unitary_5q,
+                # "CNOT TLB": round(CNOT_Theoretical_Lower_Bound, 2),
+                "compile_time_sec": round(duration, 4),
+                "hilbert_cost": "N/A",
+            }
+            result.update(gate_counter)
 
-        print(f"\n--------- New Gate Summary ---------")
-        print(f" - 2-Qubit VariableUnitaryGates: {result['2 Qubit Variable Unitaries']}")
-        print(f" - 3-Qubit VariableUnitaryGates: {result['3 Qubit Variable Unitaries']}")
-        print(f" - 4-Qubit VariableUnitaryGates: {result['4 Qubit Variable Unitaries']}")
-        print(f" - 5-Qubit VariableUnitaryGates: {result['5 Qubit Variable Unitaries']}")
-        print(f" - Actual CNOT Count: {gate_counter['Actual CNOT Count']}\n")
+            print(f"\n--------- New Gate Summary ---------")
+            print(f" - 2-Qubit VariableUnitaryGates: {result['2 Qubit Variable Unitaries']}")
+            print(f" - 3-Qubit VariableUnitaryGates: {result['3 Qubit Variable Unitaries']}")
+            print(f" - 4-Qubit VariableUnitaryGates: {result['4 Qubit Variable Unitaries']}")
+            print(f" - 5-Qubit VariableUnitaryGates: {result['5 Qubit Variable Unitaries']}")
+            print(f" - Actual CNOT Count: {gate_counter['Actual CNOT Count']}\n")
 
     # Construct unitary matrix from CNOT gate
     # print(f"\n - Original Unitary Dimensions: {og_unitary.shape}")
@@ -171,7 +179,7 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
         CNOT_Theoretical_Lower_Bound = (9/16) * (4**num_qudits) - (3/2) * (2**num_qudits) + (5/3)
     else:
         # Upper bound or conservatirve estimate without diagonal extraction
-        fidelity_check = {np.linalg.norm(compiled.get_unitary() - og_unitary):.2e}
+        fidelity_check = np.linalg.norm(compiled.get_unitary() - og_unitary)
         CNOT_Theoretical_Lower_Bound = (9/16) * (4**num_qudits) - (3/2) * (2**num_qudits) + 10
     
     print(f"\n--------- Fidelity Check ---------")
@@ -246,22 +254,18 @@ if __name__ == "__main__":
     pe = [False, True]
 
     curr_job = 1
-    # total_jobs = len(perform_extract_opts) * len(perform_extract_opts) * len(mqs)
-    total_jobs = len(pe) * len(pe)
+    total_jobs = len(pe) 
 
-    # for mq in mqs:
-    #     for da in pe:
-    #         for p in pe:
-    #             print(f"[{curr_job}/{total_jobs}] Running BZXZ Decomposition: qubits={nq}, min_qudit_size={mq}, perform_extract={p}, decompose_all={da}")
-    #             res = run_experiment(nq, mq, p, da)
-    #             results.append(res)
-    #             curr_job += 1
+    # print(f"\n[{curr_job}/1] Running BZXZ Decomposition: qubits={nq}, min_qudit_size={mq}, perform_extract={False}, decompose_all={True}\n")
+    # res = run_experiment(nq, min_qudit_size=mq, perform_extract=False, decompose_all=True)
+    # results.append(res)
+    # curr_job += 1
 
-
-    print(f"\n[{curr_job}/1] Running BZXZ Decomposition: qubits={nq}, min_qudit_size={mq}, perform_extract={False}, decompose_all={True}\n")
-    res = run_experiment(nq, min_qudit_size=mq, perform_extract=False, decompose_all=True)
-    results.append(res)
-    curr_job += 1
+    for p in pe:
+        print(f"\n[{curr_job}/{total_jobs}] Running BZXZ Decomposition: qubits={nq}, min_qudit_size={mq}, perform_extract={p}, decompose_all={True}\n")
+        res = run_experiment(nq, min_qudit_size=mq, perform_extract=p, decompose_all=True)
+        results.append(res)
+        curr_job += 1
 
 
     save_results_csv(results)

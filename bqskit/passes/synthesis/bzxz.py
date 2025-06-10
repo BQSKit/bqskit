@@ -267,8 +267,8 @@ class BlockZXZPass(BasePass):
 
         return UnitaryMatrix(V), d_params, UnitaryMatrix(W)
 
-    @staticmethod
-    def zxz(orig_u: UnitaryMatrix, dca: bool) -> Circuit:
+    # @staticmethod
+    def zxz(self, orig_u: UnitaryMatrix) -> Circuit:
     # def zxz(self, orig_u: UnitaryMatrix) -> Circuit:
         """Return the circuit that is generated from one level of Block ZXZ
         decomposition."""
@@ -328,7 +328,7 @@ class BlockZXZPass(BasePass):
         #     shifted_qubits,
         # )
 
-        if dca:
+        if self.dca:
             circ.append_circuit(
                 MGDPass.decompose_mpx_all_levels(
                     decompose_ry=False,
@@ -389,7 +389,7 @@ class BlockZXZPass(BasePass):
         #     shifted_qubits,
         # )
 
-        if dca:
+        if self.dca:
             circ.append_circuit(
                 MGDPass.decompose_mpx_all_levels(
                     decompose_ry=False,
