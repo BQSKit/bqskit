@@ -1,0 +1,2 @@
+qubits,min_qudit_size,perform_extract,decompose_all,Actual CNOT Count,compile_time_sec,hilbert_cost,2 Qubit Variable Unitaries,3 Qubit Variable Unitaries,4 Qubit Variable Unitaries,5 Qubit Variable Unitaries
+6,2,False,True,1270,2.1006,-1.1546319456101628e-14,256,0,0,0

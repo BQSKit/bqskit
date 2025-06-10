@@ -16,7 +16,7 @@ class CNOTGate(ConstantGate, QubitGate):
 
         \\begin{pmatrix}
         1 & 0 & 0 & 0 \\\\
-        0 & 1 & 0 & 0 \\\\
+        0 & 1 & 0 & 0 \\\\f
         0 & 0 & 0 & 1 \\\\
         0 & 0 & 1 & 0 \\\\
         \\end{pmatrix}

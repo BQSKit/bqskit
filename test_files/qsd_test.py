@@ -1,6 +1,4 @@
 from bqskit.passes import FullQSDPass
-from bqskit.passes.synthesis.bzxz import FullBlockZXZPass
-
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
 from bqskit.ir.gates import *
@@ -26,7 +24,8 @@ instantiate_options = {'min_iters': 0,
 
 # enable_logging(True)
 
-# Let's create a random 4-qubit unitary to synthesize and add it to a circuit
+# Let's create a random 4-qubit unitary to synthesize and add it to a
+# circuit.
 num_qudits = int(argv[2])
 circ_type = argv[1]
 # min_qudits = int(argv[3])
@@ -64,36 +63,29 @@ for _ in range(1):
 
 # We now define our synthesis workflow utilizing the QFAST algorithm.
 workflow = [
-    # FullQSDPass(start_from_left=True, min_qudit_size=2)
-    FullBlockZXZPass(
-        start_from_left=True, min_qudit_size=2
-    )
+    FullQSDPass(start_from_left=True, min_qudit_size=2)
 ]
 
-# start = time.time()
+start = time.time()
 
 # Finally let's create create the compiler and execute the CompilationTask.
 amount_of_workers = 2
-results = []
 with Compiler(num_workers=amount_of_workers, runtime_log_level=logging.INFO) as compiler:
     start = time.time()
     compiled_circuit = compiler.compile(circuit, workflow)
     total_time = time.time() - start
-    cnot_count = compiled_circuit.gate_counts.get(CNOTGate(), 0)
-    results.append({
-        'qubits': num_qudits,
-        'cnot_count': cnot_count,
-        'compile_time_sec': total_time
-    })
     # compiled_circuit = compile(compiled_circuit, optimization_level=4, max_synthesis_size=3, compiler=compiler)
     # print(time.time() - start)
 
-# gates = sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)
-# print(dict(gates))
-# gates = [x[1] for x in gates]
+gates = sorted(compiled_circuit.gate_counts.items(), key=lambda x: x[0].name)
+
+print(dict(gates))
+
+gates = [x[1] for x in gates]
+
+
 # print([type(x) for x in compiled_circuit.gate_counts.keys()])
 
-print(results)
 
 # scan_type = f"treescan{tree_depth}"
 # pickle.dump(compiled_circuit, open(f"{circ_type}_{num_qudits}_{scan_type}_{partition_depth}.pickle", "wb"))
@@ -103,13 +95,13 @@ utry_1 = compiled_circuit.get_unitary()
 utry_2 = circuit.get_unitary()
 
 cost_function = HilbertSchmidtResidualsGenerator()
-print("Hilbert-Schmidt Cost: ", cost_function(compiled_circuit, circuit.get_unitary()))
+print(cost_function(compiled_circuit, circuit.get_unitary()))
+
 # print(f"{circ_type}_{scan_type}, {num_qudits}, {partition_depth}, {total_time}, {gates[0]}, {gates[1]}, {gates[2]}, {gates[3]}")
+
 
 # np.set_printoptions(threshold=np.inf, linewidth=np.inf)
 # print(utry_1)
 # print(utry_2)
 # print(compiled_circuit)
 # print(utry_1.get_distance_from(utry_2))
-
-print("Done!")

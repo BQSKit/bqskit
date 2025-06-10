@@ -98,7 +98,8 @@ class FullQSDPass(BasePass):
         # Instantiate the helper QSD pass
         self.qsd = QSDPass(min_qudit_size=min_qudit_size)
         # Instantiate the helper Multiplex Gate Decomposition pass
-        self.mgd = MGDPass(decompose_twice=False)
+        # self.mgd = MGDPass(decompose_twice=False)
+        self.mgd = MGDPass()
         self.perform_scan = perform_scan
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
@@ -140,6 +141,101 @@ class MGDPass(BasePass):
             the pass will only decompose one level. (Default: True)
         """
         self.decompose_twice = decompose_twice
+        self.decompose_all = False
+
+    def __init__(self, decompose_all: bool) -> None:
+        """
+        The MGDPass decomposes all MPRY and MPRZ gates in a circuit.
+
+        Args:
+            decompose_twice (bool): Whether to decompose the MPRZ gate twice.
+            This will save 2 CNOT gates in the decomposition. If false,
+            the pass will only decompose one level. (Default: True)
+        """
+        self.decompose_twice = not decompose_all
+        self.decompose_all = decompose_all
+
+    # alternate constructor
+    def __init__(self, decompose_twice: bool, decompose_all: bool) -> None:
+        """
+        The MGDPass decomposes all MPRY and MPRZ gates in a circuit.
+
+        Args:
+            decompose_all (bool): Whether to decompose the MPRZ gate all the way.
+            This will save 2^k CNOT gates in the decomposition. If false,
+            the pass will only decompose two levels. (Default: True)
+        """
+        self.decompose_twice = decompose_twice
+        self.decompose_all = decompose_all
+
+    @staticmethod
+    def decompose_mpx_all_levels(
+        decompose_ry: bool, 
+        params: RealVector, 
+        num_qudits: int, 
+        reverse: bool = False, 
+        drop_last_cnot: bool = False
+    ) -> Circuit:
+        """
+        Decompose a multiplexed RZ gate all levels 
+        """
+
+        if num_qudits < 4:
+            # If you have less than 4 qubits, decompose two levels
+            return MGDPass.decompose_mpx_two_levels(
+                decompose_ry,
+                params,
+                num_qudits,
+                reverse,
+                drop_last_cnot=drop_last_cnot
+            )
+
+        # Decompose current level
+        left_params, right_params = MPRYGate.get_decomposition(params)
+
+        circ_left = MGDPass.decompose_mpx_all_levels(
+            decompose_ry=decompose_ry,
+            params=left_params,
+            num_qudits=num_qudits - 1,
+            reverse=reverse,
+            drop_last_cnot=True
+        )
+
+        circ_right = MGDPass.decompose_mpx_all_levels(
+            decompose_ry=decompose_ry,
+            params=right_params,
+            num_qudits=num_qudits - 1,
+            reverse=not reverse,
+            drop_last_cnot=True
+        )
+
+        circ = Circuit(num_qudits)
+        cx_location_big = (0, num_qudits - 1)
+
+        ops = [
+            circ_left,
+            Operation(CNOTGate(), cx_location_big),
+            circ_right,
+            Operation(CNOTGate(), cx_location_big),
+        ]
+
+        if drop_last_cnot:
+            ops.pop()
+
+        if reverse:
+            ops.reverse()
+        for op in ops:
+            if isinstance(op, Operation):
+                circ.append(op)
+            else:
+                circ.append_circuit(op, list(range(1, num_qudits)))
+
+        # if drop_last_cnot:
+        #     ops.pop()
+        
+        return circ
+
+    
 
     @staticmethod
     def decompose_mpx_one_level(
@@ -237,6 +333,7 @@ class MGDPass(BasePass):
                 params,
                 num_qudits,
                 reverse,
+                drop_last_cnot=drop_last_cnot
             )
 
         # Get params for first decomposition of the MPRZ gate
@@ -313,7 +410,16 @@ class MGDPass(BasePass):
 
         if len(ops) > 0:
             # Do a bulk QSDs -> circs
-            if self.decompose_twice:
+            if self.decompose_all:
+                circs = [
+                    MGDPass.decompose_mpx_all_levels(
+                        isinstance(op.gate, MPRYGate),
+                        op.params,
+                        op.num_qudits,
+                    ) for op in ops
+                ]
+
+            elif self.decompose_twice:
                 circs = [
                     MGDPass.decompose_mpx_two_levels(
                         isinstance(op.gate, MPRYGate),
@@ -321,6 +427,7 @@ class MGDPass(BasePass):
                         op.num_qudits,
                     ) for op in ops
                 ]
+
             else:
                 circs = [
                     MGDPass.decompose_mpx_one_level(
@@ -329,6 +436,7 @@ class MGDPass(BasePass):
                         op.num_qudits,
                     ) for op in ops
                 ]
+
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [
                 Operation(x, locations[i], x._circuit.params)
