@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 import warnings
 from typing import TYPE_CHECKING
+import pickle
 
 if TYPE_CHECKING:
     from typing import Any
@@ -158,7 +159,90 @@ class BasePass(abc.ABC):
             'https://bqskit.readthedocs.io/en/latest/source/runtime.html'
             'In a future version, this error will become an AttributeError.',
         )
+    
+    def checkpoint_finished(self, data: PassData, checkpoint_key: str) -> bool:
+        """
+        Check if we are checkpointing this pass. If so, check if the
+        checkpoint has finished.
 
+        Args:
+            data (PassData): The data dictionary.
+            checkpoint_key (str): The key to check for in the data dictionary.
+
+        Returns:
+            bool: True if the pass should checkpoint and has finished.
+        """
+        if "checkpoint_dir" in data:
+            if data.get(checkpoint_key, False):
+                return True
+            
+        return False
+
+    def finish_checkpoint(self, 
+                          circuit: Circuit, 
+                          data: PassData, 
+                          checkpoint_key: str,
+                          remove_key: str | None = None) -> None:
+        """
+        Set the checkpoint key to True and save the data and circuit.
+
+        Args:
+            circuit (Circuit): The circuit to save.
+            data (PassData): The data dictionary.
+            checkpoint_key (str): The key to set to True.
+            remove_key (str | None): If not None, remove this key from the data
+                dictionary before saving.
+        """
+        if "checkpoint_dir" in data:
+            data[checkpoint_key] = True
+            if remove_key is not None:
+                data.pop(remove_key)
+            save_data_file = data["checkpoint_data_file"]
+            save_circuit_file = data["checkpoint_circ_file"]
+            pickle.dump(data, open(save_data_file, "wb"))
+            pickle.dump(circuit, open(save_circuit_file, "wb"))
+
+    def restart_checkpoint(self,
+                           circuit: Circuit,
+                           data: PassData, 
+                           checkpoint_key: str) -> Any | None:
+        """
+        Load the saved data and circuit from the checkpoint.
+
+        This will modify (in-place) the passed in circuit and data dictionary.
+
+        Args:
+            data (PassData): The data dictionary.
+            checkpoint_key (str): The key to check for in the data dictionary.
+
+        Returns:
+            Any | None: If the checkpoint exists, it returns whatever data is 
+            stored at the checkpoint key. Otherwise, it returns None.
+        """
+        if "checkpoint_dir" in data:
+            load_data_file = data["checkpoint_data_file"]
+            load_circuit_file = data["checkpoint_circ_file"]
+            new_data = pickle.load(open(load_data_file, "rb"))
+            new_circuit = pickle.load(open(load_circuit_file, "rb"))
+            data.update(new_data)
+            circuit.become(new_circuit)
+            return data.get(checkpoint_key, None)
+
+        return None
+
+    def checkpoint_save(self, circuit: Circuit, data: PassData) -> None:
+        """
+        Save the circuit and data to the checkpoint.
+
+        Args:
+            circuit (Circuit): The circuit to save.
+            data (PassData): The data dictionary.
+        """
+        if "checkpoint_dir" in data:
+            save_data_file = data["checkpoint_data_file"]
+            save_circuit_file = data["checkpoint_circ_file"]
+            pickle.dump(data, open(save_data_file, "wb"))
+            pickle.dump(circuit, open(save_circuit_file, "wb"))
 
 async def _sub_do_work(
     workflow: Workflow,
