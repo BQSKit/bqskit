@@ -188,7 +188,7 @@ class BlockZXZPass(BasePass):
         # The upper left block is X, the upper right block is Y, the lower left
         # block is U_21, and the lower right block is U_22.
 
-        # Sid's Notes: divide U into 4 equal blocks
+        # Divide U into 4 equal blocks
 
         X = U[0:len(U) // 2, 0:len(U) // 2]
         Y = U[0:len(U) // 2, len(U) // 2:]
@@ -203,8 +203,6 @@ class BlockZXZPass(BasePass):
 
         # We can then define S_X and S_Y as V_X @ s_X @ V_X^H and
         # V_Y @ s_Y @ V_Y^H
-
-        # Sid's Notes: "@" refers to matrix multiplication
 
         S_X = V_X @ np.diag(sigma_X) @ V_X.conj().T # $V_x$ * ∑ * $V_x$ transpose
         S_Y = V_Y @ np.diag(sigma_Y) @ V_Y.conj().T # $V_y$ * ∑ * $V_y$ transpose
@@ -225,7 +223,7 @@ class BlockZXZPass(BasePass):
 
         # Finally, we can set B as 2(A_1^H @ U) - I
 
-        I = np.eye(len(U) // 2) # returns a len(U) // 2 by len(U) // 2 identity matrix – why not np.identity?
+        I = np.eye(len(U) // 2) # returns a (len(U) // 2) by (len(U) // 2) identity matrix
         B = UnitaryMatrix((2 * (A_1.conj().T @ X)) - I)
 
         return A_1, A_2, B, UnitaryMatrix(CH.conj().T)
@@ -253,10 +251,10 @@ class BlockZXZPass(BasePass):
 
         # We can find V,D^2 by performing an eigen decomposition of
         # U_1 @ U_2†
-        d2, V = eig(U_1 @ U_2.conj().T) # Sid's Notes: diagonalizing U1 and U2 conj = V * D^2 * V conj
+        d2, V = eig(U_1 @ U_2.conj().T) # Diagonalizing U1 and U2 conj = V * D^2 * V conj
         d = np.sqrt(d2)
-        D = np.diag(d) # Sid's Notes: D is diagonal matrix of eigenvalues of 
-
+        D = np.diag(d)
+        
         # We can then multiply to solve for W
         W = D @ V.conj().T @ U_2
 
