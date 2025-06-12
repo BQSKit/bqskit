@@ -32,6 +32,8 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
 
+from bqskit.ir.circuit import CircuitPoint
+
 
 _logger = logging.getLogger(__name__)
 
@@ -59,6 +61,7 @@ class FullBlockZXZPass(BasePass):
         tree_depth: int = 0,
         perform_extract: bool = True,
         instantiate_options: dict[str, Any] = {},
+        decompose_all: bool = True
     ) -> None:
         """
         Perform the full Block ZXZ decomposition.
@@ -97,8 +100,9 @@ class FullBlockZXZPass(BasePass):
                 instantiate_options=instantiation_options,
                 tree_depth=tree_depth,
             )
-        self.bzxz = BlockZXZPass(min_qudit_size=min_qudit_size)
-        self.mgd = MGDPass()
+        
+        self.mgd = MGDPass(decompose_twice=not decompose_all, decompose_all=decompose_all)
+        self.bzxz = BlockZXZPass(min_qudit_size=min_qudit_size, decompose_all=self.mgd.decompose_all)
         self.diag = ExtractDiagonalPass(qudit_size=min_qudit_size)
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
@@ -146,6 +150,7 @@ class BlockZXZPass(BasePass):
     def __init__(
         self,
         min_qudit_size: int = 4,
+        decompose_all: bool = False
     ) -> None:
         """
         Construct a single level of the QSDPass.
@@ -155,6 +160,8 @@ class BlockZXZPass(BasePass):
                 with width > min_qudit_size
         """
         self.min_qudit_size = min_qudit_size
+        # BlockZXZPass.dca = decompose_all
+        self.dca = decompose_all
 
     @staticmethod
     def initial_decompose(U: UnitaryMatrix) -> tuple[
@@ -181,6 +188,8 @@ class BlockZXZPass(BasePass):
         # The upper left block is X, the upper right block is Y, the lower left
         # block is U_21, and the lower right block is U_22.
 
+        # Sid's Notes: divide U into 4 equal blocks
+
         X = U[0:len(U) // 2, 0:len(U) // 2]
         Y = U[0:len(U) // 2, len(U) // 2:]
         U_21 = U[len(U) // 2:, 0:len(U) // 2]
@@ -189,16 +198,20 @@ class BlockZXZPass(BasePass):
         # We let X = V_X @ s_X @ W_X where V_X and W_X are unitary and s_X is
         # a diagonal matrix of singular values. We use the SVD to find these
         # matrices. We do the same decomposition for Y.
-        V_X, s_X, W_XH = svd(X)
-        V_Y, s_Y, W_YH = svd(Y)
+        V_X, sigma_X, W_XH = svd(X)
+        V_Y, sigma_Y, W_YH = svd(Y)
 
         # We can then define S_X and S_Y as V_X @ s_X @ V_X^H and
         # V_Y @ s_Y @ V_Y^H
-        S_X = V_X @ np.diag(s_X) @ V_X.conj().T
-        S_Y = V_Y @ np.diag(s_Y) @ V_Y.conj().T
 
-        # We define U_X and U_Y as V_X^H @ U @ W_X and V_Y^H @ U @ W_Y
-        U_X = V_X @ W_XH
+        # Sid's Notes: "@" refers to matrix multiplication
+
+        S_X = V_X @ np.diag(sigma_X) @ V_X.conj().T # $V_x$ * ∑ * $V_x$ transpose
+        S_Y = V_Y @ np.diag(sigma_Y) @ V_Y.conj().T # $V_y$ * ∑ * $V_y$ transpose
+
+        # We define U_X and U_Y as V_X^H @ U @ W_X and V_Y^H @ U @ W_Y respectively
+
+        U_X = V_X @ W_XH # $V_x$ times the conjugate of $W_x$
         U_Y = V_Y @ W_YH
 
         # Now, to perform the decomposition as defined in Section 4.1
@@ -207,10 +220,12 @@ class BlockZXZPass(BasePass):
 
         # We then set A_1 as S_X @ U_X and A_2 as U_21 + U_22 @ (iU_Y^H @ U_X)
         A_1 = UnitaryMatrix((S_X + 1j * S_Y) @ U_X)
-        A_2 = UnitaryMatrix(U_21 + U_22 @ (1j * U_Y.conj().T @ U_X))
+        # A_2 = UnitaryMatrix(U_21 + U_22 @ (1j * U_Y.conj().T @ U_X))
+        A_2 = UnitaryMatrix(U_21 + U_22 @ CH)
 
         # Finally, we can set B as 2(A_1^H @ U) - I
-        I = np.eye(len(U) // 2)
+
+        I = np.eye(len(U) // 2) # returns a len(U) // 2 by len(U) // 2 identity matrix – why not np.identity?
         B = UnitaryMatrix((2 * (A_1.conj().T @ X)) - I)
 
         return A_1, A_2, B, UnitaryMatrix(CH.conj().T)
@@ -238,23 +253,24 @@ class BlockZXZPass(BasePass):
 
         # We can find V,D^2 by performing an eigen decomposition of
         # U_1 @ U_2†
-        d2, V = eig(U_1 @ U_2.conj().T)
+        d2, V = eig(U_1 @ U_2.conj().T) # Sid's Notes: diagonalizing U1 and U2 conj = V * D^2 * V conj
         d = np.sqrt(d2)
-        D = np.diag(d)
+        D = np.diag(d) # Sid's Notes: D is diagonal matrix of eigenvalues of 
 
         # We can then multiply to solve for W
         W = D @ V.conj().T @ U_2
 
         # We can use d to find the parameters for the MPRZ gate.
-        # Note than because and Rz does exp(-i * theta / 2), we must
+        # Note that because and Rz does exp(-i * theta / 2), we must
         # multiply by -2.
         d_params: list[float] = list(np.angle(d) * -2)
 
         return UnitaryMatrix(V), d_params, UnitaryMatrix(W)
 
-    @staticmethod
-    def zxz(orig_u: UnitaryMatrix) -> Circuit:
-        """Return the circuit that is generated from one levl of Block ZXZ
+    # @staticmethod
+    def zxz(self, orig_u: UnitaryMatrix) -> Circuit:
+    # def zxz(self, orig_u: UnitaryMatrix) -> Circuit:
+        """Return the circuit that is generated from one level of Block ZXZ
         decomposition."""
 
         # First calculate the A, B, and C matrices for the initial decomp
@@ -295,16 +311,28 @@ class BlockZXZPass(BasePass):
         # Since the MPRZ gate circuit sets the target qubit as qubit
         # num_qudits - 1, we must shift the qubits to the left
         shifted_qubits = all_qubits[1:] + all_qubits[0:1]
-        circ.append_circuit(
-            MGDPass.decompose_mpx_two_levels(
-                decompose_ry=False,
-                params=CZ_params,
-                num_qudits=orig_u.num_qudits,
-                drop_last_cnot=True,
-            ),
-            shifted_qubits,
-        )
 
+        if self.dca:
+            circ.append_circuit(
+                MGDPass.decompose_mpx_all_levels(
+                    decompose_ry=False,
+                    params=CZ_params,
+                    num_qudits=orig_u.num_qudits,
+                    drop_last_cnot=True,
+                ),
+                shifted_qubits,
+            )
+        else:
+            circ.append_circuit(
+                MGDPass.decompose_mpx_two_levels(
+                    decompose_ry=False,
+                    params=CZ_params,
+                    num_qudits=orig_u.num_qudits,
+                    drop_last_cnot=True,
+                ),
+                shifted_qubits
+            )
+        
         # Add the decomposed B-tilde gates WB and a Hadamard
         combo_1_gate, combo_1_params = QSDPass.create_unitary_gate(WB)
         circ.append_gate(
@@ -327,21 +355,33 @@ class BlockZXZPass(BasePass):
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
 
         # Add the decomposed MPRZ gate circuit again on shifted qubits
-        circ.append_circuit(
-            MGDPass.decompose_mpx_two_levels(
-                decompose_ry=False,
-                params=AZ_params,
-                num_qudits=orig_u.num_qudits,
-                reverse=True,
-                drop_last_cnot=True,
-            ),
-            shifted_qubits,
-        )
+        if self.dca:
+            circ.append_circuit(
+                MGDPass.decompose_mpx_all_levels(
+                    decompose_ry=False,
+                    params=AZ_params,
+                    num_qudits=orig_u.num_qudits,
+                    reverse=True,
+                    drop_last_cnot=True,
+                ),
+                shifted_qubits,
+            )
+        else:
+            circ.append_circuit(
+                MGDPass.decompose_mpx_two_levels(
+                    decompose_ry=False,
+                    params=AZ_params,
+                    num_qudits=orig_u.num_qudits,
+                    reverse=True,
+                    drop_last_cnot=True,
+                ),
+                shifted_qubits
+            )
 
         va_gate, va_params = QSDPass.create_unitary_gate(VA)
         circ.append_gate(va_gate, CircuitLocation(select_qubits), va_params)
 
-        # assert np.allclose(orig_u, circ.get_unitary())
+        assert np.allclose(orig_u, circ.get_unitary())
         return circ
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
@@ -351,7 +391,8 @@ class BlockZXZPass(BasePass):
         )
 
         if len(unitaries) > 0:
-            circs = await get_runtime().map(BlockZXZPass.zxz, unitaries)
+            # circs = await get_runtime().map(BlockZXZPass.zxz, unitaries)
+            circs = [self.zxz(u) for u in unitaries]
             # Do bulk replace
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [
