@@ -34,7 +34,6 @@ from bqskit.runtime import get_runtime
 
 from bqskit.ir.circuit import CircuitPoint
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -160,8 +159,7 @@ class BlockZXZPass(BasePass):
                 with width > min_qudit_size
         """
         self.min_qudit_size = min_qudit_size
-        # BlockZXZPass.dca = decompose_all
-        self.dca = decompose_all
+        self.decompose_all = decompose_all
 
     @staticmethod
     def initial_decompose(U: UnitaryMatrix) -> tuple[
@@ -218,7 +216,6 @@ class BlockZXZPass(BasePass):
 
         # We then set A_1 as S_X @ U_X and A_2 as U_21 + U_22 @ (iU_Y^H @ U_X)
         A_1 = UnitaryMatrix((S_X + 1j * S_Y) @ U_X)
-        # A_2 = UnitaryMatrix(U_21 + U_22 @ (1j * U_Y.conj().T @ U_X))
         A_2 = UnitaryMatrix(U_21 + U_22 @ CH)
 
         # Finally, we can set B as 2(A_1^H @ U) - I
@@ -265,9 +262,8 @@ class BlockZXZPass(BasePass):
 
         return UnitaryMatrix(V), d_params, UnitaryMatrix(W)
 
-    # @staticmethod
-    def zxz(self, orig_u: UnitaryMatrix) -> Circuit:
-    # def zxz(self, orig_u: UnitaryMatrix) -> Circuit:
+    @staticmethod
+    def zxz(orig_u: UnitaryMatrix, dca: bool) -> Circuit:
         """Return the circuit that is generated from one level of Block ZXZ
         decomposition."""
 
@@ -310,7 +306,7 @@ class BlockZXZPass(BasePass):
         # num_qudits - 1, we must shift the qubits to the left
         shifted_qubits = all_qubits[1:] + all_qubits[0:1]
 
-        if self.dca:
+        if dca:
             circ.append_circuit(
                 MGDPass.decompose_mpx_all_levels(
                     decompose_ry=False,
@@ -353,7 +349,7 @@ class BlockZXZPass(BasePass):
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
 
         # Add the decomposed MPRZ gate circuit again on shifted qubits
-        if self.dca:
+        if dca:
             circ.append_circuit(
                 MGDPass.decompose_mpx_all_levels(
                     decompose_ry=False,
@@ -389,8 +385,13 @@ class BlockZXZPass(BasePass):
         )
 
         if len(unitaries) > 0:
-            # circs = await get_runtime().map(BlockZXZPass.zxz, unitaries)
-            circs = [self.zxz(u) for u in unitaries]
+            dca = self.decompose_all
+            
+            async def zxz_wrapper(u: UnitaryMatrix) -> Circuit:
+                return BlockZXZPass.zxz(u, dca)
+            
+            circs = await get_runtime().map(zxz_wrapper, unitaries)
+            
             # Do bulk replace
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [

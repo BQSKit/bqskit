@@ -305,7 +305,7 @@ class MGDPass(BasePass):
     ) -> Circuit:
         
         if num_qudits < 4:
-            # If you have less than 3 qubits, just decompose one level
+            # If you have less than 3 qubits, just decompose two levels
             return MGDPass.decompose_mpx_two_levels(
                 decompose_ry=decompose_ry,
                 params=params,
