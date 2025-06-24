@@ -37,6 +37,62 @@ from bqskit.ir.circuit import CircuitPoint
 _logger = logging.getLogger(__name__)
 
 
+class OptimizedFullBlockZXZPass(BasePass):
+    def __init__(
+        self,
+        min_qudit_size: int = 2,
+        perform_scan: bool = False,
+        start_from_left: bool = True,
+        tree_depth: int = 0,
+        perform_extract: bool = True,
+        instantiate_options: dict[str, Any] = {},
+        decompose_all: bool = True
+    ) -> None:
+        
+        self.start_from_left = start_from_left
+        self.min_qudit_size = min_qudit_size
+        instantiation_options = {'method': 'qfactor'}
+        instantiation_options.update(instantiate_options)
+        self.perform_scan = perform_scan
+        self.perform_extract = perform_extract
+        self.scan = ScanningGateRemovalPass(
+            start_from_left=start_from_left,
+            instantiate_options=instantiation_options,
+        )
+        if tree_depth > 0:
+            self.scan = TreeScanningGateRemovalPass(
+                start_from_left=start_from_left,
+                instantiate_options=instantiation_options,
+                tree_depth=tree_depth,
+            )
+        
+        self.mgd = MGDPass(decompose_twice=not decompose_all, decompose_all=decompose_all)
+        self.bzxz = BlockZXZPass(min_qudit_size=min_qudit_size, decompose_all=self.mgd.decompose_all)
+        self.diag = ExtractDiagonalPass(qudit_size=min_qudit_size)
+
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        
+        passes: list[BasePass] = []
+        start_num = max(x.num_qudits for x in circuit.operations())
+
+        for _ in range(self.min_qudit_size, start_num):
+            passes.append(self.bzxz)
+            if self.perform_scan:
+                passes.append(self.scan)
+
+        if self.perform_extract:
+            passes.append(self.diag)
+
+        # Once we have commuted the diagonal gate, we can break down the
+        # multiplexed gates
+        for _ in range(1, start_num):
+            passes.append(self.mgd)
+            if self.perform_scan:
+                passes.append(self.scan)
+
+        await Workflow(passes).run(circuit, data)
+
+
 class FullBlockZXZPass(BasePass):
     """
     A pass performing a full Block ZXZ decomposition.
@@ -263,9 +319,15 @@ class BlockZXZPass(BasePass):
         return UnitaryMatrix(V), d_params, UnitaryMatrix(W)
 
     @staticmethod
-    def zxz(orig_u: UnitaryMatrix, dca: bool) -> Circuit:
+    def zxz(orig_u: UnitaryMatrix, decompose_all_levels_enabled: bool) -> Circuit:
         """Return the circuit that is generated from one level of Block ZXZ
-        decomposition."""
+        decomposition.
+        
+        Args:
+            orig_u (UnitaryMatrix): 2^n x 2^n (where n = num_qudits) Unitary Matrix on which BZXZ decomposition is performed
+            decompose_all_levels_enabled (bool): Flag that determines whether or not to run tests with full-level decomposition
+                of multiplexed gates
+        """
 
         # First calculate the A, B, and C matrices for the initial decomp
         A_1, A_2, B, C = BlockZXZPass.initial_decompose(orig_u)
@@ -306,7 +368,7 @@ class BlockZXZPass(BasePass):
         # num_qudits - 1, we must shift the qubits to the left
         shifted_qubits = all_qubits[1:] + all_qubits[0:1]
 
-        if dca:
+        if decompose_all_levels_enabled:
             circ.append_circuit(
                 MGDPass.decompose_mpx_all_levels(
                     decompose_ry=False,
@@ -349,7 +411,7 @@ class BlockZXZPass(BasePass):
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
 
         # Add the decomposed MPRZ gate circuit again on shifted qubits
-        if dca:
+        if decompose_all_levels_enabled:
             circ.append_circuit(
                 MGDPass.decompose_mpx_all_levels(
                     decompose_ry=False,
@@ -385,10 +447,10 @@ class BlockZXZPass(BasePass):
         )
 
         if len(unitaries) > 0:
-            dca = self.decompose_all
+            decompose_all_levels_flag = self.decompose_all
             
             async def zxz_wrapper(u: UnitaryMatrix) -> Circuit:
-                return BlockZXZPass.zxz(u, dca)
+                return BlockZXZPass.zxz(u, decompose_all_levels_flag)
             
             circs = await get_runtime().map(zxz_wrapper, unitaries)
             

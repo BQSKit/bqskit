@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from collections.abc import Sequence
 import numpy as np
 from scipy.linalg import cossin
 from scipy.linalg import schur
@@ -303,9 +304,37 @@ class MGDPass(BasePass):
         reverse: bool = False,
         drop_last_cnot: bool = False,
     ) -> Circuit:
+        """
+        This function perform a full-level decomposition of multiplexed RY (MPRY) gates
+
+        Args:
+            decompose_ry (bool): Whether to decompose the MPRY gate
+            params (RealVector): The parameters for the original MPRZ gate
+            num_qudits (int): The number of qudits in the MPRZ gate
+            reverse (bool): Whether to reverse the order of the gates (you can
+                decompose the gates in either order to get the same result)
+            drop_last_cnot (bool): Whether to drop the last CNOT gate. This
+                should be set if you are doing a 2 level decomposition to save 2
+                CNOT gates.
+
+        Returns:
+            Circuit: The circuit that decomposes the MPRZ gate
+        """
+        
+        # Error Checking
+        if not isinstance(params, (Sequence, np.ndarray)):
+            raise TypeError("Expected 'params' to be of type RealVector")
+        
+        if num_qudits < 1:
+            raise ValueError("Expected 'num_qudits' to be at least 1")
+        
+        expected_length = 2 ** (num_qudits - 1)
+        if len(params) != expected_length:
+            raise ValueError(f"Expected params of {expected_length} but got {len(params)}")
+    
         
         if num_qudits < 4:
-            # If you have less than 3 qubits, just decompose two levels
+            # If you have less than 3 qubits, just decompose one level
             return MGDPass.decompose_mpx_two_levels(
                 decompose_ry=decompose_ry,
                 params=params,
