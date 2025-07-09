@@ -40,7 +40,7 @@ the [documentation](https://bqskit.readthedocs.io/en/latest/).
 
 ## How to Cite
 
-You can use the [software disclosure](https://www.osti.gov/doecode/biblio/58510)
+You can use the [software disclosure](https://doi.org/10.11578/dc.20210603.2)
 to cite the BQSKit package.
 
 Additionally, if you used or extended a specific algorithm, you should cite
