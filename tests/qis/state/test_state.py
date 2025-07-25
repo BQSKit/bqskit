@@ -66,3 +66,8 @@ class TestClosedOperations:
             out2 = a * v
             assert out2 is not v
             assert not isinstance(out2, StateVector)
+
+
+def test_zero_preserves_radixes() -> None:
+    vec = StateVector.zero(3, [3, 2, 2])
+    assert vec.radixes == (3, 2, 2)

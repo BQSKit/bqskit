@@ -42,6 +42,7 @@ class QSearchSynthesisPass(SynthesisPass):
         success_threshold: float = 1e-8,
         cost: CostFunctionGenerator = HilbertSchmidtResidualsGenerator(),
         max_layer: int | None = None,
+        no_progress_layers_allowed: int = 10,
         store_partial_solutions: bool = False,
         partials_per_depth: int = 25,
         instantiate_options: dict[str, Any] = {},
@@ -71,6 +72,10 @@ class QSearchSynthesisPass(SynthesisPass):
             max_layer (int): The maximum number of layers to append without
                 success before termination. If left as None it will default
                 to unlimited. (Default: None)
+
+            no_progress_layers_allowed (int): The maximum number of layers
+                allowed without improvement before a warning is issued to
+                the user. (Default: 10)
 
             store_partial_solutions (bool): Whether to store partial solutions
                 at different depths inside of the data dict. (Default: False)
@@ -130,6 +135,7 @@ class QSearchSynthesisPass(SynthesisPass):
         self.success_threshold = success_threshold
         self.cost = cost
         self.max_layer = max_layer
+        self.no_progress_layers_allowed = no_progress_layers_allowed
         self.instantiate_options: dict[str, Any] = {
             'cost_fn_gen': self.cost,
         }
@@ -173,6 +179,10 @@ class QSearchSynthesisPass(SynthesisPass):
         if best_dist < self.success_threshold:
             _logger.debug('Successful synthesis with 0 layers.')
             return initial_layer
+
+        # Record layers that have been warned about
+        # to avoid duplicate warnings
+        warned_layers: list[int] = []
 
         # Main loop
         while not frontier.empty():
@@ -226,6 +236,18 @@ class QSearchSynthesisPass(SynthesisPass):
 
                 if self.max_layer is None or layer + 1 < self.max_layer:
                     frontier.add(circuit, layer + 1)
+
+            layer_diff = abs(best_layer - layer)
+            if (
+                layer_diff % self.no_progress_layers_allowed == 0
+                and layer_diff > 0
+                and layer not in warned_layers
+            ):
+                _logger.warning(
+                    'No improvement after '
+                    f'{self.no_progress_layers_allowed} layers.',
+                )
+                warned_layers.append(layer)
 
         _logger.warning('Frontier emptied.')
         _logger.warning(

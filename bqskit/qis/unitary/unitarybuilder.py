@@ -4,17 +4,19 @@ from __future__ import annotations
 import logging
 from typing import cast
 from typing import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.ir.location import CircuitLocation
-from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_valid_radixes
+
+if TYPE_CHECKING:
+    from bqskit.ir.location import CircuitLocationLike
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +128,7 @@ class UnitaryBuilder(Unitary):
 
             - This operation is performed using tensor contraction.
         """
-
+        from bqskit.ir.location import CircuitLocation
         if check_arguments:
             if not isinstance(utry, UnitaryMatrix):
                 raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
@@ -204,7 +206,7 @@ class UnitaryBuilder(Unitary):
 
             - This operation is performed using tensor contraction.
         """
-
+        from bqskit.ir.location import CircuitLocation
         if check_arguments:
             if not isinstance(utry, UnitaryMatrix):
                 raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
@@ -260,6 +262,7 @@ class UnitaryBuilder(Unitary):
 
         See :func:`apply_right` for more info.
         """
+        from bqskit.ir.location import CircuitLocation
         left_perm = list(cast(CircuitLocation, location))
         mid_perm = [x for x in range(self.num_qudits) if x not in left_perm]
         right_perm = [x + self.num_qudits for x in range(self.num_qudits)]
@@ -290,6 +293,7 @@ class UnitaryBuilder(Unitary):
 
         See :func:`apply_left` for more info.
         """
+        from bqskit.ir.location import CircuitLocation
         location = cast(CircuitLocation, location)
         left_perm = list(range(self.num_qudits))
         mid_perm = [

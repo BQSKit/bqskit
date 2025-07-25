@@ -219,7 +219,7 @@ def filter_compatible_subgraphs(
     locations = graph.get_subgraphs_of_size(blocksize)
     induced_subgraphs: list[CouplingGraph] = sorted(
         (
-            CouplingGraph(graph.get_induced_subgraph(l)).relabel_subgraph()
+            graph.get_subgraph(l)
             for l in locations
         ),
         key=lambda x: -len(x),

@@ -65,15 +65,10 @@ class CSUMGate(ConstantGate, QuditGate):
 
         self._radix = radix
 
-        ival = 0
-        jval = 0
         matrix = np.zeros([self.radix**2, self.radix**2])
-        for i, col in enumerate(matrix.T):
-            col[self.radix * jval + ((ival + jval) % self.radix)] = 1
-            matrix[:, i] = col
-            if ival == self.radix - 1:
-                ival = 0
-                jval += 1
-            else:
-                ival += 1
+        for i in range(self.radix):
+            for j in range(self.radix):
+                row = self.radix * i + ((i + j) % self.radix)
+                col = self.radix * i + j
+                matrix[row, col] = 1.0
         self._utry = UnitaryMatrix(matrix, self.radixes)

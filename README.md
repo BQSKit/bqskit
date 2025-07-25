@@ -6,7 +6,7 @@ quantum programs to efficient physical circuits for any QPU.
 
 ## Installation
 
-BQSKit is available for Python 3.8+ on Linux, macOS, and Windows. BQSKit
+BQSKit is available for Python 3.9+ on Linux, macOS, and Windows. BQSKit
 and its dependencies are listed on the [Python Package Index](https://pypi.org),
 and as such, pip can easily install it:
 
@@ -40,7 +40,7 @@ the [documentation](https://bqskit.readthedocs.io/en/latest/).
 
 ## How to Cite
 
-You can use the [software disclosure](https://www.osti.gov/biblio/1785933)
+You can use the [software disclosure](https://doi.org/10.11578/dc.20210603.2)
 to cite the BQSKit package.
 
 Additionally, if you used or extended a specific algorithm, you should cite

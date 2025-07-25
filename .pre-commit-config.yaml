@@ -20,8 +20,8 @@ repos:
     -   id: fix-byte-order-marker
     -   id: fix-encoding-pragma
         args: ['--remove']
--   repo: https://github.com/s-weigand/docformatter
-    rev: 1ec30b7
+-   repo: https://github.com/PyCQA/docformatter
+    rev: v1.7.7
     hooks:
     -   id: docformatter
         args:
@@ -29,8 +29,8 @@ repos:
             - --pre-summary-newline
             - --wrap-summaries=80
             - --wrap-descriptions=80
--   repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v2.0.4
+-   repo: https://github.com/hhatto/autopep8
+    rev: v2.3.2
     hooks:
     -   id: autopep8
         args:
@@ -39,13 +39,13 @@ repos:
             - --ignore=E731
         exclude: 'tests/ext.*'
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.17.0
+    rev: v3.20.0
     hooks:
     -   id: pyupgrade
         args:
             - --py38-plus
 -   repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.13.0
+    rev: v3.15.0
     hooks:
     -   id: reorder-python-imports
         args:
@@ -54,7 +54,7 @@ repos:
             - --py37-plus
         exclude: 'tests/ext.*'
 -   repo: https://github.com/asottile/add-trailing-comma
-    rev: v3.1.0
+    rev: v3.2.0
     hooks:
     -   id: add-trailing-comma
         args:
@@ -66,13 +66,13 @@ repos:
       args:
         - --in-place
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
+    rev: v1.16.0
     hooks:
     - id: mypy
       exclude: tests/qis/test_pauli.py
       additional_dependencies: ["numpy>=1.21"]
 -   repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
+    rev: 7.2.0
     hooks:
     -   id: flake8
         args:
