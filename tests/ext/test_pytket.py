@@ -66,7 +66,7 @@ class TestTranslate:
         circuit.add_gate(OpType.U3, [1, 2.1, 3], [2])
         return circuit
 
-    def get_unitary(self, qc: QubitCircuit) -> np.ndarray:  # type: ignore
+    def get_unitary(self, qc: QubitCircuit) -> np.ndarray:
         return qc.get_unitary()
 
     def test_bqskit_to_bqskit(self, bqskit_circuit: Circuit) -> None:
