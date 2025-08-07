@@ -371,15 +371,12 @@ class Worker:
         self._cancelled_task_ids.add(addr)
 
         # Remove all tasks that are children of `addr` from initialized tasks
-        for key, task in self._tasks.items():
+        for key, task in list(self._tasks.items()):
             if task.is_descendant_of(addr):
                 task.cancel()
-                for mailbox_id in self._tasks[key].owned_mailboxes:
+                for mailbox_id in task.owned_mailboxes:
                     self._mailboxes.pop(mailbox_id)
-        self._tasks = {
-            a: t for a, t in self._tasks.items()
-            if not t.is_descendant_of(addr)
-        }
+                self._tasks.pop(key, None)
 
         # Remove all tasks that are children of `addr` from delayed tasks
         self._delayed_tasks = [
