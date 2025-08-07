@@ -9,6 +9,8 @@ import signal
 import sys
 import time
 import traceback
+from collections.abc import MutableMapping
+from collections.abc import MutableSequence
 from dataclasses import dataclass
 from multiprocessing import Process
 from multiprocessing.connection import Client
@@ -20,7 +22,9 @@ from threading import Thread
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Iterator
 from typing import List
+from typing import overload
 from typing import Sequence
 
 from bqskit.runtime import default_worker_port
@@ -103,6 +107,180 @@ class WorkerMailbox:
             self.result[slot_id] = result.result
 
 
+class TaskDict(MutableMapping[RuntimeAddress, RuntimeTask]):
+    """Thread-safe dictionary for mapping runtime addresses to tasks."""
+
+    def __init__(self) -> None:
+        """Initializes a new TaskDict instance."""
+        self.inner: dict[RuntimeAddress, RuntimeTask] = {}
+        self.lock = Lock()
+
+    def __setitem__(self, key: RuntimeAddress, value: RuntimeTask) -> None:
+        """
+        Sets the value for a given key in the dictionary in a thread-safe
+        manner.
+
+        Args:
+            key (RuntimeAddress): The key to set.
+            value (RuntimeTask): The value to associate with the key.
+        """
+        with self.lock:
+            self.inner[key] = value
+
+    def __getitem__(self, key: RuntimeAddress) -> RuntimeTask:
+        """
+        Retrieves the value for a given key from the dictionary in a thread-safe
+        manner.
+
+        Args:
+            key (RuntimeAddress): The key to retrieve.
+
+        Returns:
+            RuntimeTask: The value associated with the key.
+
+        Raises:
+            KeyError: If the key is not found in the dictionary.
+        """
+        with self.lock:
+            return self.inner[key]
+
+    def __delitem__(self, key: RuntimeAddress) -> None:
+        """
+        Deletes the item with the given key from the dictionary in a thread-safe
+        manner.
+
+        Args:
+            key (RuntimeAddress): The key of the item to delete.
+
+        Raises:
+            KeyError: If the key is not found in the dictionary.
+        """
+        with self.lock:
+            del self.inner[key]
+
+    def __len__(self) -> int:
+        """
+        Returns the number of items in the dictionary in a thread-safe manner.
+
+        Returns:
+            int: The number of items.
+        """
+        with self.lock:
+            return len(self.inner)
+
+    def __iter__(self) -> Iterator[RuntimeAddress]:
+        """Returns an iterator over the keys of the dictionary in a thread-safe
+        manner."""
+        with self.lock:
+            # Return a copy of keys to avoid modification during iteration
+            return iter(list(self.inner.keys()))
+
+    def remove_all(
+        self,
+        filter: Callable[[RuntimeAddress, RuntimeTask], bool],
+    ) -> None:
+        """Remove all elements not matching filter."""
+        with self.lock:
+            self.inner = {a: t for a, t in self.inner.items() if filter(a, t)}
+
+
+class DelayedTaskQueue(MutableSequence[RuntimeTask]):
+    """A thread-safe, mutable sequence for storing RuntimeTask objects."""
+
+    def __init__(self) -> None:
+        """Initializes a new DelayedTaskQueue instance."""
+        self.inner: list[RuntimeTask] = []
+        self.lock = Lock()
+
+    def __len__(self) -> int:
+        """
+        Returns the number of tasks in the queue in a thread-safe manner.
+
+        Returns:
+            int: The number of tasks in the queue.
+        """
+        with self.lock:
+            return len(self.inner)
+
+    @overload
+    def __getitem__(self, index: int, /) -> RuntimeTask:
+        pass
+
+    @overload
+    def __getitem__(self, index: slice, /) -> list[RuntimeTask]:
+        pass
+
+    def __getitem__(
+        self,
+        index: int | slice, /,
+    ) -> RuntimeTask | list[RuntimeTask]:
+        """
+        Retrieves a task from the queue by index in a thread-safe manner.
+
+        Args:
+            index (int): The index of the task to retrieve.
+
+        Returns:
+            RuntimeTask: The task at the specified index.
+
+        Raises:
+            IndexError: If the index is out of range.
+        """
+        with self.lock:
+            return self.inner[index]
+
+    def __setitem__(self, index: int, value: RuntimeTask, /) -> None:  # type: ignore  # noqa E501
+        """
+        Sets a task at a given index in the queue in a thread-safe manner.
+
+        Args:
+            index (int): The index at which to set the task.
+            value (RuntimeTask): The task to set.
+
+        Raises:
+            IndexError: If the index is out of range.
+        """
+        with self.lock:
+            self.inner.__setitem__(index, value)
+
+    @overload
+    def __delitem__(self, index: int, /) -> None:
+        pass
+
+    @overload
+    def __delitem__(self, index: slice, /) -> None:
+        pass
+
+    def __delitem__(self, index: int | slice, /) -> None:
+        """
+        Deletes a task from the queue by index or slice in a thread-safe manner.
+
+        Args:
+            index (int | slice): The index or slice of the task(s) to delete.
+
+        Raises:
+            IndexError: If the index is out of range.
+        """
+        with self.lock:
+            self.inner.__delitem__(index)
+
+    def insert(self, index: int, value: RuntimeTask) -> None:
+        """
+        Inserts a task into the queue at a given index in a thread-safe manner.
+
+        Args:
+            index (int): The index at which to insert the task.
+            value (RuntimeTask): The task to insert.
+        """
+        with self.lock:
+            self.inner.insert(index, value)
+
+    def remove_all(self, filter: Callable[[RuntimeTask], bool]) -> None:
+        """Remove all elements not matching filter."""
+        with self.lock:
+            self.inner = [t for t in self.inner if filter(t)]
+
+
 class Worker:
     """
     BQSKit Runtime's Worker.
@@ -161,10 +339,10 @@ class Worker:
         self._id = id
         self._conn = conn
 
-        self._tasks: dict[RuntimeAddress, RuntimeTask] = {}
+        self._tasks = TaskDict()
         """Tracks all started, unfinished tasks on this worker."""
 
-        self._delayed_tasks: list[RuntimeTask] = []
+        self._delayed_tasks = DelayedTaskQueue()
         """
         Store all delayed tasks in LIFO order.
 
@@ -268,6 +446,8 @@ class Worker:
         while self._running:
             # Receive message
             try:
+                if not self._conn.poll(2):
+                    continue
                 msg, payload = self._conn.recv()
             except Exception:
                 _logger.debug('Crashed due to lost connection')
@@ -376,16 +556,10 @@ class Worker:
                 task.cancel()
                 for mailbox_id in self._tasks[key].owned_mailboxes:
                     self._mailboxes.pop(mailbox_id)
-        self._tasks = {
-            a: t for a, t in self._tasks.items()
-            if not t.is_descendant_of(addr)
-        }
+        self._tasks.remove_all(lambda a, t: not t.is_descendant_of(addr))
 
         # Remove all tasks that are children of `addr` from delayed tasks
-        self._delayed_tasks = [
-            t for t in self._delayed_tasks
-            if not t.is_descendant_of(addr)
-        ]
+        self._delayed_tasks.remove_all(lambda x: not x.is_descendant_of(addr))
 
     def _handle_communicate(
         self,

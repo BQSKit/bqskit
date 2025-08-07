@@ -52,4 +52,3 @@ allow_redefinition = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 pretty = true
-plugins = "numpy.typing.mypy_plugin"
