@@ -114,7 +114,7 @@ def dot_product(alpha: RealVector, sigma: RealVector) -> npt.NDArray[Any]:
         and `sigma`.
     """
 
-    return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))  # type: ignore # noqa: E501
+    return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))
 
 
 def unitary_log_no_i(
