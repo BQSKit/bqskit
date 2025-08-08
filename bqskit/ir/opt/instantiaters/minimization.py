@@ -9,6 +9,8 @@ import numpy.typing as npt
 
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator  
+from bqskit.ir.opt.cost.residual import ResidualsFunction  
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
@@ -107,6 +109,8 @@ class Minimization(Instantiater):
         start_gen = RandomStartGenerator()
         starts = start_gen.gen_starting_points(num_starts, circuit, target)
         cost_fn = self.cost_fn_gen.gen_cost(circuit, target)
+        if isinstance(cost_fn, ResidualsFunction):
+            cost_fn = HilbertSchmidtCostGenerator().gen_cost(circuit, target)
         params_list = [self.instantiate(circuit, target, x0) for x0 in starts]
         params = sorted(params_list, key=lambda x: cost_fn(x))[0]
         circuit.set_params(params)
@@ -127,6 +131,8 @@ class Minimization(Instantiater):
         start_gen = RandomStartGenerator()
         starts = start_gen.gen_starting_points(num_starts, circuit, target)
         cost_fn = self.cost_fn_gen.gen_cost(circuit, target)
+        if isinstance(cost_fn, ResidualsFunction):
+            cost_fn = HilbertSchmidtCostGenerator().gen_cost(circuit, target)
         params_list = await get_runtime().map(
             self.instantiate,
             [circuit] * num_starts,
