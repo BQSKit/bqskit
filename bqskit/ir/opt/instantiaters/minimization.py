@@ -8,10 +8,10 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gates.parameterized.unitary import VariableUnitaryGate
+from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
-from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator  
-from bqskit.ir.opt.cost.residual import ResidualsFunction  
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
+from bqskit.ir.opt.cost.residual import ResidualsFunction
 from bqskit.ir.opt.instantiater import Instantiater
 from bqskit.ir.opt.minimizer import Minimizer
 from bqskit.ir.opt.minimizers.ceres import CeresMinimizer
