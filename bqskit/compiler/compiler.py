@@ -393,6 +393,7 @@ class Compiler:
             request_data,
             logging_level,
             max_logging_depth,
+            data,
         )
         result = self.result(task_id)
 
