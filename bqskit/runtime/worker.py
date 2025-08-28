@@ -463,7 +463,13 @@ class Worker:
         except StopIteration as e:
             self._process_task_completion(task, e.value)
 
-        except Exception:
+        except Exception as e:
+            if type(e) is RuntimeError:
+                # In rare cases, a cancelled task will cause a RuntimeError in step or _process_await
+                for addr in self._cancelled_task_ids:
+                    if task.is_descendant_of(addr):
+                        return
+
             assert self._active_task is not None  # for type checker
 
             # Bubble up errors
