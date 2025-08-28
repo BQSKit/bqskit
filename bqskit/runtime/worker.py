@@ -465,7 +465,6 @@ class Worker:
 
         except Exception as e:
             if type(e) is RuntimeError:
-                # In rare cases, a cancelled task will cause a RuntimeError in step or _process_await
                 for addr in self._cancelled_task_ids:
                     if task.is_descendant_of(addr):
                         return
