@@ -234,6 +234,7 @@ from bqskit.passes.control.whileloop import WhileLoopPass
 from bqskit.passes.group import PassGroup
 from bqskit.passes.io.checkpoint import LoadCheckpointPass
 from bqskit.passes.io.checkpoint import SaveCheckpointPass
+from bqskit.passes.io.intermediate import CheckpointRestartPass
 from bqskit.passes.io.intermediate import RestoreIntermediatePass
 from bqskit.passes.io.intermediate import SaveIntermediatePass
 from bqskit.passes.mapping.apply import ApplyPlacement
@@ -368,6 +369,7 @@ __all__ = [
     'ParallelDo',
     'LoadCheckpointPass',
     'SaveCheckpointPass',
+    'CheckpointRestartPass',
     'SaveIntermediatePass',
     'RestoreIntermediatePass',
     'GroupSingleQuditGatePass',
