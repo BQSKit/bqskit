@@ -4,20 +4,26 @@ from __future__ import annotations
 import logging
 import pickle
 from os import listdir
-from os import mkdir
-from os.path import exists
+from os.path import exists, join, isdir
+import shutil
 from re import findall
+from typing import cast, Sequence
+from pathlib import Path
+
+from copy import deepcopy
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.workflow import Workflow
+from bqskit.passes.alias import PassAlias
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.lang.qasm2.qasm2 import OPENQASM2Language
 from bqskit.ir.operation import Operation
 from bqskit.passes.util.converttou3 import ToU3Pass
+from bqskit.utils.typing import is_sequence
 
 _logger = logging.getLogger(__name__)
-
 
 class SaveIntermediatePass(BasePass):
     """
@@ -197,3 +203,50 @@ class RestoreIntermediatePass(BasePass):
                 circuit.append_circuit(block_circ, block_location)
         # Check if the circuit has been partitioned, if so, try to replace
         # blocks
+
+class CheckpointRestartPass(BasePass):
+    '''
+    This pass is used to reload a checkpointed circuit. Checkpoints are useful
+    to restart a workflow from a certain point in the event of a crash or 
+    timeout.
+    '''
+    def __init__(self, checkpoint_dir: str, 
+                 default_passes: BasePass | Sequence[BasePass]) -> None:
+        """ 
+        Args:
+            checkpoint_dir (str): 
+                Path to the directory containing the checkpointed circuit.
+            default_passes (BasePass | Sequence[BasePass]): 
+                The passes to run if the checkpoint does not exist. Typically,
+                these will be the partitioning passes to set up the block 
+                structure.
+        """
+        if not is_sequence(default_passes):
+            default_passes = [cast(BasePass, default_passes)]
+
+        if not isinstance(default_passes, list):
+            default_passes = list(default_passes)
+
+        self.checkpoint_dir = checkpoint_dir
+        self.default_passes = default_passes
+    
+    async def run(self, circuit: Circuit, data: PassData) -> None:
+        """
+        Set's the `checkpoint_dir` attribute and restores the circuit from the
+        checkpoint if possible. If the checkpoint does not exist, the default
+        passes are run.
+        """
+        data["checkpoint_dir"] = self.checkpoint_dir
+        if not exists(join(self.checkpoint_dir, "circuit.pickle")):
+            _logger.info("Checkpoint does not exist!")
+            await Workflow(self.default_passes).run(circuit, data)
+            Path(self.checkpoint_dir).mkdir(parents=True, exist_ok=True)
+            pickle.dump(circuit, open(join(self.checkpoint_dir, "circuit.pickle"), "wb"))
+            pickle.dump(data, open(join(self.checkpoint_dir, "data.pickle"), "wb"))
+        else:
+            # Already checkpointed, restore
+            _logger.info("Restoring from Checkpoint!")
+            new_circuit = pickle.load(open(join(self.checkpoint_dir, "circuit.pickle"), "rb"))
+            circuit.become(new_circuit)
+            new_data = pickle.load(open(join(self.checkpoint_dir, "data.pickle"), "rb"))
+            data.update(new_data)
