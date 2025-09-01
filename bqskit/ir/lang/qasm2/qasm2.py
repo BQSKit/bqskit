@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.language import Language
 from bqskit.ir.lang.qasm2.parser import parse
@@ -22,7 +23,20 @@ class OPENQASM2Language(Language):
 
         source = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n"
         source += f'qreg q[{circuit.num_qudits}];\n'
+        is_classical_register_present = False
         for gate in circuit.gate_set:
+            # add at maximum one classical register definition per gate
+            if isinstance(gate, MeasurementPlaceholder):
+                if is_classical_register_present:
+                    # skip all subsequent classical register definitions
+                    continue
+
+            if isinstance(gate, MeasurementPlaceholder):
+                is_classical_register_present = True
+
+            print(gate)
+            print('Gate definition:')
+            print(gate.get_qasm_gate_def())
             source += gate.get_qasm_gate_def()
 
         for op in circuit:
