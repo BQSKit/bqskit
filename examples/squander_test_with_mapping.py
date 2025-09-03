@@ -25,9 +25,10 @@ import numpy as np
 from numpy import linalg as LA
 import time
 import pickle
+import math
 
 
-circuit_name = 'tutorials/heisenberg-16-20'  # or '9symml_195'
+circuit_name = 'qft_20'  # or '9symml_195'
 bqskit_circuit_original = Circuit.from_file(circuit_name + '.qasm')
 
 
@@ -54,15 +55,16 @@ Allowed_gate_set = bqskit_circuit_original.gate_set.union({SwapGate(),U3Gate()})
 # SQUANDER Tree seach synthesis 
  
 start_squander = time.time()
- 
+  
 config = {  'strategy': "Tree_search", 
             'parallel': 0,
+            'verbosity' : 0,
          }
          
 
 def generate_squander_seqpam(squander_config,block_size):
 
-    squander = SquanderSynthesisPass(squander_config=squander_config)
+    squander = SquanderSynthesisPass(squander_config = squander_config)
 
     post_pam_seq = NOOPPass() # pam= permutation aware mapping
     
@@ -83,7 +85,7 @@ def generate_squander_seqpam(squander_config,block_size):
                 ),
                 LogPass('Preoptimizing with permutation-aware mapping.'),
                 PAMRoutingPass(),
-                post_pam_seq,
+                #post_pam_seq,
                 UnfoldPass(),
                 RestoreModelConnectivityPass(),
     
@@ -100,9 +102,9 @@ def generate_squander_seqpam(squander_config,block_size):
                 ),
                 LogPass('Performing permutation-aware mapping.'),
                 ApplyPlacement(),
-                PAMLayoutPass(3),
-                PAMRoutingPass(0.1),
-                post_pam_seq,
+                PAMLayoutPass(100), # originally 3
+                PAMRoutingPass(2.0), # originally 0.1
+                #post_pam_seq,
                 ApplyPlacement(),
                 UnfoldPass(),
             ],
@@ -113,13 +115,69 @@ def generate_squander_seqpam(squander_config,block_size):
 
 
 quditnumber = bqskit_circuit_original.num_qudits
-coupling_graph = CouplingGraph([
-    (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7),
-    (8, 9), (8, 10), (8, 11), (8, 12), (8, 13), (8, 14), (8, 15),
-    (0, 8),
-])
-print(coupling_graph)
-model = MachineModel(quditnumber,gate_set = Allowed_gate_set,coupling_graph=coupling_graph)
+
+
+
+def heavy_hex_coupling_for_qubits(num_qubits):
+    """
+    Generate heavy-hex connectivity edges for at least `num_qubits` qubits,
+    choosing num_rows and num_cols to be as close to square as possible.
+    
+    Returns:
+        edges: list of (u, v) tuples
+        num_rows: chosen rows
+        num_cols: chosen cols
+    """
+    def gen_edges(num_rows, num_cols):
+        edges = []
+        def qid(r, c):
+            return r * num_cols + c
+
+        for r in range(num_rows):
+            for c in range(num_cols):
+                q = qid(r, c)
+                # Horizontal neighbor
+                if c + 1 < num_cols:
+                    edges.append((q, qid(r, c + 1)))
+                # Zig-zag diagonal
+                if r + 1 < num_rows:
+                    if r % 2 == 0 and c + 1 < num_cols:
+                        edges.append((q, qid(r + 1, c + 1)))
+                    elif r % 2 == 1 and c > 0:
+                        edges.append((q, qid(r + 1, c - 1)))
+        return edges
+
+    # Find best square-ish size
+    best_rows, best_cols = None, None
+    best_diff = float('inf')
+    for rows in range(2, num_qubits + 3): 
+        cols = math.ceil(num_qubits / rows)
+        qubits_in_grid = rows * cols
+        if qubits_in_grid >= num_qubits:
+            diff = abs(rows - cols)
+            if diff < best_diff:
+                best_diff = diff
+                best_rows, best_cols = rows, cols
+    edges = gen_edges(best_rows, best_cols)
+    return edges, best_rows, best_cols
+
+#edges, rows, cols = heavy_hex_coupling_for_qubits(quditnumber) 
+
+edges32 = [(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10),(10,11),(11,12),(12,13),(0,14),(4,15),(8,16),(12,17),(18,19),(19,20),(20,21),(21,22),(22,23),(23,24),(24,25),(25,26),(26,27),(27,28),(28,29),(29,30),(30,31),(14,18),(15,22),(16,26),(17,30)]
+edges20 = [
+    (0, 1), (1, 2), (2, 3), (0, 5), (1, 6), (1, 7), (2, 6), (3, 8), (3, 9), (4, 9),
+    (5, 6), (5, 10), (5, 11), (6, 7), (6, 10), (6, 11), (7, 8), (7, 12), (7, 13),
+    (8, 9), (8, 12), (8, 13), (10, 11), (10, 15), (11, 12), (11, 16), (11, 17),
+    (12, 13), (13, 14), (13, 18), (13, 19), (14, 18), (14, 19), (15, 16), (16, 17),(4,8),(12,16)
+]
+edges32 = [(int(u), int(v)) for (u, v) in edges32]
+edges20 = [(int(u), int(v)) for (u, v) in edges20]
+
+#coupling_graph = CouplingGraph(edges)
+#print(coupling_graph)
+
+print(quditnumber)
+model = MachineModel(quditnumber,gate_set = Allowed_gate_set,coupling_graph = edges20)
 
 
 
@@ -134,7 +192,7 @@ with Compiler(num_workers = 1) as compiler:
         circuit_squander_tree = compiler.compile(bqskit_circuit_original, workflow)
 
 
-Circuit.save(circuit_squander_tree, circuit_name + '_squander_tree_search.qasm')
+Circuit.save(circuit_squander_tree, circuit_name + '_squander_tree_search_with_mapping.qasm')
 
 
 print("\n Circuit optimized with squander tree search:")
@@ -183,7 +241,7 @@ with Compiler(num_workers=1) as compiler:
         circuit_squander_tabu = compiler.compile(bqskit_circuit_original, workflow)
 
 
-Circuit.save(circuit_squander_tabu, circuit_name + '_squander_tabu_search.qasm')
+Circuit.save(circuit_squander_tabu, circuit_name + '_squander_tabu_search_with_mapping.qasm')
 
 
 
@@ -231,7 +289,7 @@ with Compiler() as compiler:
 
 
 # save the circuit is qasm format
-Circuit.save(synthesized_circuit_qsearch, circuit_name + '_qsearch.qasm')
+Circuit.save(synthesized_circuit_qsearch, circuit_name + '_qsearch_with_mapping.qasm')
 
 
 
@@ -274,9 +332,9 @@ else:
 # load the circuit from QASM format
 
 qc_original = Circuit.from_file( circuit_name + '.qasm')
-qc_squander_tabu = Circuit.from_file( circuit_name + '_squander_tabu_search.qasm' )
-qc_squander_tree = Circuit.from_file( circuit_name + '_squander_tree_search.qasm' )
-qc_qsearch  = Circuit.from_file( circuit_name + '_qsearch.qasm' )
+qc_squander_tabu = Circuit.from_file( circuit_name + '_squander_tabu_search_with_mapping.qasm' )
+qc_squander_tree = Circuit.from_file( circuit_name + '_squander_tree_search_with_mapping.qasm' )
+qc_qsearch  = Circuit.from_file( circuit_name + '_qsearch_with_mapping.qasm' )
 
 
 #qc_original      = QuantumCircuit.from_qasm_file( circuit_name +  '.qasm' )
@@ -317,18 +375,23 @@ def compute_overlap(state1, state2) -> float:
     return LA.norm(inner_product)
 
 
+
+
+
     
     
 overlap_squander_tree = compute_overlap(sv_original, sv_tree)
 overlap_squander_tabu = compute_overlap(sv_original, sv_tabu)
 overlap_qsearch = compute_overlap(sv_original, sv_qsearch)
+overlap_tree_tabu = compute_overlap(sv_tree, sv_tabu)
+overlap_tree_qsearch = compute_overlap(sv_tree, sv_qsearch)
+overlap_tabu_qsearch = compute_overlap(sv_tabu, sv_qsearch)
 
 # Display results
 print()
 print('The overlap of states (original vs squander tree search): ', overlap_squander_tree)
 print('The overlap of states (original vs squander tabu search): ', overlap_squander_tabu)
 print('The overlap of states (original vs qsearch): ', overlap_qsearch)
-
-        
-print('SQUANDER circuit compatibility with model: ', model.is_compatible(circuit_squander))
-print('QSEARCH circuit compatibility with model: ', model.is_compatible(synthesized_circuit_qsearch))
+print('The overlap of states (tree vs tabu): ', overlap_tree_tabu)
+print('The overlap of states (tree vs qsearch): ', overlap_tree_qsearch)
+print('The overlap of states (tabu vs qsearch): ', overlap_tabu_qsearch)
