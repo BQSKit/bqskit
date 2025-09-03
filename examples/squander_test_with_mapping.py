@@ -12,8 +12,10 @@ from bqskit.passes import (
     PAMLayoutPass, ApplyPlacement, SubtopologySelectionPass, LogPass,
     ExtractModelConnectivityPass
 )
+from bqskit.passes.mapping.verify import PAMVerificationSequence
 from bqskit.qis.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.state import StateVector, StateSystem
 from bqskit.qis.graph import CouplingGraph
@@ -26,13 +28,30 @@ from numpy import linalg as LA
 import time
 import pickle
 import math
+from scipy.sparse import csr_array
 
 
-circuit_name = 'qft_20'  # or '9symml_195'
 bqskit_circuit_original = Circuit.from_file(circuit_name + '.qasm')
 
 
+def generate_sparse_perm_matrix(num_qudits,location):
 
+    row,col = [],[]
+    data = np.ones(2**num_qudits,dtype=np.complex128)
+    for i in range(2**num_qudits):
+        bitstring = format(i, f'0{num_qudits}b')  
+        bits = list(map(int, bitstring))
+
+        # Apply permutation (on qubit positions, not integer values)
+        permuted_bits = [bits[p] for p in location]
+
+        # Convert permuted bitstring back to integer
+        j = int("".join(map(str, permuted_bits)), 2)
+
+        row.append(j)
+        col.append(i)
+    mat = csr_array((data, (row, col)), shape=(2**num_qudits, 2**num_qudits))
+    return mat
 
 # define the largest partition in circuit
 largest_partition = 3
@@ -59,6 +78,7 @@ start_squander = time.time()
 config = {  'strategy': "Tree_search", 
             'parallel': 0,
             'verbosity' : 0,
+            'optimization_tolerance': 1e-8
          }
          
 
@@ -66,7 +86,7 @@ def generate_squander_seqpam(squander_config,block_size):
 
     squander = SquanderSynthesisPass(squander_config = squander_config)
 
-    post_pam_seq = NOOPPass() # pam= permutation aware mapping
+    post_pam_seq: BasePass = PAMVerificationSequence(8)
     
     return Workflow(
         IfThenElsePass(
@@ -104,7 +124,7 @@ def generate_squander_seqpam(squander_config,block_size):
                 ApplyPlacement(),
                 PAMLayoutPass(100), # originally 3
                 PAMRoutingPass(2.0), # originally 0.1
-                #post_pam_seq,
+                post_pam_seq,
                 ApplyPlacement(),
                 UnfoldPass(),
             ],
@@ -189,10 +209,14 @@ workflow = [
 #Finally, we construct a compiler and submit the task
 with Compiler(num_workers = 1) as compiler:
     with Compiler() as compiler:
-        circuit_squander_tree = compiler.compile(bqskit_circuit_original, workflow)
-
+        circuit_squander_tree, data_tree = compiler.compile(bqskit_circuit_original, workflow, request_data=True,)
 
 Circuit.save(circuit_squander_tree, circuit_name + '_squander_tree_search_with_mapping.qasm')
+pi_tree = data_tree['initial_mapping']
+pf_tree = data_tree['final_mapping']
+
+PI_tree = generate_sparse_perm_matrix(quditnumber, pi_tree)
+PF_tree = generate_sparse_perm_matrix(quditnumber, pf_tree)
 
 
 print("\n Circuit optimized with squander tree search:")
@@ -224,6 +248,7 @@ start_squander = time.time()
 
 config = {  'strategy': "Tabu_search", 
             'parallel': 0,
+            'optimization_tolerance': 1e-8
          }
 
 
@@ -238,12 +263,16 @@ workflow = [
 # Finally, we construct a compiler and submit the task
 with Compiler(num_workers=1) as compiler:
     with Compiler() as compiler:
-        circuit_squander_tabu = compiler.compile(bqskit_circuit_original, workflow)
+        circuit_squander_tabu,data_tabu = compiler.compile(bqskit_circuit_original, workflow,request_data=True,)
 
 
 Circuit.save(circuit_squander_tabu, circuit_name + '_squander_tabu_search_with_mapping.qasm')
 
+pi_tabu = data_tabu['initial_mapping']
+pf_tabu = data_tabu['final_mapping']
 
+PI_tabu = generate_sparse_perm_matrix(quditnumber, pi_tabu)
+PF_tabu = generate_sparse_perm_matrix(quditnumber, pf_tabu)
 
 
 print("\n Circuit optimized with squander tabu search:")
@@ -285,13 +314,17 @@ workflow = [
 
 # Finally, we construct a compiler and submit the task
 with Compiler() as compiler:
-    synthesized_circuit_qsearch = compiler.compile(bqskit_circuit_original, workflow)
+    synthesized_circuit_qsearch, data_qsearch = compiler.compile(bqskit_circuit_original, workflow, request_data=True)
 
 
 # save the circuit is qasm format
 Circuit.save(synthesized_circuit_qsearch, circuit_name + '_qsearch_with_mapping.qasm')
 
+pi_qsearch = data_qsearch['initial_mapping']
+pf_qsearch = data_qsearch['final_mapping']
 
+PI_qsearch = generate_sparse_perm_matrix(quditnumber, pi_qsearch)
+PF_qsearch = generate_sparse_perm_matrix(quditnumber, pf_qsearch)
 
 print("\n Circuit optimized with qsearch:")
 
@@ -356,22 +389,18 @@ initial_state = initial_state/np.linalg.norm(initial_state)
 
 # statevectors:
 
-sv_original = qc_original.get_statevector(initial_state)
-sv_tabu = qc_squander_tabu.get_statevector(initial_state)
-sv_tree = qc_squander_tree.get_statevector(initial_state)
-sv_qsearch = qc_qsearch.get_statevector(initial_state)
-
-
+sv_original = qc_original.get_statevector(initial_state).numpy
+sv_tabu =  qc_squander_tabu.get_statevector(PI_tabu @ initial_state ).numpy @ PF_tabu.T
+sv_tree =  qc_squander_tree.get_statevector(PI_tree @ initial_state ).numpy @ PF_tree.T
+sv_qsearch = qc_qsearch.get_statevector(PI_qsearch @ initial_state ).numpy @ PF_qsearch.T
 
 
 # Compute overlaps (fidelity)
     
 def compute_overlap(state1, state2) -> float:
     # Ensure both inputs are raw numpy arrays
-    state1 = state1.vec if hasattr(state1, 'vec') else state1
-    state2 = state2.vec if hasattr(state2, 'vec') else state2
 
-    inner_product = np.conjugate(state1) @ state2
+    inner_product = np.conjugate(state1).T @ state2
     return LA.norm(inner_product)
 
 
