@@ -10,7 +10,7 @@ from bqskit.passes import (
     RestoreModelConnectivityPass, NOOPPass, IfThenElsePass, NotPredicate, WidthPredicate,
     EmbedAllPermutationsPass, GeneralizedSabreLayoutPass, SetModelPass, PAMRoutingPass,
     PAMLayoutPass, ApplyPlacement, SubtopologySelectionPass, LogPass,
-    ExtractModelConnectivityPass
+    ExtractModelConnectivityPass, BasePass
 )
 from bqskit.passes.mapping.verify import PAMVerificationSequence
 from bqskit.qis.unitary import Unitary
@@ -34,24 +34,54 @@ from scipy.sparse import csr_array
 bqskit_circuit_original = Circuit.from_file(circuit_name + '.qasm')
 
 
-def generate_sparse_perm_matrix(num_qudits,location):
+from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
+from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
-    row,col = [],[]
-    data = np.ones(2**num_qudits,dtype=np.complex128)
-    for i in range(2**num_qudits):
-        bitstring = format(i, f'0{num_qudits}b')  
-        bits = list(map(int, bitstring))
+def gen_swap_unitary():
+    """
+    Generate a unitary matrix that swaps the state of two qudits.
 
-        # Apply permutation (on qubit positions, not integer values)
-        permuted_bits = [bits[p] for p in location]
+    Args:
+        radix (int): The base of the qudits being swapped.
+            Defaults to qubits or base 2. (Default: 2)
 
-        # Convert permuted bitstring back to integer
-        j = int("".join(map(str, permuted_bits)), 2)
+    Raises:
+        ValueError: If radix is less than two.
+    """
+    dim = 2 * 2
+    mat = [[0 for _j in range(dim)] for _i in range(dim)]
+    for col in range(dim):
+        # col = a * radix + b; a, b < radix
+        a = col // 2
+        b = col % 2
+        row = b * 2 + a
+        mat[row][col] = 1
 
-        row.append(j)
-        col.append(i)
-    mat = csr_array((data, (row, col)), shape=(2**num_qudits, 2**num_qudits))
-    return mat
+    return UnitaryMatrix(mat, [2, 2])
+
+def apply_permutation_sparse(state_vector, location):
+    """
+    Apply permutation to state vector in a sparse manner
+    state_vector: numpy array of amplitudes
+    permutation: list where permutation[i] = j means qubit i goes to position j
+    Returns: new numpy array with permuted amplitudes
+    """
+    num_qudits = len(location)
+    swap_utry = gen_swap_unitary()
+    current_perm = list(location)
+    for i in range(num_qudits):
+        if i not in current_perm:
+            current_perm.append(i)
+
+    for index, qudit in enumerate(current_perm):
+        if index != qudit:
+            current_pos = current_perm.index(index)
+            state_vector.apply(swap_utry, (index, current_pos))
+            tmp = current_perm[index]
+            current_perm[index] = current_perm[current_pos]
+            current_perm[current_pos] = tmp
+    return state_vector
 
 # define the largest partition in circuit
 largest_partition = 3
@@ -105,7 +135,7 @@ def generate_squander_seqpam(squander_config,block_size):
                 ),
                 LogPass('Preoptimizing with permutation-aware mapping.'),
                 PAMRoutingPass(),
-                #post_pam_seq,
+                post_pam_seq,
                 UnfoldPass(),
                 RestoreModelConnectivityPass(),
     
@@ -122,8 +152,8 @@ def generate_squander_seqpam(squander_config,block_size):
                 ),
                 LogPass('Performing permutation-aware mapping.'),
                 ApplyPlacement(),
-                PAMLayoutPass(100), # originally 3
-                PAMRoutingPass(2.0), # originally 0.1
+                PAMLayoutPass(3), # originally 3
+                PAMRoutingPass(0.1), # originally 0.1
                 post_pam_seq,
                 ApplyPlacement(),
                 UnfoldPass(),
@@ -215,9 +245,9 @@ Circuit.save(circuit_squander_tree, circuit_name + '_squander_tree_search_with_m
 pi_tree = data_tree['initial_mapping']
 pf_tree = data_tree['final_mapping']
 
-PI_tree = generate_sparse_perm_matrix(quditnumber, pi_tree)
-PF_tree = generate_sparse_perm_matrix(quditnumber, pf_tree)
-
+inv_pi_tree = [0] * quditnumber
+for i, j in enumerate(pi_tree):
+    inv_pi_tree[j] = i
 
 print("\n Circuit optimized with squander tree search:")
 
@@ -236,9 +266,6 @@ print(squander_gates, "\n")
 print( time_squander )
 print(' ')
 print(' ')
- 
-
-    
     
 
 ###########################################################################
@@ -271,9 +298,9 @@ Circuit.save(circuit_squander_tabu, circuit_name + '_squander_tabu_search_with_m
 pi_tabu = data_tabu['initial_mapping']
 pf_tabu = data_tabu['final_mapping']
 
-PI_tabu = generate_sparse_perm_matrix(quditnumber, pi_tabu)
-PF_tabu = generate_sparse_perm_matrix(quditnumber, pf_tabu)
-
+inv_pi_tabu = [0] * quditnumber
+for i, j in enumerate(pi_tabu):
+    inv_pi_tabu[j] = i
 
 print("\n Circuit optimized with squander tabu search:")
 
@@ -323,8 +350,9 @@ Circuit.save(synthesized_circuit_qsearch, circuit_name + '_qsearch_with_mapping.
 pi_qsearch = data_qsearch['initial_mapping']
 pf_qsearch = data_qsearch['final_mapping']
 
-PI_qsearch = generate_sparse_perm_matrix(quditnumber, pi_qsearch)
-PF_qsearch = generate_sparse_perm_matrix(quditnumber, pf_qsearch)
+inv_pi_qsearch = [0] * quditnumber
+for i, j in enumerate(pi_qsearch):
+    inv_pi_qsearch[j] = i
 
 print("\n Circuit optimized with qsearch:")
 
@@ -341,7 +369,6 @@ print(qsearch_gates, "\n")
 print( time_qsearch )
 print(' ')
 print(' ')
-
 
 
 
@@ -370,13 +397,6 @@ qc_squander_tree = Circuit.from_file( circuit_name + '_squander_tree_search_with
 qc_qsearch  = Circuit.from_file( circuit_name + '_qsearch_with_mapping.qasm' )
 
 
-#qc_original      = QuantumCircuit.from_qasm_file( circuit_name +  '.qasm' )
-#qc_squander_tabu = QuantumCircuit.from_qasm_file( circuit_name +  '_squander_tabu_search.qasm' )
-#qc_squander_tree = QuantumCircuit.from_qasm_file( circuit_name +  '_squander_tree_search.qasm' )
-#qc_qsearch       = QuantumCircuit.from_qasm_file( circuit_name +  '_qsearch.qasm' )
-
-
-
 # generate random initial state on which we test the circuits
 
 num_qubits = qc_original.num_qudits 
@@ -389,11 +409,11 @@ initial_state = initial_state/np.linalg.norm(initial_state)
 
 # statevectors:
 
-sv_original = qc_original.get_statevector(initial_state).numpy
-sv_tabu =  qc_squander_tabu.get_statevector(PI_tabu @ initial_state ).numpy @ PF_tabu.T
-sv_tree =  qc_squander_tree.get_statevector(PI_tree @ initial_state ).numpy @ PF_tree.T
-sv_qsearch = qc_qsearch.get_statevector(PI_qsearch @ initial_state ).numpy @ PF_qsearch.T
 
+sv_original = qc_original.get_statevector(initial_state )
+sv_tree =  apply_permutation_sparse(qc_squander_tree.get_statevector(apply_permutation_sparse(StateVector(initial_state),inv_pi_tree)), pf_tree)
+sv_tabu =  apply_permutation_sparse(qc_squander_tabu.get_statevector(apply_permutation_sparse(StateVector(initial_state),inv_pi_tabu)), pf_tabu)
+sv_qsearch =  apply_permutation_sparse(synthesized_circuit_qsearch.get_statevector(apply_permutation_sparse(StateVector(initial_state),inv_pi_qsearch)), pf_qsearch)
 
 # Compute overlaps (fidelity)
     
