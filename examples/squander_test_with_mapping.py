@@ -3,6 +3,7 @@ from bqskit.ir.gates import U3Gate, CNOTGate, SwapGate
 from bqskit.compiler import CompilationTask, Compiler
 from bqskit.compiler.compile import build_seqpam_mapping_optimization_workflow
 from bqskit.compiler.machine import MachineModel
+from bqskit.compiler.basepass import BasePass
 from bqskit.passes import (
     QuickPartitioner, ClusteringPartitioner, GreedyPartitioner, ScanPartitioner,
     ForEachBlockPass, QSearchSynthesisPass, LEAPSynthesisPass, QFASTDecompositionPass,
@@ -10,7 +11,7 @@ from bqskit.passes import (
     RestoreModelConnectivityPass, NOOPPass, IfThenElsePass, NotPredicate, WidthPredicate,
     EmbedAllPermutationsPass, GeneralizedSabreLayoutPass, SetModelPass, PAMRoutingPass,
     PAMLayoutPass, ApplyPlacement, SubtopologySelectionPass, LogPass,
-    ExtractModelConnectivityPass, BasePass
+    ExtractModelConnectivityPass
 )
 from bqskit.passes.mapping.verify import PAMVerificationSequence
 from bqskit.qis.unitary import Unitary
@@ -30,9 +31,9 @@ import pickle
 import math
 from scipy.sparse import csr_array
 
-
+circuit_name = 'ising_n10'
 bqskit_circuit_original = Circuit.from_file(circuit_name + '.qasm')
-
+print("current circuit is:",bqskit_circuit_original)
 
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
@@ -131,6 +132,7 @@ def generate_squander_seqpam(squander_config,block_size):
                         input_perm = True,
                         output_perm = False,
                         vary_topology = False,
+
                     ),              
                 ),
                 LogPass('Preoptimizing with permutation-aware mapping.'),
@@ -157,6 +159,7 @@ def generate_squander_seqpam(squander_config,block_size):
                 post_pam_seq,
                 ApplyPlacement(),
                 UnfoldPass(),
+
             ],
         ),
         name='SeqPAM Mapping',
@@ -213,21 +216,39 @@ def heavy_hex_coupling_for_qubits(num_qubits):
 
 #edges, rows, cols = heavy_hex_coupling_for_qubits(quditnumber) 
 
-edges32 = [(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10),(10,11),(11,12),(12,13),(0,14),(4,15),(8,16),(12,17),(18,19),(19,20),(20,21),(21,22),(22,23),(23,24),(24,25),(25,26),(26,27),(27,28),(28,29),(29,30),(30,31),(14,18),(15,22),(16,26),(17,30)]
-edges20 = [
-    (0, 1), (1, 2), (2, 3), (0, 5), (1, 6), (1, 7), (2, 6), (3, 8), (3, 9), (4, 9),
-    (5, 6), (5, 10), (5, 11), (6, 7), (6, 10), (6, 11), (7, 8), (7, 12), (7, 13),
-    (8, 9), (8, 12), (8, 13), (10, 11), (10, 15), (11, 12), (11, 16), (11, 17),
-    (12, 13), (13, 14), (13, 18), (13, 19), (14, 18), (14, 19), (15, 16), (16, 17),(4,8),(12,16)
-]
-edges32 = [(int(u), int(v)) for (u, v) in edges32]
-edges20 = [(int(u), int(v)) for (u, v) in edges20]
+
+#edges20 = [
+#    (0, 1), (1, 2), (2, 3), (0, 5), (1, 6), (1, 7), (2, 6), (3, 8), (3, 9), (4, 9),
+#    (5, 6), (5, 10), (5, 11), (6, 7), (6, 10), (6, 11), (7, 8), (7, 12), (7, 13),
+#    (8, 9), (8, 12), (8, 13), (10, 11), (10, 15), (11, 12), (11, 16), (11, 17),
+#    (12, 13), (13, 14), (13, 18), (13, 19), (14, 18), (14, 19), (15, 16), (16, 17),(4,8),(12,16)
+#]
+edges = [(i, i+1) for i in range(quditnumber-1)]
+#edges.extend([(0,3), (0,2),(1,6),(2,12),(2,14)])
+edges = [(int(u), int(v)) for (u, v) in edges]
+#edges_heavy = [
+#    (0, 1), (0, 5), (1, 2), (1, 6), (2, 3), (2, 7),
+#    (3, 4), (3, 8), (5, 6), (6, 7), (7, 8), (8, 9),
+#    (5, 10), (6, 11), (7, 12), (8, 13),
+#    (10, 11), (11, 12), (12, 13), (13, 14), (10, 15)
+#]
+
+#edges_heavy = [(int(u), int(v)) for (u, v) in edges_heavy]
+
+
+
+print(quditnumber)
+
+
 
 #coupling_graph = CouplingGraph(edges)
 #print(coupling_graph)
 
-print(quditnumber)
-model = MachineModel(quditnumber,gate_set = Allowed_gate_set,coupling_graph = edges20)
+#model = MachineModel(quditnumber, gate_set=Allowed_gate_set, coupling_graph=coupling_graph)
+#model = MachineModel(quditnumber,gate_set = (coupling_graph = edges)
+model = MachineModel(quditnumber, coupling_graph=edges)
+
+
 
 
 
@@ -244,10 +265,12 @@ with Compiler(num_workers = 1) as compiler:
 Circuit.save(circuit_squander_tree, circuit_name + '_squander_tree_search_with_mapping.qasm')
 pi_tree = data_tree['initial_mapping']
 pf_tree = data_tree['final_mapping']
-
-inv_pi_tree = [0] * quditnumber
-for i, j in enumerate(pi_tree):
-    inv_pi_tree[j] = i
+print("TABU MAPPINGS")
+print(pi_tree)
+print(pf_tree)
+inv_pf_tree = [0] * quditnumber
+for i, j in enumerate(pf_tree):
+    inv_pf_tree[j] = i
 
 print("\n Circuit optimized with squander tree search:")
 
@@ -270,7 +293,6 @@ print(' ')
 
 ###########################################################################
 # SQUANDER Tabu seach synthesis 
- 
 start_squander = time.time()
 
 config = {  'strategy': "Tabu_search", 
@@ -297,10 +319,12 @@ Circuit.save(circuit_squander_tabu, circuit_name + '_squander_tabu_search_with_m
 
 pi_tabu = data_tabu['initial_mapping']
 pf_tabu = data_tabu['final_mapping']
-
-inv_pi_tabu = [0] * quditnumber
-for i, j in enumerate(pi_tabu):
-    inv_pi_tabu[j] = i
+print("TABU MAPPINGS")
+print(pi_tabu)
+print(pf_tabu)
+inv_pf_tabu = [0] * quditnumber
+for i, j in enumerate(pf_tabu):
+    inv_pf_tabu[j] = i
 
 print("\n Circuit optimized with squander tabu search:")
 
@@ -322,11 +346,8 @@ print(' ')
 
 
 
-
-
 ###########################################################################
 # QSearch synthesis
-
 start_qsearch = time.time()
 
 
@@ -350,9 +371,9 @@ Circuit.save(synthesized_circuit_qsearch, circuit_name + '_qsearch_with_mapping.
 pi_qsearch = data_qsearch['initial_mapping']
 pf_qsearch = data_qsearch['final_mapping']
 
-inv_pi_qsearch = [0] * quditnumber
-for i, j in enumerate(pi_qsearch):
-    inv_pi_qsearch[j] = i
+inv_pf_qsearch = [0] * quditnumber
+for i, j in enumerate(pf_qsearch):
+    inv_pf_qsearch[j] = i
 
 print("\n Circuit optimized with qsearch:")
 
@@ -369,7 +390,6 @@ print(qsearch_gates, "\n")
 print( time_qsearch )
 print(' ')
 print(' ')
-
 
 
 ##############################################################################
@@ -411,24 +431,65 @@ initial_state = initial_state/np.linalg.norm(initial_state)
 
 
 sv_original = qc_original.get_statevector(initial_state )
-sv_tree =  apply_permutation_sparse(qc_squander_tree.get_statevector(apply_permutation_sparse(StateVector(initial_state),inv_pi_tree)), pf_tree)
-sv_tabu =  apply_permutation_sparse(qc_squander_tabu.get_statevector(apply_permutation_sparse(StateVector(initial_state),inv_pi_tabu)), pf_tabu)
-sv_qsearch =  apply_permutation_sparse(synthesized_circuit_qsearch.get_statevector(apply_permutation_sparse(StateVector(initial_state),inv_pi_qsearch)), pf_qsearch)
+sv_tree = apply_permutation_sparse(qc_squander_tree.get_statevector(apply_permutation_sparse(StateVector(initial_state), pi_tree)), inv_pf_tree)
+sv_tabu = apply_permutation_sparse(qc_squander_tabu.get_statevector(apply_permutation_sparse(StateVector(initial_state), pi_tabu)), inv_pf_tabu)
+sv_qsearch = apply_permutation_sparse(qc_qsearch.get_statevector(apply_permutation_sparse(StateVector(initial_state), pi_qsearch)), inv_pf_qsearch)
 
-# Compute overlaps (fidelity)
-    
+
+
+
+
+
 def compute_overlap(state1, state2) -> float:
-    # Ensure both inputs are raw numpy arrays
-
-    inner_product = np.conjugate(state1).T @ state2
-    return LA.norm(inner_product)
-
-
-
-
-
+    # Extract numpy arrays safely
+    if hasattr(state1, 'vec'):
+        state1 = state1.vec
+    if hasattr(state2, 'vec'):
+        state2 = state2.vec
     
+    # Normalize to avoid numerical drift
+    state1 = state1 / np.linalg.norm(state1)
+    state2 = state2 / np.linalg.norm(state2)
+
+    return abs(np.vdot(state1, state2))
+
+
+
+'''
+print("\n \n squander tree:",np.abs(sv_tree[0:4]))
+
+print("\n squander tree:",np.abs(sv_tree[4:8]))
+
+print("\n squander tree:",np.abs(sv_tree[8:12]))
+
+print("\n squander tree:",np.abs(sv_tree[12:16]))
+
+
+
+
+print("\n \n original:",np.abs(sv_original[0:4]))
+
+print("\n original:",np.abs(sv_original[4:8]))
+
+print("\n original:",np.abs(sv_original[8:12]))
+
+print("\n original:",np.abs(sv_original[12:16]))
+'''
+#tree =[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#original = [0,2,1,3,12,15,14,13,11,9,10,8,4,7,6,5]
+#original2 = [0,4,1,5,2,6,3,7,8,12,9,13,10,14,11,15]
+
+#sv_shuffled = sv_original[original]
+#sv_shuffled2 = sv_original[original2]
     
+#print("\n \n shuffled:",np.abs(sv_shuffled))  
+    
+#print("\n \n squander tree:",np.abs(sv_tree))    
+
+#print("\n \n shuffled2:",np.abs(sv_shuffled2))  
+
+#print("\n \n original:",np.abs(sv_original))
+
 overlap_squander_tree = compute_overlap(sv_original, sv_tree)
 overlap_squander_tabu = compute_overlap(sv_original, sv_tabu)
 overlap_qsearch = compute_overlap(sv_original, sv_qsearch)
@@ -438,7 +499,7 @@ overlap_tabu_qsearch = compute_overlap(sv_tabu, sv_qsearch)
 
 # Display results
 print()
-print('The overlap of states (original vs squander tree search): ', overlap_squander_tree)
+print('The overlap of states (shuffled vs squander tree search): ', overlap_squander_tree)
 print('The overlap of states (original vs squander tabu search): ', overlap_squander_tabu)
 print('The overlap of states (original vs qsearch): ', overlap_qsearch)
 print('The overlap of states (tree vs tabu): ', overlap_tree_tabu)
