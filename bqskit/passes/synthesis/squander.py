@@ -312,11 +312,24 @@ class SquanderSynthesisPass(SynthesisPass):
     
     
         Umtx = utry.numpy
+        qbit_num = data.target.num_qudits
+        
+        topology_list = data.connectivity
+        num_qubits = topology_list.num_qudits
+        original_edges = list(topology_list)  # list of (i, j)
+
+        reversed_topology_list = []
+        for i, j in original_edges:
+            new_i = num_qubits - i - 1
+            new_j = num_qubits - j - 1
+            reversed_topology_list.append((new_i, new_j))
         
         if self.squander_config["strategy"] == "Tree_search":
-            cDecompose = N_Qubit_Decomposition_Tree_Search( Umtx.conj().T, config=self.squander_config, accelerator_num=0 )
+            cDecompose = N_Qubit_Decomposition_Tree_Search( Umtx.conj().T, topology= reversed_topology_list , config=self.squander_config, accelerator_num=0 )
         elif self.squander_config["strategy"] == "Tabu_search":
-            cDecompose = N_Qubit_Decomposition_Tabu_Search( Umtx.conj().T, config=self.squander_config, accelerator_num=0 )
+            cDecompose = N_Qubit_Decomposition_Tabu_Search( Umtx.conj().T, topology= reversed_topology_list , config=self.squander_config, accelerator_num=0 )
+
+            
 
             
        
@@ -335,7 +348,8 @@ class SquanderSynthesisPass(SynthesisPass):
         squander_circuit = cDecompose.get_Circuit()
         parameters       = cDecompose.get_Optimized_Parameters()
    
-        Circuit_squander = self.transform_circuit_from_squander_to_bqskit( squander_circuit, parameters)          
+        #Circuit_squander = self.transform_circuit_from_squander_to_bqskit( squander_circuit, parameters)
+        Circuit_squander = cDecompose.get_Bqskit_Circuit()          
         dist             = self.bqskit_cost_calculator.calc_cost(Circuit_squander, utry)  
         
         #print( 'Squander dist: ', str(dist) )
