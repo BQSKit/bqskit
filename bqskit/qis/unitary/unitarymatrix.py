@@ -437,7 +437,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             return False
 
         if not isinstance(U, np.ndarray):
-            U = np.array(U)
+            try:
+                U = np.array(U)
+            except ValueError:
+                return False
 
         if not is_square_matrix(U):
             return False
