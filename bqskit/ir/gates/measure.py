@@ -28,6 +28,7 @@ class MeasurementPlaceholder(Gate):
                 a tuple containing the classical register's name and index.
         """
         self._name = 'measurement'
+        self._qasm_name = 'measure'
         self._num_qudits = len(measurements)
         self._radixes = tuple([2] * self._num_qudits)
         self._num_params = 0
