@@ -103,6 +103,7 @@ class SquanderSynthesisPass(SynthesisPass):
         squander_config.setdefault("optimization_tolerance", 1e-8)
         squander_config.setdefault("Cost_Function_Variant",3)
         squander_config.setdefault("optimizer_engine",'BFGS')
+        squander_config.setdefault("tree_level_max", max_layer)
         
         valid_strategies = ["Tabu_search", "Tree_search"]
         valid_strategy_variants = valid_strategies + [s.lower() for s in valid_strategies]
