@@ -169,26 +169,39 @@ class ScanPartitioner(BasePass):
         return folded_circuit
 
     def calculate_qudit_groups(self, circuit: Circuit) -> list[tuple[int, ...]]:
-        """Calculate the groups of qudits that grouped in a partition."""
+        """Calculate the groups of qudits that can be grouped in a partition."""
         # Get initial set from circuit connectivity
         model = MachineModel(circuit.num_qudits, circuit.coupling_graph)
-        qudit_groups: list[tuple[int, ...]] = []
-        for i in reversed(range(self.block_size)):
-            potential_groups = [tuple(x) for x in model.get_locations(i + 1)]
-            for potential_group in potential_groups:
+        potential_groups: list[frozenset[int]] = [
+            frozenset(x) for x in model.get_locations(
+                self.block_size, allow_smaller=True,
+            )
+        ]
+        sorted_sets: list[list[frozenset[int]]] = [
+            [] for _ in range(self.block_size)
+        ]
+
+        for potential_group in potential_groups:
+            sorted_sets[len(potential_group) - 1].append(potential_group)
+
+        qudit_groups: list[tuple[int, ...]] = [
+            tuple(group) for group in sorted_sets[-1]
+        ]
+        for i in reversed(range(self.block_size - 1)):
+            for potential_set in sorted_sets[i]:
                 should_add_group = True
-                for qudit_group in qudit_groups:
-                    if all(x in qudit_group for x in potential_group):
+                for qudit_set in sorted_sets[i + 1]:
+                    if potential_set <= qudit_set:
                         should_add_group = False
                         break
                 if should_add_group:
-                    qudit_groups.append(potential_group)
+                    qudit_groups.append(tuple(potential_set))
 
         # Prune groups
-        active_qudits = circuit.active_qudits
+        active_qudits = set(circuit.active_qudits)
         qudits_in_groups: set[int] = set()
-        qudit_groups_to_remove = []
-        qudit_groups_to_append = []
+        qudit_groups_to_remove: list[tuple[int, ...]] = []
+        qudit_groups_to_append: list[tuple[int, ...]] = []
         for qudit_group in qudit_groups:
             if all(q in active_qudits for q in qudit_group):
                 qudits_in_groups.update(qudit_group)

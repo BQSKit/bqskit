@@ -429,7 +429,11 @@ class CouplingGraph(Collection[Tuple[int, int]]):
                 subgraph.append((renumbering[q_i], renumbering[q_i_neighbor]))
         return CouplingGraph(subgraph, len(location))
 
-    def get_subgraphs_of_size(self, size: int) -> list[CircuitLocation]:
+    def get_subgraphs_of_size(
+        self,
+        size: int,
+        include_smaller: bool = False,
+    ) -> list[CircuitLocation]:
         """
         Find all sets of indices that form connected subgraphs on their own.
 
@@ -440,6 +444,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         Args:
             size (int): The size of each location in the final list.
+
+            include_smaller (bool): Includes subgraphs with size less
+                than `size`. (Default: False)
 
         Returns:
             list[CircuitLocation]: The locations compliant with the machine.
@@ -466,55 +473,76 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         if size <= 0:
             raise ValueError(f'Nonpositive size; got {size}.')
 
-        locations: set[CircuitLocation] = set()
+        subgraphs: list[tuple[int, ...]] = list()
 
         for qudit in range(self.num_qudits):
-            # Get every valid set containing `qudit` with size == size
-            self._location_search(locations, set(), qudit, size)
+            subgraph = [qudit]
+            extension = {q for q in self._adj[qudit] if q > qudit}
+            exclusion = {qudit}
+            self._extend_subgraph(
+                size, subgraph, extension,
+                exclusion, qudit, subgraphs, include_smaller,
+            )
 
-        return list(locations)
+        locations: list[CircuitLocation] = [
+            CircuitLocation(list(group)) for group in subgraphs
+        ]
 
-    def _location_search(
+        return locations
+
+    def _extend_subgraph(
         self,
-        locations: set[CircuitLocation],
-        path: set[int],
+        size: int,
+        subgraph: list[int],
+        extension: set[int],
+        exclusion: set[int],
         vertex: int,
-        limit: int,
+        subgraphs: list[tuple[int, ...]],
+        include_smaller: bool,
     ) -> None:
         """
-        Add paths with length equal to limit to the `locations` set.
+        Add subgraphs with size equal to `size` to the `subgraphs` list.
 
         Args:
-            locations (set[CircuitLocation]): A list that contains all paths
-                found so far of length equal to `limit`.
+            size (int): The desired size of subgraphs in the
+                `subgraphs` set.
 
-            path (set[int]): The qudit vertices currently included in
-                the path.
+            subgraph (list[int]): The qudit vertices currently included
+                in the subgraph.
+
+            extension (set[int]): The qudit vertices currently being
+                considered for addition to the subgraph.
+
+            exclusion (set[int]): The qudit vertices which have already
+                been searched.
 
             vertex (int): The vertex in the graph currently being examined.
 
-            limit (int): The desired length of paths in the `locations`
-                list.
+            subgraphs (list[tuple[int,...]]): A list that contains all subgraphs
+                found so far of length equal to `size`.
+
+            include_smaller (bool): Includes subgraphs with size less
+                than `size`.
         """
-        if vertex in path:
-            return
+        if len(subgraph) == size or (include_smaller and len(subgraph) < size):
+            subgraphs.append(tuple(subgraph))
+            if len(subgraph) == size:
+                return
 
-        curr_path = path.copy()
-        curr_path.add(vertex)
+        while len(extension) > 0:
+            w = extension.pop()
+            exclusion.add(w)
+            new_extension = set(extension)
+            for neighbor in self._adj[w]:
+                if neighbor > vertex and neighbor not in exclusion:
+                    new_extension.add(neighbor)
 
-        if len(curr_path) == limit:
-            locations.add(CircuitLocation(list(curr_path)))
-            return
-
-        frontier: set[int] = {
-            qudit
-            for node in curr_path
-            for qudit in self._adj[node]
-            if qudit not in curr_path
-        }
-
-        for neighbor in frontier:
-            self._location_search(locations, curr_path, neighbor, limit)
+            subgraph.append(w)
+            self._extend_subgraph(
+                size, subgraph, new_extension, set(exclusion),
+                vertex, subgraphs, include_smaller,
+            )
+            subgraph.pop()
 
     @staticmethod
     def is_valid_coupling_graph(

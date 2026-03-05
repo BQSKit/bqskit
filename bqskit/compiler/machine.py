@@ -93,9 +93,24 @@ class MachineModel:
         self.coupling_graph = CouplingGraph(coupling_graph)
         self.num_qudits = num_qudits
 
-    def get_locations(self, block_size: int) -> list[CircuitLocation]:
-        """Return all `block_size` connected blocks of qudit indicies."""
-        return self.coupling_graph.get_subgraphs_of_size(block_size)
+    def get_locations(
+        self,
+        block_size: int,
+        allow_smaller: bool = False,
+    ) -> list[CircuitLocation]:
+        """
+        Return all `block_size` (or smaller if `allow_smaller` is True)
+        connected blocks of qudit indicies.
+
+        Args:
+            block_size (int): The size of each result block.
+
+            allow_smaller (bool): Includes blocks with size less
+                than `block_size`. (Default: False)
+        """
+        return self.coupling_graph.get_subgraphs_of_size(
+            block_size, allow_smaller,
+        )
 
     def is_compatible(
         self,
