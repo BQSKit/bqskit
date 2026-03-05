@@ -188,7 +188,13 @@ class StateVector(NDArrayOperatorsMixin):
         if isinstance(V, StateSystem):
             return False
 
-        if not np.allclose(np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol):
+        try:
+            if not np.allclose(
+                np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol,
+            ):
+                _logger.debug('Failed pure state criteria.')
+                return False
+        except ValueError:
             _logger.debug('Failed pure state criteria.')
             return False
 
