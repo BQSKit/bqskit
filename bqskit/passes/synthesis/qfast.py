@@ -192,6 +192,13 @@ class QFASTDecompositionPass(SynthesisPass):
                 failed_locs.append((location, dist))
                 self.restrict_head(circuit, location)
 
+            # Check max_depth after any depth increase
+            if self.max_depth is not None and depth >= self.max_depth:
+                _logger.info(f'Max depth {self.max_depth} reached.')
+                self.finalize_without_while_loop(circuit, utry, instantiate_options)
+                return circuit
+
+
     def get_location_of_head(self, circuit: Circuit) -> CircuitLocation:
         """Return the current location of the `circuit`'s VLG head."""
         head_gate: VariableLocationGate = circuit[-1, 0].gate  # type: ignore
@@ -217,6 +224,24 @@ class QFASTDecompositionPass(SynthesisPass):
             dist = self.cost.calc_cost(circuit, utry)
 
         _logger.info(f'Final circuit found with cost: {dist}.')
+
+    def finalize_without_while_loop(
+        self,
+        circuit: Circuit,
+        utry: UnitaryMatrix | StateVector | StateSystem,
+        instantiate_options: dict[str, Any],
+    ) -> None:
+        """Finalize the circuit without iterative reinstantiation.
+
+        This is used when the maximum depth is reached and the circuit
+        cannot be further improved through the standard iterative process.
+        """
+        # Replace Head with self.gate
+        location = self.get_location_of_head(circuit)
+        _logger.info(f'Final gate added at location {location}.')
+        circuit.pop()
+        circuit.append(Operation(self.gate, location))
+        _logger.info(f'Stopped with max allowed {depth} layers.')
 
     def expand(
         self,
