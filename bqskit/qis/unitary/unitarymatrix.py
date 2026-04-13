@@ -445,8 +445,9 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         if not is_square_matrix(U):
             return False
 
-        X = U @ U.conj().T
-        Y = U.conj().T @ U
+        with np.errstate(all='ignore'):
+            X = U @ U.conj().T
+            Y = U.conj().T @ U
         I = np.identity(X.shape[0])
 
         if not np.allclose(X, I, rtol=0, atol=tol):
