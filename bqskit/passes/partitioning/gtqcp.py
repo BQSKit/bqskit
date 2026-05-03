@@ -10,7 +10,6 @@ from typing import Sequence
 
 from ._partitioning_utils import CachedSingleQuditIterator
 from ._partitioning_utils import PriorityQueueSet
-from ._partitioning_utils import SimpleCircuitPoint
 from ._partitioning_utils import SingleQuditIterator
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
@@ -75,7 +74,7 @@ class GTQCPartitioner(BasePass):
             discard_subset_groups (bool): Toggles evaluation of qudit groups
                 which are a subset of another qudit group. Recommend disabling
                 only with a custom scoring function, since it harms performance
-                and doesn't improve result quality by much with the default.
+                and doesn't improve result quality with the default.
                 (Default: True)
 
         Raises:
@@ -127,15 +126,32 @@ class GTQCPartitioner(BasePass):
         # potential blocks is initially empty
         potential_blocks: dict[
             frozenset[int],
-            tuple[dict[int, tuple[int, int]], list[float]],
+            tuple[dict[int, tuple[int, int]], Callable[[], float]],
         ] = {}
 
+        # the gate cache contains all multiqudit gates for each qudit,
+        #   in cycle order
         self.qudit_gate_cache: dict[int, list[int]] = {
             n: CachedSingleQuditIterator.make_gate_cache(
-                circuit, 
-                n, 
-                multiqudit_only = True
+                circuit,
+                n,
+                multiqudit_only=True,
             )
+            for n in circuit.active_qudits
+        }
+        # The op cache contains all gates/operations along a qudit for
+        #   which the qudit is the "primary" in cycle order.
+        # This cache is used to enumerate all operations within a region
+        #   without using a set. This is accomplished by designating a
+        #   "primary" qudit for each gate, and only listing gates under
+        #   their primary qudit
+        # We arbitrarily designate the qudit with the min index as the "primary"
+        self.qudit_op_cache: dict[int, list[int]] = {
+            n: [
+                cycle for cycle,
+                op in SingleQuditIterator(circuit, n, 0)
+                if n == min(op.location)
+            ]
             for n in circuit.active_qudits
         }
 
@@ -147,6 +163,8 @@ class GTQCPartitioner(BasePass):
             ) == 0
         }
 
+        # block any qudits which do not have multiqudit gates,
+        #   as densely as possible
         while len(single_qudits) > 0:
             region_qudits = []
             for i in range(self.block_size):
@@ -253,15 +271,15 @@ class GTQCPartitioner(BasePass):
         for region in regions:
             ops_and_cycles = []
             for qudit_index, intervals in region.items():
-                iterator = SingleQuditIterator(
-                    SimpleCircuitPoint(intervals.lower, qudit_index),
+                iterator = CachedSingleQuditIterator(
                     circuit,
+                    self.qudit_op_cache[qudit_index],
+                    qudit_index,
+                    intervals.lower,
+                    intervals.upper + 1,
                 )
                 for cycle, op in iterator:
-                    if cycle > intervals.upper:
-                        break
-                    if len(op.location) == 1 or qudit_index == min(op.location):
-                        ops_and_cycles.append((cycle, op))
+                    ops_and_cycles.append((cycle, op))
             ops_and_cycles.sort(key=lambda x: x[0])
             qudits = sorted(region.location)
             radixes = [circuit.radixes[q] for q in qudits]
@@ -298,9 +316,10 @@ class GTQCPartitioner(BasePass):
         for qudit in target_group:
             try:
                 single_iter = CachedSingleQuditIterator(
-                    SimpleCircuitPoint(
-                        divider[qudit], qudit,
-                    ), circuit, self.qudit_gate_cache[qudit],
+                    circuit,
+                    self.qudit_gate_cache[qudit],
+                    qudit,
+                    divider[qudit],
                 )
                 cycle, op = next(single_iter)
             except StopIteration:
@@ -313,10 +332,8 @@ class GTQCPartitioner(BasePass):
                     'QuickPartitioner.',
                 )
 
-            gate = (cycle, frozenset(op.location._location))
-            dependencies.setdefault(gate, set()).update(
-                set(op.location._location),
-            )
+            gate = (cycle, frozenset(op.location))
+            dependencies.setdefault(gate, set()).update(set(op.location))
             visit_set.setdefault(gate, set()).add(qudit)
             to_visit.push(gate)
 
@@ -331,9 +348,10 @@ class GTQCPartitioner(BasePass):
                 for qudit in location:
                     try:
                         single_iter = CachedSingleQuditIterator(
-                            SimpleCircuitPoint(
-                                cycle + 1, qudit,
-                            ), circuit, self.qudit_gate_cache[qudit],
+                            circuit,
+                            self.qudit_gate_cache[qudit],
+                            qudit,
+                            cycle + 1,
                         )
                         next_cycle, next_op = next(single_iter)
                     except StopIteration:
@@ -346,13 +364,9 @@ class GTQCPartitioner(BasePass):
                             'QuickPartitioner.',
                         )
 
-                    next_gate = (
-                        next_cycle, frozenset(
-                            next_op.location._location,
-                        ),
-                    )
+                    next_gate = (next_cycle, frozenset(next_op.location))
                     dependencies.setdefault(next_gate, set()).update(
-                        dependencies[gate] | set(next_op.location._location),
+                        dependencies[gate] | set(next_op.location),
                     )
                     visit_set.setdefault(next_gate, set()).add(qudit)
                     to_visit.push(next_gate)
@@ -382,14 +396,15 @@ class GTQCPartitioner(BasePass):
         for qudit in removed_group:
             try:
                 single_iter = CachedSingleQuditIterator(
-                    SimpleCircuitPoint(
-                        divider[qudit], qudit,
-                    ), circuit, self.qudit_gate_cache[qudit],
+                    circuit,
+                    self.qudit_gate_cache[qudit],
+                    qudit,
+                    divider[qudit],
                 )
                 cycle, op = next(single_iter)
             except StopIteration:
                 continue
-            gate = (cycle, frozenset(op.location._location))
+            gate = (cycle, frozenset(op.location))
             if (gate in dependencies):
                 to_visit.push(gate)
                 if (not dependencies[gate] <= removed_group):
@@ -406,14 +421,15 @@ class GTQCPartitioner(BasePass):
             for qudit in location:
                 try:
                     single_iter = CachedSingleQuditIterator(
-                        SimpleCircuitPoint(
-                            cycle + 1, qudit,
-                        ), circuit, self.qudit_gate_cache[qudit],
+                        circuit,
+                        self.qudit_gate_cache[qudit],
+                        qudit,
+                        cycle + 1,
                     )
                     next_cycle, next_op = next(single_iter)
                 except StopIteration:
                     continue
-                next_gate = (next_cycle, frozenset(next_op.location._location))
+                next_gate = (next_cycle, frozenset(next_op.location))
                 if (next_gate in dependencies):
                     to_visit.push(next_gate)
                     if (not dependencies[next_gate] <= removed_group):
@@ -478,9 +494,10 @@ class GTQCPartitioner(BasePass):
             # create an iterator along the target qudit from the front of
             #   the divider
             qudit_iter = CachedSingleQuditIterator(
-                SimpleCircuitPoint(
-                    divider[qudit], qudit,
-                ), circuit, self.qudit_gate_cache[qudit],
+                circuit,
+                self.qudit_gate_cache[qudit],
+                qudit,
+                divider[qudit],
             )
             # Find the furthest gate which leaves the
             #   dependencies at <= k qudits
@@ -495,7 +512,7 @@ class GTQCPartitioner(BasePass):
                 # this if statement excludes gates which do not have a complete
                 #   dependency set (they cannot be reached with the current
                 #   k limit)
-                gate = (cycle, frozenset(op.location._location))
+                gate = (cycle, frozenset(op.location))
                 if not self.gate_dependencies_valid(gate):
                     break
                 dependencies = self.gate_dependencies[gate] | best_dependencies
@@ -536,7 +553,7 @@ class GTQCPartitioner(BasePass):
         divider: Sequence[int],
     ) -> dict[
         frozenset[int], tuple[
-            dict[int, tuple[int, int]], list[float],
+            dict[int, tuple[int, int]], Callable[[], float],
         ],
     ]:
         """Calculates the set of possible partitions given a `circuit`,
@@ -550,60 +567,8 @@ class GTQCPartitioner(BasePass):
         blocks: dict[
             frozenset[int],
             tuple[
-                dict[int, tuple[int, int]], list[float],
+                dict[int, tuple[int, int]], Callable[[], float],
             ],
-        ] = {}
-
-        # for group, ends in qudit_groups.items():
-        #     op_list = list()
-        #     for qudit in group:
-        #         qudit_iter = SingleQuditIterator(
-        #             SimpleCircuitPoint(
-        #                 divider[qudit], qudit,
-        #             ),
-        #             circuit,
-        #             # self.qudit_gate_cache[qudit],
-        #         )
-        #         cycle = circuit.num_cycles
-        #         while (True):
-        #             try:
-        #                 (cycle, op) = next(qudit_iter)
-        #             except StopIteration:
-        #                 cycle = circuit.num_cycles
-        #                 break
-        #             gate = (cycle, frozenset(op.location))
-        #             if len(op.location) > 1:
-        #                 if not self.gate_dependencies_valid(gate):
-        #                     break
-        #                 if not self.gate_dependencies[gate] <= group:
-        #                     break
-        #             if qudit == min(op.location):
-        #                 op_list.append((cycle, op))
-        #         ends[qudit] = cycle - 1
-
-        #     blocks[group] = (
-        #         {
-        #             q: (divider[q], ends[q])
-        #             for q in group
-        #         },
-        #         [self.scoring_fn(op_list)],
-        #     )
-
-        # return blocks
-
-        # a dictionary used to efficiently form partitions
-        # initially contains a dictionary of cycle limits and related groups
-        #   for each qudit
-        # these groups are subsequently transformed into a list of cycle limits
-        #   and related groups for each qudit, sorted by cycle limit
-        bounds: dict[
-            int,
-            dict[int, set[frozenset[int]]],
-        ] = dict()
-
-        ops: dict[
-            frozenset[int],
-            list[Iterable[tuple[int, Operation]]],
         ] = {}
 
         # iterate over all qudit groups and calculate the boundary for any
@@ -613,9 +578,10 @@ class GTQCPartitioner(BasePass):
             # iterate over qudits with no boundary
             for qudit in missing:
                 qudit_iter = CachedSingleQuditIterator(
-                    SimpleCircuitPoint(
-                        divider[qudit], qudit,
-                    ), circuit, self.qudit_gate_cache[qudit],
+                    circuit,
+                    self.qudit_gate_cache[qudit],
+                    qudit,
+                    divider[qudit],
                 )
                 cycle = circuit.num_cycles
                 while (True):
@@ -624,88 +590,32 @@ class GTQCPartitioner(BasePass):
                     except StopIteration:
                         cycle = circuit.num_cycles
                         break
-                    gate = (cycle, frozenset(op.location._location))
+                    gate = (cycle, frozenset(op.location))
                     if not self.gate_dependencies_valid(gate):
                         break
                     if not self.gate_dependencies[gate] <= group:
                         break
                 ends[qudit] = cycle - 1
 
-            for qudit, cycle in ends.items():
-                bounds.setdefault(qudit, dict()).setdefault(
-                    cycle, set(),
-                ).add(group)
-            blocks.setdefault(
-                group, (
-                    {
-                        q: (divider[q], ends[q])
-                        for q in group
-                    },
-                    [0],
-                ),
-            )
-            ops.setdefault(group, list())
+            op_list = [
+                CachedSingleQuditIterator(
+                    circuit,
+                    self.qudit_op_cache[qudit],
+                    qudit,
+                    divider[qudit],
+                    ends[qudit] + 1,
+                )
+                for qudit in group
+            ]
 
-        # sort cycle limits and related groups
-        sorted_bounds: dict[
-            int,
-            list[tuple[int, set[frozenset[int]]]],
-        ] = dict()
-        for qudit in bounds.keys():
-            sorted_bounds[qudit] = sorted(
-                list(bounds[qudit].items()), key=lambda x: x[0],
+            blocks[group] = (
+                {
+                    q: (divider[q], ends[q])
+                    for q in group
+                },
+                lambda op_list=op_list:     # type: ignore[misc]
+                self.scoring_fn(itertools.chain.from_iterable(op_list)),
             )
-
-        # iterate down each qudit, and add all gates up to the current cycle
-        # to the gate set for each block once it's cycle limit has been reached
-        # we have to do this to form the operation set and to make sure to
-        # include any single qudit gates up to the next multi-qudit gate (since
-        # these are ignored by most other operations)
-        for qudit in sorted(sorted_bounds.keys()):
-            op_list: list[tuple[int, Operation]] = list()
-            # acc = 0
-            i = 0
-            # iterate down the selected qudit
-            iterator = SingleQuditIterator(
-                SimpleCircuitPoint(divider[qudit], qudit),
-                circuit,
-                # self.qudit_gate_cache[qudit],
-            )
-            for cycle, op in iterator:
-                # once we have passed the foremost cycle limit, update all
-                #   related groups with the cycle number and operations
-                if cycle > sorted_bounds[qudit][i][0]:
-                    for group in sorted_bounds[qudit][i][1]:
-                        # blocks[group][1][0] += acc
-                        ops[group].append(
-                            itertools.islice(op_list, len(op_list)),
-                        )
-                        if qudit == max(group):
-                            blocks[group][1][0] = self.scoring_fn(
-                                itertools.chain.from_iterable(ops[group]),
-                            )
-                    i += 1
-                    if i >= len(sorted_bounds[qudit]):
-                        break
-                if qudit == min(op.location._location):
-                    # acc += self.scoring_fn(((cycle, op),))
-                    op_list.append((cycle, op))
-            # if we did not reach the end of the sorted_bounds for the current
-            #   qudit (i.e. the cycles in sorted_bounds go beyond the gates
-            #   for the current qudit)
-            # then finish up by merging in the gates to the remaining bounds
-            if i < len(sorted_bounds[qudit]) and \
-                    sorted_bounds[qudit][i][0] == circuit.num_cycles - 1:
-
-                for group in sorted_bounds[qudit][i][1]:
-                    # blocks[group][1][0] += acc
-                    ops[group].append(
-                        itertools.islice(op_list, len(op_list)),
-                    )
-                    if qudit == max(group):
-                        blocks[group][1][0] = self.scoring_fn(
-                            itertools.chain.from_iterable(ops[group]),
-                        )
 
         return blocks
 
@@ -714,13 +624,13 @@ class GTQCPartitioner(BasePass):
         potential_blocks: dict[
             frozenset[int],
             tuple[
-                dict[int, tuple[int, int]], list[float],
+                dict[int, tuple[int, int]], Callable[[], float],
             ],
         ],
     ) -> CircuitRegion:
         """Find and return the current best scoring block."""
         region = sorted(
             list(potential_blocks.values()),
-            key=lambda x: x[1][0],
+            key=lambda x: x[1](),
         )[-1][0]
         return CircuitRegion(region)
