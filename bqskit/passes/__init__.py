@@ -258,9 +258,11 @@ from bqskit.passes.measure import RestoreMeasurements
 from bqskit.passes.noop import NOOPPass
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
+from bqskit.passes.partitioning.gtqcp import GTQCPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
+from bqskit.passes.partitioning.tdag import TDAGPartitioner
 from bqskit.passes.processing.exhaustive import ExhaustiveGateRemovalPass
 from bqskit.passes.processing.iterative import IterativeScanningGateRemovalPass
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
@@ -333,6 +335,8 @@ __all__ = [
     'GreedyPartitioner',
     'ScanPartitioner',
     'QuickPartitioner',
+    'GTQCPartitioner',
+    'TDAGPartitioner',
     'SynthesisPass',
     'WalshDiagonalSynthesisPass',
     'LEAPSynthesisPass',
