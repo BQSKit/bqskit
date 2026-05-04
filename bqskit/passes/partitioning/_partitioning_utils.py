@@ -12,8 +12,8 @@ from typing import TypeVar
 
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.operation import Operation
-# Generic utils
 
+# Generic utils
 if TYPE_CHECKING:
     from _typeshed import SupportsRichComparison
 
@@ -68,28 +68,6 @@ class PriorityQueueSet(Set[T]):
 
 
 # BQSKit utils
-
-
-class SimpleCircuitPoint(Tuple[int, int]):
-    """A simple, more efficient version of BQSKit's CircuitPoint."""
-    def __new__(
-        cls,
-        cycle: int,
-        qudit: int,
-    ) -> SimpleCircuitPoint:
-        return super().__new__(cls, (cycle, qudit))
-
-    @property
-    def cycle(self) -> int:
-        """The point's cycle index."""
-        return self[0]
-
-    @property
-    def qudit(self) -> int:
-        """The point's qudit index."""
-        return self[1]
-
-
 class SingleQuditIterator(Iterator[Tuple[int, Operation]]):
     """A circuit iterator designed for walking down a single qudit."""
 
