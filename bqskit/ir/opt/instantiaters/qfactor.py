@@ -71,7 +71,6 @@ class QFactor(QFactorInstantiatorNative, Instantiater):
             ValueError: If `circuit` can be instantiated with this
                 instantiater.
         """
-
         invalid_gates = {
             gate
             for gate in circuit.gate_set

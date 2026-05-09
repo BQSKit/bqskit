@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import copy
 import itertools as it
+from collections.abc import Iterable
+from collections.abc import Sequence
 from typing import Any
-from typing import Iterable
-from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel

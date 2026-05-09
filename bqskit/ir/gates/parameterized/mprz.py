@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -23,10 +23,12 @@ class MPRZGate(
     LocallyOptimizableUnitary,
 ):
     """
-    A gate representing a multiplexed Z rotation. A multiplexed Z rotation
-    uses n - 1 qubits as select qubits and applies a Z rotation to the target.
-    If the target qubit is the last qubit, then the unitary is block diagonal.
-    Each block is a 2x2 RZ matrix with parameter theta.
+    A gate representing a multiplexed Z rotation.
+
+    A multiplexed Z rotation uses n - 1 qubits as select qubits and applies a Z
+    rotation to the target. If the target qubit is the last qubit, then the
+    unitary is block diagonal. Each block is a 2x2 RZ matrix with parameter
+    theta.
 
     Since there are n - 1 select qubits, there are 2^(n-1) parameters (thetas).
 

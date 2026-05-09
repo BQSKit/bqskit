@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import logging
 import typing
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import Any
 from typing import cast
-from typing import Iterator
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -273,7 +273,6 @@ class StateVector(NDArrayOperatorsMixin):
         check_arguments: bool = True,
     ) -> None:
         """
-
         Apply the specified unitary on the right of this StateVector.
 
         ..

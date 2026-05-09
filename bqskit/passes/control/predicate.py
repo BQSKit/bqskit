@@ -21,7 +21,6 @@ class PassPredicate(abc.ABC):
 
     def __call__(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate and retrieve the truth value result."""
-
         if not isinstance(circuit, Circuit):
             raise TypeError(f'Expected Circuit, got {type(circuit)}.')
 

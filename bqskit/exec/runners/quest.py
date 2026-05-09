@@ -90,7 +90,6 @@ class QuestRunner(CircuitRunner):
 
     def run(self, circuit: Circuit) -> RunnerResults:
         """Execute the circuit, see CircuitRunner.run for more info."""
-
         # 1. Compile the circuit
         synthesis_pass = LEAPSynthesisPass(
             store_partial_solutions=True,

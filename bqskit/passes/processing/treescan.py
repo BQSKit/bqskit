@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -84,7 +84,6 @@ class TreeScanningGateRemovalPass(ScanningGateRemovalPass):
                 attempt to remove that operation. Defaults to all
                 operations.
         """
-
         if not is_real_number(success_threshold):
             raise TypeError(
                 'Expected real number for success_threshold'

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from hypothesis import assume
 from hypothesis import given
 
 from bqskit.compiler.passdata import PassData
@@ -10,6 +9,7 @@ from bqskit.ir.gates import HGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes.search.generators import SeedLayerGenerator
 from bqskit.utils.test.strategies import circuits
+# from hypothesis import assume
 
 
 @given(circuits(2))

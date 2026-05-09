@@ -164,7 +164,6 @@ class MGDPass(BasePass):
         Returns:
             Circuit: The circuit that decomposes the MPRZ gate
         """
-
         new_gate: MPRZGate | MPRYGate | RZGate | RYGate = RZGate()
         if decompose_ry:
             new_gate = RYGate()
@@ -208,8 +207,9 @@ class MGDPass(BasePass):
         drop_last_cnot: bool = False,
     ) -> Circuit:
         """
-        We decompose a multiplexed RZ gate 2 levels deep. This allows you to
-        remove 2 CNOTs as per Figure 2 in
+        We decompose a multiplexed RZ gate 2 levels deep.
+
+        This allows you to remove 2 CNOTs as per Figure 2 in
         https://arxiv.org/pdf/quant-ph/0406176.pdf.
 
         Furthermore, in the context of the Block ZXZ decomposition, you can
@@ -229,7 +229,6 @@ class MGDPass(BasePass):
         Returns:
             Circuit: The circuit that decomposes the MPR gate
         """
-
         if num_qudits <= 2:
             # If you have less than 3 qubits, just decompose one level
             return MGDPass.decompose_mpx_one_level(
@@ -408,9 +407,10 @@ class QSDPass(BasePass):
         select_qubits: list[int],
     ) -> Circuit:
         """
-        Takes a list of 2 unitaries of size n. Returns a circuit that decomposes
-        the unitaries into a circuit with 2 unitaries of size n-1 and a
-        multiplexed controlled gate.
+        Takes a list of 2 unitaries of size n.
+
+        Returns a circuit that decomposes the unitaries into a circuit with
+        2 unitaries of size n-1 and a multiplexed controlled gate.
 
         Args:
             us (list[UnitaryMatrix]): The unitaries to decompose
@@ -471,7 +471,6 @@ class QSDPass(BasePass):
         Returns:
             Circuit: The circuit that decomposes the unitary
         '''
-
         # Shift the unitary qubits down by one
         u = QSDPass.mod_unitaries(orig_u)
 

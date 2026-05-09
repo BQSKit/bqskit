@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass

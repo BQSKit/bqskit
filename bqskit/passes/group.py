@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import cast
-from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.passes.alias import PassAlias

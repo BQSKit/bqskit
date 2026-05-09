@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import cast
-from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -124,9 +124,9 @@ class SeedLayerGenerator(LayerGenerator):
         """
         Generate the successors of a circuit node.
 
-        If `circuit` is the empty Circuit, seeds with radixes matching
-        `circuit` will be used. If no seeds match, the empty Circuit will
-        be returned as the only successor with a warning message.
+        If `circuit` is the empty Circuit, seeds with radixes matching `circuit`
+        will be used. If no seeds match, the empty Circuit will be returned as
+        the only successor with a warning message.
         """
         if not isinstance(circuit, Circuit):
             raise TypeError(f'Expected Circuit, got {type(circuit)}.')

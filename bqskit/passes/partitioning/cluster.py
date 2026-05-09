@@ -37,7 +37,6 @@ class ClusteringPartitioner(BasePass):
 
             ValueError: if `num_points` is nonpositive.
         """
-
         if not is_integer(block_size):
             raise TypeError(
                 f'Expected integer for block_size, got {type(block_size)}.',
@@ -63,7 +62,6 @@ class ClusteringPartitioner(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '

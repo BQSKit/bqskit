@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import copy
 import itertools as it
+from collections.abc import Iterator
+from collections.abc import MutableMapping
+from collections.abc import Sequence
 from typing import Any
-from typing import Iterator
-from typing import MutableMapping
-from typing import Sequence
 
 from bqskit.compiler.gateset import GateSet
 from bqskit.compiler.machine import MachineModel

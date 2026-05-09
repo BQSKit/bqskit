@@ -6,7 +6,7 @@ applied to a circuit.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 from typing import ClassVar
 from typing import TYPE_CHECKING
 

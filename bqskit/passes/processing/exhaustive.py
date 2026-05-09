@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
 
 import numpy as np
 
@@ -63,7 +63,6 @@ class ExhaustiveGateRemovalPass(BasePass):
                 A scoring function for the circuits to determine which one
                 to select. Defaults to gate counts weighted by their size.
         """
-
         if not is_real_number(success_threshold):
             raise TypeError(
                 'Expected real number for success_threshold'

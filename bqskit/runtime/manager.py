@@ -5,13 +5,11 @@ import argparse
 import logging
 import selectors
 import time
+from collections.abc import Sequence
 from multiprocessing.connection import Connection
 from typing import Any
 from typing import cast
-from typing import List
 from typing import Optional
-from typing import Sequence
-from typing import Tuple
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
@@ -156,7 +154,7 @@ class Manager(ServerBase):
                 # self.update_upstream_idle_workers()
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
-                rtasks = cast(List[RuntimeTask], payload)
+                rtasks = cast(list[RuntimeTask], payload)
                 self.most_recent_read_submit = rtasks[0].unique_id
                 self.schedule_tasks(rtasks)
                 # self.update_upstream_idle_workers()
@@ -172,7 +170,7 @@ class Manager(ServerBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.IMPORTPATH:
-                paths = cast(List[str], payload)
+                paths = cast(list[str], payload)
                 self.handle_importpath(paths)
 
             elif msg == RuntimeMessage.COMMUNICATE:
@@ -188,7 +186,7 @@ class Manager(ServerBase):
                 self.send_up_or_schedule_tasks([rtask])
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
-                rtasks = cast(List[RuntimeTask], payload)
+                rtasks = cast(list[RuntimeTask], payload)
                 self.send_up_or_schedule_tasks(rtasks)
 
             elif msg == RuntimeMessage.RESULT:
@@ -196,7 +194,7 @@ class Manager(ServerBase):
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                p = cast(Tuple[int, Optional[RuntimeAddress]], payload)
+                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
                 num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
                 self.update_upstream_idle_workers()

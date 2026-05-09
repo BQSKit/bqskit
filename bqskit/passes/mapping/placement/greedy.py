@@ -16,7 +16,6 @@ class GreedyPlacementPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         # Find physical qudit with highest degree
         graph = self.get_model(circuit, data).coupling_graph
         degrees = np.array(graph.get_qudit_degrees())

@@ -1,10 +1,9 @@
 """This module implements the StateSystem class."""
 from __future__ import annotations
 
+from collections.abc import Iterator
+from collections.abc import Mapping
 from typing import Any
-from typing import Dict
-from typing import Iterator
-from typing import Mapping
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -118,4 +117,4 @@ class StateSystem(Mapping[StateVector, StateVector]):
         return True
 
 
-StateSystemLike = Union[StateSystem, Dict[Any, Any]]
+StateSystemLike = Union[StateSystem, dict[Any, Any]]

@@ -1,12 +1,11 @@
 """This module implements the GateSet class."""
 from __future__ import annotations
 
-import sys
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from collections.abc import Set
 from typing import Any
-from typing import Iterable
-from typing import Iterator
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -24,10 +23,7 @@ from bqskit.utils.typing import is_sequence_of_int
 if TYPE_CHECKING:
     from bqskit.passes.search.generator import LayerGenerator
 
-if sys.version_info < (3, 9):
-    SuperType = Set
-else:
-    SuperType = Set[Gate]
+SuperType = Set[Gate]
 
 
 class GateSet(SuperType):

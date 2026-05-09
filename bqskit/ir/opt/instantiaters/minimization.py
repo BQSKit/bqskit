@@ -47,7 +47,6 @@ class Minimization(Instantiater):
             minimizer (Minimizer): The minimizer to use. If left as
                 None, attempts to select best one.
         """
-
         if not isinstance(cost_fn_gen, CostFunctionGenerator):
             raise TypeError(
                 'Expected CostFunctionGenerator, got %s.' % type(cost_fn_gen),

@@ -28,7 +28,6 @@ class UpdateDataPass(BasePass):
 
             val (Any): The value to associate with the key.
         """
-
         if not isinstance(key, str):
             raise TypeError('Expected string for key, got %s.' % type(key))
 

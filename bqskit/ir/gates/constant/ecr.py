@@ -24,6 +24,7 @@ class ECRGate(ConstantGate, QubitGate):
         -i & 0 & 1  & 0
         \\end{pmatrix}
     """
+
     _name = 'ecr'
     _num_qudits = 2
     _qasm_name = 'ecr'

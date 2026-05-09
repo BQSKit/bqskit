@@ -1,9 +1,9 @@
 """This module tests RuntimeTask functionality."""
 from __future__ import annotations
 
+from collections.abc import Awaitable
+from collections.abc import Generator
 from typing import Any
-from typing import Awaitable
-from typing import Generator
 
 import pytest
 

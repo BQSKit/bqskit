@@ -1,6 +1,5 @@
 """
-BQSKit Gates (:mod:`bqskit.ir.gates`)
-=====================================
+BQSKit Gates (:mod:`bqskit.ir.gates`) =====================================
 
 .. rubric:: Constant Gates
 
