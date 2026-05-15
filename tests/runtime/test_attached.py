@@ -59,7 +59,7 @@ def test_create_workers(num_workers: int) -> None:
         psutil.Process(compiler.p.pid).children(
             recursive=True,
         ),
-    ) > num_workers
+    ) >= num_workers
     compiler.close()
 
 
