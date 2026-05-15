@@ -14,7 +14,6 @@ class CircuitStructure:
         Args:
             circuit (Circuit): The circuit to store the structure of.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError(f'Expected a circuit, got {type(circuit)}.')
 

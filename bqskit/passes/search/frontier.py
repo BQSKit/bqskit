@@ -15,6 +15,7 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class FrontierElement(NamedTuple):
     """The Frontier contains FrontierElements."""
+
     cost: float
     element_id: int
     circuit: Circuit
@@ -39,7 +40,6 @@ class Frontier:
             heuristic_function (HeuristicFunction): The heuristic used
                 to sort the Frontier.
         """
-
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),

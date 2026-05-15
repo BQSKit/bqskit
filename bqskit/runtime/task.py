@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import inspect
 import logging
+from collections.abc import Coroutine
 from typing import Any
-from typing import Coroutine
 
 import dill
 
@@ -47,41 +47,30 @@ class RuntimeTask:
         self._fnargs: tuple[Any, Any, Any] | None = None
         self._name = fnargs[0].__name__ if task_name is None else task_name
         """Tuple of function pointer, arguments, and keyword arguments."""
-
         self.return_address = return_address
         """
         Where the result of this task should be sent.
 
         This doubles as a unique system-wide id for the task.
         """
-
         self.logging_level = logging_level or 0
         """Logs with levels >= to this get emitted, if None always emit."""
-
         self.comp_task_id = comp_task_id
         """The mailbox id of the this task's root task."""
-
         self.breadcrumbs = breadcrumbs
         """All of this task's parent tasks' addresses in order."""
-
         self.max_logging_depth = max_logging_depth
         """Logs are not emitted for tasks with this many or more parents."""
-
         self.coro: Coroutine[Any, Any, Any] | None = None
         """The coroutine containing this tasks code."""
-
         self.desired_box_id: int | None = None
         """When waiting on a mailbox, this stores that mailbox's id."""
-
         self.owned_mailboxes: list[int] = []
         """The mailbox ids that this task owns."""
-
         self.wake_on_next: bool = False
         """Set to true if this task should wake immediately on a result."""
-
         self.log_context: dict[str, str] = log_context
         """Additional context to be logged with this task."""
-
         self.msg_buffer: list[Any] = []
 
     @property

@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import itertools as it
-from typing import Iterable
-from typing import Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import overload
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -259,8 +259,8 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
             else:
                 acm = mat_dict[pauli_string[0]]
                 for char in pauli_string[1:]:
-                    acm = np.kron(acm, mat_dict[char])  # type: ignore
-                pauliz_matrices.append(acm)
+                    acm = np.kron(acm, mat_dict[char])
+                pauliz_matrices.append(acm)  # type: ignore
 
         if len(pauliz_matrices) == 1:
             return pauliz_matrices[0]

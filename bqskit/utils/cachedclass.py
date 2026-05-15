@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Hashable
 from typing import Any
-from typing import Hashable
 from typing import TypeVar
 
 from bqskit.utils.docs import building_docs

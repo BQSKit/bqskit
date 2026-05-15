@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import Any
-from typing import Sequence
 
 import numpy as np
 
@@ -92,7 +92,6 @@ class QPredictDecompositionPass(SynthesisPass):
 
             ValueError: If `max_depth` is nonpositive.
         """
-
         if not is_integer(block_size_start):
             raise TypeError(
                 'Expected block_size_start to be an integer, got %s'

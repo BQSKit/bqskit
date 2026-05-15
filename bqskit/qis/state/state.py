@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import logging
 import typing
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import Any
 from typing import cast
-from typing import Iterator
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -188,7 +188,13 @@ class StateVector(NDArrayOperatorsMixin):
         if isinstance(V, StateSystem):
             return False
 
-        if not np.allclose(np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol):
+        try:
+            if not np.allclose(
+                np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol,
+            ):
+                _logger.debug('Failed pure state criteria.')
+                return False
+        except ValueError:
             _logger.debug('Failed pure state criteria.')
             return False
 
@@ -267,7 +273,6 @@ class StateVector(NDArrayOperatorsMixin):
         check_arguments: bool = True,
     ) -> None:
         """
-
         Apply the specified unitary on the right of this StateVector.
 
         ..

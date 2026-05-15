@@ -43,7 +43,6 @@ class Operation(DifferentiableUnitary):
             ValueError: If `gate`'s num_params doesn't match `params`'s
                 length.
         """
-
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate, got %s.' % type(gate))
 

@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import cast
-from typing import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
@@ -38,7 +38,6 @@ class QuickPartitioner(BasePass):
         Raises:
             ValueError: If `block_size` is less than 2.
         """
-
         if not is_integer(block_size):
             raise TypeError(
                 f'Expected integer for block_size, got {type(block_size)}.',
@@ -297,7 +296,6 @@ class Bin:
 
     def __init__(self) -> None:
         """Can start a new bin from an operation."""
-
         # The qudits in the bin
         self.qudits: list[int] = []
 

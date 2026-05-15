@@ -1,6 +1,6 @@
 """
-==========================================================
-BQSKit Utility Classes and Functions (:mod:`bqskit.utils`)
+========================================================== BQSKit Utility
+Classes and Functions (:mod:`bqskit.utils`)
 ==========================================================
 
 .. currentmodule:: bqskit.utils

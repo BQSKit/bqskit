@@ -1,6 +1,5 @@
 """
-BQSKit Gates (:mod:`bqskit.ir.gates`)
-=====================================
+BQSKit Gates (:mod:`bqskit.ir.gates`) =====================================
 
 .. rubric:: Constant Gates
 
@@ -43,6 +42,8 @@ BQSKit Gates (:mod:`bqskit.ir.gates`)
     SwapGate
     SqrtXGate
     SXGate
+    SqrtXdgGate
+    SXdgGate
     SycamoreGate
     TGate
     TdgGate

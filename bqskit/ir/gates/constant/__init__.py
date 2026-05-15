@@ -34,6 +34,8 @@ from bqskit.ir.gates.constant.subswap import SubSwapGate
 from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.gates.constant.sx import SqrtXGate
 from bqskit.ir.gates.constant.sx import SXGate
+from bqskit.ir.gates.constant.sxdg import SqrtXdgGate
+from bqskit.ir.gates.constant.sxdg import SXdgGate
 from bqskit.ir.gates.constant.sycamore import SycamoreGate
 from bqskit.ir.gates.constant.t import TGate
 from bqskit.ir.gates.constant.tdg import TdgGate
@@ -79,6 +81,8 @@ __all__ = [
     'SwapGate',
     'SqrtXGate',
     'SXGate',
+    'SqrtXdgGate',
+    'SXdgGate',
     'SycamoreGate',
     'TGate',
     'TdgGate',

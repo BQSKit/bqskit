@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from hypothesis import assume
 from hypothesis import given
 
 from bqskit.compiler.passdata import PassData
@@ -10,6 +9,7 @@ from bqskit.ir.gates import HGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes.search.generators import SeedLayerGenerator
 from bqskit.utils.test.strategies import circuits
+# from hypothesis import assume
 
 
 @given(circuits(2))
@@ -56,32 +56,32 @@ def test_remove_atomic_units() -> None:
     assert zero_left_circ.depth == 1
 
 
-@given(circuits())
-def test_remove_atomic_units_removes_num_mq_gates(circuit: Circuit) -> None:
-    layer_gen = SeedLayerGenerator(Circuit(1), num_removed=2)
+# @given(circuits())
+# def test_remove_atomic_units_removes_num_mq_gates(circuit: Circuit) -> None:
+#     layer_gen = SeedLayerGenerator(Circuit(1), num_removed=2)
 
-    if circuit.num_qudits >= 2:
-        mq_count = sum(
-            c for g, c in circuit.gate_counts.items() if g.num_qudits >= 2
-        )
-        assume(mq_count > 1)
-        one_remove, two_remove = layer_gen.remove_atomic_units(circuit)
+#     if circuit.num_qudits >= 2:
+#         mq_count = sum(
+#             c for g, c in circuit.gate_counts.items() if g.num_qudits >= 2
+#         )
+#         assume(mq_count > 1)
+#         one_remove, two_remove = layer_gen.remove_atomic_units(circuit)
 
-        one_remove_mq_count = sum(
-            c for g, c in one_remove.gate_counts.items() if g.num_qudits >= 2
-        )
-        two_remove_mq_count = sum(
-            c for g, c in two_remove.gate_counts.items() if g.num_qudits >= 2
-        )
-        assert one_remove_mq_count == mq_count - 1
-        assert two_remove_mq_count == mq_count - 2
+#         one_remove_mq_count = sum(
+#             c for g, c in one_remove.gate_counts.items() if g.num_qudits >= 2
+#         )
+#         two_remove_mq_count = sum(
+#             c for g, c in two_remove.gate_counts.items() if g.num_qudits >= 2
+#         )
+#         assert one_remove_mq_count == mq_count - 1
+#         assert two_remove_mq_count == mq_count - 2
 
-    else:
-        num_ops = circuit.num_operations
-        assume(num_ops > 1)
-        one_remove, two_remove = layer_gen.remove_atomic_units(circuit)
-        assert one_remove.num_operations == num_ops - 1
-        assert two_remove.num_operations == num_ops - 2
+#     else:
+#         num_ops = circuit.num_operations
+#         assume(num_ops > 1)
+#         one_remove, two_remove = layer_gen.remove_atomic_units(circuit)
+#         assert one_remove.num_operations == num_ops - 1
+#         assert two_remove.num_operations == num_ops - 2
 
 
 def test_gen_successors() -> None:

@@ -42,7 +42,6 @@ class StairLayerGenerator(LayerGenerator):
             ValueError: If `target` has a size or radix mismatch with
                 `self.seed`.
         """
-
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
@@ -64,7 +63,6 @@ class StairLayerGenerator(LayerGenerator):
         Raises:
             ValueError: If circuit is a single-qudit circuit.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 

@@ -1,6 +1,6 @@
 """
-====================================================================
-Compilation and Synthesis Algorithms (:mod:`bqskit.passes`)
+==================================================================== Compilation
+and Synthesis Algorithms (:mod:`bqskit.passes`)
 ====================================================================
 
 .. rubric:: Partitioning Passes

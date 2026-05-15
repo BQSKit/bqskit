@@ -3,15 +3,15 @@ from __future__ import annotations
 
 import logging
 import numbers
+from collections.abc import Iterable
+from collections.abc import Mapping
 from collections.abc import Sequence
+from collections.abc import Sized
 from typing import Any
-from typing import Iterable
-from typing import Mapping
-from typing import Sized
+from typing import TypeGuard
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypeGuard
 
 
 _logger = logging.getLogger(__name__)

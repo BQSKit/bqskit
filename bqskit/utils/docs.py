@@ -6,7 +6,6 @@ import os
 
 def building_docs() -> bool:
     """Return true if currently building documentations."""
-
     if 'BQSKIT_DOC_CHECK_OVERRIDE' in os.environ:
         return False
     if 'READTHEDOCS' in os.environ:

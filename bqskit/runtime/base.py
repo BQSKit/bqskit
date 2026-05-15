@@ -12,6 +12,7 @@ import socket
 import sys
 import time
 import traceback
+from collections.abc import Sequence
 from multiprocessing import Process
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
@@ -21,7 +22,6 @@ from threading import Thread
 from types import FrameType
 from typing import Any
 from typing import cast
-from typing import Sequence
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
@@ -49,7 +49,6 @@ class RuntimeEmployee:
         is_manager: bool = False,
     ) -> None:
         """Construct an employee with all resources idle."""
-
         self.id = id
         """
         The ID of the employee.
@@ -57,7 +56,6 @@ class RuntimeEmployee:
         If this is a worker, then their unique worker id. If this is a manager,
         then their local id.
         """
-
         self.conn: Connection = conn
         self.total_workers = total_workers
         self.process = process
@@ -133,34 +131,28 @@ class ServerBase:
 
     def __init__(self) -> None:
         """Initialize a runtime node component."""
-
         self.lower_id_bound = 0
         self.upper_id_bound = int(2 ** 30)
         """
-        The node starts with an ID range from 0 -> 2^30. ID ranges are then
-        assigned to managers by evenly splitting this range.
+        The node starts with an ID range from 0 -> 2^30.
+
+        ID ranges are then assigned to managers by evenly splitting this range.
 
         Managers then recursively split their range when connecting the sub-
         managers. Finally, workers are assigned specific ids from within this
         range.
         """
-
         self.running = True
         """True while the node is running."""
-
         self.sel = selectors.DefaultSelector()
         """Used to efficiently idle and wake when communication is ready."""
-
         p, self.terminate_hotline = socket.socketpair()
         self.sel.register(p, selectors.EVENT_READ, MessageDirection.SIGNAL)
         """Terminate hotline is used to unblock select while running."""
-
         self.employees: list[RuntimeEmployee] = []
         """Tracks this node's employees, which are managers or workers."""
-
         self.conn_to_employee_dict: dict[Connection, RuntimeEmployee] = {}
         """Used to find the employee associated with a message."""
-
         # Servers do not need blas threads
         set_blas_thread_counts(1)
 

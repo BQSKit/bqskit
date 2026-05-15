@@ -42,7 +42,6 @@ class FourParamGenerator(LayerGenerator):
         Raises:
             ValueError: If `target` is not qubit only.
         """
-
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
@@ -63,7 +62,6 @@ class FourParamGenerator(LayerGenerator):
         Raises:
             ValueError: If circuit is a single-qudit circuit.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 

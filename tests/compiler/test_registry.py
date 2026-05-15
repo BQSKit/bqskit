@@ -65,7 +65,7 @@ def simple_circuit(num_qudits: int, gate_set: list[Gate]) -> Circuit:
     if gate.num_qudits == 1:
         loc = choice(range(num_qudits))
     else:
-        loc = choice(list(combinations(range(num_qudits), 2)))  # type: ignore
+        loc = choice(list(combinations(range(num_qudits), 2)))
     gate_inv = gate.get_inverse()
     circ.append_gate(gate, loc)
     circ.append_gate(gate_inv, loc)

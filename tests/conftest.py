@@ -7,10 +7,10 @@ main types of fixtures defined here, unitaries, gates, and circuits.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import Any
-from typing import Callable
-from typing import Iterator
-from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -494,7 +494,6 @@ def circuit_gen(
 
         # 2. Select random gate and location
         gate_selected = None
-        location_selected = None
 
         # 2a. Shuffle gates
         shuffled_gates = gateset

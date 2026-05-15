@@ -5,20 +5,19 @@ import copy
 import itertools as it
 import logging
 import warnings
+from collections.abc import Collection
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
 from random import shuffle
 from typing import Any
-from typing import Collection
-from typing import Iterable
-from typing import Iterator
-from typing import Mapping
-from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeGuard
+    from typing import TypeGuard
     from bqskit.ir.location import CircuitLocationLike
 
 from bqskit.ir.location import CircuitLocation
@@ -28,7 +27,7 @@ from bqskit.utils.typing import is_iterable, is_mapping, is_real_number
 _logger = logging.getLogger(__name__)
 
 
-class CouplingGraph(Collection[Tuple[int, int]]):
+class CouplingGraph(Collection[tuple[int, int]]):
     """A graph representing connections in a qudit topology."""
 
     def __init__(
@@ -392,8 +391,8 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         The qudits in the returned sub-coupling-graph are by default renumbered
         to lie in [0, `len(location)`), ordered in increasing order by the
         sequence given in `location`. The qudits may be renumbered manually by
-        `renumbering` but the renumbering must be a permutation of
-        [0, `len(location)`).
+        `renumbering` but the renumbering must be a permutation of [0,
+        `len(location)`).
         """
         if not CircuitLocation.is_location(location, self.num_qudits):
             raise TypeError('Invalid location.')
@@ -533,7 +532,6 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         Returns:
             bool: Valid or not
         """
-
         if not is_iterable(coupling_graph):
             _logger.debug('Coupling graph is not iterable.')
             return False
@@ -613,8 +611,9 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         randomize: bool = False,
     ) -> list[tuple[int, int]]:
         """
-        Generate a random graph matching for the coupling graph. Edges in the
-        `ignored_edges` list will not be included.
+        Generate a random graph matching for the coupling graph.
+
+        Edges in the `ignored_edges` list will not be included.
 
         Arguments:
             edges_to_ignore (list[tuple[int]]): Edges not included in the
@@ -694,16 +693,16 @@ class CouplingGraph(Collection[Tuple[int, int]]):
 
         # Traverse MST depth-first to produce pairs of interacting qudits
         interactions: list[tuple[int, int]] = []
-        frontier: list[tuple[int, tuple[int, int] | None]] = [(root, None)]
+        mst_frontier: list[tuple[int, tuple[int, int] | None]] = [(root, None)]
 
-        while len(frontier) > 0:
-            qudit, interaction = frontier.pop(0)
+        while len(mst_frontier) > 0:
+            qudit, interaction = mst_frontier.pop(0)
             if interaction is not None:
                 interactions.append(interaction)
 
             for neighbor in mst.get_neighbors_of(qudit):
                 if interaction is None or neighbor != interaction[0]:
-                    frontier.insert(0, (neighbor, (qudit, neighbor)))
+                    mst_frontier.insert(0, (neighbor, (qudit, neighbor)))
 
         return interactions
 
@@ -848,4 +847,4 @@ class CouplingGraph(Collection[Tuple[int, int]]):
         return False
 
 
-CouplingGraphLike = Union[Iterable[Tuple[int, int]], CouplingGraph]
+CouplingGraphLike = Union[Iterable[tuple[int, int]], CouplingGraph]

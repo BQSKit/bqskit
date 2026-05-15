@@ -17,15 +17,15 @@ class CostFunctionGenerator(abc.ABC):
     """
     The CostFunctionGenerator base class.
 
-    A CostFunctionGenerator in BQSKit is a function generator that can
-    produce maps from circuit parameters to real numbers.
+    A CostFunctionGenerator in BQSKit is a function generator that can produce
+    maps from circuit parameters to real numbers.
 
-    The `gen_cost` method signature includes a circuit and target unitary
-    or state as parameters. This allows a user to configure the generator
-    and pass it to anything that does instantiation, like a synthesis pass,
-    which in turn, will generate configured CostFunctions. This is useful
-    since passes might be working with changing circuits and will need to
-    regenerate CostFunctions from time to time.
+    The `gen_cost` method signature includes a circuit and target unitary or
+    state as parameters. This allows a user to configure the generator and pass
+    it to anything that does instantiation, like a synthesis pass, which in
+    turn, will generate configured CostFunctions. This is useful since passes
+    might be working with changing circuits and will need to regenerate
+    CostFunctions from time to time.
     """
 
     @abc.abstractmethod

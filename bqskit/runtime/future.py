@@ -14,10 +14,8 @@ class RuntimeFuture:
 
     def __init__(self, mailbox_id: int) -> None:
         """Initialize a future tied to a local mailbox."""
-
         self.mailbox_id = mailbox_id
         """The mailbox id where this future's result will be shipped."""
-
         self._next_flag = False
         """If flag is set, then awaiting returns next result."""
 

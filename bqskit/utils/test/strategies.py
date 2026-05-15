@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Sequence
 from typing import Any
-from typing import Sequence
 
 from hypothesis.control import assume
 from hypothesis.strategies import composite

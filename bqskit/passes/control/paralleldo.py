@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
-from typing import Iterable
+from collections.abc import Callable
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.basepass import _sub_do_work
