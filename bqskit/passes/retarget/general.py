@@ -12,7 +12,6 @@ class GeneralSQDecomposition(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         if circuit.num_qudits != 1:
             raise ValueError(
                 'Cannot convert multi-qudit circuit into'

@@ -6,9 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 from typing import cast
-from typing import List
 from typing import NamedTuple
-from typing import Tuple
 
 import lark
 import numpy as np
@@ -81,12 +79,14 @@ _logger = logging.getLogger(__name__)
 
 class QubitReg(NamedTuple):
     """Definition of a Qubit Register."""
+
     name: str
     size: int
 
 
 class ClassicalReg(NamedTuple):
     """Definition of a Classical Bit Register."""
+
     name: str
     size: int
 
@@ -94,6 +94,7 @@ class ClassicalReg(NamedTuple):
 @dataclass
 class GateDef:
     """Definition of a QASM Gate."""
+
     qasm_name: str
     num_params: int
     num_vars: int
@@ -107,6 +108,7 @@ class GateDef:
 @dataclass
 class CustomGateDef:
     """Definition of a Custom QASM Gate."""
+
     qasm_name: str
     num_params: int
     num_vars: int
@@ -364,8 +366,8 @@ class OPENQASMVisitor(Visitor):
         if location is None:
             raise LangException(f'Qubit register not found: {name}')
 
-        location = CircuitLocation(location)
-        self.op_list.append(self.gate_defs['U'].build_op(location, params))
+        loc = CircuitLocation(location)
+        self.op_list.append(self.gate_defs['U'].build_op(loc, params))
 
     def gatep(self, tree: lark.Tree) -> None:
         """Apply a gate to a currently-being-built gate declaration."""
@@ -586,7 +588,7 @@ class OPENQASMVisitor(Visitor):
         class_childs = tree.children[1].children
         qubit_reg_name = str(qubit_childs[0])
         class_reg_name = str(class_childs[0])
-        cregs = cast(List[Tuple[str, int]], self.classical_regs)
+        cregs = cast(list[tuple[str, int]], self.classical_regs)
         qlist = tree.children[0]
         location = CircuitLocation(self.convert_qubit_ids_to_indices(qlist))
 

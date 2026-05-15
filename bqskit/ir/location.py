@@ -2,13 +2,12 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import Any
-from typing import Iterator
 from typing import overload
-from typing import Sequence
+from typing import TypeGuard
 from typing import Union
-
-from typing_extensions import TypeGuard
 
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
@@ -38,7 +37,6 @@ class CircuitLocation(Sequence[int]):
 
             ValueError: If there are duplicates in location.
         """
-
         if is_integer(location):
             location = [location]
 
@@ -130,9 +128,11 @@ class CircuitLocation(Sequence[int]):
         num_qudits: int | None = None,
     ) -> TypeGuard[CircuitLocationLike]:
         """
-        Determines if the sequence of qudits form a valid location. A valid
-        location is a set of qubit indices (integers) that are greater than or
-        equal to zero, and if num_qudits is specified, less than num_qudits.
+        Determines if the sequence of qudits form a valid location.
+
+        A valid location is a set of qubit indices (integers) that are greater
+        than or equal to zero, and if num_qudits is specified, less than
+        num_qudits.
 
         Args:
             location (Any): The location to check.

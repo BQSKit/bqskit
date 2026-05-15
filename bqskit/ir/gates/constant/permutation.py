@@ -1,7 +1,7 @@
 """This module implements the PermutationGate."""
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate

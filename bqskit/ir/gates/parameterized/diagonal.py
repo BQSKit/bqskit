@@ -17,11 +17,13 @@ class DiagonalGate(
     LocallyOptimizableUnitary,
 ):
     """
-    A gate representing a general diagonal unitary. The top-left element is
-    fixed to 1, and the rest are set to exp(i * theta).
+    A gate representing a general diagonal unitary.
+
+    The top-left element is fixed to 1, and the rest are set to exp(i * theta).
 
     This gate is used to optimize the Block ZXZ decomposition of a unitary.
     """
+
     _qasm_name = 'diag'
 
     def __init__(

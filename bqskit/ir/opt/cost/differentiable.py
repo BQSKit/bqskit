@@ -15,13 +15,13 @@ class DifferentiableCostFunction(CostFunction):
     """
     The DifferentiableCostFunction base class.
 
-    A DifferentiableCostFunction is a differentiable map from a vector of
-    real numbers to a real number.
+    A DifferentiableCostFunction is a differentiable map from a vector of real
+    numbers to a real number.
 
-    A DifferentiableCostFunction exposes the `get_grad` abstract method
-    and the `get_cost_and_grad` method. When subclassing, you only need to
-    implement the `gen_cost` and `gen_grad` function factories. You can
-    overwrite gen_cost_and_grad for optimization in some cases.
+    A DifferentiableCostFunction exposes the `get_grad` abstract method and the
+    `get_cost_and_grad` method. When subclassing, you only need to implement the
+    `gen_cost` and `gen_grad` function factories. You can overwrite
+    gen_cost_and_grad for optimization in some cases.
     """
 
     @abc.abstractmethod
@@ -41,11 +41,11 @@ class DifferentiableResidualsFunction(ResidualsFunction):
     The DifferentiableResidualsFunction base class.
 
     A DifferentiableResidualsFunction is a differentiable map from a vector of
-    real numbers to a matrix where the rows are the gradients for each
-    input parameter.
+    real numbers to a matrix where the rows are the gradients for each input
+    parameter.
 
-    A DifferentiableResidualsFunction exposes the `get_grad` abstract method
-    and the `get_residuals_and_grad` method. When subclassing, you only need to
+    A DifferentiableResidualsFunction exposes the `get_grad` abstract method and
+    the `get_residuals_and_grad` method. When subclassing, you only need to
     implement the `gen_cost` and `gen_grad` function factories. You can
     overwrite gen_cost_and_grad for optimization in some cases.
     """

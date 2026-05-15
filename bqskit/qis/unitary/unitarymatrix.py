@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import Any
-from typing import Iterator
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -78,7 +78,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             array([[0.+0.j, 1.+0.j],
                    [1.+0.j, 0.+0.j]])
         """
-
         # Stop any actual logic when building documentation
         if building_docs():
             self._utry: npt.NDArray[np.complex128] = np.array([])
@@ -189,13 +188,12 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         Returns:
             UnitaryMatrix: The resulting unitary matrix.
         """
-
         utrys = [UnitaryMatrix(u) for u in utrys]
 
         utry_acm = self.numpy
         radixes_acm = self.radixes
         for utry in utrys:
-            utry_acm = np.kron(utry_acm, utry.numpy)  # type: ignore
+            utry_acm = np.kron(utry_acm, utry.numpy)
             radixes_acm += utry.radixes
 
         return UnitaryMatrix(utry_acm, radixes_acm)
@@ -428,7 +426,6 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         Returns:
             bool: True if U is a unitary.
         """
-
         if isinstance(U, UnitaryMatrix):
             return True
 
@@ -437,7 +434,10 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             return False
 
         if not isinstance(U, np.ndarray):
-            U = np.array(U)
+            try:
+                U = np.array(U)
+            except ValueError:
+                return False
 
         if not is_square_matrix(U):
             return False

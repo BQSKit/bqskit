@@ -25,7 +25,6 @@ class NotPredicate(PassPredicate):
         Args:
             predicate (PassPredicate): The predicate to invert.
         """
-
         if not isinstance(predicate, PassPredicate):
             raise TypeError(f'Expected PassPredicate, got {type(predicate)}.')
 

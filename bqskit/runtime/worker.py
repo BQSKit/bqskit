@@ -9,6 +9,8 @@ import signal
 import sys
 import time
 import traceback
+from collections.abc import Callable
+from collections.abc import Sequence
 from dataclasses import dataclass
 from multiprocessing import Process
 from multiprocessing.connection import Client
@@ -18,10 +20,7 @@ from queue import Queue
 from threading import Lock
 from threading import Thread
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import List
-from typing import Sequence
 
 from bqskit.runtime import default_worker_port
 from bqskit.runtime import set_blas_thread_counts
@@ -46,6 +45,7 @@ class WorkerMailbox:
     placed in the appropriate mailbox and the waiting task is placed into the
     ready queue.
     """
+
     expecting_single_result: bool = False
     expected_num_results: int = 0
     result: Any = None
@@ -163,7 +163,6 @@ class Worker:
 
         self._tasks: dict[RuntimeAddress, RuntimeTask] = {}
         """Tracks all started, unfinished tasks on this worker."""
-
         self._delayed_tasks: list[RuntimeTask] = []
         """
         Store all delayed tasks in LIFO order.
@@ -173,40 +172,30 @@ class Worker:
         consumes much more memory, so we delay the task start until necessary
         (at no cost)
         """
-
         self._ready_task_ids: Queue[RuntimeAddress] = Queue()
         """Tasks queued up for execution."""
-
         self._cancelled_task_ids: set[RuntimeAddress] = set()
         """To ensure newly-received cancelled tasks are never started."""
-
         self._active_task: RuntimeTask | None = None
         """The currently executing task if one is running."""
-
         self._running = True
         """Controls if the event loop is running."""
-
         self._mailboxes: dict[int, WorkerMailbox] = {}
         """Map from mailbox ids to worker mailboxes."""
-
         self._mailbox_counter = 0
         """This count ensures every mailbox has a unique id."""
-
         self._cache: dict[str, Any] = {}
         """Local worker cache."""
-
         self.most_recent_read_submit: RuntimeAddress | None = None
         """Tracks the most recently processed submit message from above."""
-
         self.read_receipt_mutex = Lock()
         """
         A lock to ensure waiting messages's read receipt is correct.
 
-        This lock enforces atomic update of `most_recent_read_submit` and
-        task addition/enqueueing. This is necessary to ensure that the
-        idle status is always correct.
+        This lock enforces atomic update of `most_recent_read_submit` and task
+        addition/enqueueing. This is necessary to ensure that the idle status is
+        always correct.
         """
-
         # Send out every client emitted log message upstream
         old_factory = logging.getLogRecordFactory()
 
@@ -296,7 +285,7 @@ class Worker:
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
                 self.read_receipt_mutex.acquire()
-                tasks = cast(List[RuntimeTask], payload)
+                tasks = cast(list[RuntimeTask], payload)
                 self.most_recent_read_submit = tasks[0].unique_id
                 self._add_task(tasks.pop())  # Submit one task
                 self._delayed_tasks.extend(tasks)  # Delay rest
@@ -316,7 +305,7 @@ class Worker:
                 self._handle_communicate(addrs, msg)
 
             elif msg == RuntimeMessage.IMPORTPATH:
-                paths = cast(List[str], payload)
+                paths = cast(list[str], payload)
                 for path in paths:
                     if path not in sys.path:
                         sys.path.append(path)

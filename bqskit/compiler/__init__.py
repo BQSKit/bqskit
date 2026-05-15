@@ -1,7 +1,6 @@
 """
-================================================
-Compiler Infrastructure (:mod:`bqskit.compiler`)
-================================================
+================================================ Compiler Infrastructure
+(:mod:`bqskit.compiler`) ================================================
 
 The `bqskit.compiler` package implements the BQSKit's compiler framework.
 This includes classes for defining, combining, executing, and managing

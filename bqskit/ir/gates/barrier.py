@@ -1,7 +1,7 @@
 """This module implements the BarrierPlaceholder class."""
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector

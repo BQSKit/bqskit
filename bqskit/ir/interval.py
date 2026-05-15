@@ -2,18 +2,16 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from typing import Any
-from typing import Iterator
-from typing import Tuple
+from typing import TypeGuard
 from typing import Union
-
-from typing_extensions import TypeGuard
 
 from bqskit.utils.typing import is_integer
 _logger = logging.getLogger(__name__)
 
 
-class CycleInterval(Tuple[int, int]):
+class CycleInterval(tuple[int, int]):
     """
     The CycleInterval class.
 
@@ -212,4 +210,4 @@ class CycleInterval(Tuple[int, int]):
         return f'Interval(lower={self.lower}, upper={self.upper})'
 
 
-IntervalLike = Union[Tuple[int, int], CycleInterval]
+IntervalLike = Union[tuple[int, int], CycleInterval]

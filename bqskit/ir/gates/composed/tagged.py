@@ -35,7 +35,6 @@ class TaggedGate(
 
             tag (Any): The tag to associate with the gate.
         """
-
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate object, got %s' % type(gate))
 

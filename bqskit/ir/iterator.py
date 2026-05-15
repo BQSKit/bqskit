@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import heapq
-from typing import Iterator
-from typing import Sequence
-from typing import Tuple
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
 
 
-class CircuitIterator(Iterator[Union[Operation, Tuple[int, Operation]]]):
+class CircuitIterator(Iterator[Union[Operation, tuple[int, Operation]]]):
     """A CircuitIterator iterates through a circuit in a simulation order."""
 
     def __init__(

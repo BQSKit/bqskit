@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
-from typing import Sequence
+from collections.abc import Callable
+from collections.abc import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -96,7 +96,6 @@ class DiscreteLayerGenerator(LayerGenerator):
             ValueError: If `target` has a radix mismatch with
                 `self.initial_layer_gate`.
         """
-
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             m = f'Expected unitary or state, got {type(target)}.'
             raise TypeError(m)

@@ -35,7 +35,6 @@ class CircuitGate(Gate):
                 longer be used on caller side. If unsure use the default.
                 (Default: False)
         """
-
         self._circuit = circuit if move else circuit.copy()
         self._num_qudits = self._circuit.num_qudits
         self._radixes = self._circuit.radixes

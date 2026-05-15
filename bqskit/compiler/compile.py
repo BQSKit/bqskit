@@ -4,10 +4,10 @@ from __future__ import annotations
 import logging
 import math
 import warnings
+from collections.abc import Sequence
 from typing import Any
 from typing import Literal
 from typing import overload
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -1048,7 +1048,6 @@ def build_multi_qudit_retarget_workflow(
           the decomposition of those gates. If your input contains many-qudit
           gates, consider following this with a mapping workflow.
     """
-
     core_retarget_workflow = [
         FillSingleQuditGatesPass(),
         IfThenElsePass(
@@ -1787,7 +1786,7 @@ def _stateprep_workflow(
                 min_prefix_size=7,
             )
         else:
-            in_synthesis = QSearchSynthesisPass(  # type: ignore
+            in_synthesis = QSearchSynthesisPass(
                 success_threshold=synthesis_epsilon,
                 layer_generator=layer_gen,
                 instantiate_options=inst_ops,
@@ -1886,7 +1885,7 @@ def _statemap_workflow(
                 min_prefix_size=7,
             )
         else:
-            in_synthesis = QSearchSynthesisPass(  # type: ignore
+            in_synthesis = QSearchSynthesisPass(
                 success_threshold=synthesis_epsilon,
                 layer_generator=layer_gen,
                 instantiate_options=inst_ops,

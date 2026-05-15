@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 

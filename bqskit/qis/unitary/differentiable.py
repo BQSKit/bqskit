@@ -15,9 +15,9 @@ class DifferentiableUnitary(Unitary):
     """
     A differentiable unitary-valued function.
 
-    A `DifferentiableUnitary` inherits from `Unitary` and additionally
-    exposes the :func:`get_grad` abstract method and the
-    :func:`get_unitary_and_grad` method.
+    A `DifferentiableUnitary` inherits from `Unitary` and additionally exposes
+    the :func:`get_grad` abstract method and the :func:`get_unitary_and_grad`
+    method.
     """
 
     @abc.abstractmethod

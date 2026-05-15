@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -118,7 +118,6 @@ class SingleQuditLayerGenerator(LayerGenerator):
         Raises:
             ValueError: If circuit is not a single-qudit circuit.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 

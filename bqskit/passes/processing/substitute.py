@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import itertools as it
 import logging
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData

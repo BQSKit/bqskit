@@ -89,7 +89,7 @@ class SaveIntermediatePass(BasePass):
         # NOTE: Block numbers are gotten by iterating through the circuit so
         # there is no guarantee that the blocks were partitioned in that order.
         for enum, block in blocks_to_save:
-            enum = str(enum).zfill(num_digits)  # type: ignore
+            enum = str(enum).zfill(num_digits)
             structure_list.append(block.location)  # type: ignore
             subcircuit = Circuit(block.num_qudits)
             subcircuit.append_gate(

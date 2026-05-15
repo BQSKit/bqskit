@@ -94,7 +94,6 @@ def softmax(
     Returns:
         np.ndarray: Output vector of softmax.
     """
-
     shiftx = beta * (x - np.max(x))
     exps = np.exp(shiftx)
     return exps / np.sum(exps)
@@ -113,7 +112,6 @@ def dot_product(alpha: RealVector, sigma: RealVector) -> npt.NDArray[Any]:
         np.ndarray: Sum of element-wise multiplication of `alpha`
         and `sigma`.
     """
-
     return np.array(np.sum([a * s for a, s in zip(alpha, sigma)], 0))
 
 

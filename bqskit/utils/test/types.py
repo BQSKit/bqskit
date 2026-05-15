@@ -4,12 +4,12 @@ from __future__ import annotations
 import collections
 import inspect
 import sys
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Sequence
 from itertools import chain
 from itertools import combinations
 from typing import Any
-from typing import Callable
-from typing import Iterable
-from typing import Sequence
 
 import numpy as np
 import pytest

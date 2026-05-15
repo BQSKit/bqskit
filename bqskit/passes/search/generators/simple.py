@@ -60,7 +60,6 @@ class SimpleLayerGenerator(LayerGenerator):
                 `single_qudit_gate_2`'s radix does not match the radix
                 of `two_qudit_gate`'s second qudit.
         """
-
         if not isinstance(two_qudit_gate, Gate):
             raise TypeError(
                 'Expected gate for two_qudit_gate, got %s.'
@@ -153,7 +152,6 @@ class SimpleLayerGenerator(LayerGenerator):
             ValueError: If `target` has a radix mismatch with
                 `self.initial_layer_gate`.
         """
-
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
@@ -177,7 +175,6 @@ class SimpleLayerGenerator(LayerGenerator):
         Raises:
             ValueError: If circuit is a single-qudit circuit.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 
