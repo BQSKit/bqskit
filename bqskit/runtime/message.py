@@ -6,6 +6,7 @@ from enum import IntEnum
 
 class RuntimeMessage(IntEnum):
     """An message sent between processes in the BQSKit runtime."""
+
     CONNECT = 0
     DISCONNECT = 1
     STARTED = 2

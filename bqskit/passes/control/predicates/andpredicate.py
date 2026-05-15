@@ -26,7 +26,6 @@ class AndPredicate(PassPredicate):
 
             p2 (PassPredicate): The second predicate.
         """
-
         if not isinstance(p1, PassPredicate):
             raise TypeError(f'Expected PassPredicate, got {type(p1)}.')
 

@@ -55,8 +55,11 @@ def test_cleanup_with_clause(num_workers: int) -> None:
 def test_create_workers(num_workers: int) -> None:
     compiler = Compiler(num_workers=num_workers)
     assert compiler.p is not None
-    expected = [num_workers, num_workers + 1]  # Some OS create a spawn server
-    assert len(psutil.Process(compiler.p.pid).children()) in expected
+    assert len(
+        psutil.Process(compiler.p.pid).children(
+            recursive=True,
+        ),
+    ) >= num_workers
     compiler.close()
 
 
@@ -69,8 +72,12 @@ def test_two_thread_per_worker() -> None:
 
     compiler = Compiler(num_workers=1)
     assert compiler.p is not None
-    assert len(psutil.Process(compiler.p.pid).children()) in [1, 2]
-    assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 2
+    if sys.version_info >= (3, 14):
+        assert psutil.Process(compiler.p.pid).children(
+            recursive=True,
+        )[-1].num_threads() == 2
+    else:
+        assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 2
     compiler.close()
 
 

@@ -24,7 +24,6 @@ class ToU3Pass(BasePass):
             convert_all_single_qubit_gates (bool): Indicates wheter to convert
             only the general gates, or every single qubit gate.
         """
-
         self.convert_all_single_qubit_gates = convert_all_single_qubit_gates
 
     async def run(self, circuit: Circuit, data: PassData) -> None:

@@ -7,16 +7,14 @@ import selectors
 import socket
 import time
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from multiprocessing.connection import Connection
 from multiprocessing.connection import Listener
 from threading import Thread
 from typing import Any
 from typing import cast
-from typing import List
 from typing import Optional
-from typing import Sequence
-from typing import Tuple
 
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
@@ -78,19 +76,14 @@ class DetachedServer(ServerBase):
 
         self.clients: dict[Connection, set[uuid.UUID]] = {}
         """Tracks all connected clients and all the tasks they have created."""
-
         self.tasks: dict[uuid.UUID, tuple[int, Connection]] = {}
         """Tracks all active CompilationTasks submitted to the cluster."""
-
         self.mailbox_to_task_dict: dict[int, uuid.UUID] = {}
         """Used to convert internal RuntimeTasks to client CompilationTasks."""
-
         self.mailboxes: dict[int, ServerMailbox] = {}
         """Mapping from mailbox ids to mailboxes."""
-
         self.mailbox_counter = 0
         """Counter to ensure all mailboxes have unique IDs."""
-
         # Connect to managers
         self.connect_to_managers(ipports)
 
@@ -132,7 +125,7 @@ class DetachedServer(ServerBase):
         if direction == MessageDirection.CLIENT:
 
             if msg == RuntimeMessage.CONNECT:
-                paths = cast(List[str], payload)
+                paths = cast(list[str], payload)
                 self.handle_connect(conn, paths)
 
             elif msg == RuntimeMessage.DISCONNECT:
@@ -163,7 +156,7 @@ class DetachedServer(ServerBase):
                 self.schedule_tasks([rtask])
 
             elif msg == RuntimeMessage.SUBMIT_BATCH:
-                rtasks = cast(List[RuntimeTask], payload)
+                rtasks = cast(list[RuntimeTask], payload)
                 self.schedule_tasks(rtasks)
 
             elif msg == RuntimeMessage.RESULT:
@@ -184,7 +177,7 @@ class DetachedServer(ServerBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                p = cast(Tuple[int, Optional[RuntimeAddress]], payload)
+                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
                 num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
 

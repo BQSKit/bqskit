@@ -30,7 +30,6 @@ class ResidualsFunction(CostFunction):
         params: RealVector,
     ) -> npt.NDArray[np.float64]:
         """Return the vector of residuals given the input parameters."""
-
         if not is_sequence(params):
             raise TypeError(
                 'Expected sequence for params, got %s.' % type(params),

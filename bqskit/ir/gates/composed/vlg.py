@@ -1,8 +1,8 @@
 """This module implements the VariableLocationGate."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import cast
-from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -68,7 +68,7 @@ class VariableLocationGate(ComposedGate):
 
         locations = [CircuitLocation(l) for l in locations]
 
-        if not all(len(l) == gate.num_qudits for l in locations):
+        if not all(len(l) == gate.num_qudits for l in locations):  # type: ignore  # noqa
             raise ValueError('Invalid sized location.')
 
         if len(locations) < 1:
@@ -78,7 +78,7 @@ class VariableLocationGate(ComposedGate):
         name_str_tuple = (gate.name, locations, radixes)
         self._name = 'VariableLocationGate(%s, %s, %s)' % name_str_tuple
         self.locations = list(locations)
-        self._num_qudits = len(set(sum((tuple(l) for l in locations), tuple())))
+        self._num_qudits = len(set(sum((tuple(l) for l in locations), tuple())))  # type: ignore  # noqa
 
         if len(radixes) == 0:
             # Calculate radixes
@@ -86,7 +86,7 @@ class VariableLocationGate(ComposedGate):
                 i: None for i in range(self.num_qudits)
             }
             for l in locations:
-                for radix, qudit_index in zip(gate.radixes, l):
+                for radix, qudit_index in zip(gate.radixes, l):  # type: ignore  # noqa
                     if radix_map[qudit_index] is None:
                         radix_map[qudit_index] = radix
                     elif radix_map[qudit_index] != radix:
@@ -101,7 +101,7 @@ class VariableLocationGate(ComposedGate):
             self._radixes = tuple(radix_map.values())  # type: ignore
         else:
             for l in locations:
-                for radix, qudit_index in zip(gate.radixes, l):
+                for radix, qudit_index in zip(gate.radixes, l):  # type: ignore  # noqa
                     if radixes[qudit_index] != radix:
                         raise ValueError(
                             'Gate cannot be applied to all locations'
@@ -117,14 +117,14 @@ class VariableLocationGate(ComposedGate):
         # TODO: This needs to changed for radixes
         self.I = np.identity(2 ** self.extension_size)
         self.perms = np.array([
-            PermutationMatrix.from_qubit_location(self.num_qudits, l)
+            PermutationMatrix.from_qubit_location(self.num_qudits, l)  # type: ignore  # noqa
             for l in self.locations
         ])
 
     def get_location(self, params: RealVector) -> tuple[int, ...]:
         """Returns the gate's location."""
         idx = int(np.argmax(self.split_params(params)[1]))
-        return tuple(self.locations[idx])
+        return tuple(self.locations[idx])  # type: ignore  # noqa
 
     def split_params(
         self,

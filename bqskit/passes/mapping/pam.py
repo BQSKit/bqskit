@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import itertools as it
 import logging
-from typing import Dict
+from collections.abc import Sequence
 from typing import Literal
 from typing import overload
-from typing import Sequence
-from typing import Tuple
 from typing import TypedDict
 
 import numpy as np
@@ -23,8 +21,8 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 _logger = logging.getLogger(__name__)
 
 
-PAMBlockPermData = Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], Circuit]
-PAMBlockTAPermData = Dict[CouplingGraph, PAMBlockPermData]
+PAMBlockPermData = dict[tuple[tuple[int, ...], tuple[int, ...]], Circuit]
+PAMBlockTAPermData = dict[CouplingGraph, PAMBlockPermData]
 
 
 class PAMBlockResultData(TypedDict):
@@ -33,7 +31,7 @@ class PAMBlockResultData(TypedDict):
     original_utry: UnitaryMatrix
 
 
-PAMBlockResultDict = Dict[CircuitPoint, PAMBlockResultData]
+PAMBlockResultDict = dict[CircuitPoint, PAMBlockResultData]
 
 
 class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
@@ -282,7 +280,6 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         qudits: Sequence[int],
     ) -> tuple[tuple[int, ...], Circuit, tuple[int, ...]]:
         """Return the best permutation to apply before and after a gate."""
-
         # Local permutations determine how a gate is permuted in it own space
         local_perms = list(it.permutations(range(len(qudits))))
 

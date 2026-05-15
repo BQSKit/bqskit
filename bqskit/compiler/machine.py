@@ -1,7 +1,7 @@
 """This module implements the MachineModel class."""
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from bqskit.compiler.gateset import GateSet
@@ -53,7 +53,6 @@ class MachineModel:
             Pre-built models for many active QPUs exist in the
             :obj:`~bqskit.ext` package.
         """
-
         if not is_integer(num_qudits):
             raise TypeError(
                 f'Expected integer num_qudits, got {type(num_qudits)}.',

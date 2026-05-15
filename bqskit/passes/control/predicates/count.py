@@ -9,7 +9,7 @@ from bqskit.passes.control.predicate import PassPredicate
 from bqskit.utils.typing import is_sequence
 
 if TYPE_CHECKING:
-    from typing import Sequence
+    from collections.abc import Sequence
 
     from bqskit.compiler.passdata import PassData
     from bqskit.ir.circuit import Circuit
@@ -41,7 +41,6 @@ class GateCountPredicate(PassPredicate):
                     - 'multi' for multi-qudit gates
                     - 'many' for gates with more than 2 qudits
         """
-
         if isinstance(gate, Gate):
             gate = [gate]
 
@@ -56,7 +55,13 @@ class GateCountPredicate(PassPredicate):
             if gate not in ['sq', 'tq', 'multi', 'many']:
                 raise ValueError(f'Unknown gate type {gate}.')
 
-        self.gate = list(gate) if not isinstance(gate, str) else gate
+        self.gate: list[Gate] | str = ''
+        if isinstance(gate, Gate):
+            self.gate = [gate]
+        elif isinstance(gate, str):
+            self.gate = gate
+        else:
+            self.gate = list(gate)
 
     def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
@@ -69,7 +74,7 @@ class GateCountPredicate(PassPredicate):
             }[self.gate])
 
         else:
-            gates = self.gate  # type: ignore
+            gates = self.gate
 
         gate_count = sum(circuit.count(g) for g in gates)
 

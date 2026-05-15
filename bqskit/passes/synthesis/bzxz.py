@@ -80,7 +80,6 @@ class FullBlockZXZPass(BasePass):
             instantiate_options (dict): The options to pass to the
                 scanning gate removal pass. (Default: {})
         """
-
         self.start_from_left = start_from_left
         self.min_qudit_size = min_qudit_size
         instantiation_options = {'method': 'qfactor'}
@@ -256,7 +255,6 @@ class BlockZXZPass(BasePass):
     def zxz(orig_u: UnitaryMatrix) -> Circuit:
         """Return the circuit that is generated from one levl of Block ZXZ
         decomposition."""
-
         # First calculate the A, B, and C matrices for the initial decomp
         A_1, A_2, B, C = BlockZXZPass.initial_decompose(orig_u)
 

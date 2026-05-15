@@ -30,7 +30,6 @@ class HeuristicFunction(abc.ABC):
         target: UnitaryMatrix | StateVector | StateSystem,
     ) -> float:
         """Return the heuristic's value given `circuit` and `target`."""
-
         if not isinstance(circuit, Circuit):
             raise TypeError(
                 'Expected circuit, got %s.' % type(circuit),

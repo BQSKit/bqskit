@@ -35,7 +35,6 @@ class StructureAnalysisPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         structures_seen: dict[CircuitStructure, int] = {}
 
         for block in circuit:

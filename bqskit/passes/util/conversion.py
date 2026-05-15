@@ -70,7 +70,6 @@ class BlockConversionPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         # Variable -> Constant
         if self.convert_variable and self.convert_target == 'constant':
             _logger.debug('Converting variable gates to constant gates.')

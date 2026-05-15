@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import itertools as it
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit

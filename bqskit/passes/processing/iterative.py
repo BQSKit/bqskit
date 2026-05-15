@@ -57,7 +57,6 @@ class IterativeScanningGateRemovalPass(PassAlias):
             ValueError: If `width_to_partition` is less than or equal to
                 `block_size`.
         """
-
         if not is_integer(width_to_partition):
             raise TypeError(f'Expected an int, got {type(width_to_partition)}.')
 

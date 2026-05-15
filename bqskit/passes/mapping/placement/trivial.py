@@ -14,7 +14,6 @@ class TrivialPlacementPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         # Select the first n physical qubits for placement
         trivial_placement = list(range(circuit.num_qudits))
         model = BasePass.get_model(circuit, data)

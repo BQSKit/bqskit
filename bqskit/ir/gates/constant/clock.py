@@ -38,7 +38,6 @@ class ClockGate(ConstantGate, QuditGate):
         Raises:
             ValueError: if radix < 2
         """
-
         if not is_integer(radix):
             raise TypeError(f'Expected integer for radix, got {type(radix)}.')
 

@@ -19,7 +19,6 @@ class GroupSingleQuditGatePass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         # Go through each qudit individually
         for q in range(circuit.num_qudits):
 

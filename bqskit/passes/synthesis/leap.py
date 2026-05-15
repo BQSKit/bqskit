@@ -352,7 +352,6 @@ class LEAPSynthesisPass(SynthesisPass):
 
             last_prefix_layer (int): The last layer a prefix was formed.
         """
-
         with np.errstate(invalid='ignore', divide='ignore'):
             # Calculate predicted best value
             m, y_int, _, _, _ = linregress(best_layers, best_dists)

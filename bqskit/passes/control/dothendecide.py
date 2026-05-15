@@ -8,7 +8,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.workflow import Workflow
 
 if TYPE_CHECKING:
-    from typing import Callable
+    from collections.abc import Callable
 
     from bqskit.compiler.passdata import PassData
     from bqskit.compiler.workflow import WorkflowLike

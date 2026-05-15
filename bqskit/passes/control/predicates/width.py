@@ -26,7 +26,6 @@ class WidthPredicate(PassPredicate):
         Args:
             width (int): Return true if the circuit's width is less than this.
         """
-
         if not is_integer(width):
             raise TypeError(f'Expected int, got {type(width)}')
 

@@ -47,5 +47,4 @@ class CeresMinimizer(LeastSquaresMinimizerNative, Minimizer):
                 can generate. This is quite noisy so only enable this if
                 you are certain you want it! Defaults to false.
         """
-
         return super().__new__(cls, num_threads, ftol, gtol, report)

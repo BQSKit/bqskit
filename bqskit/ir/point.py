@@ -3,16 +3,14 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from typing import Tuple
+from typing import TypeGuard
 from typing import Union
-
-from typing_extensions import TypeGuard
 
 from bqskit.utils.typing import is_integer
 _logger = logging.getLogger(__name__)
 
 
-class CircuitPoint(Tuple[int, int]):
+class CircuitPoint(tuple[int, int]):
     """
     A cycle and qudit index pair used to index a circuit.
 
@@ -41,7 +39,6 @@ class CircuitPoint(Tuple[int, int]):
         Returns:
             CircuitPoint: The new point object.
         """
-
         if qudit is not None and not is_integer(qudit):
             raise TypeError(
                 f'Expected int or None for qudit, got {type(qudit)}.',
@@ -118,4 +115,4 @@ class CircuitPoint(Tuple[int, int]):
         return True
 
 
-CircuitPointLike = Union[Tuple[int, int], CircuitPoint]
+CircuitPointLike = Union[tuple[int, int], CircuitPoint]

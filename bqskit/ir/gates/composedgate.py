@@ -13,12 +13,12 @@ class ComposedGate(Gate):
     A ComposedGate provides methods for determining if the gate is
     differentiable or locally optimizable.
 
-    A ComposedGate is differentiable/locally optimizable if
-    it inherits from the appropriate base class and all of its subgates
-    (in either self.gate or self.gates) inherit from the base class.
+    A ComposedGate is differentiable/locally optimizable if it inherits from the
+    appropriate base class and all of its subgates (in either self.gate or
+    self.gates) inherit from the base class.
 
-    For more complex behaviors, one can override :func:`is_differentiable`
-    or :func:`is_locally_optimizable`.
+    For more complex behaviors, one can override :func:`is_differentiable` or
+    :func:`is_locally_optimizable`.
     """
 
     def is_differentiable(self) -> bool:

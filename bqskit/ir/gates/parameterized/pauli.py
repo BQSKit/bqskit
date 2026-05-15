@@ -45,7 +45,6 @@ class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
         Raises:
             ValueError: If `num_qudits` is nonpositive.
         """
-
         if num_qudits <= 0:
             raise ValueError('Expected positive integer, got %d' % num_qudits)
 
