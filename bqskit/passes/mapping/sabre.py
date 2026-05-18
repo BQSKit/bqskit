@@ -15,31 +15,50 @@ from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.qis.graph import CouplingGraph
+from bqskit.utils.citation import cite
 
 
 _logger = logging.getLogger(__name__)
 
 
+@cite(key="10.1145/3297858.3304023", bibtex=r"""@inproceedings{10.1145/3297858.3304023,
+author = {Li, Gushu and Ding, Yufei and Xie, Yuan},
+title = {Tackling the Qubit Mapping Problem for NISQ-Era Quantum Devices},
+year = {2019},
+isbn = {9781450362405},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3297858.3304023},
+doi = {10.1145/3297858.3304023},
+abstract = {Due to little considerations in the hardware constraints, e.g., limited connections between physical qubits to enable two-qubit gates, most quantum algorithms cannot be directly executed on the Noisy Intermediate-Scale Quantum (NISQ) devices. Dynamically remapping logical qubits to physical qubits in the compiler is needed to enable the two-qubit gates in the algorithm, which introduces additional operations and inevitably reduces the fidelity of the algorithm. Previous solutions in finding such remapping suffer from high complexity, poor initial mapping quality, and limited flexibility and control. To address these drawbacks mentioned above, this paper proposes a SWAP-based Bidirectional heuristic search algorithm (SABRE), which is applicable to NISQ devices with arbitrary connections between qubits. By optimizing every search attempt, globally optimizing the initial mapping using a novel reverse traversal technique, introducing the decay effect to enable the trade-off between the depth and the number of gates of the entire algorithm, SABRE outperforms the best known algorithm with exponential speedup and comparable or better results on various benchmarks.},
+booktitle = {Proceedings of the Twenty-Fourth International Conference on Architectural Support for Programming Languages and Operating Systems},
+pages = {1001–1014},
+numpages = {14},
+keywords = {NISQ, quantum computing, qubit mapping},
+location = {Providence, RI, USA},
+series = {ASPLOS '19}
+}""")
+@cite(key="10.1145/3445814.3446718", bibtex=r"""@inproceedings{10.1145/3445814.3446718,
+author = {Duckering, Casey and Baker, Jonathan M. and Litteken, Andrew and Chong, Frederic T.},
+title = {Orchestrated trios: compiling for efficient communication in Quantum programs with 3-Qubit gates},
+year = {2021},
+isbn = {9781450383172},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3445814.3446718},
+doi = {10.1145/3445814.3446718},
+abstract = {Current quantum computers are especially error prone and require high levels of optimization to reduce operation counts and maximize the probability the compiled program will succeed. These computers only support operations decomposed into one- and two-qubit gates and only two-qubit gates between physically connected pairs of qubits. Typical compilers first decompose operations, then route data to connected qubits. We propose a new compiler structure, Orchestrated Trios, that first decomposes to the three-qubit Toffoli, routes the inputs of the higher-level Toffoli operations to groups of nearby qubits, then finishes decomposition to hardware-supported gates.  This significantly reduces communication overhead by giving the routing pass access to the higher-level structure of the circuit instead of discarding it. A second benefit is the ability to now select an architecture-tuned Toffoli decomposition such as the 8-CNOT Toffoli for the specific hardware qubits now known after the routing pass. We perform real experiments on IBM Johannesburg showing an average 35\% decrease in two-qubit gate count and 23\% increase in success rate of a single Toffoli over Qiskit. We additionally compile many near-term benchmark algorithms showing an average 344\% increase in (or 4.44x) simulated success rate on the Johannesburg architecture and compare with other architecture types.},
+booktitle = {Proceedings of the 26th ACM International Conference on Architectural Support for Programming Languages and Operating Systems},
+pages = {375–385},
+numpages = {11},
+keywords = {quantum computing, compiler, Toffoli, NISQ},
+location = {Virtual, USA},
+series = {ASPLOS '21}
+}""")
 class GeneralizedSabreAlgorithm():
     """
     Implements methods for Sabre-based layout and routing algorithms using a
     modified heuristic to accommodate larger than 2-qudit gates.
-
-    References:
-        Gushu Li, Yufei Ding, and Yuan Xie. 2019. Tackling the Qubit
-        Mapping Problem for NISQ-Era Quantum Devices. In Proceedings of
-        the 24th ACM International Conference on Architectural
-        Support for Programming Languages and Operating Systems
-        (ASPLOS 2019). Association for Computing Machinery, New York, NY,
-        USA, 1001-1014. https://doi.org/10.1145/3297858.3304023
-
-        Casey Duckering, Jonathan M. Baker, Andrew Litteken, and Frederic
-        T. Chong. 2021. Orchestrated trios: compiling for efficient
-        communication in Quantum programs with 3-Qubit gates. In Proceedings
-        of the 26th ACM International Conference on Architectural Support
-        for Programming Languages and Operating Systems (ASPLOS 2021).
-        Association for Computing Machinery, New York, NY, USA, 375-385.
-        https://doi.org/10.1145/3445814.3446718
     """
 
     def __init__(

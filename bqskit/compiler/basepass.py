@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from bqskit.qis.state.system import StateSystem
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+    from bqskit.utils.citation import Citation
 
 
 class BasePass(abc.ABC):
@@ -35,6 +36,16 @@ class BasePass(abc.ABC):
     def name(self) -> str:
         """The name of the pass."""
         return self.__class__.__name__
+
+    def get_citations(self) -> set[Citation]:
+        """Return the set of citations associated with this pass."""
+        # automatically deduplicated by Citation.__hash__
+        result = set()
+
+        for class_ in type(self).__mro__:
+            result |= class_.__dict__.get("_cite_meta", set())
+
+        return result
 
     @abc.abstractmethod
     async def run(self, circuit: Circuit, data: PassData) -> None:
