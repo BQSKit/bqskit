@@ -42,7 +42,6 @@ class IfThenElsePass(BasePass):
                 the pass or passes to execute if `condition` is false.
                 Defaults to None, which does is equivalent to a No-Op.
         """
-
         if not isinstance(condition, PassPredicate):
             raise TypeError('Expected PassPredicate, got %s.' % type(condition))
 

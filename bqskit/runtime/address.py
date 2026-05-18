@@ -13,6 +13,7 @@ class RuntimeAddress(NamedTuple):
     will ship its result to its return address. That slot will only accept a
     package from that task.
     """
+
     worker_id: int
     mailbox_index: int
     mailbox_slot: int

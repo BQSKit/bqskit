@@ -28,7 +28,6 @@ class CZToCNOTPass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         # Find all cnots
         cnot_points = []
         for cycle, op in circuit.operations_with_cycles():

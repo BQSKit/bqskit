@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import itertools as it
-from typing import Iterable
-from typing import Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import overload
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -69,7 +69,6 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         Raises:
             ValueError: If `num_qudits` is less than or equal to 0.
         """
-
         if not is_integer(num_qudits):
             raise TypeError(
                 'Expected integer for num_qudits, got %s.' %
@@ -194,7 +193,6 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         Raises:
             ValueError: If `alpha` and `self.paulis` are incompatible.
         """
-
         if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
             raise TypeError(
                 'Expected a sequence of numbers, got %s.' % type(alpha),
@@ -228,7 +226,6 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         Raises:
             ValueError: if `pauli_string` is invalid.
         """
-
         if not isinstance(pauli_string, str):
             raise TypeError(
                 'Expected string for pauli_string, got %s' % type(
@@ -264,8 +261,8 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
             else:
                 acm = mat_dict[pauli_string[0]]
                 for char in pauli_string[1:]:
-                    acm = np.kron(acm, mat_dict[char])  # type: ignore
-                pauli_matrices.append(acm)
+                    acm = np.kron(acm, mat_dict[char])
+                pauli_matrices.append(acm)  # type: ignore
 
         if len(pauli_matrices) == 1:
             return pauli_matrices[0]

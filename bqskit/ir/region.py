@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from collections.abc import Mapping
 from typing import Any
-from typing import Iterator
-from typing import Mapping
+from typing import TypeGuard
 from typing import Union
-
-from typing_extensions import TypeGuard
 
 from bqskit.ir.interval import CycleInterval
 from bqskit.ir.interval import IntervalLike
@@ -256,7 +255,6 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
     def overlaps(self, other: CircuitPointLike | CircuitRegionLike) -> bool:
         """Return true if `other` overlaps this region."""
-
         if CircuitPoint.is_point(other):
             other = CircuitPoint(*other)
 
@@ -398,7 +396,6 @@ class CircuitRegion(Mapping[int, CycleInterval]):
 
         Return -1 if other depends on self. Return 0 if no dependency.
         """
-
         if not isinstance(other, CircuitRegion):
             other = CircuitRegion(other)
 

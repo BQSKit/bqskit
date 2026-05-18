@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections.abc import Sequence
 from typing import Any
-from typing import Sequence
 
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -81,7 +81,6 @@ class QFASTDecompositionPass(SynthesisPass):
         Raises:
             ValueError: If max_depth is nonpositive.
         """
-
         if not isinstance(gate, Gate):
             raise TypeError('Expected gate to be a Gate, got %s' % type(gate))
 

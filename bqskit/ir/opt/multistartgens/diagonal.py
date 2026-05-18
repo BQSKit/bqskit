@@ -42,7 +42,6 @@ class DiagonalStartGenerator(MultiStartGenerator):
         Raises:
             ValueError: If `multistarts` is not a positive integer.
         """
-
         if not is_integer(multistarts):
             raise TypeError(
                 'Expected int for multistarts, got %s.' % type(multistarts),

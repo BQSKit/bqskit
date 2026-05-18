@@ -10,12 +10,12 @@ import subprocess
 import sys
 import time
 import uuid
+from collections.abc import MutableMapping
 from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from subprocess import Popen
 from types import FrameType
 from typing import Literal
-from typing import MutableMapping
 from typing import overload
 from typing import TYPE_CHECKING
 

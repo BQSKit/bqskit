@@ -40,7 +40,6 @@ class SubSwapGate(ConstantGate, QuditGate):
 
             ValueError: If the qudit_levels string is not formatted correctly.
         """
-
         if not is_integer(radix):
             raise TypeError(f'Expected integer for radix, got {type(radix)}.')
 

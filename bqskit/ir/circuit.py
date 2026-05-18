@@ -5,16 +5,15 @@ import copy
 import logging
 import pickle
 import warnings
+from collections.abc import Callable
+from collections.abc import Collection
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Collection
-from typing import Dict
-from typing import Iterable
-from typing import Iterator
 from typing import Optional
 from typing import overload
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import dill
@@ -163,7 +162,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         self._gate_info: dict[Gate, int] = {}
         self._graph_info: dict[tuple[int, int], int] = {}
 
-        _NodePtrs = Dict[int, Optional[CircuitPoint]]
+        _NodePtrs = dict[int, Optional[CircuitPoint]]
         self._front: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._rear: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._dag: dict[CircuitPoint, tuple[_NodePtrs, _NodePtrs]] = {}
@@ -304,7 +303,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             ValueError: If `radix` is < 2
         """
-
         if not is_integer(radix):
             raise TypeError('Expected integer for radix, got: %s', type(radix))
 
@@ -330,7 +328,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             ValueError: If any radix in `radixes` is < 2.
         """
-
         for radix in radixes:
             self.append_qudit(radix)
 
@@ -346,7 +343,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             ValueError: If `radix` is < 2.
         """
-
         if not is_integer(qudit_index):
             raise TypeError(
                 f'Expected integer for qudit_index, got: {type(qudit_index)}',
@@ -434,7 +430,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             ValueError: If circuit only has one qudit.
         """
-
         if not is_integer(qudit_index):
             raise TypeError(
                 f'Expected integer for qudit_index, got: {type(qudit_index)}',
@@ -517,7 +512,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def is_qudit_in_range(self, qudit_index: int) -> bool:
         """Return true if `qudit_index` is in-range for the circuit."""
-
         if not is_integer(qudit_index):
             raise TypeError(
                 f'Expected integer for qudit_index, got: {type(qudit_index)}',
@@ -530,7 +524,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def is_qudit_idle(self, qudit_index: int) -> bool:
         """Return true if the qudit is not involved in any operations."""
-
         if not is_integer(qudit_index):
             raise TypeError(
                 f'Expected integer for qudit_index, got: {type(qudit_index)}',
@@ -667,7 +660,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             IndexError: If `cycle_index` is out of range.
         """
-
         if not is_integer(cycle_index):
             raise TypeError(
                 f'Expected integer for cycle_index, got: {type(cycle_index)}',
@@ -721,7 +713,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def is_cycle_in_range(self, cycle_index: int) -> bool:
         """Return true if cycle is a valid in-range index in the circuit."""
-
         if not is_integer(cycle_index):
             raise TypeError(
                 f'Expected integer for cycle_index, got: {type(cycle_index)}',
@@ -833,7 +824,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         location: CircuitLocationLike,
     ) -> int:
         """Find the first available cycle, if none exists append one."""
-
         available_cycle = self.find_available_cycle(location)
 
         # If no available cycle
@@ -1450,7 +1440,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         See Also:
             :func:`insert`
         """
-
         if not is_integer(cycle_index):
             raise TypeError(
                 f'Expected integer cycle index, got: {cycle_index}.',
@@ -2215,7 +2204,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
             an exhaustive search is employed to find the maximal region
             from this decision tree.
         """
-
         if not is_integer(num_qudits):
             raise TypeError(
                 f'Expected an integer num_qudits, got {type(num_qudits)}.',
@@ -2392,7 +2380,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
             IndexError: If any of `points` are out-of-range.
         """
-
         if not is_iterable(points):
             raise TypeError(
                 'Expected iterable of points, got %s.' % type(points),
@@ -3004,7 +2991,6 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
         Raises:
             IndexError: If any specified point is invalid or out-of-range.
         """
-
         if CircuitPoint.is_point(indices):
             return self.get_operation(indices)
 
@@ -3325,7 +3311,6 @@ def rebuild_circuit(
 ) -> Circuit:
     """Rebuild a circuit from a pickle state."""
     circuit = Circuit(num_qudits, radixes)
-
     gate_table = {}
     for i, (is_dill, serialized_gate) in enumerate(serialized_gates):
         if is_dill:

@@ -93,10 +93,10 @@ from __future__ import annotations
 
 import faulthandler
 import os
+from collections.abc import Callable
+from collections.abc import Sequence
 from typing import Any
-from typing import Callable
 from typing import Protocol
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -106,7 +106,6 @@ class PermutationMatrix(UnitaryMatrix):
         Returns:
             bool: True if P is a permutation matrix.
         """
-
         if isinstance(P, PermutationMatrix):
             return True
 

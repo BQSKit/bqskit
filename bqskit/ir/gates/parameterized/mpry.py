@@ -41,10 +41,12 @@ class MPRYGate(
     LocallyOptimizableUnitary,
 ):
     """
-    A gate representing a multiplexed Y rotation. A multiplexed Y rotation
-    uses n - 1 qubits as select qubits and applies a Y rotation to the target.
-    If the target qubit is the last qubit, then the unitary is block diagonal.
-    Each block is a 2x2 RY matrix with parameter theta.
+    A gate representing a multiplexed Y rotation.
+
+    A multiplexed Y rotation uses n - 1 qubits as select qubits and applies a
+    Y rotation to the target. If the target qubit is the last qubit, then the
+    unitary is block diagonal. Each block is a 2x2 RY matrix with parameter
+    theta.
 
     Since there are n - 1 select qubits, there are 2^(n-1) parameters (thetas).
 

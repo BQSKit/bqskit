@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
-from typing import Iterator
-from typing import Sequence
-from typing import Tuple
+from collections.abc import Callable
+from collections.abc import Iterator
+from collections.abc import Sequence
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel
@@ -59,7 +58,6 @@ class ScanPartitioner(BasePass):
         Raises:
             ValueError: If `block_size` is less than 2.
         """
-
         if not is_integer(block_size):
             raise TypeError(
                 f'Expected integer for block_size, got {type(block_size)}.',
@@ -75,7 +73,6 @@ class ScanPartitioner(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '
@@ -231,7 +228,6 @@ class ScanPartitioner(BasePass):
         circuit: Circuit,
     ) -> dict[tuple[int, ...], tuple[CircuitRegion, list[Operation]]]:
         """Calculate the initial blocks for all qudit groups."""
-
         blocks: dict[
             tuple[int, ...],
             tuple[CircuitRegion, list[Operation]],
@@ -309,7 +305,7 @@ class ScanPartitioner(BasePass):
             op_list,
         )
 
-    class FastRegionIterator(Iterator[Tuple[int, Operation]]):
+    class FastRegionIterator(Iterator[tuple[int, Operation]]):
         """A circuit iterator designed to be efficient for the ScanPartitioner's
         use case."""
 

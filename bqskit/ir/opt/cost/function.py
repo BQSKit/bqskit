@@ -23,7 +23,6 @@ class CostFunction(abc.ABC):
 
     def __call__(self, params: RealVector) -> float:
         """Return the cost value given the input parameters."""
-
         if not is_sequence(params):
             raise TypeError(
                 'Expected sequence for params, got %s.' % type(params),

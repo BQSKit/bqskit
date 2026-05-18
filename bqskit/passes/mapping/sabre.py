@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Iterator
-from typing import Sequence
+from collections.abc import Iterator
+from collections.abc import Sequence
 
 import numpy as np
 

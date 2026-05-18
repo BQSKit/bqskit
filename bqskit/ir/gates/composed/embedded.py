@@ -1,8 +1,8 @@
 """This module implements the ControlledGate class."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import cast
-from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -318,7 +318,6 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
         Notes:
             No checks are done to ensure that the parameters are correct.
         """
-
         for i in range(self.gate.dim):
             # Expand i, j into the mixed-radix basis of the gate
             i_exp = np.unravel_index(i, self.gate.radixes)

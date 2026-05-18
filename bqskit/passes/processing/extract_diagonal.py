@@ -22,14 +22,13 @@ def construct_linear_ansatz(num_qudits: int) -> Circuit:
     """
     Generate a linear ansatz for extracting the diagonal of a unitary.
 
-    This ansatz consists of a `num_qudits` width Diagonal Gate followed
-    by a ladder of CNOTs and single qubit gates. Right now, we try to use
-    one fewer CNOT than the theorized minimum number of CNOTs to represent
-    the unitary.
+    This ansatz consists of a `num_qudits` width Diagonal Gate followed by a
+    ladder of CNOTs and single qubit gates. Right now, we try to use one fewer
+    CNOT than the theorized minimum number of CNOTs to represent the unitary.
 
-    This ansatz is simply a heuristic and does not have theoretical
-    backing. However, we see that for unitaries up to 5 qubits, this
-    ansatz does succeed most of the time with a threshold of 1e-8.
+    This ansatz is simply a heuristic and does not have theoretical backing.
+    However, we see that for unitaries up to 5 qubits, this ansatz does succeed
+    most of the time with a threshold of 1e-8.
     """
     theorized_num = theorized_bounds[num_qudits]
     circuit = Circuit(num_qudits)
@@ -105,7 +104,6 @@ class ExtractDiagonalPass(BasePass):
             instantiate_options (dict[str, Any]): The options to pass to the
             instantiate method.
         """
-
         circ = Circuit(op.gate.num_qudits)
 
         if op.gate.num_qudits == 2:

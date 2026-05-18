@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 import itertools as it
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.machine import MachineModel

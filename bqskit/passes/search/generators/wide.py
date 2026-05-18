@@ -97,7 +97,6 @@ class WideLayerGenerator(LayerGenerator):
             ValueError: If `target` has a radix mismatch with
                 `self.initial_layer_gate`.
         """
-
         if not isinstance(target, (UnitaryMatrix, StateVector, StateSystem)):
             raise TypeError(
                 'Expected unitary or state, got %s.' % type(target),
@@ -126,7 +125,6 @@ class WideLayerGenerator(LayerGenerator):
         Raises:
             ValueError: If circuit is a single-qudit circuit.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 

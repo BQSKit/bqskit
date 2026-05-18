@@ -36,16 +36,12 @@ class CompilationTask():
 
         self.data = PassData(input)
         """The task's data for use in BQSKit passes."""
-
         self.done = False
         """True when the task is complete."""
-
         self.request_data = False
         """If true, :func:`run` will additionally return the PassData."""
-
         self.logging_level: int | None = None
         """A general filter on all logging messages in the system."""
-
         self.max_logging_depth = -1
         """No logging for tasks with more than `max_logging_depth` parents."""
 

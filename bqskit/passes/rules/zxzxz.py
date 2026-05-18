@@ -34,7 +34,6 @@ class ZXZXZDecomposition(BasePass):
 
             always_use_u1 (bool): If True, always use U1 instead of RZ.
         """
-
         if not isinstance(always_use_rx, bool):
             raise TypeError(
                 f'Expected bool for always_use_rx, got {type(always_use_rx)}.',
@@ -50,7 +49,6 @@ class ZXZXZDecomposition(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         if circuit.num_qudits != 1:
             raise ValueError(
                 'Cannot convert multi-qudit circuit into ZXZXZ sequence.',

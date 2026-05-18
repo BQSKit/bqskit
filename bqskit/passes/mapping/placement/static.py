@@ -78,7 +78,6 @@ class StaticPlacementPass(BasePass):
         logical_graph: CouplingGraph,
     ) -> list[int]:
         """Try all possible placements."""
-
         # To be optimized later
         logical_qubit_order = list(range(logical_graph.num_qudits))
 

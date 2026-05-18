@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from typing import cast
-from typing import Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -328,16 +328,16 @@ class UnitaryBuilder(Unitary):
             self, location: Sequence[int],
     ) -> npt.NDArray[np.complex128]:
         """
-        Calculates the environment matrix w.r.t. the specified location.
+        Calculates the environment matrix w.r.t.
 
-        Args:
-            location (Sequence[int]): Calculate the environment matrix with
-                respect to the qudit indices in location.
+        the specified location.
+                Args:
+                    location (Sequence[int]): Calculate the environment matrix
+                        with respect to the qudit indices in location.
 
-        Returns:
-            np.ndarray: The environmental matrix.
+                Returns:
+                    np.ndarray: The environmental matrix.
         """
-
         left_perm = list(range(self.num_qudits))
         left_perm = [x for x in left_perm if x not in location]
         left_perm = left_perm + [x + self.num_qudits for x in left_perm]

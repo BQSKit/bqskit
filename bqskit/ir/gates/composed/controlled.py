@@ -1,8 +1,8 @@
 """This module implements the ControlledGate class."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from functools import reduce
-from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -267,19 +267,14 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
 
         iden_gate = np.identity(self.gate.dim, dtype=np.complex128)
         """Identity is applied when controls are not properly activated."""
-
         self.ctrl = self.build_control_proj(control_radixes, control_levels)
         """Control projection matrix determines if the gate should activate."""
-
         ctrl_dim = int(np.prod(self.control_radixes))
         """Dimension of the control qudits."""
-
         iden_proj = np.eye(ctrl_dim, dtype=np.complex128) - self.ctrl
         """Identity projection matrix determines if it shouldn't activate."""
-
         self.ihalf = np.kron(iden_proj, iden_gate)
         """Identity half of the final unitary equation."""
-
         # If input is a constant gate, we can cache the unitary.
         if self.num_params == 0 and not building_docs():
             U = self.gate.get_unitary()
@@ -400,8 +395,8 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
         """
         Checks the control paramters for type and value errors.
 
-        Returns specific types for each parameter; see
-        :class:`ControlledGate` for more info on errors and parameters.
+        Returns specific types for each parameter; see :class:`ControlledGate`
+        for more info on errors and parameters.
         """
         if not is_integer(num_controls):
             raise TypeError(
@@ -446,44 +441,46 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
                 f'got {type(control_levels)}.',
             )
 
-        control_levels = [
-            [level] if is_integer(level) else level
+        ctrl_lvl_lists: list[list[int]] = [
+            [level] if is_integer(level) else list(level)
             for level in control_levels
         ]
 
-        if any(not is_sequence_of_int(levels) for levels in control_levels):
-            bad = [not is_sequence_of_int(levels) for levels in control_levels]
+        if any(not is_sequence_of_int(levels) for levels in ctrl_lvl_lists):
+            bad = [
+                not is_sequence_of_int(levels)
+                for levels in ctrl_lvl_lists
+            ]
             bad_index = bad.index(True)
             raise TypeError(
                 'Expected sequence of sequence of integers for control_levels,'
-                f'got {control_levels[bad_index]} where a sequence of integers'
+                f'got {ctrl_lvl_lists[bad_index]} where a sequence of integers'
                 ' was expected.',
             )
 
-        if len(control_levels) != num_controls:
+        if len(ctrl_lvl_lists) != num_controls:
             raise ValueError(
                 'Expected length of control_levels to be equal to '
-                f'num_controls: {len(control_levels)=} != {num_controls=}.',
+                f'num_controls: {len(ctrl_lvl_lists)=} != {num_controls=}.',
             )
 
-        if any(l < 0 for levels in control_levels for l in levels):
+        if any(l < 0 for levels in ctrl_lvl_lists for l in levels):
             raise ValueError(
                 'Expected control levels to be greater than or equal to 0.',
             )
 
         if any(
             l >= r
-            for r, levels in zip(control_radixes, control_levels)
+            for r, levels in zip(control_radixes, ctrl_lvl_lists)
             for l in levels
         ):
             raise ValueError(
                 'Expected control levels to be less than the number of levels.',
             )
 
-        if any(len(l) != len(set(l)) for l in control_levels):
+        if any(len(l) != len(set(l)) for l in ctrl_lvl_lists):
             raise ValueError(
                 'Expected control levels to be unique for each qudit.',
             )
 
-        control_levels = [list(levels) for levels in control_levels]
-        return num_controls, list(control_radixes), control_levels
+        return num_controls, list(control_radixes), ctrl_lvl_lists

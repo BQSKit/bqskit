@@ -16,6 +16,7 @@ _logger = logging.getLogger(__name__)
 # TODO: choose a better name?
 class MiddleOutLayerGenerator(SimpleLayerGenerator):
     """Layer Generator for search that adds gates at each time step."""
+
     generated_circuits: set[int]
 
     def __init__(self) -> None:
@@ -30,7 +31,6 @@ class MiddleOutLayerGenerator(SimpleLayerGenerator):
         Raises:
             ValueError: If circuit is a single-qudit circuit.
         """
-
         if not isinstance(circuit, Circuit):
             raise TypeError('Expected circuit, got %s.' % type(circuit))
 
