@@ -21,7 +21,8 @@ from bqskit.utils.citation import cite
 _logger = logging.getLogger(__name__)
 
 
-@cite(key="10.1145/3297858.3304023", bibtex=r"""@inproceedings{10.1145/3297858.3304023,
+@cite(
+    key='10.1145/3297858.3304023', bibtex=r"""@inproceedings{10.1145/3297858.3304023,
 author = {Li, Gushu and Ding, Yufei and Xie, Yuan},
 title = {Tackling the Qubit Mapping Problem for NISQ-Era Quantum Devices},
 year = {2019},
@@ -37,8 +38,10 @@ numpages = {14},
 keywords = {NISQ, quantum computing, qubit mapping},
 location = {Providence, RI, USA},
 series = {ASPLOS '19}
-}""")
-@cite(key="10.1145/3445814.3446718", bibtex=r"""@inproceedings{10.1145/3445814.3446718,
+}""",
+)
+@cite(
+    key='10.1145/3445814.3446718', bibtex=r"""@inproceedings{10.1145/3445814.3446718,
 author = {Duckering, Casey and Baker, Jonathan M. and Litteken, Andrew and Chong, Frederic T.},
 title = {Orchestrated trios: compiling for efficient communication in Quantum programs with 3-Qubit gates},
 year = {2021},
@@ -54,12 +57,11 @@ numpages = {11},
 keywords = {quantum computing, compiler, Toffoli, NISQ},
 location = {Virtual, USA},
 series = {ASPLOS '21}
-}""")
+}""",
+)
 class GeneralizedSabreAlgorithm():
-    """
-    Implements methods for Sabre-based layout and routing algorithms using a
-    modified heuristic to accommodate larger than 2-qudit gates.
-    """
+    """Implements methods for Sabre-based layout and routing algorithms using a
+    modified heuristic to accommodate larger than 2-qudit gates."""
 
     def __init__(
         self,

@@ -43,7 +43,7 @@ class BasePass(abc.ABC):
         result = set()
 
         for class_ in type(self).__mro__:
-            result |= class_.__dict__.get("_cite_meta", set())
+            result |= class_.__dict__.get('_cite_meta', set())
 
         return result
 

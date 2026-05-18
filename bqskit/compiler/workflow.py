@@ -4,7 +4,12 @@ from __future__ import annotations
 import copy
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Iterable, Iterator, Sequence, Union, overload
+from typing import Iterable
+from typing import Iterator
+from typing import overload
+from typing import Sequence
+from typing import TYPE_CHECKING
+from typing import Union
 
 import dill
 
@@ -64,11 +69,12 @@ class Workflow(BasePass, Sequence[BasePass]):
             raise ValueError('Expected at least one pass in workflow.')
 
     def get_citations(self) -> set[Citation]:
-        """Return the set of citations for this pass and all its parent classes."""
+        """Return the set of citations for this pass and all its parent
+        classes."""
         return set(self.gather_citations().keys())
 
     def gather_citations(self) -> dict[Citation, list[BasePass]]:
-        """ Return a mapping of citations to the passes that use them."""
+        """Return a mapping of citations to the passes that use them."""
         result: defaultdict[Citation, list[BasePass]] = defaultdict(list)
         for pass_ in self._passes:
             for citation in pass_.get_citations():
