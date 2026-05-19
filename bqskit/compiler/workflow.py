@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections import defaultdict
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
@@ -13,6 +14,7 @@ from typing import Union
 import dill
 
 from bqskit.compiler.basepass import BasePass
+from bqskit.utils.citation import Citation
 from bqskit.utils.random import seed_random_sources
 from bqskit.utils.typing import is_iterable
 
@@ -65,6 +67,19 @@ class Workflow(BasePass, Sequence[BasePass]):
 
         if len(self._passes) == 0:
             raise ValueError('Expected at least one pass in workflow.')
+
+    def get_citations(self) -> set[Citation]:
+        """Return the set of citations for this pass and all its parent
+        classes."""
+        return set(self.gather_citations().keys())
+
+    def gather_citations(self) -> dict[Citation, list[BasePass]]:
+        """Return a mapping of citations to the passes that use them."""
+        result: defaultdict[Citation, list[BasePass]] = defaultdict(list)
+        for pass_ in self._passes:
+            for citation in pass_.get_citations():
+                result[citation].append(pass_)
+        return result
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
