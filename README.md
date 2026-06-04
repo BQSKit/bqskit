@@ -44,8 +44,8 @@ You can use the [software disclosure](https://doi.org/10.11578/dc.20210603.2)
 to cite the BQSKit package.
 
 Additionally, if you used or extended a specific algorithm, you should cite
-that individually. BQSKit passes will include a relevant reference in
-their documentation.
+that individually. Citations can be programatically retrieved for passes and
+workflows via `get_citations` and/or `gather_citations`.
 
 ## License
 
