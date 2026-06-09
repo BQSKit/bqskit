@@ -18,6 +18,7 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
+from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
@@ -25,6 +26,7 @@ from bqskit.utils.typing import is_real_number
 _logger = logging.getLogger(__name__)
 
 
+@cite(doi='10.1109/QCE49297.2020.00036')
 class QSearchSynthesisPass(SynthesisPass):
     """
     A pass implementing the QSearch A* synthesis algorithm.

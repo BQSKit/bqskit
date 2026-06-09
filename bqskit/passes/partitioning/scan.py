@@ -13,6 +13,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.region import CircuitRegion
+from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 
 _logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ def default_scoring_fn(ops: list[Operation]) -> float:
     return score
 
 
+@cite(doi='10.48550/arXiv.2012.09835')
 class ScanPartitioner(BasePass):
     """
     The ScanPartitioner Pass.

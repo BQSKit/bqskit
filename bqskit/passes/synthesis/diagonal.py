@@ -13,6 +13,7 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
+from bqskit.utils.citation import cite
 from bqskit.utils.math import pauliz_expansion
 from bqskit.utils.math import unitary_log_no_i
 
@@ -20,6 +21,7 @@ from bqskit.utils.math import unitary_log_no_i
 _logger = logging.getLogger(__name__)
 
 
+@cite(doi='10.1088/1367-2630/16/3/033040')
 class WalshDiagonalSynthesisPass(SynthesisPass):
     """
     A pass that synthesizes diagonal unitaries into Walsh functions.

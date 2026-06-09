@@ -19,12 +19,14 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
 _logger = logging.getLogger(__name__)
 
 
+@cite(doi='10.1109/QCE52317.2021.00041')
 class QFASTDecompositionPass(SynthesisPass):
     """
     A pass performing one round of decomposition from the QFAST algorithm.
