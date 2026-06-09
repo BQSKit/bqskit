@@ -1,4 +1,5 @@
 """This module implements the RYYGate."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -33,7 +34,7 @@ class RYYGate(
 
     _num_qudits = 2
     _num_params = 1
-    _qasm_name = 'ryy'
+    _qasm_name = "ryy"
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -72,5 +73,19 @@ class RYYGate(
                     [0, dnsin, dcos, 0],
                     [dpsin, 0, 0, dcos],
                 ],
-            ], dtype=np.complex128,
+            ],
+            dtype=np.complex128,
+        )
+
+    def get_qasm_gate_def(self) -> str:
+        return (
+            "gate ryy(param0) q0, q1 {"
+            "sxdg q0; "
+            "sxdg q1; "
+            "cx q0, q1; "
+            "rz(param0) q1; "
+            "cx q0, q1; "
+            "sx q0; "
+            "sx q1; "
+            "}\n"
         )
