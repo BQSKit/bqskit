@@ -44,8 +44,14 @@ You can use the [software disclosure](https://doi.org/10.11578/dc.20210603.2)
 to cite the BQSKit package.
 
 Additionally, if you used or extended a specific algorithm, you should cite
-that individually. Citations can be programatically retrieved for passes and
-workflows via `get_citations` and/or `gather_citations`.
+that individually. BQSKit passes should include the reference in their
+documentation as well as register it programatically so it can be retrieved
+via `get_citations` and/or `gather_citations`.
+
+```python
+from bqskit.passes import SabreLayoutPass
+print(SabreLayoutPass().get_citations())
+```
 
 ## License
 

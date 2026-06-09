@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from bqskit.qis.state.system import StateSystem
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-    from bqskit.utils.citation import Citation
 
 
 class BasePass(abc.ABC):
@@ -37,9 +36,8 @@ class BasePass(abc.ABC):
         """The name of the pass."""
         return self.__class__.__name__
 
-    def get_citations(self) -> set[Citation]:
+    def get_citations(self) -> set[str]:
         """Return the set of citations associated with this pass."""
-        # automatically deduplicated by Citation.__hash__
         result = set()
 
         for class_ in type(self).__mro__:
