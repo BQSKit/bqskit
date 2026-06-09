@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections.abc import Sequence
 from typing import Callable
-from typing import Sequence
 
 from ._partitioning_utils import CachedSingleQuditIterator
 from ._partitioning_utils import PriorityQueueSet

@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import bisect
 import heapq
-from typing import Iterable
-from typing import Iterator
-from typing import Sequence
-from typing import Set
-from typing import Tuple
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
@@ -20,7 +18,7 @@ if TYPE_CHECKING:
 T = TypeVar('T', bound='SupportsRichComparison')
 
 
-class PriorityQueueSet(Set[T]):
+class PriorityQueueSet(set[T]):
     """
     Source: https://stackoverflow.com/questions/407734/
         a-generic-priority-queue-for-python
@@ -68,7 +66,7 @@ class PriorityQueueSet(Set[T]):
 
 
 # BQSKit utils
-class SingleQuditIterator(Iterator[Tuple[int, Operation]]):
+class SingleQuditIterator(Iterator[tuple[int, Operation]]):
     """A circuit iterator designed for walking down a single qudit."""
 
     def __init__(
@@ -106,7 +104,7 @@ class SingleQuditIterator(Iterator[Tuple[int, Operation]]):
         return cycle_to_return, op
 
 
-class CachedSingleQuditIterator(Iterator[Tuple[int, Operation]]):
+class CachedSingleQuditIterator(Iterator[tuple[int, Operation]]):
     """A SingleQuditIterator which walks down a cache rather than directly
     walking the qudit."""
 
