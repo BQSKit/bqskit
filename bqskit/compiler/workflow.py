@@ -73,11 +73,13 @@ class Workflow(BasePass, Sequence[BasePass]):
 
     def gather_citations(self) -> dict[str, list[str]]:
         """Return a mapping of citations to the passes that use them."""
-        result = defaultdict(list)
+        result: defaultdict[str, list[str]] = defaultdict(list)
+
         for pass_ in self._passes:
             for citation in pass_.get_citations():
                 result[citation].append(pass_.name)
-        return result
+
+        return dict(result)
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
