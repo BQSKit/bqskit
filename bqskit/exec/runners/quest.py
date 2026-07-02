@@ -130,7 +130,11 @@ class QuestRunner(CircuitRunner):
         # 5. Average and return results
         probs = np.sum(np.array([result.probs for result in results]), axis=0)
         probs /= self.sample_size
-        return RunnerResults(circuit.num_qudits, circuit.radixes, probs)
+        return RunnerResults(
+            circuit.num_qudits,
+            circuit.radixes,
+            probs.tolist(),
+        )
 
     def parse_data(
         self,
