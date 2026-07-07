@@ -15,12 +15,14 @@ from bqskit.ir.gates.constant.swap import SwapGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.point import CircuitPoint
 from bqskit.qis.graph import CouplingGraph
-
+from bqskit.utils.citation import cite
 
 _logger = logging.getLogger(__name__)
 
 
-class GeneralizedSabreAlgorithm():
+@cite(doi='10.1145/3297858.3304023')
+@cite(doi='10.1145/3445814.3446718')
+class GeneralizedSabreAlgorithm:
     """
     Implements methods for Sabre-based layout and routing algorithms using a
     modified heuristic to accommodate larger than 2-qudit gates.

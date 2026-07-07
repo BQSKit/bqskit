@@ -31,11 +31,13 @@ from bqskit.passes.synthesis.qsd import QSDPass
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
+from bqskit.utils.citation import cite
 
 
 _logger = logging.getLogger(__name__)
 
 
+@cite(doi='10.1016/0024-3795(94)90446-4')
 class FullBlockZXZPass(BasePass):
     """
     A pass performing a full Block ZXZ decomposition.
@@ -130,6 +132,7 @@ class FullBlockZXZPass(BasePass):
         await Workflow(passes).run(circuit, data)
 
 
+@cite(doi='10.48550/arXiv.2403.13692')
 class BlockZXZPass(BasePass):
     """
     A pass performing one round of decomposition from the Block ZXZ algorithm.

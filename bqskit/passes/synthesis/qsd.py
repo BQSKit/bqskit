@@ -28,10 +28,12 @@ from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
+from bqskit.utils.citation import cite
 
 _logger = logging.getLogger(__name__)
 
 
+@cite(doi='10.1016/0024-3795(94)90446-4')
 class FullQSDPass(BasePass):
     """
     A pass performing one round of decomposition from the QSD algorithm.
@@ -114,6 +116,7 @@ class FullQSDPass(BasePass):
         await Workflow(passes).run(circuit, data)
 
 
+@cite(doi='10.48550/arXiv.quant-ph/0406176')
 class MGDPass(BasePass):
     """
     A pass performing one round of decomposition of the MPRY and MPRZ gates in a
@@ -339,6 +342,7 @@ class MGDPass(BasePass):
         circuit.unfold_all()
 
 
+@cite(doi='10.48550/arXiv.quant-ph/0406176')
 class QSDPass(BasePass):
     """
     A pass performing one round of decomposition from the QSD algorithm.

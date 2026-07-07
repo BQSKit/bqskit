@@ -21,12 +21,14 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
+from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
 _logger = logging.getLogger(__name__)
 
 
+@cite(doi='10.1145/3548693')
 class LEAPSynthesisPass(SynthesisPass):
     """
     A pass implementing the LEAP search synthesis algorithm.

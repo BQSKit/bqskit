@@ -36,6 +36,15 @@ class BasePass(abc.ABC):
         """The name of the pass."""
         return self.__class__.__name__
 
+    def get_citations(self) -> set[str]:
+        """Return the set of citations associated with this pass."""
+        result = set()
+
+        for class_ in type(self).__mro__:
+            result |= class_.__dict__.get('_cite_meta', set())
+
+        return result
+
     @abc.abstractmethod
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """

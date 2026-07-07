@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections import defaultdict
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
@@ -65,6 +66,20 @@ class Workflow(BasePass, Sequence[BasePass]):
 
         if len(self._passes) == 0:
             raise ValueError('Expected at least one pass in workflow.')
+
+    def get_citations(self) -> set[str]:
+        """Return all citations associated with this workflow."""
+        return set(self.gather_citations().keys())
+
+    def gather_citations(self) -> dict[str, list[str]]:
+        """Return a mapping of citations to the passes that use them."""
+        result: defaultdict[str, list[str]] = defaultdict(list)
+
+        for pass_ in self._passes:
+            for citation in pass_.get_citations():
+                result[citation].append(pass_.name)
+
+        return dict(result)
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
