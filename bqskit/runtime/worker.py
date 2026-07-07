@@ -772,8 +772,8 @@ def start_worker(
 
     # Pin worker to cpu
     if cpu is not None:
-        if sys.platform == 'win32':
-            raise RuntimeError('Cannot pin worker to cpu on windows.')
+        if not hasattr(os, 'sched_setaffinity'):
+            raise RuntimeError('CPU pinning is not supported on this platform.')
         os.sched_setaffinity(0, [cpu])
 
     # Connect to manager
