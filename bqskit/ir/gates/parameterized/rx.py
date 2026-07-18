@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import RXGate as _RXGate
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -31,9 +32,15 @@ class RXGate(
         \\end{pmatrix}
     """
 
-    _num_qudits = 1
-    _num_params = 1
     _qasm_name = 'rx'
+    # `_expr` powers name/num_params/radixes/dim. `get_unitary` below stays
+    # numpy-based rather than evaluating `_expr` directly: openqudit's Rust
+    # evaluator asserts the result is unitary and panics (uncatchably, from
+    # Python's perspective, via a Rust panic) instead of raising a normal
+    # error when floating-point precision degrades for extreme parameter
+    # magnitudes (e.g. params near float max), which a numerical optimizer
+    # could plausibly produce transiently.
+    _expr = _RXGate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

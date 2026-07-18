@@ -1,7 +1,7 @@
 """This module implements the ShiftGate."""
 from __future__ import annotations
 
-import numpy as np
+from openqudit.expressions import XGate as _XGate
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
@@ -60,9 +60,4 @@ class ShiftGate(ConstantGate, QuditGate):
             raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
         self._radix = radix
-
-        # Calculate unitary
-        matrix = np.zeros([radix, radix])
-        for j in range(radix):
-            matrix[(j + 1) % radix, j] = 1
-        self._utry = UnitaryMatrix(matrix, self.radixes)
+        self._utry = UnitaryMatrix(_XGate(radix)(), self.radixes)

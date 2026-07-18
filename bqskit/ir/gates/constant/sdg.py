@@ -1,6 +1,9 @@
 """This module implements the SdgGate."""
 from __future__ import annotations
 
+from openqudit.expressions import Dagger as _Dagger
+from openqudit.expressions import SGate as _SGate
+
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -20,6 +23,10 @@ class SdgGate(ConstantGate, QubitGate):
 
     _num_qudits = 1
     _qasm_name = 'sdg'
+    # See YGate for why `_utry` stays a hand-written exact matrix instead
+    # of `_expr()` (ULP-level residuals from the general qudit formula
+    # compound significantly in deep circuits).
+    _expr = _Dagger(_SGate())
     _utry = UnitaryMatrix(
         [
             [1, 0],

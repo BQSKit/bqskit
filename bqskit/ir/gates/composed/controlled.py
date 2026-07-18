@@ -260,10 +260,10 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
         self.num_controls, self.control_radixes, self.control_levels = params
 
         self._radixes = tuple(tuple(control_radixes) + self.gate.radixes)
-        self._num_qudits = gate._num_qudits + self.num_controls
+        self._num_qudits = gate.num_qudits + self.num_controls
         # TODO: Incorporate control radixes/levels into name with function def.
         self._name = 'Controlled(%s)' % self.gate.name
-        self._num_params = self.gate._num_params
+        self._num_params = self.gate.num_params
 
         iden_gate = np.identity(self.gate.dim, dtype=np.complex128)
         """Identity is applied when controls are not properly activated."""

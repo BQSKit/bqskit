@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import RZGate as _RZGate
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -25,9 +26,11 @@ class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
         \\end{pmatrix}
     """
 
-    _num_qudits = 1
-    _num_params = 1
     _qasm_name = 'rz'
+    # See RXGate for why `get_unitary` stays numpy-based instead of
+    # evaluating `_expr` directly (openqudit panics instead of raising a
+    # catchable error for extreme parameter magnitudes).
+    _expr = _RZGate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

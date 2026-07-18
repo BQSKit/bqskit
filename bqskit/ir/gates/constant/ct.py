@@ -1,7 +1,8 @@
 """This module implements the CTGate."""
 from __future__ import annotations
 
-import cmath
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import TGate as _TGate
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -24,13 +25,7 @@ class CTGate(ConstantGate, QubitGate):
         \\end{pmatrix}
     """
 
-    _num_qudits = 2
+    _name = 'CTGate'
     _qasm_name = 'ct'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, cmath.exp(1j * cmath.pi / 4)],
-        ],
-    )
+    _expr = _Controlled(_TGate())
+    _utry = UnitaryMatrix(_expr())

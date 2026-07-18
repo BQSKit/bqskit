@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import U2Gate as _U2Gate
 
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.differentiable import DifferentiableUnitary
@@ -26,9 +27,15 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
         \\end{pmatrix}
     """
 
-    _num_qudits = 1
-    _num_params = 2
     _qasm_name = 'u2'
+    # `_expr` powers name/num_params/radixes/dim. `get_unitary` below stays
+    # numpy-based rather than evaluating `_expr` directly: openqudit's QGL
+    # expression for this gate computes e^(i*(theta0+theta1)) as a single
+    # exponential of the summed angle, which loses precision for large
+    # parameter values and trips an internal `assert is_unitary(...)` panic
+    # in the Rust evaluator. Computing exp(i*theta0)*exp(i*theta1) as a
+    # product of two already-unit-modulus factors (as below) stays stable.
+    _expr = _U2Gate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

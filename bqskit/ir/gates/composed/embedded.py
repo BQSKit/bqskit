@@ -207,9 +207,9 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
 
         self.gate = gate
         self.level_maps = tuple([tuple(list(lmap)) for lmap in level_maps])
-        self._num_qudits = gate._num_qudits
+        self._num_qudits = gate.num_qudits
         self._name = f'Embedded({self.gate.name}){self.level_maps}'
-        self._num_params = self.gate._num_params
+        self._num_params = self.gate.num_params
         self._radixes = tuple(radixes)
         self._dim = int(np.prod(self.radixes))
 

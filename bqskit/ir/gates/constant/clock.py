@@ -1,7 +1,7 @@
 """This module implements the ClockGate."""
 from __future__ import annotations
 
-import numpy as np
+from openqudit.expressions import ZGate as _ZGate
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
@@ -45,7 +45,4 @@ class ClockGate(ConstantGate, QuditGate):
             raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
         self._radix = radix
-
-        # Calculate unitary
-        diags = [np.exp(2j * np.pi * i / radix) for i in range(radix)]
-        self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
+        self._utry = UnitaryMatrix(_ZGate(radix)(), self.radixes)

@@ -1,7 +1,7 @@
 """This module implements the TGate."""
 from __future__ import annotations
 
-import cmath
+from openqudit.expressions import TGate as _TGate
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.qubitgate import QubitGate
@@ -22,9 +22,5 @@ class TGate(ConstantGate, QubitGate):
 
     _num_qudits = 1
     _qasm_name = 't'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0],
-            [0, cmath.exp(1j * cmath.pi / 4)],
-        ],
-    )
+    _expr = _TGate()
+    _utry = UnitaryMatrix(_expr())
