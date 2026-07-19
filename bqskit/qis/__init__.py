@@ -20,7 +20,6 @@ represents a pure quantum operation in matrix form.
     :template: autosummary/class_no_init.rst
 
     Unitary
-    DifferentiableUnitary
     LocallyOptimizableUnitary
     StateVectorMap
 
@@ -61,7 +60,6 @@ from bqskit.qis.state import StateVector
 from bqskit.qis.state import StateVectorMap
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.state.system import StateSystemLike
-from bqskit.qis.unitary import DifferentiableUnitary
 from bqskit.qis.unitary import LocallyOptimizableUnitary
 from bqskit.qis.unitary import RealVector
 from bqskit.qis.unitary import Unitary
@@ -85,7 +83,6 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     'Unitary',
-    'DifferentiableUnitary',
     'LocallyOptimizableUnitary',
     'UnitaryBuilder',
     'UnitaryMatrix',

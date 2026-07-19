@@ -14,8 +14,11 @@ from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import Unitary
 
 if TYPE_CHECKING:
+    import numpy as np
+    import numpy.typing as npt
     from openqudit.expressions import UnitaryExpression
     from bqskit.qis.unitary.unitary import RealVector
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 
 
@@ -71,6 +74,62 @@ class Gate(Unitary):
         if hasattr(self, '_expr'):
             return self._expr.dimension()
         return super().dim
+
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
+        """
+        Return the gradient for the unitary map as an np.ndarray.
+
+        Args:
+            params (RealVector): The unitary parameters, see
+                :func:`Unitary.get_unitary` for more info.
+
+        Returns:
+            np.ndarray: The `(num_params,N,N)`-shaped, matrix-by-vector
+            derivative of this unitary at the point specified by params.
+
+        Notes:
+            The gradient of a unitary is defined as a matrix-by-vector
+            derivative. If the UnitaryMatrix result of `get_unitary` has
+            dimension NxN, then the shape of `get_grad`'s return value
+            should equal (num_params,N,N), where the return value's
+            i-th element is the matrix derivative of the unitary
+            with respect to the i-th parameter.
+
+            The default implementation raises `NotImplementedError`; gates
+            that support differentiation should override this method. Use
+            :func:`is_differentiable` to check whether a gate has done so.
+        """
+        raise NotImplementedError(
+            f'{self.name} does not have a gradient definition.',
+        )
+
+    def get_unitary_and_grad(
+        self,
+        params: RealVector = [],
+    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
+        """
+        Return a tuple combining the outputs of `get_unitary` and `get_grad`.
+
+        Args:
+            params (RealVector): The unitary parameters, see
+                :func:`Unitary.get_unitary` for more info.
+
+        Returns:
+            tuple: tuple containing:
+                UnitaryMatrix: The unitary matrix, see
+                :func:`Unitary.get_unitary` for more info.
+
+                np.ndarray: The unitary's gradient, see :func:`get_grad`.
+
+        Notes:
+            Can be overridden to potentially speed up optimization by
+            calculating both at the same time.
+        """
+        return (self.get_unitary(params), self.get_grad(params))
+
+    def is_differentiable(self) -> bool:
+        """Return true if this gate has a gradient definition."""
+        return type(self).get_grad is not Gate.get_grad
 
     @property
     def qasm_name(self) -> str:

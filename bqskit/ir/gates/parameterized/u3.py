@@ -8,13 +8,12 @@ from openqudit.expressions import U3Gate as _U3Gate
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U3Gate(QubitGate, DifferentiableUnitary, CachedClass, GeneralGate):
+class U3Gate(QubitGate, CachedClass, GeneralGate):
     """
     The U3 single qubit gate.
 
@@ -65,7 +64,7 @@ class U3Gate(QubitGate, DifferentiableUnitary, CachedClass, GeneralGate):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

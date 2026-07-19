@@ -9,7 +9,6 @@ import numpy.typing as npt
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.pauliz import PauliZMatrices
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
@@ -19,7 +18,7 @@ from bqskit.utils.math import pauliz_expansion
 from bqskit.utils.math import unitary_log_no_i
 
 
-class PauliZGate(QubitGate, DifferentiableUnitary, GeneralGate):
+class PauliZGate(QubitGate, GeneralGate):
     """
     A gate representing an arbitrary diagonal rotation.
 
@@ -67,7 +66,7 @@ class PauliZGate(QubitGate, DifferentiableUnitary, GeneralGate):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
 
         TODO: Accelerated gradient computation for diagonal matrices.
         """
@@ -83,7 +82,7 @@ class PauliZGate(QubitGate, DifferentiableUnitary, GeneralGate):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

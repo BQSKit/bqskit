@@ -6,13 +6,12 @@ import numpy.typing as npt
 from openqudit.expressions import RZGate as _RZGate
 
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
+class RZGate(QubitGate, CachedClass):
     """
     A gate representing an arbitrary rotation around the Z axis.
 
@@ -50,7 +49,7 @@ class RZGate(QubitGate, DifferentiableUnitary, CachedClass):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

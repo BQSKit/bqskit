@@ -9,7 +9,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
@@ -19,7 +18,7 @@ from bqskit.utils.typing import is_sequence_of_int
 from bqskit.utils.typing import is_valid_radixes
 
 
-class EmbeddedGate(ComposedGate, DifferentiableUnitary):
+class EmbeddedGate(ComposedGate):
     """
     An embedding of a gate into a higher-dimensional qudit gate.
 
@@ -234,12 +233,12 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if hasattr(self, 'utry'):
             return np.array([])
 
-        G = self.gate.get_grad(params)  # type: ignore
+        G = self.gate.get_grad(params)
         G_embed = []
         for g in G:
             M = np.zeros((self.dim, self.dim), dtype=np.complex128)
@@ -254,12 +253,12 @@ class EmbeddedGate(ComposedGate, DifferentiableUnitary):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if hasattr(self, '_utry'):
             return self._utry, np.array([])
 
-        U, G = self.gate.get_unitary_and_grad(params)  # type: ignore
+        U, G = self.gate.get_unitary_and_grad(params)
         U_embed = np.eye(self.dim, dtype=np.complex128)
         self._map_matrix(U, U_embed)
 

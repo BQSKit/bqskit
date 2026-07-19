@@ -49,7 +49,7 @@ class DiagonalGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

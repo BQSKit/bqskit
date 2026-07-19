@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -12,7 +11,6 @@ from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
 from bqskit.qis.permutation import PermutationMatrix
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.math import softmax
@@ -151,7 +149,7 @@ class VariableLocationGate(ComposedGate):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         return self.get_unitary_and_grad(params)[1]
 
@@ -162,7 +160,7 @@ class VariableLocationGate(ComposedGate):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
         a, l = self.split_params(params)
@@ -175,7 +173,7 @@ class VariableLocationGate(ComposedGate):
         GPT = G @ P.T
         PGPT = P @ GPT
 
-        dG = cast(DifferentiableUnitary, self.gate).get_grad(a)
+        dG = self.gate.get_grad(a)
         dG = np.kron(dG, self.I)
         dG = P @ dG @ P.T
 

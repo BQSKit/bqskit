@@ -5,14 +5,13 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gates.qutritgate import QutritGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
+class RSU3Gate(QutritGate, CachedClass):
     """
     Rotation by SU3 generator for a single qutrit gate.
 
@@ -107,7 +106,7 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

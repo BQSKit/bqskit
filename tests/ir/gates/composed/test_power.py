@@ -9,7 +9,6 @@ from hypothesis.strategies import integers
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates import PowerGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.test.strategies import gates_and_params
@@ -43,7 +42,7 @@ def test_power_gate(g_and_p: tuple[Gate, RealVector], power: int) -> None:
     expected_unitary = gate.get_unitary(params).ipower(power)
     assert actual_unitary.isclose(expected_unitary)
 
-    if not isinstance(gate, DifferentiableUnitary):
+    if not gate.is_differentiable():
         return
 
     if gate.num_params == 0:

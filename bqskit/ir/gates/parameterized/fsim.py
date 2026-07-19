@@ -5,7 +5,6 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
@@ -13,7 +12,6 @@ from bqskit.utils.cachedclass import CachedClass
 
 class FSIMGate(
     QubitGate,
-    DifferentiableUnitary,
     CachedClass,
 ):
     """
@@ -61,7 +59,7 @@ class FSIMGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

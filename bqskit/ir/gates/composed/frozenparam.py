@@ -8,7 +8,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -19,7 +18,6 @@ from bqskit.utils.typing import is_real_number
 class FrozenParameterGate(
     ComposedGate,
     LocallyOptimizableUnitary,
-    DifferentiableUnitary,
 ):
     """A composed gate which fixes some parameters of another gate."""
 
@@ -100,9 +98,9 @@ class FrozenParameterGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
-        grads = self.gate.get_grad(self.get_full_params(params))  # type: ignore
+        grads = self.gate.get_grad(self.get_full_params(params))
         return grads[self.unfixed_param_idxs, :, :]
 
     def get_unitary_and_grad(
@@ -112,11 +110,11 @@ class FrozenParameterGate(
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         f_params = self.get_full_params(params)
 
-        utry, grads = self.gate.get_unitary_and_grad(f_params)  # type: ignore
+        utry, grads = self.gate.get_unitary_and_grad(f_params)
         return utry, grads[self.unfixed_param_idxs, :, :]
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:

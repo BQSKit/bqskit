@@ -6,13 +6,12 @@ import numpy.typing as npt
 
 from bqskit.ir.gates.generalgate import GeneralGate
 from bqskit.ir.gates.qutritgate import QutritGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U8Gate(QutritGate, DifferentiableUnitary, CachedClass, GeneralGate):
+class U8Gate(QutritGate, CachedClass, GeneralGate):
     """The U8 single qutrit gate."""
 
     _num_qudits = 1
@@ -64,7 +63,7 @@ class U8Gate(QutritGate, DifferentiableUnitary, CachedClass, GeneralGate):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

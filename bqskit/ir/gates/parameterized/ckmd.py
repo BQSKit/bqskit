@@ -5,13 +5,12 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gates.qutritgate import QutritGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class CKMdgGate(QutritGate, DifferentiableUnitary, CachedClass):
+class CKMdgGate(QutritGate, CachedClass):
     """
     The Cabibbo-Kobayashi-Maskawa dagger single qutrit gate.
 
@@ -60,7 +59,7 @@ class CKMdgGate(QutritGate, DifferentiableUnitary, CachedClass):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

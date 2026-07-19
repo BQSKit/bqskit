@@ -6,7 +6,6 @@ import numpy.typing as npt
 from openqudit.expressions import RYYGate as _RYYGate
 
 from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
@@ -14,7 +13,6 @@ from bqskit.utils.cachedclass import CachedClass
 
 class RYYGate(
     QubitGate,
-    DifferentiableUnitary,
     CachedClass,
 ):
     """
@@ -59,7 +57,7 @@ class RYYGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 
