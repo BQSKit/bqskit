@@ -31,28 +31,12 @@ class RXGate(
     """
 
     _qasm_name = 'rx'
-    # `_expr` powers name/num_params/radixes/dim. `get_unitary` below stays
-    # numpy-based rather than evaluating `_expr` directly: openqudit's Rust
-    # evaluator asserts the result is unitary and panics (uncatchably, from
-    # Python's perspective, via a Rust panic) instead of raising a normal
-    # error when floating-point precision degrades for extreme parameter
-    # magnitudes (e.g. params near float max), which a numerical optimizer
-    # could plausibly produce transiently.
     _expr = _RXGate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
-
-        cos = np.cos(params[0] / 2)
-        sin = -1j * np.sin(params[0] / 2)
-
-        return UnitaryMatrix(
-            [
-                [cos, sin],
-                [sin, cos],
-            ],
-        )
+        return UnitaryMatrix(self._expr(*params), self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """

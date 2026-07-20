@@ -52,6 +52,20 @@ class HGate(ConstantGate, QuditGate):
     _num_qudits = 1
     _qasm_name = 'h'
 
+    # from claude:
+    # Not yet backed by an openqudit `_expr`. openqudit's QGL evaluates the
+    # radix=2 case as `1/sqrt(2)`, while this file uses `sqrt(2)/2` — both
+    # exactly correct, and only 1 ULP apart. That should be negligible, but
+    # empirically it isn't: swapping in the other literal (regardless of
+    # whether it comes from openqudit or is just hand-written here) makes
+    # CNOTToCZPass's repeated H-CZ-H substitution accumulate ~1e-7 of error
+    # over a few hundred gates (see tests/passes/rules/test_cnot2cz.py),
+    # far more than the ~1e-14 a single 1-ULP perturbation should cause
+    # under ordinary error accumulation. That points to a real numerical-
+    # conditioning issue in UnitaryBuilder's incremental composition, not
+    # a problem with either literal. H should switch to `_expr` once that's
+    # root-caused and fixed — until then, keep this hand-written to avoid
+    # depending on which ULP openqudit happens to pick.
     def __init__(self, radix: int = 2) -> None:
         """
         Construct a HGate.

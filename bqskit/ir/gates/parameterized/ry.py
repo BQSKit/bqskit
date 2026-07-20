@@ -31,24 +31,12 @@ class RYGate(
     """
 
     _qasm_name = 'ry'
-    # See RXGate for why `get_unitary` stays numpy-based instead of
-    # evaluating `_expr` directly (openqudit panics instead of raising a
-    # catchable error for extreme parameter magnitudes).
     _expr = _RYGate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
-
-        cos = np.cos(params[0] / 2)
-        sin = np.sin(params[0] / 2)
-
-        return UnitaryMatrix(
-            [
-                [cos, -sin],
-                [sin, cos],
-            ],
-        )
+        return UnitaryMatrix(self._expr(*params), self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
