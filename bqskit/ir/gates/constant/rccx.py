@@ -1,12 +1,14 @@
 """This module implements the RCCXGate/MargolusGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class RCCXGate(ConstantGate, QubitGate):
+class RCCXGate(Gate, CachedClass):
     """
     The relative phase ccx gate.
 
@@ -16,6 +18,12 @@ class RCCXGate(ConstantGate, QubitGate):
 
     _num_qudits = 3
     _qasm_name = 'rccx'
+    _expr = _UnitaryExpression(
+        'RCCX() { [[1,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],'
+        '[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0],'
+        '[0,0,0,0,1,0,0,0],[0,0,0,0,0,~1,0,0],'
+        '[0,0,0,0,0,0,0,~i],[0,0,0,0,0,0,i,0]] }',
+    )
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0, 0, 0, 0, 0],
@@ -33,7 +41,7 @@ class RCCXGate(ConstantGate, QubitGate):
 MargolusGate = RCCXGate
 
 
-class RC3XGate(ConstantGate, QubitGate):
+class RC3XGate(Gate, CachedClass):
     """
     The relative phase c3x gate.
 
@@ -43,6 +51,25 @@ class RC3XGate(ConstantGate, QubitGate):
 
     _num_qudits = 4
     _qasm_name = 'rc3x'
+    _expr = _UnitaryExpression(
+        'RC3X() { ['
+        '[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'
+        '[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'
+        '[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],'
+        '[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],'
+        '[0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],'
+        '[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],'
+        '[0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0],'
+        '[0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],'
+        '[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],'
+        '[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],'
+        '[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],'
+        '[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],'
+        '[0,0,0,0,0,0,0,0,0,0,0,0,i,0,0,0],'
+        '[0,0,0,0,0,0,0,0,0,0,0,0,0,~i,0,0],'
+        '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],'
+        '[0,0,0,0,0,0,0,0,0,0,0,0,0,0,~1,0]] }',
+    )
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

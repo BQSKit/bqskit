@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from openqudit.expressions import ZGate as _ZGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils import CachedClass
 
 
-class ZGate(ConstantGate, QubitGate):
+class ZGate(Gate, CachedClass):
     """
     The Pauli Z gate.
 

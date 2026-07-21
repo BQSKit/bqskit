@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from openqudit.expressions import YGate as _YGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class YGate(ConstantGate, QubitGate):
+class YGate(Gate, CachedClass):
     """
     The Pauli Y gate.
 
@@ -24,7 +24,7 @@ class YGate(ConstantGate, QubitGate):
 
     _num_qudits = 1
     _qasm_name = 'y'
-    # `_expr` powers name/num_params (radixes come from QubitGate above).
+    # `_expr` powers name/num_params (radixes come from Gate above).
     # `_utry` stays a hand-written exact matrix rather than `_expr()`:
     # openqudit's general qudit-Y formula evaluates a complex exponential
     # for the d=2 case instead of using the exact literal, leaving a

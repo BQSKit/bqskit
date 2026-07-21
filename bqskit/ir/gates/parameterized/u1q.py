@@ -5,14 +5,15 @@ import math
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U1qGate(QubitGate, CachedClass):
+class U1qGate(Gate, CachedClass):
     """
     The Quantinuum U1q single qubit gate.
 
@@ -31,6 +32,14 @@ class U1qGate(QubitGate, CachedClass):
     _num_qudits = 1
     _num_params = 2
     _qasm_name = 'U1q'
+    _expr = UnitaryExpression(
+        'U1q(θ0, θ1) {'
+        '['
+        '[cos(θ0/2), ~i*e^(~i*θ1)*sin(θ0/2)],'
+        '[~i*e^(i*θ1)*sin(θ0/2), cos(θ0/2)]'
+        ']'
+        '}',
+    )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

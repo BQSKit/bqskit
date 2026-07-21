@@ -4,12 +4,12 @@ from __future__ import annotations
 from openqudit.expressions import Controlled as _Controlled
 from openqudit.expressions import TGate as _TGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class CTGate(ConstantGate, QubitGate):
+class CTGate(Gate, CachedClass):
     """
     The Controlled-T gate.
 

@@ -5,13 +5,13 @@ import numpy as np
 import numpy.typing as npt
 from openqudit.expressions import U2Gate as _U2Gate
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U2Gate(QubitGate, CachedClass):
+class U2Gate(Gate, CachedClass):
     """
     The U2 single qubit gate.
 

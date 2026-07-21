@@ -3,15 +3,30 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qutritgate import QutritGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
+_SU3_GENERATOR_QGL = {
+    0: 'RSU3_0(t0) { [[cos(t0),~i*sin(t0),0],[~i*sin(t0),cos(t0),0],[0,0,1]] }',
+    1: 'RSU3_1(t0) { [[cos(t0),~sin(t0),0],[sin(t0),cos(t0),0],[0,0,1]] }',
+    2: 'RSU3_2(t0) { [[e^(~i*t0),0,0],[0,e^(i*t0),0],[0,0,1]] }',
+    3: 'RSU3_3(t0) { [[cos(t0),0,~i*sin(t0)],[0,1,0],[~i*sin(t0),0,cos(t0)]] }',
+    4: 'RSU3_4(t0) { [[cos(t0),0,~sin(t0)],[0,1,0],[sin(t0),0,cos(t0)]] }',
+    5: 'RSU3_5(t0) { [[1,0,0],[0,cos(t0),~i*sin(t0)],[0,~i*sin(t0),cos(t0)]] }',
+    6: 'RSU3_6(t0) { [[1,0,0],[0,cos(t0),~sin(t0)],[0,sin(t0),cos(t0)]] }',
+    7: (
+        'RSU3_7(t0) { [[e^(~i*t0/sqrt(3)),0,0],'
+        '[0,e^(~i*t0/sqrt(3)),0],[0,0,e^(2*i*t0/sqrt(3))]] }'
+    ),
+}
 
-class RSU3Gate(QutritGate, CachedClass):
+
+class RSU3Gate(Gate, CachedClass):
     """
     Rotation by SU3 generator for a single qutrit gate.
 
@@ -52,6 +67,7 @@ class RSU3Gate(QutritGate, CachedClass):
             raise ValueError(f'Expected index between 0 and 7, got {index}.')
 
         self.index = index
+        self._expr = _UnitaryExpression(_SU3_GENERATOR_QGL[index])
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

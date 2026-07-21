@@ -4,13 +4,13 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.ir.gates.qutritgate import QutritGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class CKMGate(QutritGate, CachedClass):
+class CKMGate(Gate, CachedClass):
     """
     The Cabibbo-Kobayashi-Maskawa single qutrit gate.
 
@@ -28,6 +28,7 @@ class CKMGate(QutritGate, CachedClass):
     """
 
     _num_qudits = 1
+    _radixes = (3,)
     _num_params = 4
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
@@ -53,7 +54,7 @@ class CKMGate(QutritGate, CachedClass):
         u2 = np.array([[c1, 0, s1 * m1], [0, 1, 0], [-s1 * p1, 0, c1]])
         u3 = np.array([[c2, s2, 0], [-s2, c2, 0], [0, 0, 1]])
 
-        return UnitaryMatrix(u1 @ u2 @ u3)
+        return UnitaryMatrix(u1 @ u2 @ u3, self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """

@@ -9,13 +9,14 @@ from numpy import complex128
 from numpy import exp
 from numpy import zeros
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class HGate(ConstantGate, QuditGate):
+class HGate(QuditGate, CachedClass):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 
@@ -50,6 +51,7 @@ class HGate(ConstantGate, QuditGate):
     """
 
     _num_qudits = 1
+    _num_params = 0
     _qasm_name = 'h'
 
     # from claude:
@@ -106,3 +108,8 @@ class HGate(ConstantGate, QuditGate):
                     matrix[j, i] = val
             matrix *= 1 / sqrt(radix)
             self._utry = UnitaryMatrix(matrix, self.radixes)
+
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
+        self.check_parameters(params)
+        return self._utry

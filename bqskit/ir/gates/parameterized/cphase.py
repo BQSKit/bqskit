@@ -5,6 +5,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
@@ -37,6 +38,17 @@ class ArbitraryCPhaseGate(
 
         self._num_qudits = len(radixes)
         self._radixes = tuple(radixes)
+
+        # A raw QGL matrix literal only ever infers a single flat qudit
+        # from its dimension, so the multi-qudit radices are built by
+        # embedding a parameterized 1x1 phase block into a tagged identity.
+        self._expr = _UnitaryExpression.identity(
+            'ArbitraryCPhase', self._radixes,
+        )
+        self._expr.embed(
+            _UnitaryExpression('Phase(t0) { [[e^(i*t0)]] }'),
+            self.dim - 1, self.dim - 1,
+        )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

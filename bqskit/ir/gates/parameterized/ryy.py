@@ -5,14 +5,13 @@ import numpy as np
 import numpy.typing as npt
 from openqudit.expressions import RYYGate as _RYYGate
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
 class RYYGate(
-    QubitGate,
+    Gate,
     CachedClass,
 ):
     """
@@ -32,11 +31,6 @@ class RYYGate(
 
     _qasm_name = 'ryy'
     _expr = _RYYGate()
-
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-        return UnitaryMatrix(self._expr(*params), self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """

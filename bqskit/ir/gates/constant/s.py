@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from openqudit.expressions import SGate as _SGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SGate(ConstantGate, QubitGate):
+class SGate(Gate, CachedClass):
     """
     The single-qubit S gate.
 

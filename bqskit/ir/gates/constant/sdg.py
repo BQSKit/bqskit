@@ -4,12 +4,12 @@ from __future__ import annotations
 from openqudit.expressions import Dagger as _Dagger
 from openqudit.expressions import SGate as _SGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SdgGate(ConstantGate, QubitGate):
+class SdgGate(Gate, CachedClass):
     """
     The single-qubit S Dagger gate.
 

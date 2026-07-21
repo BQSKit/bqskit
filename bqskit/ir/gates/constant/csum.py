@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import numpy as np
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class CSUMGate(ConstantGate, QuditGate):
+class CSUMGate(QuditGate, CachedClass):
     """
     The two-qudit Conditional-SUM gate.
 
@@ -72,3 +73,20 @@ class CSUMGate(ConstantGate, QuditGate):
                 col = self.radix * i + j
                 matrix[row, col] = 1.0
         self._utry = UnitaryMatrix(matrix, self.radixes)
+
+        # A raw QGL matrix literal only ever infers a single flat qudit
+        # from its dimension, so the two-qudit radices are built by
+        # embedding each row-cyclic-shift block into a tagged identity.
+        self._expr = _UnitaryExpression.identity(
+            'CSUM', [self.radix, self.radix],
+        )
+        for i in range(self.radix):
+            rows = []
+            for r in range(self.radix):
+                row = ['0'] * self.radix
+                row[(r - i) % self.radix] = '1'
+                rows.append('[' + ','.join(row) + ']')
+            qgl = 'Shift%d() { [%s] }' % (i, ','.join(rows))
+            self._expr.embed(
+                _UnitaryExpression(qgl), self.radix * i, self.radix * i,
+            )

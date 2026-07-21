@@ -3,19 +3,35 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.generalgate import GeneralGate
-from bqskit.ir.gates.qutritgate import QutritGate
+from bqskit.ir.gates import GeneralGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U8Gate(QutritGate, CachedClass, GeneralGate):
+class U8Gate(GeneralGate, CachedClass):
     """The U8 single qutrit gate."""
 
     _num_qudits = 1
     _num_params = 8
+    _expr = _UnitaryExpression(
+        'U8(t0,t1,t2,t3,t4,t5,t6,t7) { ['
+        '[cos(t0)*cos(t1)*e^(i*t3), sin(t0)*e^(i*t5), '
+        'cos(t0)*sin(t1)*e^(i*t6)],'
+        '[sin(t1)*sin(t2)*e^(~i*t6)*e^(~i*t7) - '
+        'sin(t0)*cos(t1)*cos(t2)*e^(i*t3)*e^(i*t4)*e^(~i*t5), '
+        'cos(t0)*cos(t2)*e^(i*t4), '
+        '~cos(t1)*sin(t2)*e^(~i*t3)*e^(~i*t7) - '
+        'sin(t0)*sin(t1)*cos(t2)*e^(i*t4)*e^(~i*t5)*e^(i*t6)],'
+        '[~sin(t0)*cos(t1)*sin(t2)*e^(i*t3)*e^(~i*t5)*e^(i*t7) - '
+        'sin(t1)*cos(t2)*e^(~i*t4)*e^(~i*t6), '
+        'cos(t0)*sin(t2)*e^(i*t7), '
+        'cos(t1)*cos(t2)*e^(~i*t3)*e^(~i*t4) - '
+        'sin(t0)*sin(t1)*sin(t2)*e^(~i*t5)*e^(i*t6)*e^(i*t7)]'
+        '] }',
+    )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

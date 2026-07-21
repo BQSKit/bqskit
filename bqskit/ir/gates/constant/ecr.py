@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import math
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class ECRGate(ConstantGate, QubitGate):
+class ECRGate(Gate, CachedClass):
     """
     The echoed cross-resonance gate (ECR).
 
@@ -28,6 +30,10 @@ class ECRGate(ConstantGate, QubitGate):
     _name = 'ecr'
     _num_qudits = 2
     _qasm_name = 'ecr'
+    _expr = _UnitaryExpression(
+        'ECR() { 1/sqrt(2) * '
+        '[[0,0,1,i],[0,0,i,1],[1,~i,0,0],[~i,1,0,0]] }',
+    )
     _utry = UnitaryMatrix([
         [0, 0, 1 * 1 / math.sqrt(2), 1j * 1 / math.sqrt(2)],
         [0, 0, 1j * 1 / math.sqrt(2), 1 * 1 / math.sqrt(2)],

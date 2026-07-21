@@ -3,13 +3,17 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gate import Gate
+from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class ConstantUnitaryGate(ConstantGate):
+class ConstantUnitaryGate(Gate, CachedClass):
     """An arbitrary constant unitary operator."""
+
+    _num_params = 0
 
     def __init__(
         self,
@@ -28,6 +32,11 @@ class ConstantUnitaryGate(ConstantGate):
         self._utry = UnitaryMatrix(utry, radixes)
         self._num_qudits = self._utry.num_qudits
         self._radixes = self._utry.radixes
+
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
+        self.check_parameters(params)
+        return self._utry
 
     def __eq__(self, other: object) -> bool:
         return (

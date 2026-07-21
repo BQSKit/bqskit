@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import Unitary
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
     from openqudit.expressions import UnitaryExpression
     from bqskit.qis.unitary.unitary import RealVector
-    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 
 
@@ -30,8 +30,8 @@ class Gate(Unitary):
     `_expr` attribute, which then powers `name`/`num_params`/`radixes`/`dim`.
     Gates that don't set `_expr` fall back to the old class-level attributes
     (`_num_params`, `_radixes`, ...). Either way, `get_unitary` itself is
-    still provided by the gate (e.g. via `ConstantGate`'s cached `_utry`, or
-    a hand-written override) rather than by this base class.
+    still provided by the gate (e.g. via a cached `_utry`, or a hand-written
+    override) rather than by this base class.
     """
 
     _expr: UnitaryExpression
@@ -102,6 +102,11 @@ class Gate(Unitary):
         raise NotImplementedError(
             f'{self.name} does not have a gradient definition.',
         )
+
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+        """Return the unitary for this gate."""
+        self.check_parameters(params)
+        return UnitaryMatrix(self._expr(*params), self.radixes)
 
     def get_unitary_and_grad(
         self,

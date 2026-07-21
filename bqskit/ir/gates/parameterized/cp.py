@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
 class CPGate(
-    QubitGate,
+    Gate,
     CachedClass,
 ):
     """
@@ -32,6 +33,9 @@ class CPGate(
     _num_qudits = 2
     _num_params = 1
     _qasm_name = 'cp'
+    _expr = _UnitaryExpression(
+        'CP(t0) { [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,e^(i*t0)]] }',
+    )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

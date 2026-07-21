@@ -5,15 +5,14 @@ import numpy as np
 import numpy.typing as npt
 from openqudit.expressions import U1Gate as _U1Gate
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
 class U1Gate(
-    QubitGate,
+    Gate,
     LocallyOptimizableUnitary,
     CachedClass,
 ):
@@ -32,11 +31,6 @@ class U1Gate(
 
     _qasm_name = 'u1'
     _expr = _U1Gate()
-
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-        return UnitaryMatrix(self._expr(*params), self.radixes)
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """

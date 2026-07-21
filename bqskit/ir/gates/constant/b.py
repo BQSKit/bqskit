@@ -2,15 +2,16 @@
 from __future__ import annotations
 
 from numpy import pi
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 from scipy.linalg import expm
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.pauli import PauliMatrices
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils import CachedClass
 
 
-class BGate(ConstantGate, QubitGate):
+class BGate(Gate, CachedClass):
     """
     The 2 qubit B gate.
 
@@ -25,6 +26,12 @@ class BGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'b'
+    _expr = _UnitaryExpression(
+        'B() { [[cos(pi/8),0,0,i*sin(pi/8)],'
+        '[0,sin(pi/8),i*cos(pi/8),0],'
+        '[0,i*cos(pi/8),sin(pi/8),0],'
+        '[i*sin(pi/8),0,0,cos(pi/8)]] }',
+    )
 
     def __init__(self) -> None:
         """Construct a BGate."""

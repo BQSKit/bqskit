@@ -6,9 +6,10 @@ from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.parameterized.mpry import get_indices
-from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -16,7 +17,7 @@ from bqskit.utils.cachedclass import CachedClass
 
 
 class MPRZGate(
-    QubitGate,
+    Gate,
     CachedClass,
     LocallyOptimizableUnitary,
 ):
@@ -71,6 +72,23 @@ class MPRZGate(
             target_qubit = num_qudits - 1
         self.target_qubit = target_qubit
         super().__init__()
+
+        # This gate only ever touches diagonal entries, so each parameter's
+        # pair of entries can be embedded independently regardless of
+        # whether their indices happen to be contiguous.
+        self._expr = _UnitaryExpression.identity(
+            'MPRZ', [2] * num_qudits,
+        )
+        for i in range(self._num_params):
+            x1, x2 = get_indices(i, self.target_qubit, num_qudits)
+            neg = _UnitaryExpression(
+                'Neg%d(t%d) { [[e^(~i*t%d/2)]] }' % (i, i, i),
+            )
+            pos = _UnitaryExpression(
+                'Pos%d(t%d) { [[e^(i*t%d/2)]] }' % (i, i, i),
+            )
+            self._expr.embed(neg, x1, x1)
+            self._expr.embed(pos, x2, x2)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

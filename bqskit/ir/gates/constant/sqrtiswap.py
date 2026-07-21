@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import math
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SqrtISwapGate(ConstantGate, QubitGate):
+class SqrtISwapGate(Gate, CachedClass):
     """
     The square root two qubit swap and phase iSWAP gate.
 
@@ -26,6 +28,10 @@ class SqrtISwapGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'sqisw'
+    _expr = _UnitaryExpression(
+        'SqrtISwap() { [[1,0,0,0],[0,1/sqrt(2),i/sqrt(2),0],'
+        '[0,i/sqrt(2),1/sqrt(2),0],[0,0,0,1]] }',
+    )
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],

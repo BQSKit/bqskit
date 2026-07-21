@@ -7,7 +7,6 @@ import numpy as np
 import numpy.typing as npt
 
 from bqskit.ir.gates.generalgate import GeneralGate
-from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.pauliz import PauliZMatrices
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -18,7 +17,7 @@ from bqskit.utils.math import pauliz_expansion
 from bqskit.utils.math import unitary_log_no_i
 
 
-class PauliZGate(QubitGate, GeneralGate):
+class PauliZGate(GeneralGate):
     """
     A gate representing an arbitrary diagonal rotation.
 
@@ -48,6 +47,7 @@ class PauliZGate(QubitGate, GeneralGate):
 
         self._name = f'PauliZGate({num_qudits})'
         self._num_qudits = num_qudits
+        self._radixes = tuple([2] * num_qudits)
         paulizs = PauliZMatrices(self.num_qudits)
         self._num_params = len(paulizs)
         if building_docs():

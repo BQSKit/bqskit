@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import math
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class XXGate(ConstantGate, QubitGate):
+class XXGate(Gate, CachedClass):
     """
     The Ising XX coupling gate.
 
@@ -26,6 +28,12 @@ class XXGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'rxx(pi/2)'
+    _expr = _UnitaryExpression(
+        'XX() { [[sqrt(2)/2,0,0,~i*sqrt(2)/2],'
+        '[0,sqrt(2)/2,~i*sqrt(2)/2,0],'
+        '[0,~i*sqrt(2)/2,sqrt(2)/2,0],'
+        '[~i*sqrt(2)/2,0,0,sqrt(2)/2]] }',
+    )
     _utry = UnitaryMatrix(
         [
             [math.sqrt(2) / 2, 0, 0, -1j * math.sqrt(2) / 2],

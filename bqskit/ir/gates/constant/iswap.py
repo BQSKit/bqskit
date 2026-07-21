@@ -1,12 +1,14 @@
 """This module implements the ISwapGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class ISwapGate(ConstantGate, QubitGate):
+class ISwapGate(Gate, CachedClass):
     """
     The two qubit swap and phase iSWAP gate.
 
@@ -24,6 +26,9 @@ class ISwapGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'iswap'
+    _expr = _UnitaryExpression(
+        'ISwap() { [[1,0,0,0],[0,0,i,0],[0,i,0,0],[0,0,0,1]] }',
+    )
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],

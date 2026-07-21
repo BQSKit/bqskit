@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -12,7 +13,7 @@ from bqskit.utils.cachedclass import CachedClass
 
 
 class DiagonalGate(
-    QubitGate,
+    Gate,
     CachedClass,
     LocallyOptimizableUnitary,
 ):
@@ -33,6 +34,19 @@ class DiagonalGate(
         self._num_qudits = num_qudits
         # 1 parameter per diagonal element, removing one for global phase
         self._num_params = 2 ** num_qudits - 1
+
+        # A raw QGL matrix literal only ever infers a single flat qudit
+        # from its dimension, so the multi-qudit radices are built by
+        # embedding each parameterized diagonal entry into a tagged
+        # identity instead of parsing a `2**n`x`2**n` literal directly.
+        self._expr = _UnitaryExpression.identity(
+            'Diagonal', [2] * num_qudits,
+        )
+        for i in range(1, 2 ** num_qudits):
+            sub = _UnitaryExpression(
+                'Phase%d(t%d) { [[e^(i*t%d)]] }' % (i, i - 1, i - 1),
+            )
+            self._expr.embed(sub, i, i)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

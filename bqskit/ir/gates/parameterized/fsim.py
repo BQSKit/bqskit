@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
 class FSIMGate(
-    QubitGate,
+    Gate,
     CachedClass,
 ):
     """
@@ -37,6 +38,12 @@ class FSIMGate(
     _num_qudits = 2
     _num_params = 2
     _qasm_name = 'fsim'
+    _expr = _UnitaryExpression(
+        'FSIM(t0,t1) { [[1,0,0,0],'
+        '[0,cos(t0),~i*sin(t0),0],'
+        '[0,~i*sin(t0),cos(t0),0],'
+        '[0,0,0,e^(~i*t1)]] }',
+    )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

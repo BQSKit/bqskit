@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import numpy as np
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class PDGate(ConstantGate, QuditGate):
+class PDGate(QuditGate, CachedClass):
     """
     The one-qudit P[i] gate.
 
@@ -70,3 +71,16 @@ class PDGate(ConstantGate, QuditGate):
         omega = np.exp(2j * np.pi * index / radix)
         diags = [(-omega ** 2) if i == index else 1 for i in range(radix)]
         self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
+
+        # A raw QGL matrix literal only ever infers a single flat qudit
+        # from its dimension, so the single diagonal entry is embedded
+        # into a tagged identity instead of parsing a `radix`x`radix`
+        # literal directly.
+        self._expr = _UnitaryExpression.identity('PD', [radix])
+        if index == 0:
+            sub = _UnitaryExpression('Neg() { [[~1]] }')
+        else:
+            sub = _UnitaryExpression(
+                'Neg() { [[~e^(i*4*%d/%d*pi)]] }' % (index, radix),
+            )
+        self._expr.embed(sub, index, index)

@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import numpy as np
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class SubSwapGate(ConstantGate, QuditGate):
+class SubSwapGate(QuditGate, CachedClass):
     """
     The two-qudit subspace SWAP gate.
 
@@ -55,6 +56,7 @@ class SubSwapGate(ConstantGate, QuditGate):
         self._radix = radix
         level1, level2 = self.decode_qudit_level_string(qudit_levels)
         self._utry = self.calculate_level_swap_unitary(radix, level1, level2)
+        self._expr = self.calculate_level_swap_expr(radix, level1, level2)
 
     @staticmethod
     def calculate_level_swap_unitary(
@@ -105,6 +107,41 @@ class SubSwapGate(ConstantGate, QuditGate):
         utry[i, j] = 1
         utry[j, i] = 1
         return UnitaryMatrix(utry, [radix, radix])
+
+    @staticmethod
+    def calculate_level_swap_expr(
+        radix: int,
+        level1: tuple[int, int],
+        level2: tuple[int, int],
+    ) -> _UnitaryExpression:
+        """
+        Build the QGL expression for a qudit level swap.
+
+        A raw QGL matrix literal only ever infers a single flat qudit
+        from its dimension, so the two-qudit radices are built by
+        embedding a small swap block into a tagged identity instead of
+        parsing a `radix^2`x`radix^2` literal directly.
+        """
+        i = level1[0] * radix + level1[1]
+        j = level2[0] * radix + level2[1]
+        lo, hi = min(i, j), max(i, j)
+        n = hi - lo + 1
+
+        rows = []
+        for r in range(n):
+            row = ['0'] * n
+            if r == 0:
+                row[-1] = '1'
+            elif r == n - 1:
+                row[0] = '1'
+            else:
+                row[r] = '1'
+            rows.append('[' + ','.join(row) + ']')
+        qgl = 'Blk() { [%s] }' % ','.join(rows)
+
+        expr = _UnitaryExpression.identity('SubSwap', [radix, radix])
+        expr.embed(_UnitaryExpression(qgl), lo, lo)
+        return expr
 
     @staticmethod
     def decode_qudit_level_string(

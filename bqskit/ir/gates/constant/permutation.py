@@ -3,13 +3,17 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.permutation import PermutationMatrix
+from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class PermutationGate(ConstantGate, QubitGate):
+class PermutationGate(Gate, CachedClass):
     """A Permutation Gate."""
+
+    _num_params = 0
 
     def __init__(
         self,
@@ -34,10 +38,16 @@ class PermutationGate(ConstantGate, QubitGate):
             raise ValueError('Expected positive integer, got %d' % num_qudits)
 
         self._num_qudits = num_qudits
+        self._radixes = tuple([2] * num_qudits)
         self.location = tuple(location)
         self._utry = PermutationMatrix.from_qubit_location(
             num_qudits, self.location,
         )
+
+    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
+        """Return the unitary for this gate, see :class:`Unitary` for more."""
+        self.check_parameters(params)
+        return self._utry
 
     def __str__(self) -> str:
         return f'PermutationGate({self.location})'

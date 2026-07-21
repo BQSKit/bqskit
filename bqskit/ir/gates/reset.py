@@ -1,12 +1,13 @@
 """This module implements the Reset class."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class Reset(ConstantGate):
+class Reset(Gate, CachedClass):
     """Pseudogate to reset/initialize the qudit to |0>."""
 
     def __init__(self, radix: int = 2) -> None:

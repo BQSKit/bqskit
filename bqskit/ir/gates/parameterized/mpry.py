@@ -6,7 +6,7 @@ import typing
 import numpy as np
 import numpy.typing as npt
 
-from bqskit.ir.gates.qubitgate import QubitGate
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -34,7 +34,7 @@ def get_indices(
 
 
 class MPRYGate(
-    QubitGate,
+    Gate,
     CachedClass,
     LocallyOptimizableUnitary,
 ):
@@ -62,6 +62,7 @@ class MPRYGate(
         target_qubit: int = -1,
     ) -> None:
         self._num_qudits = num_qudits
+        self._radixes = tuple([2] * num_qudits)
         # 1 param for each configuration of the selec qubits
         self._num_params = 2 ** (num_qudits - 1)
         # By default, the controlled qubit is the last qubit

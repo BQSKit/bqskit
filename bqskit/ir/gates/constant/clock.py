@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from openqudit.expressions import ZGate as _ZGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class ClockGate(ConstantGate, QuditGate):
+class ClockGate(QuditGate, CachedClass):
     """
     The one-qudit clock (Z) gate. This is a Weyl-Heisenberg gate.
 
@@ -45,4 +45,5 @@ class ClockGate(ConstantGate, QuditGate):
             raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
         self._radix = radix
-        self._utry = UnitaryMatrix(_ZGate(radix)(), self.radixes)
+        self._expr = _ZGate(radix)
+        self._utry = UnitaryMatrix(self._expr(), self.radixes)

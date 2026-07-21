@@ -1,12 +1,14 @@
 """This module implements the SqrtCNOTGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SqrtCNOTGate(ConstantGate, QubitGate):
+class SqrtCNOTGate(Gate, CachedClass):
     """
     The Square root Controlled-X gate.
 
@@ -24,6 +26,10 @@ class SqrtCNOTGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'csx'
+    _expr = _UnitaryExpression(
+        'SqrtCNOT() { [[1,0,0,0],[0,1,0,0],'
+        '[0,0,0.5+0.5*i,0.5-0.5*i],[0,0,0.5-0.5*i,0.5+0.5*i]] }',
+    )
     _utry = UnitaryMatrix(
         [
             [1, 0, 0, 0],
