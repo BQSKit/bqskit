@@ -16,8 +16,15 @@ params = ['attached', 'detached'] if sys.platform != 'win32' else ['attached']
 @pytest.fixture(params=params)
 def server_compiler(request: Any) -> Iterator[Compiler]:
     if request.param == 'detached':
-        manager = subprocess.Popen(['bqskit-manager', '-n2', '-i'])
-        server = subprocess.Popen(['bqskit-server', 'localhost', '-i'])
+        manager = subprocess.Popen(
+            [sys.executable, '-m', 'bqskit.runtime.manager', '-n2', '-i'],
+        )
+        server = subprocess.Popen(
+            [
+                sys.executable, '-m', 'bqskit.runtime.detached',
+                'localhost', '-i',
+            ],
+        )
         compiler = Compiler('localhost')
     else:
         compiler = Compiler(num_workers=2, runtime_log_level=1)
