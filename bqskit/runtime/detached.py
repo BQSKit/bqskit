@@ -469,3 +469,7 @@ def start_server() -> None:
 
     # Start the server
     server.run()
+
+
+if __name__ == '__main__':
+    start_server()
