@@ -21,11 +21,6 @@ class ConstantGate(
     _num_params = 0
     _utry: UnitaryMatrix
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-        return getattr(self, '_utry')
-
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """
         Return the gradient for this gate.
@@ -34,18 +29,6 @@ class ConstantGate(
         """
         self.check_parameters(params)
         return np.array([])
-
-    def get_unitary_and_grad(
-        self,
-        params: RealVector = [],
-    ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
-        """
-        Return the unitary and gradient for this gate.
-
-        See :class:`Gate` for more info.
-        """
-        self.check_parameters(params)
-        return getattr(self, '_utry'), np.array([])
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

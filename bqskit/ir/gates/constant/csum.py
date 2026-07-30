@@ -74,20 +74,14 @@ class CSUMGate(QuditGate, CachedClass):
                 matrix[row, col] = 1.0
         self._utry = UnitaryMatrix(matrix, self.radixes)
 
-        # TODO/OQ: fix
-        # A raw QGL matrix literal only ever infers a single flat qudit
-        # from its dimension, so the two-qudit radices are built by
-        # embedding each row-cyclic-shift block into a tagged identity.
-        self._expr = _UnitaryExpression.identity(
-            'CSUM', [self.radix, self.radix],
+        dim = self.radix ** 2
+        rows = [
+            '[' + ','.join(
+                '1' if matrix[r, c] else '0' for c in range(dim)
+            ) + ']'
+            for r in range(dim)
+        ]
+        self._expr = _UnitaryExpression(
+            'CSUM%d<%d,%d>() { [%s] }'
+            % (self.radix, self.radix, self.radix, ','.join(rows)),
         )
-        for i in range(self.radix):
-            rows = []
-            for r in range(self.radix):
-                row = ['0'] * self.radix
-                row[(r - i) % self.radix] = '1'
-                rows.append('[' + ','.join(row) + ']')
-            qgl = 'Shift%d() { [%s] }' % (i, ','.join(rows))
-            self._expr.embed(
-                _UnitaryExpression(qgl), self.radix * i, self.radix * i,
-            )

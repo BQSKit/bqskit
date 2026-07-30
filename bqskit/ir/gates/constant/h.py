@@ -1,18 +1,10 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-from math import pi
-from math import sqrt
-
-from numpy import array
-from numpy import complex128
-from numpy import exp
-from numpy import zeros
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
@@ -55,21 +47,6 @@ class HGate(ConstantGate, QuditGate, CachedClass):
     _num_params = 0
     _qasm_name = 'h'
 
-    # TODO/OQ: fix
-    # from claude:
-    # Not yet backed by an openqudit `_expr`. openqudit's QGL evaluates the
-    # radix=2 case as `1/sqrt(2)`, while this file uses `sqrt(2)/2` — both
-    # exactly correct, and only 1 ULP apart. That should be negligible, but
-    # empirically it isn't: swapping in the other literal (regardless of
-    # whether it comes from openqudit or is just hand-written here) makes
-    # CNOTToCZPass's repeated H-CZ-H substitution accumulate ~1e-7 of error
-    # over a few hundred gates (see tests/passes/rules/test_cnot2cz.py),
-    # far more than the ~1e-14 a single 1-ULP perturbation should cause
-    # under ordinary error accumulation. That points to a real numerical-
-    # conditioning issue in UnitaryBuilder's incremental composition, not
-    # a problem with either literal. H should switch to `_expr` once that's
-    # root-caused and fixed — until then, keep this hand-written to avoid
-    # depending on which ULP openqudit happens to pick.
     def __init__(self, radix: int = 2) -> None:
         """
         Construct a HGate.
@@ -82,36 +59,28 @@ class HGate(ConstantGate, QuditGate, CachedClass):
             ValueError: if radix < 2
         """
         if not is_integer(radix):
-            raise TypeError(f'Expected integer for radix, got {type(radix)}.')
+            raise TypeError(f"Expected integer for radix, got {type(radix)}.")
 
         if radix < 2:
-            raise ValueError(f'Radix must be greater than 1, got {radix}.')
+            raise ValueError(f"Radix must be greater than 1, got {radix}.")
 
         self._radix = radix
 
         # Calculate unitary
         if radix == 2:
-            matrix = array(
-                [
-                    [sqrt(2) / 2, sqrt(2) / 2],
-                    [sqrt(2) / 2, -sqrt(2) / 2],
-                ],
-                dtype=complex128,
+            self._expr = _UnitaryExpression(
+                'H() { [[1/sqrt(2), 1/sqrt(2)], [1/sqrt(2), ~(1/sqrt(2))]] }',
             )
-            self._utry = UnitaryMatrix(matrix)
-
         else:
-            matrix = zeros([radix] * 2, dtype=complex128)
-            omega = exp(2j * pi / radix)
-            for i in range(radix):
-                for j in range(i, radix):
-                    val = omega ** (i * j)
-                    matrix[i, j] = val
-                    matrix[j, i] = val
-            matrix *= 1 / sqrt(radix)
-            self._utry = UnitaryMatrix(matrix, self.radixes)
-
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-        return self._utry
+            rows = [
+                '['
+                + ','.join(
+                    'e^(i*2*π*%d/%d)/sqrt(%d)' % ((r * c) % radix, radix, radix)
+                    for c in range(radix)
+                )
+                + ']'
+                for r in range(radix)
+            ]
+            self._expr = _UnitaryExpression(
+                'H%d<%d>() { [%s] }' % (radix, radix, ','.join(rows)),
+            )

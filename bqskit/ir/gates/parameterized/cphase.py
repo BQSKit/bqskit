@@ -39,16 +39,19 @@ class ArbitraryCPhaseGate(
         self._num_qudits = len(radixes)
         self._radixes = tuple(radixes)
 
-        # TODO/OQ: fix
-        # A raw QGL matrix literal only ever infers a single flat qudit
-        # from its dimension, so the multi-qudit radices are built by
-        # embedding a parameterized 1x1 phase block into a tagged identity.
-        self._expr = _UnitaryExpression.identity(
-            'ArbitraryCPhase', self._radixes,
-        )
-        self._expr.embed(
-            _UnitaryExpression('Phase(t0) { [[e^(i*t0)]] }'),
-            self.dim - 1, self.dim - 1,
+        dim = self.dim
+        rows = []
+        for r in range(dim):
+            row = ['0'] * dim
+            row[r] = 'e^(i*t0)' if r == dim - 1 else '1'
+            rows.append('[' + ','.join(row) + ']')
+
+        self._expr = _UnitaryExpression(
+            'ArbitraryCPhase_{}<{}>(t0) {{ [{}] }}'.format(
+                '_'.join(str(r) for r in self._radixes),
+                ','.join(str(r) for r in self._radixes),
+                ','.join(rows),
+            ),
         )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

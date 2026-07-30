@@ -110,38 +110,30 @@ class SubSwapGate(QuditGate, CachedClass):
 
     @staticmethod
     def calculate_level_swap_expr(
-        radix: int,
-        level1: tuple[int, int],
-        level2: tuple[int, int],
+            radix: int,
+            level1: tuple[int, int],
+            level2: tuple[int, int],
     ) -> _UnitaryExpression:
-        """
-        Build the QGL expression for a qudit level swap.
-
-        A raw QGL matrix literal only ever infers a single flat qudit
-        from its dimension, so the two-qudit radices are built by
-        embedding a small swap block into a tagged identity instead of
-        parsing a `radix^2`x`radix^2` literal directly.
-        """
+        """Build the QGL expression for a qudit level swap."""
         i = level1[0] * radix + level1[1]
         j = level2[0] * radix + level2[1]
-        lo, hi = min(i, j), max(i, j)
-        n = hi - lo + 1
+        dim = radix * radix
 
         rows = []
-        for r in range(n):
-            row = ['0'] * n
-            if r == 0:
-                row[-1] = '1'
-            elif r == n - 1:
-                row[0] = '1'
+        for r in range(dim):
+            row = ['0'] * dim
+            if r == i:
+                row[j] = '1'
+            elif r == j:
+                row[i] = '1'
             else:
                 row[r] = '1'
             rows.append('[' + ','.join(row) + ']')
-        qgl = 'Blk() { [%s] }' % ','.join(rows)
 
-        expr = _UnitaryExpression.identity('SubSwap', [radix, radix])
-        expr.embed(_UnitaryExpression(qgl), lo, lo)
-        return expr
+        qgl = 'SubSwap_%d_%d_%d<%d,%d>() { [%s] }' % (
+            radix, i, j, radix, radix, ','.join(rows),
+        )
+        return _UnitaryExpression(qgl)
 
     @staticmethod
     def decode_qudit_level_string(

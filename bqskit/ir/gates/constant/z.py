@@ -4,7 +4,6 @@ from __future__ import annotations
 from openqudit.expressions import ZGate as _ZGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils import CachedClass
 
 
@@ -24,13 +23,4 @@ class ZGate(Gate, CachedClass):
 
     _num_qudits = 1
     _qasm_name = 'z'
-    # See YGate for why `_utry` stays a hand-written exact matrix instead
-    # of `_expr()` (ULP-level residuals from the general qudit formula
-    # compound significantly in deep circuits).
     _expr = _ZGate()
-    _utry = UnitaryMatrix(
-        [
-            [1, 0],
-            [0, -1],
-        ],
-    )

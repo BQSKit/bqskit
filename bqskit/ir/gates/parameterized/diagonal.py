@@ -35,19 +35,22 @@ class DiagonalGate(
         # 1 parameter per diagonal element, removing one for global phase
         self._num_params = 2 ** num_qudits - 1
 
-        # TODO/OQ: fix
-        # A raw QGL matrix literal only ever infers a single flat qudit
-        # from its dimension, so the multi-qudit radices are built by
-        # embedding each parameterized diagonal entry into a tagged
-        # identity instead of parsing a `2**n`x`2**n` literal directly.
-        self._expr = _UnitaryExpression.identity(
-            'Diagonal', [2] * num_qudits,
+        dim = 2 ** num_qudits
+        params = ['t%d' % j for j in range(self._num_params)]
+        rows = []
+        for r in range(dim):
+            row = ['0'] * dim
+            row[r] = '1' if r == 0 else 'e^(i*%s)' % params[r - 1]
+            rows.append('[' + ','.join(row) + ']')
+
+        self._expr = _UnitaryExpression(
+            'Diagonal%d<%s>(%s) { [%s] }' % (
+                num_qudits,
+                ','.join(['2'] * num_qudits),
+                ','.join(params),
+                ','.join(rows),
+            ),
         )
-        for i in range(1, 2 ** num_qudits):
-            sub = _UnitaryExpression(
-                'Phase%d(t%d) { [[e^(i*t%d)]] }' % (i, i - 1, i - 1),
-            )
-            self._expr.embed(sub, i, i)
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""

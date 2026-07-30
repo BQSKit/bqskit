@@ -58,10 +58,10 @@ class PDGate(QuditGate, CachedClass):
         if not is_integer(index):
             raise TypeError(f'Expected integer for index, got {type(index)}.')
 
-        if index >= radix:
+        if index < 0 or index >= radix:
             raise ValueError(
-                'PDGate index must be less than number of levels:'
-                f'got: {index=} >= {radix=}.',
+                'PDGate index must be less radix and above 0:'
+                f'got: {index=}; {radix=}.',
             )
 
         self._radix = radix
@@ -72,16 +72,14 @@ class PDGate(QuditGate, CachedClass):
         diags = [(-omega ** 2) if i == index else 1 for i in range(radix)]
         self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
 
-        # TODO/OQ: fix
-        # A raw QGL matrix literal only ever infers a single flat qudit
-        # from its dimension, so the single diagonal entry is embedded
-        # into a tagged identity instead of parsing a `radix`x`radix`
-        # literal directly.
-        self._expr = _UnitaryExpression.identity('PD', [radix])
-        if index == 0:
-            sub = _UnitaryExpression('Neg() { [[~1]] }')
-        else:
-            sub = _UnitaryExpression(
-                'Neg() { [[~e^(i*4*%d/%d*pi)]] }' % (index, radix),
-            )
-        self._expr.embed(sub, index, index)
+        diag = '~e^(i*4*%d*π/%d)' % (index, radix)
+        rows = [
+            '[' + ','.join(
+                (diag if r == index else '1') if r == c else '0'
+                for c in range(radix)
+            ) + ']'
+            for r in range(radix)
+        ]
+        self._expr = _UnitaryExpression(
+            'PD%d_%d<%d>() { [%s] }' % (index, radix, radix, ','.join(rows)),
+        )

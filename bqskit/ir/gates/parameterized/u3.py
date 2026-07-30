@@ -30,14 +30,6 @@ class U3Gate(GeneralGate, CachedClass):
 
     _name = 'U3Gate'
     _qasm_name = 'u3'
-    # TODO/OQ: fix
-    # `_expr` powers name/num_params/radixes/dim. `get_unitary` below stays
-    # numpy-based rather than evaluating `_expr` directly: openqudit's QGL
-    # expression for this gate computes e^(i*(theta1+theta2)) as a single
-    # exponential of the summed angle, which loses precision for large
-    # parameter values and trips an internal `assert is_unitary(...)` panic
-    # in the Rust evaluator. Computing exp(i*theta1)*exp(i*theta2) as a
-    # product of two already-unit-modulus factors (as below) stays stable.
     _expr = _U3Gate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

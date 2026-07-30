@@ -7,13 +7,22 @@ from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
-# TODO/OQ: fix
-# A raw QGL matrix literal only ever infers a single flat qudit from its
-# dimension (9 -> one dim-9 qudit, not two qutrits), so the two-qutrit
-# radices are built by embedding a swap block into a tagged identity
-# instead of parsing a 9x9 literal directly.
-_cpi_expr = _UnitaryExpression.identity('CPI', [3, 3])
-_cpi_expr.embed(_UnitaryExpression('Swap2() { [[0,1],[1,0]] }'), 3, 3)
+
+_cpi_expr = _UnitaryExpression("""
+CPI<3, 3>() {
+    [
+        [1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 1],
+    ]
+}
+""")
 
 
 class CPIGate(Gate, CachedClass):
