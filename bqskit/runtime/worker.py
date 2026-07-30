@@ -921,3 +921,7 @@ def start_worker_rank() -> None:
     # Join them
     for proc in procs:
         proc.join()
+
+
+if __name__ == '__main__':
+    start_worker_rank()

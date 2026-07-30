@@ -98,7 +98,7 @@ def test_interrupt_handling() -> None:
 
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
     p = subprocess.Popen([
-        'python', '-c',
+        sys.executable, '-c',
         """
         import time
         from bqskit.compiler import Compiler
