@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+import numpy as np
+import numpy.typing as npt
+
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
@@ -37,6 +40,19 @@ class ConstantUnitaryGate(Gate, CachedClass):
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
         return self._utry
+
+    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
+        """
+        Return the gradient for this gate.
+
+        See :class:`~bqskit.ir.gate.Gate` for more info.
+
+        Notes:
+            This gate has no parameters, so its gradient is always an
+            empty `(0,N,N)`-shaped tensor.
+        """
+        self.check_parameters(params)
+        return np.zeros((0, self.dim, self.dim), dtype=np.complex128)
 
     def __eq__(self, other: object) -> bool:
         return (

@@ -39,6 +39,7 @@ class ArbitraryCPhaseGate(
         self._num_qudits = len(radixes)
         self._radixes = tuple(radixes)
 
+        # TODO/OQ: fix
         # A raw QGL matrix literal only ever infers a single flat qudit
         # from its dimension, so the multi-qudit radices are built by
         # embedding a parameterized 1x1 phase block into a tagged identity.
@@ -56,17 +57,6 @@ class ArbitraryCPhaseGate(
         U = np.identity(self.dim, dtype=np.complex128)
         U[-1, -1] = np.exp(1j * params[0])
         return UnitaryMatrix(U)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-        dU = np.zeros((1, self.dim, self.dim), dtype=np.complex128)
-        dU[-1, -1, -1] = 1j * np.exp(1j * params[0])
-        return dU
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

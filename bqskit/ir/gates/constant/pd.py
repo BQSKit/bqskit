@@ -72,6 +72,7 @@ class PDGate(QuditGate, CachedClass):
         diags = [(-omega ** 2) if i == index else 1 for i in range(radix)]
         self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
 
+        # TODO/OQ: fix
         # A raw QGL matrix literal only ever infers a single flat qudit
         # from its dimension, so the single diagonal entry is embedded
         # into a tagged identity instead of parsing a `radix`x`radix`

@@ -95,10 +95,16 @@ class Gate(Unitary):
             i-th element is the matrix derivative of the unitary
             with respect to the i-th parameter.
 
-            The default implementation raises `NotImplementedError`; gates
-            that support differentiation should override this method. Use
-            :func:`is_differentiable` to check whether a gate has done so.
+            Gates backed by an openqudit `UnitaryExpression` (i.e. that set
+            `_expr`) get a gradient definition for free here. Gates that
+            don't set `_expr` and don't override this method raise
+            `NotImplementedError`. Use :func:`is_differentiable` to check
+            whether a gate has a gradient definition.
         """
+        if hasattr(self, '_expr'):
+            self.check_parameters(params)
+            return self._expr.gradient(*params)
+
         raise NotImplementedError(
             f'{self.name} does not have a gradient definition.',
         )
@@ -134,7 +140,10 @@ class Gate(Unitary):
 
     def is_differentiable(self) -> bool:
         """Return true if this gate has a gradient definition."""
-        return type(self).get_grad is not Gate.get_grad
+        return (
+            type(self).get_grad is not Gate.get_grad
+            or hasattr(self, '_expr')
+        )
 
     @property
     def qasm_name(self) -> str:

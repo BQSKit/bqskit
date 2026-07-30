@@ -7,7 +7,6 @@ from openqudit.expressions import U1Gate as _U1Gate
 
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -31,25 +30,6 @@ class U1Gate(
 
     _qasm_name = 'u1'
     _expr = _U1Gate()
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        dexp = 1j * np.exp(1j * params[0])
-
-        return np.array(
-            [
-                [
-                    [0, 0],
-                    [0, dexp],
-                ],
-            ], dtype=np.complex128,
-        )
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

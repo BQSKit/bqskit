@@ -35,6 +35,7 @@ class DiagonalGate(
         # 1 parameter per diagonal element, removing one for global phase
         self._num_params = 2 ** num_qudits - 1
 
+        # TODO/OQ: fix
         # A raw QGL matrix literal only ever infers a single flat qudit
         # from its dimension, so the multi-qudit radices are built by
         # embedding each parameterized diagonal entry into a tagged
@@ -58,26 +59,6 @@ class DiagonalGate(
             mat[i][i] = np.exp(1j * params[i - 1])
 
         return UnitaryMatrix(mat)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        grad = np.zeros(
-            (
-                len(params), 2 ** self.num_qudits,
-                2 ** self.num_qudits,
-            ), dtype=np.complex128,
-        )
-
-        for i, ind in enumerate(range(1, 2 ** self.num_qudits)):
-            grad[i][ind][ind] = 1j * np.exp(1j * params[i])
-
-        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

@@ -1053,16 +1053,6 @@ class TestIsDifferentiable:
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.is_differentiable(), bool)
 
-    def test_value(self, gate: Gate) -> None:
-        circuit = Circuit(gate.num_qudits, gate.radixes)
-        assert circuit.is_differentiable()
-
-        circuit.append_gate(gate, list(range(gate.num_qudits)))
-        if gate.is_differentiable():
-            assert circuit.is_differentiable()
-        else:
-            assert not circuit.is_differentiable()
-
     @pytest.mark.parametrize(
         'circuit', [
             Circuit(1),

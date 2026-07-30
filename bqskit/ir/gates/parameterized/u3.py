@@ -30,6 +30,7 @@ class U3Gate(GeneralGate, CachedClass):
 
     _name = 'U3Gate'
     _qasm_name = 'u3'
+    # TODO/OQ: fix
     # `_expr` powers name/num_params/radixes/dim. `get_unitary` below stays
     # numpy-based rather than evaluating `_expr` directly: openqudit's QGL
     # expression for this gate computes e^(i*(theta1+theta2)) as a single

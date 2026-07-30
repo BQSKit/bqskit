@@ -9,6 +9,7 @@ from numpy import complex128
 from numpy import exp
 from numpy import zeros
 
+from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -16,7 +17,7 @@ from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class HGate(QuditGate, CachedClass):
+class HGate(ConstantGate, QuditGate, CachedClass):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 
@@ -54,6 +55,7 @@ class HGate(QuditGate, CachedClass):
     _num_params = 0
     _qasm_name = 'h'
 
+    # TODO/OQ: fix
     # from claude:
     # Not yet backed by an openqudit `_expr`. openqudit's QGL evaluates the
     # radix=2 case as `1/sqrt(2)`, while this file uses `sqrt(2)/2` — both

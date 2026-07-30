@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
@@ -53,26 +52,4 @@ class CRYGate(
                 [0, 0, cos, -sin],
                 [0, 0, sin, cos],
             ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        dcos = -np.sin(params[0] / 2) / 2
-        dsin = -1j * np.cos(params[0] / 2) / 2
-
-        return np.array(
-            [
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, dcos, -dsin],
-                    [0, 0, dsin, dcos],
-                ],
-            ], dtype=np.complex128,
         )

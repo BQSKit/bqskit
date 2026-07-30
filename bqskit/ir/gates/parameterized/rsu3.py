@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
@@ -117,59 +116,3 @@ class RSU3Gate(Gate, CachedClass):
             matrix[1, 1] = np.exp(-1j * params[0] / np.sqrt(3))
             matrix[2, 2] = np.exp(2j * params[0] / np.sqrt(3))
         return UnitaryMatrix(matrix, self.radixes)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        cos = np.cos(params[0])
-        sin = np.sin(params[0])
-
-        matrix = np.zeros(
-            (3, 3),
-            dtype=np.complex128,
-        )
-        if self.index == 0:
-            matrix[0, 0] = -sin
-            matrix[1, 1] = -sin
-            matrix[0, 1] = -1j * cos
-            matrix[1, 0] = -1j * cos
-        elif self.index == 1:
-            matrix[0, 0] = -sin
-            matrix[1, 1] = -sin
-            matrix[0, 1] = -cos
-            matrix[1, 0] = cos
-        elif self.index == 2:
-            matrix[0, 0] = -1j * np.exp(-1j * params[0])
-            matrix[1, 1] = 1j * np.exp(1j * params[0])
-        elif self.index == 3:
-            matrix[0, 0] = -sin
-            matrix[2, 2] = -sin
-            matrix[0, 2] = -1j * cos
-            matrix[2, 0] = -1j * cos
-        elif self.index == 4:
-            matrix[0, 0] = -sin
-            matrix[2, 2] = -sin
-            matrix[0, 2] = -cos
-            matrix[2, 0] = cos
-        elif self.index == 5:
-            matrix[1, 1] = sin
-            matrix[2, 2] = sin
-            matrix[1, 2] = -1j * cos
-            matrix[2, 1] = -1j * cos
-        elif self.index == 6:
-            matrix[1, 1] = sin
-            matrix[2, 2] = sin
-            matrix[1, 2] = -cos
-            matrix[2, 1] = cos
-        elif self.index == 7:
-            matrix[0, 0] = -1j / np.sqrt(3) * \
-                np.exp(-1j * params[0] / np.sqrt(3))
-            matrix[1, 1] = -1j / np.sqrt(3) * \
-                np.exp(-1j * params[0] / np.sqrt(3))
-            matrix[2, 2] = 2j / np.sqrt(3) * np.exp(2j * params[0] / np.sqrt(3))
-        return np.array([matrix], dtype=np.complex128)

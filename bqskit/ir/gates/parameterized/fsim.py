@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
@@ -60,33 +59,4 @@ class FSIMGate(
                 [0, sin, cos, 0],
                 [0, 0, 0, phi],
             ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        dcos = -np.sin(params[0])
-        dsin = -1j * np.cos(params[0])
-        dphi = -1j * np.exp(-1j * params[1])
-
-        return np.array(
-            [
-                [
-                    [0, 0, 0, 0],
-                    [0, dcos, dsin, 0],
-                    [0, dsin, dcos, 0],
-                    [0, 0, 0, 0],
-                ],
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, 0, dphi],
-                ],
-            ], dtype=np.complex128,
         )

@@ -4,7 +4,6 @@ from __future__ import annotations
 import math
 
 import numpy as np
-import numpy.typing as npt
 from openqudit.expressions import UnitaryExpression
 
 from bqskit.ir.gate import Gate
@@ -55,33 +54,6 @@ class U1qGate(Gate, CachedClass):
                 [ct, -1j * enp * st],
                 [-1j * epp * st, ct],
             ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        ct = np.cos(params[0] / 2)
-        st = np.sin(params[0] / 2)
-        enp = np.exp(-1j * params[1])
-        epp = np.exp(1j * params[1])
-
-        return np.array(
-            [
-                [  # wrt params[0]
-                    [-0.5 * st, -0.5j * enp * ct],
-                    [-0.5j * epp * ct, -0.5 * st],
-                ],
-
-                [  # wrt params[1]
-                    [0, -1 * enp * st],
-                    [epp * st, 0],
-                ],
-            ], dtype=np.complex128,
         )
 
 

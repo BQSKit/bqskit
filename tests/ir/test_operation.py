@@ -50,14 +50,14 @@ def test_get_grad(op: Operation) -> None:
     assert np.allclose(op.get_grad(), op.gate.get_grad(op.params))  # noqa
 
     new_params = [1] * op.num_params
-    assert np.allclose(op.get_grad(new_params), op.gate.get_grad(new_params))  # noqa
+    assert np.allclose(op.get_grad(new_params), op.gate.get_grad(new_params))   # noqa
 
 
 @given(operations())
 def test_get_unitary_and_grad(op: Operation) -> None:
     assume(op.is_differentiable())
     utry, grads = op.get_unitary_and_grad()
-    exp_utry, exp_grads = op.gate.get_unitary_and_grad(op.params)  # noqa
+    exp_utry, exp_grads = op.gate.get_unitary_and_grad(op.params)    # noqa
     assert utry == exp_utry
     assert np.allclose(grads, exp_grads)
 

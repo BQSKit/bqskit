@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -111,35 +110,6 @@ class MPRZGate(
             matrix[x2, x2] = pos
 
         return UnitaryMatrix(matrix)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        grad = np.zeros(
-            (
-                len(params), 2 ** self.num_qudits,
-                2 ** self.num_qudits,
-            ), dtype=np.complex128,
-        )
-
-        # For each parameter, calculate the derivative
-        # with respect to that parameter
-        for i, param in enumerate(typing.cast(Sequence[float], params)):
-            dpos = 1j * np.exp(1j * param / 2) / 2
-            dneg = -1j * np.exp(-1j * param / 2) / 2
-
-            # Again, get indices based on target qubit.
-            x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
-
-            grad[i, x1, x1] = dpos
-            grad[i, x2, x2] = dneg
-
-        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

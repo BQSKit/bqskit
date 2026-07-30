@@ -27,6 +27,7 @@ class U2Gate(Gate, CachedClass):
     """
 
     _qasm_name = 'u2'
+    # TODO/OQ: fix
     # `_expr` powers name/num_params/radixes/dim. `get_unitary` below stays
     # numpy-based rather than evaluating `_expr` directly: openqudit's QGL
     # expression for this gate computes e^(i*(theta0+theta1)) as a single

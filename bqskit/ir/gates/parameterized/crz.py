@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
@@ -52,26 +51,4 @@ class CRZGate(
                 [0, 0, neg, 0],
                 [0, 0, 0, pos],
             ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        dpos = 1j / 2 * np.exp(1j * params[0] / 2)
-        dneg = -1j / 2 * np.exp(-1j * params[0] / 2)
-
-        return np.array(
-            [
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, dneg, 0],
-                    [0, 0, 0, dpos],
-                ],
-            ], dtype=np.complex128,
         )

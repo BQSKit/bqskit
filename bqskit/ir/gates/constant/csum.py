@@ -74,6 +74,7 @@ class CSUMGate(QuditGate, CachedClass):
                 matrix[row, col] = 1.0
         self._utry = UnitaryMatrix(matrix, self.radixes)
 
+        # TODO/OQ: fix
         # A raw QGL matrix literal only ever infers a single flat qudit
         # from its dimension, so the two-qudit radices are built by
         # embedding each row-cyclic-shift block into a tagged identity.

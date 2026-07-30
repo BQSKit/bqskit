@@ -7,7 +7,6 @@ from openqudit.expressions import RXXGate as _RXXGate
 
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
-from bqskit.qis.unitary.unitary import RealVector
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -33,28 +32,6 @@ class RXXGate(
 
     _qasm_name = 'rxx'
     _expr = _RXXGate()
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-        """
-        self.check_parameters(params)
-
-        dcos = -np.sin(params[0] / 2) / 2
-        dsin = -1j * np.cos(params[0] / 2) / 2
-
-        return np.array(
-            [
-                [
-                    [dcos, 0, 0, dsin],
-                    [0, dcos, dsin, 0],
-                    [0, dsin, dcos, 0],
-                    [dsin, 0, 0, dcos],
-                ],
-            ], dtype=np.complex128,
-        )
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """
