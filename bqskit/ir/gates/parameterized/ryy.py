@@ -72,5 +72,19 @@ class RYYGate(
                     [0, dnsin, dcos, 0],
                     [dpsin, 0, 0, dcos],
                 ],
-            ], dtype=np.complex128,
+            ],
+            dtype=np.complex128,
+        )
+
+    def get_qasm_gate_def(self) -> str:
+        return (
+            'gate ryy(param0) q0, q1 {'
+            'sxdg q0; '
+            'sxdg q1; '
+            'cx q0, q1; '
+            'rz(param0) q1; '
+            'cx q0, q1; '
+            'sx q0; '
+            'sx q1; '
+            '}\n'
         )
