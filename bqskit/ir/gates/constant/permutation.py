@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
 from bqskit.ir.gate import Gate
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.qis.unitary.unitary import RealVector
@@ -42,6 +44,19 @@ class PermutationGate(Gate, CachedClass):
         self.location = tuple(location)
         self._utry = PermutationMatrix.from_qubit_location(
             num_qudits, self.location,
+        )
+
+        dim = 2 ** num_qudits
+        entries = self._utry.numpy.real
+        rows = [
+            ','.join('1' if entries[r, c] > 0.5 else '0' for c in range(dim))
+            for r in range(dim)
+        ]
+        self._expr = _UnitaryExpression(
+            'Permutation<{}>() {{ [{}] }}'.format(
+                ','.join(['2'] * num_qudits),
+                ','.join('[%s]' % row for row in rows),
+            ),
         )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
