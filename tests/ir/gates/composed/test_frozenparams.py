@@ -20,6 +20,5 @@ from bqskit.ir.gates import U3Gate
 )
 def test_u3_rx(angle: float) -> None:
     frozen_u3 = FrozenParameterGate(U3Gate(), {1: -np.pi / 2, 2: np.pi / 2})
-    print(angle)
     assert frozen_u3.get_unitary([angle]) == RXGate().get_unitary([angle])
     assert frozen_u3.num_params == 1
