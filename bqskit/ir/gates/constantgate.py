@@ -7,7 +7,6 @@ import numpy.typing as npt
 from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -19,7 +18,6 @@ class ConstantGate(
     """A gate that does not change during circuit instantiation."""
 
     _num_params = 0
-    _utry: UnitaryMatrix
 
     def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
         """

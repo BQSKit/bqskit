@@ -4,7 +4,6 @@ from __future__ import annotations
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -28,14 +27,6 @@ class ISwapGate(Gate, CachedClass):
     _qasm_name = 'iswap'
     _expr = _UnitaryExpression(
         'ISwap() { [[1,0,0,0],[0,0,i,0],[0,i,0,0],[0,0,0,1]] }',
-    )
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 0, 1j, 0],
-            [0, 1j, 0, 0],
-            [0, 0, 0, 1],
-        ],
     )
 
     def get_qasm_gate_def(self) -> str:

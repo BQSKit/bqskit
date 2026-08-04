@@ -4,7 +4,6 @@ from __future__ import annotations
 from openqudit.expressions import SwapGate as _SwapGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
@@ -47,7 +46,6 @@ class SwapGate(Gate, CachedClass):
         self._radixes = (radix, radix)
         self._dim = radix * radix
         self._expr = _SwapGate(radix)
-        self._utry = UnitaryMatrix(self._expr(), self.radixes)
         self._qasm_name = 'swap'
 
     def __eq__(self, other: object) -> bool:

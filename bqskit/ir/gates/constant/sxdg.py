@@ -5,7 +5,6 @@ from openqudit.expressions import Dagger as _Dagger
 from openqudit.expressions import SXGate as _SXGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -26,7 +25,6 @@ class SqrtXdgGate(Gate, CachedClass):
     _num_qudits = 1
     _qasm_name = 'sxdg'
     _expr = _Dagger(_SXGate())
-    _utry = UnitaryMatrix(_expr())
 
 
 SXdgGate = SqrtXdgGate

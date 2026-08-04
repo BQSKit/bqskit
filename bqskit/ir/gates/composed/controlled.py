@@ -11,7 +11,6 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_sequence_of_int
@@ -274,11 +273,6 @@ class ControlledGate(ComposedGate):
         """Identity projection matrix determines if it shouldn't activate."""
         self.ihalf = np.kron(iden_proj, iden_gate)
         """Identity half of the final unitary equation."""
-        # If input is a constant gate, we can cache the unitary.
-        if self.num_params == 0 and not building_docs():
-            U = self.gate.get_unitary()
-            ctrl_U = np.kron(self.ctrl, U) + self.ihalf
-            self._utry = UnitaryMatrix(ctrl_U, self.radixes)
 
     @property
     def qasm_name(self) -> str:
@@ -309,9 +303,6 @@ class ControlledGate(ComposedGate):
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-        if hasattr(self, '_utry'):
-            return self._utry
-
         U = self.gate.get_unitary(params)
         ctrl_U = np.kron(self.ctrl, U) + self.ihalf
         return UnitaryMatrix(ctrl_U, self.radixes)
@@ -322,9 +313,6 @@ class ControlledGate(ComposedGate):
 
         See :class:`~bqskit.ir.gate.Gate` for more info.
         """
-        if hasattr(self, '_utry'):
-            return np.array([])
-
         grads = self.gate.get_grad(params)
         return np.kron(self.ctrl, grads).astype(np.complex128)
 
@@ -337,9 +325,6 @@ class ControlledGate(ComposedGate):
 
         See :class:`~bqskit.ir.gate.Gate` for more info.
         """
-        if hasattr(self, '_utry'):
-            return self._utry, np.array([])
-
         U, grads = self.gate.get_unitary_and_grad(params)
         ctrl_U = np.kron(self.ctrl, U) + self.ihalf
         ctl_grads = np.kron(self.ctrl, grads).astype(np.complex128)

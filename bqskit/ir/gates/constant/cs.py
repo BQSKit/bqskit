@@ -5,7 +5,6 @@ from openqudit.expressions import Controlled as _Controlled
 from openqudit.expressions import SGate as _SGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -28,11 +27,3 @@ class CSGate(Gate, CachedClass):
     _num_qudits = 2
     _qasm_name = 'cs'
     _expr = _Controlled(_SGate())
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1j],
-        ],
-    )

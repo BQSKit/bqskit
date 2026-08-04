@@ -5,7 +5,6 @@ from openqudit.expressions import Controlled as _Controlled
 from openqudit.expressions import YGate as _YGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -28,11 +27,3 @@ class CYGate(Gate, CachedClass):
     _num_qudits = 2
     _qasm_name = 'cy'
     _expr = _Controlled(_YGate())
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, -1j],
-            [0, 0, 1j, 0],
-        ],
-    )

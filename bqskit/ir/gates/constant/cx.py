@@ -5,7 +5,6 @@ from openqudit.expressions import Controlled as _Controlled
 from openqudit.expressions import XGate as _XGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -28,7 +27,6 @@ class CNOTGate(Gate, CachedClass):
     _name = 'CNOTGate'
     _qasm_name = 'cx'
     _expr = _Controlled(_XGate())
-    _utry = UnitaryMatrix(_expr())
 
 
 CXGate = CNOTGate

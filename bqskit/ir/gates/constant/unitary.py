@@ -2,15 +2,41 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from decimal import Decimal
 
-import numpy as np
-import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryLike
+from bqskit.qis import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
+
+
+def _qgl_num(x: float) -> str:
+    """Render a float as a QGL constant (no exponent, unary '~' for negation)"""
+    if x == 0.0:
+        return '0'
+    s = format(Decimal(x), 'f')          # exact, never scientific notation
+    return f'~{s[1:]}' if s.startswith('-') else s
+
+
+def _qgl_entry(z: complex) -> str:
+    re, im = _qgl_num(z.real), _qgl_num(z.imag)
+    if im == '0':
+        return re
+    if re == '0':
+        return f'{im}*i'
+    return f'{re} + {im}*i'
+
+
+def _utry_to_qgl(utry: UnitaryMatrix, name: str) -> str:
+    m = utry.numpy
+    rows = ',\n    '.join(
+        '[' + ', '.join(_qgl_entry(z) for z in row) + ']'
+        for row in m
+    )
+    radices = ', '.join(str(r) for r in utry.radixes)
+    return f'{name}<{radices}>() {{\n  [{rows}]\n}}'
 
 
 class ConstantUnitaryGate(Gate, CachedClass):
@@ -33,26 +59,8 @@ class ConstantUnitaryGate(Gate, CachedClass):
                 for each qudit this gate will act on. Defaults to qubits.
         """
         self._utry = UnitaryMatrix(utry, radixes)
-        self._num_qudits = self._utry.num_qudits
-        self._radixes = self._utry.radixes
-
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-        return self._utry
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`~bqskit.ir.gate.Gate` for more info.
-
-        Notes:
-            This gate has no parameters, so its gradient is always an
-            empty `(0,N,N)`-shaped tensor.
-        """
-        self.check_parameters(params)
-        return np.zeros((0, self.dim, self.dim), dtype=np.complex128)
+        name = f'ConstUtry_{abs(hash(self._utry)):x}'
+        self._expr = UnitaryExpression(_utry_to_qgl(self._utry, name))
 
     def __eq__(self, other: object) -> bool:
         return (

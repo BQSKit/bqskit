@@ -11,7 +11,6 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_sequence_of_int
@@ -212,18 +211,8 @@ class EmbeddedGate(ComposedGate):
         self._radixes = tuple(radixes)
         self._dim = int(np.prod(self.radixes))
 
-        # If input is a constant gate, we can cache the unitary.
-        if self.num_params == 0 and not building_docs():
-            U = self.gate.get_unitary()
-            U_embed = np.eye(self.dim, dtype=np.complex128)
-            self._map_matrix(U, U_embed)
-            self._utry = UnitaryMatrix(U_embed, self.radixes, False)
-
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-        if hasattr(self, '_utry'):
-            return self._utry
-
         U = self.gate.get_unitary(params)
         U_embed = np.eye(self.dim, dtype=np.complex128)
         self._map_matrix(U, U_embed)
@@ -255,9 +244,6 @@ class EmbeddedGate(ComposedGate):
 
         See :class:`~bqskit.ir.gate.Gate` for more info.
         """
-        if hasattr(self, '_utry'):
-            return self._utry, np.array([])
-
         U, G = self.gate.get_unitary_and_grad(params)
         U_embed = np.eye(self.dim, dtype=np.complex128)
         self._map_matrix(U, U_embed)

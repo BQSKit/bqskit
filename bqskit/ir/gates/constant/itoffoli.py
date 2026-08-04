@@ -5,7 +5,6 @@ from openqudit.expressions import Controlled as _Controlled
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -38,16 +37,4 @@ class IToffoliGate(Gate, CachedClass):
     _qasm_name = 'iccx'
     _expr = _Controlled(
         _UnitaryExpression('iX() { [[0,i],[i,0]] }'), [2, 2],
-    )
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1j],
-            [0, 0, 0, 0, 0, 0, 1j, 0],
-        ],
     )

@@ -4,7 +4,6 @@ from __future__ import annotations
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -48,16 +47,3 @@ class CPIGate(Gate, CachedClass):
 
     _num_qudits = 2
     _expr = _cpi_expr
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 1],
-        ],
-    )

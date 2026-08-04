@@ -29,9 +29,7 @@ class Gate(Unitary):
     A `Gate` can optionally wrap an openqudit `UnitaryExpression` via the
     `_expr` attribute, which then powers `name`/`num_params`/`radixes`/`dim`.
     Gates that don't set `_expr` fall back to the old class-level attributes
-    (`_num_params`, `_radixes`, ...). Either way, `get_unitary` itself is
-    still provided by the gate (e.g. via a cached `_utry`, or a hand-written
-    override) rather than by this base class.
+    (`_num_params`, `_radixes`, ...).
     """
 
     _expr: UnitaryExpression

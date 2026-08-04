@@ -1,12 +1,9 @@
 """This module implements the SqrtISwapGate."""
 from __future__ import annotations
 
-import math
-
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -31,12 +28,4 @@ class SqrtISwapGate(Gate, CachedClass):
     _expr = _UnitaryExpression(
         'SqrtISwap() { [[1,0,0,0],[0,1/sqrt(2),i/sqrt(2),0],'
         '[0,i/sqrt(2),1/sqrt(2),0],[0,0,0,1]] }',
-    )
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1 / math.sqrt(2), 1j / math.sqrt(2), 0],
-            [0, 1j / math.sqrt(2), 1 / math.sqrt(2), 0],
-            [0, 0, 0, 1],
-        ],
     )

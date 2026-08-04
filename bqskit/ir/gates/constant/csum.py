@@ -5,7 +5,6 @@ import numpy as np
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
@@ -72,7 +71,6 @@ class CSUMGate(QuditGate, CachedClass):
                 row = self.radix * i + ((i + j) % self.radix)
                 col = self.radix * i + j
                 matrix[row, col] = 1.0
-        self._utry = UnitaryMatrix(matrix, self.radixes)
 
         dim = self.radix ** 2
         rows = [

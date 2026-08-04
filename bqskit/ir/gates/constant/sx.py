@@ -4,7 +4,6 @@ from __future__ import annotations
 from openqudit.expressions import SXGate as _SXGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -25,7 +24,6 @@ class SqrtXGate(Gate, CachedClass):
     _num_qudits = 1
     _qasm_name = 'sx'
     _expr = _SXGate()
-    _utry = UnitaryMatrix(_expr())
 
 
 SXGate = SqrtXGate

@@ -55,7 +55,6 @@ class SubSwapGate(QuditGate, CachedClass):
 
         self._radix = radix
         level1, level2 = self.decode_qudit_level_string(qudit_levels)
-        self._utry = self.calculate_level_swap_unitary(radix, level1, level2)
         self._expr = self.calculate_level_swap_expr(radix, level1, level2)
 
     @staticmethod

@@ -1,12 +1,9 @@
 """This module implements the ECRGate."""
 from __future__ import annotations
 
-import math
-
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -34,12 +31,6 @@ class ECRGate(Gate, CachedClass):
         'ECR() { 1/sqrt(2) * '
         '[[0,0,1,i],[0,0,i,1],[1,~i,0,0],[~i,1,0,0]] }',
     )
-    _utry = UnitaryMatrix([
-        [0, 0, 1 * 1 / math.sqrt(2), 1j * 1 / math.sqrt(2)],
-        [0, 0, 1j * 1 / math.sqrt(2), 1 * 1 / math.sqrt(2)],
-        [1 * 1 / math.sqrt(2), -1j * 1 / math.sqrt(2), 0, 0],
-        [-1j * 1 / math.sqrt(2), 1 * 1 / math.sqrt(2), 0, 0],
-    ])
 
     def __init__(self) -> None:
         pass

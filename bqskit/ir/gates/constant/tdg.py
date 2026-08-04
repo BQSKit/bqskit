@@ -5,7 +5,6 @@ from openqudit.expressions import Dagger as _Dagger
 from openqudit.expressions import TGate as _TGate
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -24,4 +23,3 @@ class TdgGate(Gate, CachedClass):
     _num_qudits = 1
     _qasm_name = 'tdg'
     _expr = _Dagger(_TGate())
-    _utry = UnitaryMatrix(_expr())

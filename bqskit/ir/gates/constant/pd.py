@@ -1,11 +1,9 @@
 """This module implements the PDGate."""
 from __future__ import annotations
 
-import numpy as np
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
@@ -66,11 +64,6 @@ class PDGate(QuditGate, CachedClass):
 
         self._radix = radix
         self.index = index
-
-        # Calculate unitary
-        omega = np.exp(2j * np.pi * index / radix)
-        diags = [(-omega ** 2) if i == index else 1 for i in range(radix)]
-        self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
 
         diag = '~e^(i*4*%d*π/%d)' % (index, radix)
         rows = [

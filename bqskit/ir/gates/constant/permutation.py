@@ -7,8 +7,6 @@ from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
 from bqskit.qis.permutation import PermutationMatrix
-from bqskit.qis.unitary.unitary import RealVector
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
@@ -42,12 +40,11 @@ class PermutationGate(Gate, CachedClass):
         self._num_qudits = num_qudits
         self._radixes = tuple([2] * num_qudits)
         self.location = tuple(location)
-        self._utry = PermutationMatrix.from_qubit_location(
-            num_qudits, self.location,
-        )
 
         dim = 2 ** num_qudits
-        entries = self._utry.numpy.real
+        entries = PermutationMatrix.from_qubit_location(
+            num_qudits, self.location,
+        ).numpy.real
         rows = [
             ','.join('1' if entries[r, c] > 0.5 else '0' for c in range(dim))
             for r in range(dim)
@@ -59,19 +56,14 @@ class PermutationGate(Gate, CachedClass):
             ),
         )
 
-    def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
-        """Return the unitary for this gate, see :class:`Unitary` for more."""
-        self.check_parameters(params)
-        return self._utry
-
     def __str__(self) -> str:
         return f'PermutationGate({self.location})'
 
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, PermutationGate)
-            and self._utry == other._utry
+            and self._expr() == other._expr()
         )
 
     def __hash__(self) -> int:
-        return hash(self._utry)
+        return hash(self._expr())

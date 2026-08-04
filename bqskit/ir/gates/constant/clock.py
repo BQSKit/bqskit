@@ -4,7 +4,6 @@ from __future__ import annotations
 from openqudit.expressions import ZGate as _ZGate
 
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
@@ -46,4 +45,3 @@ class ClockGate(QuditGate, CachedClass):
 
         self._radix = radix
         self._expr = _ZGate(radix)
-        self._utry = UnitaryMatrix(self._expr(), self.radixes)
