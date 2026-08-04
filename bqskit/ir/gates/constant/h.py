@@ -1,7 +1,7 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+from openqudit.expressions import HGate as _HGate
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
@@ -65,22 +65,4 @@ class HGate(ConstantGate, QuditGate, CachedClass):
             raise ValueError(f"Radix must be greater than 1, got {radix}.")
 
         self._radix = radix
-
-        # Calculate unitary
-        if radix == 2:
-            self._expr = _UnitaryExpression(
-                'H() { [[1/sqrt(2), 1/sqrt(2)], [1/sqrt(2), ~(1/sqrt(2))]] }',
-            )
-        else:
-            rows = [
-                '['
-                + ','.join(
-                    'e^(i*2*π*%d/%d)/sqrt(%d)' % ((r * c) % radix, radix, radix)
-                    for c in range(radix)
-                )
-                + ']'
-                for r in range(radix)
-            ]
-            self._expr = _UnitaryExpression(
-                'H%d<%d>() { [%s] }' % (radix, radix, ','.join(rows)),
-            )
+        self._expr = _HGate(radix)
