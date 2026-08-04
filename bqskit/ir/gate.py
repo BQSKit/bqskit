@@ -138,10 +138,7 @@ class Gate(Unitary):
 
     def is_differentiable(self) -> bool:
         """Return true if this gate has a gradient definition."""
-        return (
-            type(self).get_grad is not Gate.get_grad
-            or hasattr(self, '_expr')
-        )
+        return hasattr(self, '_expr')
 
     @property
     def qasm_name(self) -> str:
