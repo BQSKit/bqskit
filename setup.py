@@ -66,7 +66,7 @@ setup(
     },
     packages=find_packages(exclude=['examples*', 'test*']),
     install_requires=[
-        'openqudit>=0.3.3',
+        'openqudit==0.3.4',
         'bqskitrs>=0.4.1',
         'lark',
         'numpy>=1.22.0',
