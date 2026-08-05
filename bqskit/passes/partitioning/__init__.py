@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 from bqskit.passes.partitioning.greedy import GreedyPartitioner
+from bqskit.passes.partitioning.gtqcp import GTQCPartitioner
 from bqskit.passes.partitioning.quick import QuickPartitioner
 from bqskit.passes.partitioning.scan import ScanPartitioner
 from bqskit.passes.partitioning.single import GroupSingleQuditGatePass
+from bqskit.passes.partitioning.tdag import TDAGPartitioner
 
 __all__ = [
     'ClusteringPartitioner',
@@ -17,4 +19,6 @@ __all__ = [
     'ScanPartitioner',
     'QuickPartitioner',
     'GroupSingleQuditGatePass',
+    'TDAGPartitioner',
+    'GTQCPartitioner',
 ]
