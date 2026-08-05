@@ -31,7 +31,7 @@ def test_barrier_still_there_after_partitioning(compiler: Compiler) -> None:
 
 
 def test_barrier_stop_partitioning_across_some_circuit(
-        compiler: Compiler,
+    compiler: Compiler,
 ) -> None:
     circuit = Circuit(4)
     circuit.append_gate(CXGate(), (0, 1))

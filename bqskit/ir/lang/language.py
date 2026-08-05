@@ -1,4 +1,5 @@
 """This module implements the Language base class and LangException class."""
+
 from __future__ import annotations
 
 import abc

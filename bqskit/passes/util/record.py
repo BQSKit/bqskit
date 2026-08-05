@@ -1,4 +1,5 @@
 """This module implements the RecordStatsPass class."""
+
 from __future__ import annotations
 
 import logging
@@ -28,8 +29,7 @@ class RecordStatsPass(BasePass):
         stats['cgraph'] = circuit.coupling_graph
         stats['depth'] = circuit.depth
         stats['gate_counts'] = {
-            gate: circuit.count(gate)
-            for gate in circuit.gate_set
+            gate: circuit.count(gate) for gate in circuit.gate_set
         }
 
         if self.key not in data:

@@ -1,4 +1,5 @@
 """This module implements the ExtendBlockSizePass class."""
+
 from __future__ import annotations
 
 import logging
@@ -11,7 +12,6 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.qis.graph import CouplingGraph
 from bqskit.utils.typing import is_integer
-
 
 _logger = logging.getLogger(__name__)
 
@@ -42,8 +42,7 @@ class ExtendBlockSizePass(BasePass):
         minimum_size = self.minimum_size
         if minimum_size is None:
             minimum_size = min(
-                g.num_qudits for g in data.gate_set
-                if g.num_qudits != 1
+                g.num_qudits for g in data.gate_set if g.num_qudits != 1
             )
 
         if minimum_size is None:

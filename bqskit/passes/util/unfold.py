@@ -1,4 +1,5 @@
 """This module implements the UnfoldPass class."""
+
 from __future__ import annotations
 
 import logging
@@ -6,7 +7,6 @@ import logging
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
-
 
 _logger = logging.getLogger(__name__)
 

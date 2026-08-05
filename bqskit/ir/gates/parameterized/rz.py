@@ -1,4 +1,5 @@
 """This module implements the RZGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import RZGate as _RZGate

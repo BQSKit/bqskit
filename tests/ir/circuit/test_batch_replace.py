@@ -1,4 +1,5 @@
 """This module tests circuit simulation through the get_unitary method."""
+
 from __future__ import annotations
 
 from random import randint
@@ -32,39 +33,69 @@ class TestBatchReplace:
         for op in list_a:
             circ.append(op)
 
-        assert circ.get_operation(
-            (0, 0),
-        ) == op_1a and circ.get_operation(
-            (0, 1),
-        ) == op_1a
-        assert circ.get_operation(
-            (0, 2),
-        ) == op_2a and circ.get_operation(
-            (0, 3),
-        ) == op_2a
+        assert (
+            circ.get_operation(
+                (0, 0),
+            )
+            == op_1a
+            and circ.get_operation(
+                (0, 1),
+            )
+            == op_1a
+        )
+        assert (
+            circ.get_operation(
+                (0, 2),
+            )
+            == op_2a
+            and circ.get_operation(
+                (0, 3),
+            )
+            == op_2a
+        )
 
-        assert circ.get_operation(
-            (1, 1),
-        ) == op_3a and circ.get_operation(
-            (1, 2),
-        ) == op_3a
+        assert (
+            circ.get_operation(
+                (1, 1),
+            )
+            == op_3a
+            and circ.get_operation(
+                (1, 2),
+            )
+            == op_3a
+        )
 
-        assert circ.get_operation(
-            (2, 0),
-        ) == op_4a and circ.get_operation(
-            (2, 1),
-        ) == op_4a
-        assert circ.get_operation(
-            (2, 2),
-        ) == op_6a and circ.get_operation(
-            (2, 3),
-        ) == op_6a
+        assert (
+            circ.get_operation(
+                (2, 0),
+            )
+            == op_4a
+            and circ.get_operation(
+                (2, 1),
+            )
+            == op_4a
+        )
+        assert (
+            circ.get_operation(
+                (2, 2),
+            )
+            == op_6a
+            and circ.get_operation(
+                (2, 3),
+            )
+            == op_6a
+        )
 
-        assert circ.get_operation(
-            (3, 0),
-        ) == op_5a and circ.get_operation(
-            (3, 1),
-        ) == op_5a
+        assert (
+            circ.get_operation(
+                (3, 0),
+            )
+            == op_5a
+            and circ.get_operation(
+                (3, 1),
+            )
+            == op_5a
+        )
         for i in range(4):
             for j in range(4):
                 print(f'({i},{j}): {circ._circuit[i][j]}')
@@ -73,39 +104,69 @@ class TestBatchReplace:
         new_ops = list_b
         circ.batch_replace(points, new_ops)
 
-        assert circ.get_operation(
-            (0, 0),
-        ) == op_1b and circ.get_operation(
-            (0, 1),
-        ) == op_1b
-        assert circ.get_operation(
-            (0, 2),
-        ) == op_2b and circ.get_operation(
-            (0, 3),
-        ) == op_2b
+        assert (
+            circ.get_operation(
+                (0, 0),
+            )
+            == op_1b
+            and circ.get_operation(
+                (0, 1),
+            )
+            == op_1b
+        )
+        assert (
+            circ.get_operation(
+                (0, 2),
+            )
+            == op_2b
+            and circ.get_operation(
+                (0, 3),
+            )
+            == op_2b
+        )
 
-        assert circ.get_operation(
-            (1, 1),
-        ) == op_3b and circ.get_operation(
-            (1, 2),
-        ) == op_3b
+        assert (
+            circ.get_operation(
+                (1, 1),
+            )
+            == op_3b
+            and circ.get_operation(
+                (1, 2),
+            )
+            == op_3b
+        )
 
-        assert circ.get_operation(
-            (2, 0),
-        ) == op_4b and circ.get_operation(
-            (2, 1),
-        ) == op_4b
-        assert circ.get_operation(
-            (2, 2),
-        ) == op_6b and circ.get_operation(
-            (2, 3),
-        ) == op_6b
+        assert (
+            circ.get_operation(
+                (2, 0),
+            )
+            == op_4b
+            and circ.get_operation(
+                (2, 1),
+            )
+            == op_4b
+        )
+        assert (
+            circ.get_operation(
+                (2, 2),
+            )
+            == op_6b
+            and circ.get_operation(
+                (2, 3),
+            )
+            == op_6b
+        )
 
-        assert circ.get_operation(
-            (3, 0),
-        ) == op_5b and circ.get_operation(
-            (3, 1),
-        ) == op_5b
+        assert (
+            circ.get_operation(
+                (3, 0),
+            )
+            == op_5b
+            and circ.get_operation(
+                (3, 1),
+            )
+            == op_5b
+        )
 
     def test_random_batch_replace(self, compiler: Compiler) -> None:
         num_gates = 200

@@ -1,4 +1,5 @@
 """This module implements the CeresMinimizer class."""
+
 from __future__ import annotations
 
 import logging
@@ -23,8 +24,11 @@ class CeresMinimizer(LeastSquaresMinimizerNative, Minimizer):
     """
 
     def __new__(
-        cls: type[Self], num_threads: int = 1, ftol: float = 1e-6,
-        gtol: float = 1e-10, report: bool = False,
+        cls: type[Self],
+        num_threads: int = 1,
+        ftol: float = 1e-6,
+        gtol: float = 1e-10,
+        report: bool = False,
     ) -> Self:
         """
         Create a new CeresMinimizer.

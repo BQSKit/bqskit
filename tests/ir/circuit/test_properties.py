@@ -8,6 +8,7 @@ This test is broken down into multiple parts. First, a few simple known circuits
 have their properties tested. Then, each property is tested in depth
 individually.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -34,8 +35,10 @@ from bqskit.utils.typing import is_valid_radixes
 
 
 class TestSimpleCircuit:
-    """This set of tests will ensure that all circuit properties are correct for
-    a simple circuit."""
+    """
+    This set of tests will ensure that all circuit properties are correct for
+    a simple circuit.
+    """
 
     def test_num_params(self, simple_circuit: Circuit) -> None:
         assert simple_circuit.num_params == 0
@@ -101,8 +104,10 @@ class TestSimpleCircuit:
 
 
 class TestSwapCircuit:
-    """This set of tests will ensure that all circuit properties are correct for
-    a swap circuit."""
+    """
+    This set of tests will ensure that all circuit properties are correct for
+    a swap circuit.
+    """
 
     def test_num_params(self, swap_circuit: Circuit) -> None:
         assert swap_circuit.num_params == 0
@@ -167,8 +172,10 @@ class TestSwapCircuit:
 
 
 class TestToffoliCircuit:
-    """This set of tests will ensure that all circuit properties are correct for
-    a toffoli circuit."""
+    """
+    This set of tests will ensure that all circuit properties are correct for
+    a toffoli circuit.
+    """
 
     def test_num_params(self, toffoli_circuit: Circuit) -> None:
         assert toffoli_circuit.num_params == 0
@@ -698,10 +705,7 @@ class TestGetDepth:
         assert circuit.depth == 0
 
     def test_vs_cycles(self, r6_qudit_circuit: Circuit) -> None:
-        assert (
-            r6_qudit_circuit.depth
-            <= r6_qudit_circuit.num_cycles
-        )
+        assert r6_qudit_circuit.depth <= r6_qudit_circuit.num_cycles
 
 
 class TestGetParallelism:
@@ -763,7 +767,8 @@ class TestGetCouplingGraph:
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert CouplingGraph.is_valid_coupling_graph(
-            r6_qudit_circuit.coupling_graph, 6,
+            r6_qudit_circuit.coupling_graph,
+            6,
         )
 
     def test_empty(self) -> None:
@@ -887,7 +892,8 @@ class TestGetCouplingGraph:
         assert len(circuit.coupling_graph) == 0
 
         three_qubit_gate = ConstantUnitaryGate(
-            gen_random_utry_np(12), [2, 2, 3],
+            gen_random_utry_np(12),
+            [2, 2, 3],
         )
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         cgraph = circuit.coupling_graph
@@ -919,10 +925,7 @@ class TestGetGateSet:
 
     def test_type(self, r6_qudit_circuit: Circuit) -> None:
         assert isinstance(r6_qudit_circuit.gate_set, GateSet)
-        assert all(
-            isinstance(gate, Gate)
-            for gate in r6_qudit_circuit.gate_set
-        )
+        assert all(isinstance(gate, Gate) for gate in r6_qudit_circuit.gate_set)
 
     def test_empty(self) -> None:
         circuit = Circuit(4)
@@ -1058,7 +1061,8 @@ class TestIsDifferentiable:
         assert circuit.is_differentiable()
 
     @pytest.mark.parametrize(
-        'circuit', [
+        'circuit',
+        [
             Circuit(1),
             Circuit(4),
             Circuit(4, [2, 3, 4, 5]),

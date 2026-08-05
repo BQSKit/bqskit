@@ -1,4 +1,5 @@
 """This module implements the ExtractDiagonalPass."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,7 +14,6 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
 
 theorized_bounds = [0, 0, 3, 14, 61, 252]
 
@@ -134,7 +134,8 @@ class ExtractDiagonalPass(BasePass):
         default_circ = Circuit(op.gate.num_qudits)
         default_circ.append_gate(
             op.gate,
-            tuple(range(op.gate.num_qudits)), op.params,
+            tuple(range(op.gate.num_qudits)),
+            op.params,
         )
         return None, default_circ
 
@@ -151,10 +152,9 @@ class ExtractDiagonalPass(BasePass):
             all_ops = list(circuit.operations_with_cycles(reverse=True))
             found = False
             for cyc, op in all_ops:
-                if (
-                    isinstance(op.gate, VariableUnitaryGate)
-                    and op.gate.num_qudits in [2, 3, 4]
-                ):
+                if isinstance(
+                    op.gate, VariableUnitaryGate
+                ) and op.gate.num_qudits in [2, 3, 4]:
                     if found:
                         merge_op = op
                         merge_pt = (cyc, op.location[0])
@@ -179,7 +179,9 @@ class ExtractDiagonalPass(BasePass):
             if diag_op:
                 new_mat = diag_op.get_unitary() @ merge_op.get_unitary()
                 circuit.replace_gate(
-                    merge_pt, merge_op.gate, merge_location,
+                    merge_pt,
+                    merge_op.gate,
+                    merge_location,
                     VariableUnitaryGate.get_params(new_mat),
                 )
 

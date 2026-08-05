@@ -8,18 +8,17 @@ from bqskit.passes.partitioning.cluster import ClusteringPartitioner
 
 class TestClusteringPartitioner:
     def test_run_r6(
-        self, r6_qudit_circuit: Circuit,
+        self,
+        r6_qudit_circuit: Circuit,
         compiler: Compiler,
     ) -> None:
         utry = r6_qudit_circuit.get_unitary()
         r6_qudit_circuit = compiler.compile(
-            r6_qudit_circuit, [ClusteringPartitioner(3, 2)],
+            r6_qudit_circuit,
+            [ClusteringPartitioner(3, 2)],
         )
 
-        assert any(
-            isinstance(op.gate, CircuitGate)
-            for op in r6_qudit_circuit
-        )
+        assert any(isinstance(op.gate, CircuitGate) for op in r6_qudit_circuit)
 
         assert r6_qudit_circuit.get_unitary() == utry
         for cycle_index in range(r6_qudit_circuit.num_cycles):

@@ -1,4 +1,5 @@
 """This module implements the ConstantGate base class."""
+
 from __future__ import annotations
 
 import numpy as np

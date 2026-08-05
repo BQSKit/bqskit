@@ -1,4 +1,5 @@
 """This module implements the MPRZGate."""
+
 from __future__ import annotations
 
 import typing
@@ -76,7 +77,8 @@ class MPRZGate(
         # pair of entries can be embedded independently regardless of
         # whether their indices happen to be contiguous.
         self._expr = _UnitaryExpression.identity(
-            'MPRZ', [2] * num_qudits,
+            'MPRZ',
+            [2] * num_qudits,
         )
         for i in range(self._num_params):
             x1, x2 = get_indices(i, self.target_qubit, num_qudits)
@@ -94,9 +96,10 @@ class MPRZGate(
         self.check_parameters(params)
         matrix = np.zeros(
             (
-                2 ** self.num_qudits,
-                2 ** self.num_qudits,
-            ), dtype=np.complex128,
+                2**self.num_qudits,
+                2**self.num_qudits,
+            ),
+            dtype=np.complex128,
         )
         for i, param in enumerate(typing.cast(typing.Sequence[float], params)):
             pos = np.exp(1j * param / 2)

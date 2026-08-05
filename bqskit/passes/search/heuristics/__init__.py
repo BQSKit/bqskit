@@ -1,4 +1,5 @@
 """This package contains HeuristicFunction definitions."""
+
 from __future__ import annotations
 
 from bqskit.passes.search.heuristics.astar import AStarHeuristic

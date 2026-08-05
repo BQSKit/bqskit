@@ -80,8 +80,11 @@ class SingleQuditIterator(Iterator[tuple[int, Operation]]):
         self.qudit = qudit
         self.circuit = circuit
         self.start = start
-        self.end = end if end is not None and \
-            end < circuit.num_cycles else circuit.num_cycles
+        self.end = (
+            end
+            if end is not None and end < circuit.num_cycles
+            else circuit.num_cycles
+        )
         self.cycle = start
 
     def __iter__(self) -> Iterator[tuple[int, Operation]]:
@@ -105,8 +108,10 @@ class SingleQuditIterator(Iterator[tuple[int, Operation]]):
 
 
 class CachedSingleQuditIterator(Iterator[tuple[int, Operation]]):
-    """A SingleQuditIterator which walks down a cache rather than directly
-    walking the qudit."""
+    """
+    A SingleQuditIterator which walks down a cache rather than directly
+    walking the qudit.
+    """
 
     @staticmethod
     def make_gate_cache(
@@ -114,13 +119,14 @@ class CachedSingleQuditIterator(Iterator[tuple[int, Operation]]):
         qudit: int,
         multiqudit_only: bool = False,
     ) -> list[int]:
-        """Creates the gate cache for a given circuit `circuit`, composed of
-        gates with more than one input."""
-
+        """
+        Creates the gate cache for a given circuit `circuit`, composed of
+        gates with more than one input.
+        """
         circuit_iterator = SingleQuditIterator(circuit, qudit, 0)
         gate_cache: list[int] = [
-            cycle for cycle,
-            op in circuit_iterator
+            cycle
+            for cycle, op in circuit_iterator
             if len(op.location) > 1 or not multiqudit_only
         ]
 
@@ -139,8 +145,11 @@ class CachedSingleQuditIterator(Iterator[tuple[int, Operation]]):
         self.cache = cache
         self.qudit = qudit
         self.start_index = bisect.bisect_left(self.cache, start)
-        self.end = end if end is not None and \
-            end < circuit.num_cycles else circuit.num_cycles
+        self.end = (
+            end
+            if end is not None and end < circuit.num_cycles
+            else circuit.num_cycles
+        )
         self.cache_index = self.start_index
 
     def __iter__(self) -> Iterator[tuple[int, Operation]]:

@@ -1,19 +1,21 @@
 """This module implements the CircuitLocation class."""
+
 from __future__ import annotations
 
 import logging
 from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Any
-from typing import overload
 from typing import TypeGuard
 from typing import Union
+from typing import overload
 
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_mapping
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_sequence_of_int
+
 _logger = logging.getLogger(__name__)
 
 
@@ -68,12 +70,12 @@ class CircuitLocation(Sequence[int]):
         self._location: tuple[int, ...] = tuple(location)
 
     @overload
-    def __getitem__(self, index: int) -> int:
-        ...
+    def __getitem__(self, index: int) -> int: ...
 
     @overload
-    def __getitem__(self, indices: slice | Sequence[int]) -> tuple[int, ...]:
-        ...
+    def __getitem__(
+        self, indices: slice | Sequence[int]
+    ) -> tuple[int, ...]: ...
 
     def __getitem__(
         self,

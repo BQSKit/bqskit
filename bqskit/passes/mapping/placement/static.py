@@ -1,4 +1,5 @@
 """This module implements the StaticPlacementPass class."""
+
 from __future__ import annotations
 
 import logging
@@ -13,8 +14,10 @@ _logger = logging.getLogger(__name__)
 
 
 class StaticPlacementPass(BasePass):
-    """Find a subgraph monomorphic to the coupling graph so that no SWAPs are
-    needed."""
+    """
+    Find a subgraph monomorphic to the coupling graph so that no SWAPs are
+    needed.
+    """
 
     def __init__(self, timeout_sec: float = 10) -> None:
         self.timeout_sec = timeout_sec
@@ -120,7 +123,8 @@ class StaticPlacementPass(BasePass):
 
         # Find an monomorphic subgraph
         placement = self.find_monomorphic_subgraph(
-            physical_graph, logical_graph,
+            physical_graph,
+            logical_graph,
         )
 
         # Set the placement if it is valid

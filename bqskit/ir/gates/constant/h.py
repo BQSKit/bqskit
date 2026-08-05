@@ -1,4 +1,5 @@
 """This module implements the HGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import HGate as _HGate
@@ -59,10 +60,10 @@ class HGate(ConstantGate, QuditGate, CachedClass):
             ValueError: if radix < 2
         """
         if not is_integer(radix):
-            raise TypeError(f"Expected integer for radix, got {type(radix)}.")
+            raise TypeError(f'Expected integer for radix, got {type(radix)}.')
 
         if radix < 2:
-            raise ValueError(f"Radix must be greater than 1, got {radix}.")
+            raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
         self._radix = radix
         self._expr = _HGate(radix)

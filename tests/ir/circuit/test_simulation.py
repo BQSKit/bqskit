@@ -1,4 +1,5 @@
 """This module tests circuit simulation through the get_unitary method."""
+
 from __future__ import annotations
 
 import numpy as np

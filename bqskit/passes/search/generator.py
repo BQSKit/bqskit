@@ -1,4 +1,5 @@
 """This module implements the LayerGenerator base class."""
+
 from __future__ import annotations
 
 import abc

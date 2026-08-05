@@ -1,4 +1,5 @@
 """This module implements the SynthesisPass abstract class."""
+
 from __future__ import annotations
 
 from abc import abstractmethod

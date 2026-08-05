@@ -1,4 +1,5 @@
 """This module implements the Minimizer base class."""
+
 from __future__ import annotations
 
 import abc
@@ -23,7 +24,8 @@ class Minimizer(abc.ABC):
 
     @abc.abstractmethod
     def minimize(
-        self, cost: CostFunction,
+        self,
+        cost: CostFunction,
         x0: RealVector,
     ) -> npt.NDArray[np.float64]:
         """

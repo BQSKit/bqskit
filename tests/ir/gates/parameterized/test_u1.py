@@ -1,4 +1,5 @@
 """This module tests the U1Gate class."""
+
 from __future__ import annotations
 
 from hypothesis import given

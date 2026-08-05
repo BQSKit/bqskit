@@ -1,4 +1,5 @@
 """This module implements the SeedLayerGenerator class."""
+
 from __future__ import annotations
 
 import logging
@@ -62,8 +63,7 @@ class SeedLayerGenerator(LayerGenerator):
 
         if not is_integer(num_removed):
             raise TypeError(
-                'Expected integer for num_removed, '
-                f'got {type(num_removed)}.',
+                f'Expected integer for num_removed, got {type(num_removed)}.',
             )
         if not isinstance(hash_on_1q_gate, bool):
             raise TypeError(
@@ -144,8 +144,7 @@ class SeedLayerGenerator(LayerGenerator):
 
             # Check if any seeds match circuit, only use those seeds
             usable_seeds = [
-                seed for seed in self.seeds
-                if circuit.radixes == seed.radixes
+                seed for seed in self.seeds if circuit.radixes == seed.radixes
             ]
             for seed in usable_seeds:
                 h = self.hash_structure(seed, self.hash_on_1q_gate)
@@ -153,7 +152,7 @@ class SeedLayerGenerator(LayerGenerator):
 
             if len(usable_seeds) == 0:
                 _logger.warning(
-                    'No seeds matching the circuit\'s radixes found.'
+                    "No seeds matching the circuit's radixes found."
                     '\nGenerating successors from empty circuit.'
                     '\nThis may cause a malformed search tree because the'
                     'generator never generated a proper initial layer.',
@@ -229,7 +228,6 @@ class SeedLayerGenerator(LayerGenerator):
                 ancestor_circuits.append(circuit_copy.copy())
 
         for cycle, op in circuit.operations_with_cycles(reverse=True):
-
             if num_removed >= self.num_removed:
                 break
             if op.num_qudits == 1:

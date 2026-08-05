@@ -1,4 +1,5 @@
 """This test module tests circuit point methods."""
+
 from __future__ import annotations
 
 import pytest
@@ -30,7 +31,8 @@ class TestIsPointInRange:
         assert is_bool(circuit.is_point_in_range(point))
 
     @pytest.mark.parametrize(
-        'point', [
+        'point',
+        [
             (-5, -5),
             (-4, -4),
             (-3, -3),
@@ -49,7 +51,8 @@ class TestIsPointInRange:
         assert circuit.is_point_in_range(point)
 
     @pytest.mark.parametrize(
-        'point', [
+        'point',
+        [
             (0, 0),
             (1, 1),
             (2, 2),
@@ -68,7 +71,8 @@ class TestIsPointInRange:
         assert circuit.is_point_in_range(point)
 
     @pytest.mark.parametrize(
-        'point', [
+        'point',
+        [
             (-1000, 0),
             (1, -100),
             (-8, -8),
@@ -87,7 +91,8 @@ class TestIsPointInRange:
         assert not circuit.is_point_in_range(point)
 
     @pytest.mark.parametrize(
-        'point', [
+        'point',
+        [
             (1000, 0),
             (1, 100),
             (8, 8),

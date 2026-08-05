@@ -1,4 +1,5 @@
 """This module implements the ZXZXZDecomposition."""
+
 from __future__ import annotations
 
 import cmath

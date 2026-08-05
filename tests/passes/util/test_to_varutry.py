@@ -16,16 +16,18 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 
 def test_single_qubit_general_gate_conversion(
-        compiler: Compiler,
-        single_qubit_general_gate: GeneralGate,
-        gen_random_utry_np:
-        Callable[[int | Sequence[int]], npt.NDArray[np.complex128]],
+    compiler: Compiler,
+    single_qubit_general_gate: GeneralGate,
+    gen_random_utry_np: Callable[
+        [int | Sequence[int]], npt.NDArray[np.complex128]
+    ],
 ) -> None:
 
     circuit = Circuit(1)
     gate_utry = UnitaryMatrix(gen_random_utry_np(2))
     circuit.append_gate(
-        single_qubit_general_gate, (0,),
+        single_qubit_general_gate,
+        (0,),
         single_qubit_general_gate.calc_params(gate_utry),
     )
 
@@ -36,8 +38,8 @@ def test_single_qubit_general_gate_conversion(
 
 
 def test_skiping_non_general_gate(
-        compiler: Compiler,
-        single_qubit_gate: Gate,
+    compiler: Compiler,
+    single_qubit_gate: Gate,
 ) -> None:
     circuit = Circuit(1)
     params = np.random.random(single_qubit_gate.num_params)
@@ -45,7 +47,8 @@ def test_skiping_non_general_gate(
     circuit.append_gate(single_qubit_gate, (0,), params)
 
     circuit = compiler.compile(
-        circuit, [ToVariablePass(convert_all_single_qudit_gates=False)],
+        circuit,
+        [ToVariablePass(convert_all_single_qudit_gates=False)],
     )
     dist = circuit.get_unitary().get_distance_from(
         single_qubit_gate.get_unitary(params),
@@ -59,8 +62,8 @@ def test_skiping_non_general_gate(
 
 
 def test_all_single_qubit_gate_conversion(
-        compiler: Compiler,
-        single_qubit_gate: Gate,
+    compiler: Compiler,
+    single_qubit_gate: Gate,
 ) -> None:
 
     circuit = Circuit(1)
@@ -69,7 +72,8 @@ def test_all_single_qubit_gate_conversion(
     circuit.append_gate(single_qubit_gate, (0,), params)
 
     circuit = compiler.compile(
-        circuit, [ToVariablePass(convert_all_single_qudit_gates=True)],
+        circuit,
+        [ToVariablePass(convert_all_single_qudit_gates=True)],
     )
 
     dist = circuit.get_unitary().get_distance_from(
@@ -81,16 +85,18 @@ def test_all_single_qubit_gate_conversion(
 
 
 def test_single_qutrit_general_gate_conversion(
-        compiler: Compiler,
-        single_qutrit_general_gate: GeneralGate,
-        gen_random_utry_np:
-        Callable[[int | Sequence[int]], npt.NDArray[np.complex128]],
+    compiler: Compiler,
+    single_qutrit_general_gate: GeneralGate,
+    gen_random_utry_np: Callable[
+        [int | Sequence[int]], npt.NDArray[np.complex128]
+    ],
 ) -> None:
 
     circuit = Circuit(1, [3])
     gate_utry = UnitaryMatrix(gen_random_utry_np(3))
     circuit.append_gate(
-        single_qutrit_general_gate, (0,),
+        single_qutrit_general_gate,
+        (0,),
         single_qutrit_general_gate.calc_params(gate_utry),
     )
 
@@ -101,8 +107,8 @@ def test_single_qutrit_general_gate_conversion(
 
 
 def test_all_single_qutrit_gate_conversion(
-        compiler: Compiler,
-        single_qutrit_gate: Gate,
+    compiler: Compiler,
+    single_qutrit_gate: Gate,
 ) -> None:
 
     circuit = Circuit(1, [3])
@@ -111,7 +117,8 @@ def test_all_single_qutrit_gate_conversion(
     circuit.append_gate(single_qutrit_gate, (0,), params)
 
     circuit = compiler.compile(
-        circuit, [ToVariablePass(convert_all_single_qudit_gates=True)],
+        circuit,
+        [ToVariablePass(convert_all_single_qudit_gates=True)],
     )
 
     dist = circuit.get_unitary().get_distance_from(
@@ -123,8 +130,8 @@ def test_all_single_qutrit_gate_conversion(
 
 
 def test_all_gates_conversion(
-        compiler: Compiler,
-        gate: Gate,
+    compiler: Compiler,
+    gate: Gate,
 ) -> None:
 
     circuit = Circuit(gate.num_qudits, gate.radixes)
@@ -133,7 +140,8 @@ def test_all_gates_conversion(
     circuit.append_gate(gate, range(gate.num_qudits), params)
 
     circuit = compiler.compile(
-        circuit, [ToVariablePass(convert_all_single_qudit_gates=True)],
+        circuit,
+        [ToVariablePass(convert_all_single_qudit_gates=True)],
     )
 
     dist = circuit.get_unitary().get_distance_from(

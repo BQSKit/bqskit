@@ -1,4 +1,5 @@
 """This module implements the RCCXGate/MargolusGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression

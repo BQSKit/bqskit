@@ -1,4 +1,5 @@
 """This module implements helper methods for generating docs."""
+
 from __future__ import annotations
 
 import os

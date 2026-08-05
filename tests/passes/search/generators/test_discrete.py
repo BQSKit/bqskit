@@ -11,7 +11,6 @@ from bqskit.passes.search.generators.discrete import DiscreteLayerGenerator
 
 
 class TestDiscreteLayerGenerator:
-
     def test_gate_set(self) -> None:
         gates = [HGate(), CNOTGate(), TGate()]
         generator = DiscreteLayerGenerator()

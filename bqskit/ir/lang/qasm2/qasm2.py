@@ -1,4 +1,5 @@
 """This module implements the OPENQASM2Language class."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -20,7 +21,7 @@ class OPENQASM2Language(Language):
         if not circuit.is_qubit_only():
             raise LangException('Only qubit circuits can be wrriten to qasm.')
 
-        source = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\n"
+        source = 'OPENQASM 2.0;\ninclude "qelib1.inc";\n'
         source += f'qreg q[{circuit.num_qudits}];\n'
         for gate in circuit.gate_set:
             source += gate.get_qasm_gate_def()

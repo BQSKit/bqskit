@@ -1,4 +1,5 @@
 """This module implements the U3Gate."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -77,17 +78,16 @@ class U3Gate(GeneralGate, CachedClass):
                     [-0.5 * st, -0.5 * ct * el],
                     [0.5 * ct * ep, -0.5 * st * el * ep],
                 ],
-
                 [  # wrt params[1]
                     [0, 0],
                     [st * dep_, ct * el * dep_],
                 ],
-
                 [  # wrt params[2]
                     [0, -st * del_],
                     [0, ct * ep * del_],
                 ],
-            ], dtype=np.complex128,
+            ],
+            dtype=np.complex128,
         )
 
     def calc_params(self, utry: UnitaryMatrix) -> list[float]:
@@ -115,8 +115,8 @@ class U3Gate(GeneralGate, CachedClass):
         c = np.abs(special_utry[1, 0])
         d = np.abs(special_utry[0, 0])
         theta = 2 * float(np.arctan2(c, d))
-        phi = (a + b)
-        lamb = (a - b)
+        phi = a + b
+        lamb = a - b
         return [theta, phi, lamb]
 
     def get_inverse_params(self, params: RealVector = []) -> RealVector:

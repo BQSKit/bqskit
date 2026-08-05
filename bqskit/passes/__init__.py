@@ -208,6 +208,7 @@ algorithms extend circuit templates.
     StairLayerGenerator
     WideLayerGenerator
 """
+
 from __future__ import annotations
 
 from bqskit.passes.alias import PassAlias
@@ -319,7 +320,6 @@ from bqskit.passes.util.record import RecordStatsPass
 from bqskit.passes.util.structure import StructureAnalysisPass
 from bqskit.passes.util.unfold import UnfoldPass
 from bqskit.passes.util.update import UpdateDataPass
-
 
 __all__ = [
     'DoWhileLoopPass',

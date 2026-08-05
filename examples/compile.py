@@ -3,6 +3,7 @@ This example demonstrates using the standard BQSKit compile function.
 
 For a much more detailed tutorial, see the bqskit-tutorial repository.
 """
+
 from __future__ import annotations
 
 from bqskit import Circuit

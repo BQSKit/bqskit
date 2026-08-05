@@ -1,4 +1,5 @@
 """This module implements the CYToCNOTPass."""
+
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass

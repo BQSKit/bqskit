@@ -1,4 +1,5 @@
 """This package contains parameterized gates."""
+
 from __future__ import annotations
 
 from bqskit.ir.gates.parameterized.ccp import CCPGate

@@ -10,7 +10,6 @@ from bqskit.qis import UnitaryMatrix
 
 
 class TestLeap:
-
     def test_small_qubit(self, compiler: Compiler) -> None:
         utry = UnitaryMatrix.random(2)
         circuit = Circuit.from_unitary(utry)

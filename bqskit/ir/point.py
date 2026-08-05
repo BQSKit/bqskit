@@ -1,4 +1,5 @@
 """This module implements the CircuitPoint class."""
+
 from __future__ import annotations
 
 import logging
@@ -7,6 +8,7 @@ from typing import TypeGuard
 from typing import Union
 
 from bqskit.utils.typing import is_integer
+
 _logger = logging.getLogger(__name__)
 
 
@@ -88,7 +90,8 @@ class CircuitPoint(tuple[int, int]):
         if len(point) != 2:
             _logger.log(
                 0,
-                'Expected point to contain two values, got %d.' % len(
+                'Expected point to contain two values, got %d.'
+                % len(
                     point,
                 ),
             )
@@ -97,7 +100,8 @@ class CircuitPoint(tuple[int, int]):
         if not is_integer(point[0]):
             _logger.log(
                 0,
-                'Expected integer values in point, got %s.' % type(
+                'Expected integer values in point, got %s.'
+                % type(
                     point[0],
                 ),
             )
@@ -106,7 +110,8 @@ class CircuitPoint(tuple[int, int]):
         if not is_integer(point[1]):
             _logger.log(
                 0,
-                'Expected integer values in point, got %s.' % type(
+                'Expected integer values in point, got %s.'
+                % type(
                     point[1],
                 ),
             )

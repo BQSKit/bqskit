@@ -1,4 +1,5 @@
 """This file tests the qasm2 language support in BQSKit."""
+
 from __future__ import annotations
 
 from unittest.mock import mock_open
@@ -97,6 +98,7 @@ class TestGateDecl:
 
         pytest.importorskip('qiskit')
         from qiskit import QuantumCircuit
+
         circuit = OPENQASM2Language().decode(input)
         assert circuit.num_qudits == 1
         assert circuit.num_operations == 1
@@ -145,6 +147,7 @@ class TestGateDecl:
 
         pytest.importorskip('qiskit')
         from qiskit import QuantumCircuit
+
         circuit = OPENQASM2Language().decode(input)
         assert circuit.num_qudits == 1
         op = circuit[0, 0]
@@ -543,7 +546,7 @@ def test_ECR_gate() -> None:
     [
         [-0.1, 0.2, -0.3],
         [1e-10, 1e-8, 2.2e-10],
-        [-1e+4, 1e+5, -1e+6],
+        [-1e4, 1e5, -1e6],
         [3.141592653589793, -2.718281828459045, 1.4142135623730951],
         [1, 2, 3],
         [1.0, 2.0, 3.0],

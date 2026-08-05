@@ -1,4 +1,5 @@
 """This module implements the SingleQuditLayerGenerator class."""
+
 from __future__ import annotations
 
 import logging
@@ -12,6 +13,7 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
+
 _logger = logging.getLogger(__name__)
 
 
@@ -130,7 +132,6 @@ class SingleQuditLayerGenerator(LayerGenerator):
         # Generate successors
         successors = []
         for gate in self.gates:  # type: ignore  # self.gates is set earlier
-
             # Skip adding a gate that repeats the last one on the circuit
             if not self.allow_repeats and gate == last_gate:
                 continue

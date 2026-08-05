@@ -1,4 +1,5 @@
 """This module tests RuntimeTask functionality."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable

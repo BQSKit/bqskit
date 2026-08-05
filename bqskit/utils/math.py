@@ -1,4 +1,5 @@
 """This module implements numerical functions."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,7 +14,8 @@ from bqskit.qis.unitary.unitary import RealVector
 
 
 def dexpmv(
-    M: npt.NDArray[np.complex128], dM: npt.NDArray[np.complex128],
+    M: npt.NDArray[np.complex128],
+    dM: npt.NDArray[np.complex128],
 ) -> tuple[npt.NDArray[np.complex128], npt.NDArray[np.complex128]]:
     """
     Compute the Matrix exponential F = e^M and its derivative dF.
@@ -38,12 +40,11 @@ def dexpmv(
         derivative evaluation." Proc. of Technical Computing Prague 2008
         (2008): 17-24.
     """
-
     norm = np.linalg.norm(M, np.inf)
     e = np.log2(norm) if norm != 0 else -np.inf
     r = int(max(0, e + 1))
-    M = M / (2 ** r)
-    dM = dM / (2 ** r)
+    M = M / (2**r)
+    dM = dM / (2**r)
     X = M
     Y = dM
     c = 0.5
@@ -116,7 +117,7 @@ def dot_product(alpha: RealVector, sigma: RealVector) -> npt.NDArray[Any]:
 
 
 def unitary_log_no_i(
-        U: npt.NDArray[np.complex128],
+    U: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.complex128]:
     """
     Solves for H in U = e^{iH}
@@ -131,7 +132,6 @@ def unitary_log_no_i(
         This assumes the input is unitary but does not check. The output
         is undefined on non-unitary inputs.
     """
-
     T, Z = sp.linalg.schur(U)
     T = np.diag(T)
     D = T / np.abs(T)
@@ -156,12 +156,11 @@ def pauli_expansion(H: npt.NDArray[np.complex128]) -> npt.NDArray[np.float64]:
         This assumes the input is hermitian but does not check. The
         output is undefined on non-hermitian inputs.
     """
-
     # Change basis of H to Pauli Basis (solve for coefficients -> X)
     n = int(np.log2(len(H)))
     paulis = PauliMatrices(n)
-    flatten_paulis = [np.reshape(pauli, 4 ** n) for pauli in paulis]
-    flatten_H = np.reshape(H, 4 ** n)
+    flatten_paulis = [np.reshape(pauli, 4**n) for pauli in paulis]
+    flatten_H = np.reshape(H, 4**n)
     A = np.stack(flatten_paulis, axis=-1)
     X = np.real(np.matmul(np.linalg.inv(A), flatten_H))
     return np.array(X)
@@ -228,7 +227,8 @@ def compute_su_generators(n: int) -> npt.NDArray[np.complex128]:
                 [[0, 1], [1, 0]],
                 [[0, -1j], [1j, 0]],
                 [[1, 0], [0, -1]],
-            ], dtype=np.complex128,
+            ],
+            dtype=np.complex128,
         )
 
     else:

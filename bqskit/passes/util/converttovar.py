@@ -1,4 +1,5 @@
 """This module implements the ToVariablePass."""
+
 from __future__ import annotations
 
 import logging
@@ -32,15 +33,16 @@ class ToVariablePass(BasePass):
             'Converting single-qudit general gates to VariableUnitaryGate.',
         )
         for cycle, op in circuit.operations_with_cycles():
-            if (
-                op.gate.num_qudits == 1 and (
-                    isinstance(op.gate, GeneralGate)
-                    or self.convert_all_single_qudit_gates
-                )
+            if op.gate.num_qudits == 1 and (
+                isinstance(op.gate, GeneralGate)
+                or self.convert_all_single_qudit_gates
             ):
                 params = VariableUnitaryGate.get_params(op.get_unitary())
                 point = CircuitPoint(cycle, op.location[0])
                 vgate = VariableUnitaryGate(op.num_qudits, op.radixes)
                 circuit.replace_gate(
-                    point, vgate, op.location, params,
+                    point,
+                    vgate,
+                    op.location,
+                    params,
                 )

@@ -1,4 +1,5 @@
 """This module implements the U3Decomposition."""
+
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass

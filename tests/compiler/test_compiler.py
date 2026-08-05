@@ -1,4 +1,5 @@
 """This module tests BQSKit's Compiler object."""
+
 from __future__ import annotations
 
 import logging

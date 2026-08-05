@@ -1,4 +1,5 @@
 """This module defines the QuickPartitioner pass."""
+
 from __future__ import annotations
 
 import logging
@@ -119,7 +120,8 @@ class QuickPartitioner(BasePass):
                             for p in partitioned_circuit.rear:
                                 op = partitioned_circuit[p]
                                 if isinstance(
-                                    op.gate, (
+                                    op.gate,
+                                    (
                                         BarrierPlaceholder,
                                         MeasurementPlaceholder,
                                         Reset,
@@ -181,14 +183,14 @@ class QuickPartitioner(BasePass):
             location = op.location
 
             # Get all currently active bins that share at least one qudit
-            overlapping_bins: list[Bin] = list({
-                active_bins[q] for q in location  # type: ignore
-                if active_bins[q] is not None
-            })
+            overlapping_bins: list[Bin] = list(
+                {active_bins[q] for q in location if active_bins[q] is not None}  # type: ignore
+            )
 
             # Barriers close all overlapping bins
             if isinstance(
-                op.gate, (
+                op.gate,
+                (
                     BarrierPlaceholder,
                     MeasurementPlaceholder,
                     Reset,
@@ -207,7 +209,8 @@ class QuickPartitioner(BasePass):
 
             # Get all the currently active bins that can have op added to them
             admissible_bins = [
-                bin for bin in overlapping_bins
+                bin
+                for bin in overlapping_bins
                 if bin.can_accommodate(location, self.block_size)
             ]
 
@@ -344,15 +347,13 @@ class Bin:
         the bin and if the new bin won't be too large.
         """
         if any(
-            q in self.blocked_qudits
-            and q not in self.active_qudits
+            q in self.blocked_qudits and q not in self.active_qudits
             for q in loc
         ):
             return False
 
         overlapping_qudits_are_active = all(
-            q not in self.qudits or q in self.active_qudits
-            for q in loc
+            q not in self.qudits or q in self.active_qudits for q in loc
         )
 
         size_limit = max(block_size, len(self.qudits))

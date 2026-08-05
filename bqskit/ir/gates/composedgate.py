@@ -1,4 +1,5 @@
 """This module implements the ComposedGate class."""
+
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate
@@ -28,15 +29,15 @@ class ComposedGate(Gate):
             return all(gate.is_differentiable() for gate in self.gates)
 
         raise AttributeError(
-            'Expected gate or gates field for composed gate %s.'
-            % self.name,
+            'Expected gate or gates field for composed gate %s.' % self.name,
         )
 
     def is_locally_optimizable(self) -> bool:
         """Check if all sub gates are locally optimizable."""
         if hasattr(self, 'gate'):
             return isinstance(
-                self.gate, LocallyOptimizableUnitary,
+                self.gate,
+                LocallyOptimizableUnitary,
             )
         if hasattr(self, 'gates'):
             return all(
@@ -45,8 +46,7 @@ class ComposedGate(Gate):
             )
 
         raise AttributeError(
-            'Expected gate or gates field for composed gate %s.'
-            % self.name,
+            'Expected gate or gates field for composed gate %s.' % self.name,
         )
 
     def __hash__(self) -> int:

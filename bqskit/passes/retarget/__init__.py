@@ -1,4 +1,5 @@
 """This package implements BQSKit's gate retargeting passes."""
+
 from __future__ import annotations
 
 from bqskit.passes.retarget.auto import AutoRebase2QuditGatePass

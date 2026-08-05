@@ -1,4 +1,5 @@
 """This module tests the UnitaryMatrix class in bqskit.qis.unitary."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -58,8 +59,8 @@ class TestOtimes:
         kron = u1.otimes(u2)
         assert isinstance(kron, UnitaryMatrix)
         assert len(kron.radixes) == len(u1.radixes) + len(u2.radixes)
-        assert kron.radixes[:len(u1.radixes)] == u1.radixes
-        assert kron.radixes[len(u1.radixes):] == u2.radixes
+        assert kron.radixes[: len(u1.radixes)] == u1.radixes
+        assert kron.radixes[len(u1.radixes) :] == u2.radixes
         assert np.allclose(kron.numpy, np.kron(u1, u2))
 
     @given(unitaries(2), unitaries(2), unitaries(1))
@@ -73,9 +74,9 @@ class TestOtimes:
         assert isinstance(kron, UnitaryMatrix)
         total_qudits = len(u1.radixes) + len(u2.radixes) + len(u3.radixes)
         assert len(kron.radixes) == total_qudits
-        assert kron.radixes[:len(u1.radixes)] == u1.radixes
+        assert kron.radixes[: len(u1.radixes)] == u1.radixes
         sep = len(u1.radixes) + len(u2.radixes)
-        assert kron.radixes[len(u1.radixes):sep] == u2.radixes
+        assert kron.radixes[len(u1.radixes) : sep] == u2.radixes
         assert kron.radixes[sep:] == u3.radixes
         assert np.allclose(kron.numpy, np.kron(np.kron(u1, u2), u3))
 
@@ -88,7 +89,8 @@ def test_get_unitary(utry: UnitaryMatrix) -> None:
 class TestGetDistanceFrom:
     @given(unitaries(1, (2,)), unitaries(1, (2,)))
     def test_get_distance_from(
-        self, u1: UnitaryMatrix,
+        self,
+        u1: UnitaryMatrix,
         u2: UnitaryMatrix,
     ) -> None:
         assert u1.get_distance_from(u2) == u2.get_distance_from(u1)
@@ -136,8 +138,8 @@ class TestIdentity:
 
     @given(num_qudits())
     def test_identity_no_radixes(self, num_qudits: int) -> None:
-        utry = UnitaryMatrix.identity(2 ** num_qudits)
-        assert utry == np.identity(2 ** num_qudits)
+        utry = UnitaryMatrix.identity(2**num_qudits)
+        assert utry == np.identity(2**num_qudits)
         assert utry.radixes == tuple([2] * num_qudits)
 
     @given(integers(max_value=0))

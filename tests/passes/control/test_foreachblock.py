@@ -112,7 +112,8 @@ def test_replacement_happens(blk_circuit: Circuit, compiler: Compiler) -> None:
 
 def test_replace_filter(blk_circuit: Circuit, compiler: Compiler) -> None:
     feb_pass = ForEachBlockPass(
-        ReplaceXwithHPass(), replace_filter=never_replace,
+        ReplaceXwithHPass(),
+        replace_filter=never_replace,
     )
     out_circuit = compiler.compile(blk_circuit, [feb_pass, UnfoldPass()])
     assert len(out_circuit) == 6
@@ -170,7 +171,9 @@ def test_pass_down_seeds(compiler: Compiler) -> None:
 
     # Check usability of block specific keys
     compiled, data = compiler.compile(
-        circuit, workflow, request_data=True,
+        circuit,
+        workflow,
+        request_data=True,
     )
 
     block0_data = data['ForEachBlockPass_data'][0][0]

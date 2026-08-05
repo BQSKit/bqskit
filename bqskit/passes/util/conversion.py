@@ -1,4 +1,5 @@
 """This module implements the BlockConversionPass."""
+
 from __future__ import annotations
 
 import logging

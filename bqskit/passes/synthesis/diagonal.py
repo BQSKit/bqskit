@@ -1,4 +1,5 @@
 """This module implements the WalshDiagonalSynthesisPass."""
+
 from __future__ import annotations
 
 import logging
@@ -16,7 +17,6 @@ from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.utils.citation import cite
 from bqskit.utils.math import pauliz_expansion
 from bqskit.utils.math import unitary_log_no_i
-
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class WalshDiagonalSynthesisPass(SynthesisPass):
             parameter_precision (float): Pauli strings with parameter values
                 less than this are rounded to zero. (Default: 1e-8)
 
-        TODO:
+        Todo:
             - Cancel adjacent CNOTs
             - See how QFAST can be used to generalize to qudits
         """

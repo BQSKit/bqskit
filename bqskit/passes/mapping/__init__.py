@@ -1,4 +1,5 @@
 """This package implements passes that perform qudit assignment."""
+
 from __future__ import annotations
 
 from bqskit.passes.mapping.apply import ApplyPlacement

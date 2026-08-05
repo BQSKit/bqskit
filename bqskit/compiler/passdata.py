@@ -1,4 +1,5 @@
 """This module implements the PassData class."""
+
 from __future__ import annotations
 
 import copy
@@ -103,8 +104,7 @@ class PassData(MutableMapping[str, Any]):
     def model(self, _val: MachineModel) -> None:
         if not isinstance(_val, MachineModel):
             raise TypeError(
-                f'Cannot set model to {type(_val)}.'
-                ' Expected a MachineModel.',
+                f'Cannot set model to {type(_val)}. Expected a MachineModel.',
             )
 
         self._model = _val
@@ -118,8 +118,7 @@ class PassData(MutableMapping[str, Any]):
     def gate_set(self, _val: GateSet) -> None:
         if not isinstance(_val, GateSet):
             raise TypeError(
-                f'Cannot set gate_set to {type(_val)}.'
-                ' Expected a GateSet.',
+                f'Cannot set gate_set to {type(_val)}. Expected a GateSet.',
             )
 
         self._model.gate_set = _val
@@ -293,4 +292,4 @@ class PassData(MutableMapping[str, Any]):
 
     def update_error_mul(self, error: float) -> None:
         """Update the error multiplicatively."""
-        self.error = (1 - ((1 - self.error) * (1 - error)))
+        self.error = 1 - ((1 - self.error) * (1 - error))

@@ -24,7 +24,6 @@ from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 
-
 NATIVE_GATES: list[Gate] = [
     CRXGate(),
     CRYGate(),
@@ -53,7 +52,8 @@ NON_GRADIENT_GATES: list[Gate] = [
 
 
 @pytest.mark.parametrize(
-    'gate', NATIVE_GATES + NON_GRADIENT_GATES,
+    'gate',
+    NATIVE_GATES + NON_GRADIENT_GATES,
     ids=lambda gate: repr(gate),
 )
 def test_get_unitary(gate: Gate) -> None:
@@ -68,10 +68,13 @@ def test_get_unitary(gate: Gate) -> None:
 
 NATIVE_XFAIL_CRY = [
     pytest.param(
-        gate, marks=pytest.mark.xfail(
+        gate,
+        marks=pytest.mark.xfail(
             reason='bqskitrs incorrectly computes gradient for CRYGate',
         ),
-    ) if isinstance(gate, CRYGate) else gate
+    )
+    if isinstance(gate, CRYGate)
+    else gate
     for gate in NATIVE_GATES
 ]
 
@@ -106,7 +109,7 @@ def test_get_unitary_and_grad(gate: Gate) -> None:
 
 
 def test_random_circuit_only_native(
-        gen_random_circuit: Any,
+    gen_random_circuit: Any,
 ) -> None:
     circ = gen_random_circuit(3, gateset=NATIVE_GATES + NON_GRADIENT_GATES)
     num_params = circ.num_params

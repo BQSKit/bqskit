@@ -1,4 +1,5 @@
 """This module implements the ClockGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import ZGate as _ZGate

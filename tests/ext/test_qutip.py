@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+
 pytest.importorskip('qutip')
 
 from bqskit.qis import UnitaryMatrix
@@ -88,7 +89,9 @@ class TestTranslate:
         in_utry = UnitaryMatrix(utry.todense())
         bqskit_circuit = qutip_to_bqskit(qc)
         bqskit_out_circuit = compile(
-            bqskit_circuit, max_synthesis_size=2, compiler=compiler,
+            bqskit_circuit,
+            max_synthesis_size=2,
+            compiler=compiler,
         )
         oc = bqskit_to_qutip(bqskit_out_circuit)
         utry = CircuitSimulator(oc, precompute_unitary=True).ops[0].data

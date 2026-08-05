@@ -1,4 +1,5 @@
 """This module implements the TreeScanningGateRemovalPass."""
+
 from __future__ import annotations
 
 import logging
@@ -189,11 +190,13 @@ class TreeScanningGateRemovalPass(ScanningGateRemovalPass):
         )
 
         while ops_left:
-            chunk = ops_left[:self.tree_depth]
-            ops_left = ops_left[self.tree_depth:]
+            chunk = ops_left[: self.tree_depth]
+            ops_left = ops_left[self.tree_depth :]
 
             all_circs = TreeScanningGateRemovalPass.get_tree_circs(
-                circuit.num_cycles, circuit_copy, chunk,
+                circuit.num_cycles,
+                circuit_copy,
+                chunk,
             )
 
             _logger.debug(

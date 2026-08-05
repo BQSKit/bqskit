@@ -11,7 +11,8 @@ def test_extend_3(r6_qudit_circuit: Circuit, compiler: Compiler) -> None:
     in_utry = r6_qudit_circuit.get_unitary()
     r6_qudit_circuit = compiler.compile(r6_qudit_circuit, [QuickPartitioner(3)])
     r6_qudit_circuit = compiler.compile(
-        r6_qudit_circuit, [ExtendBlockSizePass(3)],
+        r6_qudit_circuit,
+        [ExtendBlockSizePass(3)],
     )
     out_utry = r6_qudit_circuit.get_unitary()
     assert all(isinstance(op.gate, CircuitGate) for op in r6_qudit_circuit)
@@ -23,7 +24,8 @@ def test_extend_4(r6_qudit_circuit: Circuit, compiler: Compiler) -> None:
     in_utry = r6_qudit_circuit.get_unitary()
     r6_qudit_circuit = compiler.compile(r6_qudit_circuit, [QuickPartitioner(3)])
     r6_qudit_circuit = compiler.compile(
-        r6_qudit_circuit, [ExtendBlockSizePass(4)],
+        r6_qudit_circuit,
+        [ExtendBlockSizePass(4)],
     )
     out_utry = r6_qudit_circuit.get_unitary()
     assert all(isinstance(op.gate, CircuitGate) for op in r6_qudit_circuit)

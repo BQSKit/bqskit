@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+
 pytest.importorskip('cirq')
 
 from bqskit.qis import UnitaryMatrix

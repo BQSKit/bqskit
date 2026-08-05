@@ -1,4 +1,5 @@
 """This module implements the Workflow class."""
+
 from __future__ import annotations
 
 import copy
@@ -7,9 +8,9 @@ from collections import defaultdict
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import overload
 from typing import TYPE_CHECKING
 from typing import Union
+from typing import overload
 
 import dill
 
@@ -91,12 +92,14 @@ class Workflow(BasePass, Sequence[BasePass]):
 
     def save(self, filename: str) -> None:
         import pickle
+
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
     @staticmethod
     def load(filename: str) -> Workflow:
         import pickle
+
         with open(filename, 'rb') as f:
             return pickle.load(f)
 
@@ -132,12 +135,10 @@ class Workflow(BasePass, Sequence[BasePass]):
         return self._passes.__iter__()
 
     @overload
-    def __getitem__(self, _key: int, /) -> BasePass:
-        ...
+    def __getitem__(self, _key: int, /) -> BasePass: ...
 
     @overload
-    def __getitem__(self, _key: slice, /) -> list[BasePass]:
-        ...
+    def __getitem__(self, _key: slice, /) -> list[BasePass]: ...
 
     def __getitem__(self, _key: int | slice) -> BasePass | list[BasePass]:
         return self._passes.__getitem__(_key)

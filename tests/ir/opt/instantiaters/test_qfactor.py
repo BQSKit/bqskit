@@ -1,4 +1,5 @@
 """This test module verifies the QFactor instantiater."""
+
 from __future__ import annotations
 
 import numpy as np

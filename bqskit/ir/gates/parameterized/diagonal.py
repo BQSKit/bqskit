@@ -1,4 +1,5 @@
 """This module implements a general Diagonal Gate."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -33,9 +34,9 @@ class DiagonalGate(
     ):
         self._num_qudits = num_qudits
         # 1 parameter per diagonal element, removing one for global phase
-        self._num_params = 2 ** num_qudits - 1
+        self._num_params = 2**num_qudits - 1
 
-        dim = 2 ** num_qudits
+        dim = 2**num_qudits
         params = ['t%d' % j for j in range(self._num_params)]
         rows = []
         for r in range(dim):
@@ -44,7 +45,8 @@ class DiagonalGate(
             rows.append('[' + ','.join(row) + ']')
 
         self._expr = _UnitaryExpression(
-            'Diagonal%d<%s>(%s) { [%s] }' % (
+            'Diagonal%d<%s>(%s) { [%s] }'
+            % (
                 num_qudits,
                 ','.join(['2'] * num_qudits),
                 ','.join(params),
@@ -56,9 +58,9 @@ class DiagonalGate(
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
 
-        mat = np.eye(2 ** self.num_qudits, dtype=np.complex128)
+        mat = np.eye(2**self.num_qudits, dtype=np.complex128)
 
-        for i in range(1, 2 ** self.num_qudits):
+        for i in range(1, 2**self.num_qudits):
             mat[i][i] = np.exp(1j * params[i - 1])
 
         return UnitaryMatrix(mat)
@@ -76,7 +78,7 @@ class DiagonalGate(
         if base == 0:
             base = np.max(env_matrix[0, :])
 
-        for i in range(1, 2 ** self.num_qudits):
+        for i in range(1, 2**self.num_qudits):
             # Optimize each angle independently
             a = np.angle(env_matrix[i, i] / base)
             thetas[i - 1] = -1 * a

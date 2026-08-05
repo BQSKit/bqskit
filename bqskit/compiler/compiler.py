@@ -1,4 +1,5 @@
 """This module implements the Compiler class."""
+
 from __future__ import annotations
 
 import atexit
@@ -15,9 +16,9 @@ from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from subprocess import Popen
 from types import FrameType
+from typing import TYPE_CHECKING
 from typing import Literal
 from typing import overload
-from typing import TYPE_CHECKING
 
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
@@ -29,8 +30,9 @@ from bqskit.runtime.message import RuntimeMessage
 
 if TYPE_CHECKING:
     from typing import Any
-    from bqskit.ir.circuit import Circuit
+
     from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
 
@@ -149,7 +151,7 @@ class Compiler:
     def _connect_to_server(self, ip: str, port: int, attached: bool) -> None:
         """Connect to a runtime server at `ip` and `port`."""
         max_retries = 8
-        wait_time = .25
+        wait_time = 0.25
         current_retry = 0
         while current_retry < max_retries or attached:
             try:
@@ -159,7 +161,8 @@ class Compiler:
                 if wait_time > 4:
                     _logger.warning(
                         'Connection refused by runtime server.'
-                        ' Retrying in %s seconds.', wait_time,
+                        ' Retrying in %s seconds.',
+                        wait_time,
                     )
                 if wait_time > 16 and attached:
                     _logger.warning(
@@ -350,8 +353,7 @@ class Compiler:
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
         data: MutableMapping[str, Any] | None = ...,
-    ) -> Circuit:
-        ...
+    ) -> Circuit: ...
 
     @overload
     def compile(
@@ -362,8 +364,7 @@ class Compiler:
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
         data: MutableMapping[str, Any] | None = ...,
-    ) -> tuple[Circuit, PassData]:
-        ...
+    ) -> tuple[Circuit, PassData]: ...
 
     @overload
     def compile(
@@ -374,8 +375,7 @@ class Compiler:
         logging_level: int | None = ...,
         max_logging_depth: int = ...,
         data: MutableMapping[str, Any] | None = ...,
-    ) -> Circuit | tuple[Circuit, PassData]:
-        ...
+    ) -> Circuit | tuple[Circuit, PassData]: ...
 
     def compile(
         self,

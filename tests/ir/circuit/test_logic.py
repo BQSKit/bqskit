@@ -1,4 +1,5 @@
 """This module tests circuit.renumber_qudits."""
+
 from __future__ import annotations
 
 from hypothesis import given

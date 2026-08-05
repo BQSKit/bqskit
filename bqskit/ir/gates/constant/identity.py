@@ -1,4 +1,5 @@
 """This module implements the IdentityGate."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -42,7 +43,8 @@ class IdentityGate(Gate, CachedClass):
         self._radixes = tuple(radixes or [2] * num_qudits)
         self._dim = int(np.prod(self.radixes))
         self._expr = UnitaryExpression.identity(
-            'I%d' % num_qudits, self.radixes,
+            'I%d' % num_qudits,
+            self.radixes,
         )
         self._utry = UnitaryMatrix(self._expr(), self.radixes)
         self._qasm_name = 'identity%d' % self.num_qudits

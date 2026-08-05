@@ -1,4 +1,5 @@
 """This module implements the LocallyOptimizableUnitary base class."""
+
 from __future__ import annotations
 
 import abc

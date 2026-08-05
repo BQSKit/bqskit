@@ -1,4 +1,5 @@
 """This module implements the ToU3Pass."""
+
 from __future__ import annotations
 
 import logging
@@ -30,11 +31,9 @@ class ToU3Pass(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         _logger.debug('Converting single-qubit general gates to U3Gates.')
         for cycle, op in circuit.operations_with_cycles():
-            if (
-                op.radixes == (2,) and (
-                    isinstance(op.gate, GeneralGate)
-                    or self.convert_all_single_qubit_gates
-                )
+            if op.radixes == (2,) and (
+                isinstance(op.gate, GeneralGate)
+                or self.convert_all_single_qubit_gates
             ):
                 params = U3Gate().calc_params(op.get_unitary())
                 point = CircuitPoint(cycle, op.location[0])

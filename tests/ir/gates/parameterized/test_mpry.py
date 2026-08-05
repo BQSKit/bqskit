@@ -1,4 +1,5 @@
 """This module tests the MPRYGate class."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -19,7 +20,9 @@ from bqskit.ir.gates.parameterized import RYGate
             allow_nan=False,
             allow_infinity=False,
             width=32,
-        ), min_size=2, max_size=16,
+        ),
+        min_size=2,
+        max_size=16,
     ),
 )
 def test_get_unitary(thetas: list[float]) -> None:
@@ -31,7 +34,7 @@ def test_get_unitary(thetas: list[float]) -> None:
     # Ensure that len(thetas) is a power of 2
     # There are 2 ** (n - 1) parameters
     num_qudits = int(np.log2(len(thetas))) + 1
-    thetas = thetas[:2 ** (num_qudits - 1)]
+    thetas = thetas[: 2 ** (num_qudits - 1)]
     MPRy = MPRYGate(num_qudits=num_qudits)
     block_unitaries = [RYGate().get_unitary([theta]) for theta in thetas]
     blocked_unitary = la.block_diag(*block_unitaries)
@@ -41,8 +44,10 @@ def test_get_unitary(thetas: list[float]) -> None:
 
 @given(integers(min_value=0, max_value=4))
 def test_get_unitary_target_select(target_qubit: int) -> None:
-    """Test the get_unitary method of the MPRYGate class when the target qubit
-    is set."""
+    """
+    Test the get_unitary method of the MPRYGate class when the target qubit
+    is set.
+    """
     # Create an MPRY gate with 6 qubits and random parameters
     num_qudits = 6
     MPRy = MPRYGate(num_qudits=num_qudits, target_qubit=target_qubit)
@@ -65,7 +70,8 @@ def test_get_unitary_target_select(target_qubit: int) -> None:
 
     full_utry = (
         perm_gate.get_unitary().conj().T
-        @ blocked_unitary @ perm_gate.get_unitary()
+        @ blocked_unitary
+        @ perm_gate.get_unitary()
     )
 
     dist = MPRy.get_unitary(thetas).get_distance_from(full_utry)

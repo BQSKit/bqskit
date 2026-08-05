@@ -1,4 +1,5 @@
 """This module implements the Quantum Shannon Decomposition."""
+
 from __future__ import annotations
 
 import logging
@@ -104,8 +105,10 @@ class FullQSDPass(BasePass):
         self.perform_scan = perform_scan
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        """Run a round of QSD, Multiplex Gate Decomposition, and Scanning Gate
-        Removal (optionally) until you reach the desired qudit size gates."""
+        """
+        Run a round of QSD, Multiplex Gate Decomposition, and Scanning Gate
+        Removal (optionally) until you reach the desired qudit size gates.
+        """
         passes: list[BasePass] = []
         start_num = max(x.num_qudits for x in circuit.operations())
         for _ in range(self.min_qudit_size, start_num):
@@ -171,7 +174,7 @@ class MGDPass(BasePass):
         if decompose_ry:
             new_gate = RYGate()
 
-        if (num_qudits >= 3):
+        if num_qudits >= 3:
             if decompose_ry:
                 new_gate = MPRYGate(num_qudits - 1, num_qudits - 2)
             else:
@@ -307,8 +310,8 @@ class MGDPass(BasePass):
                 # qudit
                 loc = list(op.location)
                 loc = (
-                    loc[0:op.gate.target_qubit]
-                    + loc[(op.gate.target_qubit + 1):]
+                    loc[0 : op.gate.target_qubit]
+                    + loc[(op.gate.target_qubit + 1) :]
                     + [loc[op.gate.target_qubit]]
                 )
                 locations.append(CircuitLocation(loc))
@@ -321,7 +324,8 @@ class MGDPass(BasePass):
                         isinstance(op.gate, MPRYGate),
                         op.params,
                         op.num_qudits,
-                    ) for op in ops
+                    )
+                    for op in ops
                 ]
             else:
                 circs = [
@@ -329,7 +333,8 @@ class MGDPass(BasePass):
                         isinstance(op.gate, MPRYGate),
                         op.params,
                         op.num_qudits,
-                    ) for op in ops
+                    )
+                    for op in ops
                 ]
             circ_gates = [CircuitGate(x) for x in circs]
             circ_ops = [
@@ -375,8 +380,10 @@ class QSDPass(BasePass):
         num_qudits: int,
         end_qubits: int,
     ) -> PermutationMatrix:
-        """Return the Permutation Matrix that shifts the qubits down by 1
-        qubit."""
+        """
+        Return the Permutation Matrix that shifts the qubits down by 1
+        qubit.
+        """
         top_qubits = num_qudits - end_qubits
         now_bottom_qubits = list(reversed(range(top_qubits)))
         now_top_qubits = list(range(num_qudits - end_qubits, num_qudits))
@@ -388,15 +395,19 @@ class QSDPass(BasePass):
         num_qudits: int,
         end_qubits: int,
     ) -> PermutationMatrix:
-        """Return the Permutation Matrix that shifts the qubits down by 1
-        qubit."""
+        """
+        Return the Permutation Matrix that shifts the qubits down by 1
+        qubit.
+        """
         bottom_qubits = list(range(end_qubits))
         top_qubits = list(reversed(range(end_qubits, num_qudits)))
         final_qudits = top_qubits + bottom_qubits
         return PermutationMatrix.from_qubit_location(num_qudits, final_qudits)
 
     @staticmethod
-    def create_unitary_gate(u: UnitaryMatrix) -> tuple[
+    def create_unitary_gate(
+        u: UnitaryMatrix,
+    ) -> tuple[
         VariableUnitaryGate,
         RealVector,
     ]:
@@ -428,7 +439,7 @@ class QSDPass(BasePass):
         """
         u1 = us[0]
         u2 = us[1]
-        assert (u1.num_qudits == u2.num_qudits)
+        assert u1.num_qudits == u2.num_qudits
         all_qubits = list(range(len(select_qubits) + 1))
         # Use Schur Decomposition to split Us into V, D, and W matrices
         D_2, V = schur(u1._utry @ u2.dagger._utry)
@@ -451,38 +462,46 @@ class QSDPass(BasePass):
         circ.append_gate(left_gate, CircuitLocation(select_qubits), left_params)
         circ.append_gate(z_gate, CircuitLocation(all_qubits), z_params)
         circ.append_gate(
-            right_gate, CircuitLocation(
+            right_gate,
+            CircuitLocation(
                 select_qubits,
-            ), right_params,
+            ),
+            right_params,
         )
         return circ
 
     @staticmethod
     def mod_unitaries(u: UnitaryMatrix) -> UnitaryMatrix:
-        """Apply a permutation transform to the unitaries to the rest of the
-        circuit."""
+        """
+        Apply a permutation transform to the unitaries to the rest of the
+        circuit.
+        """
         shift_up = QSDPass.shift_up_unitary(u.num_qudits, u.num_qudits - 1)
         shift_down = QSDPass.shift_down_unitary(u.num_qudits, u.num_qudits - 1)
         return shift_up @ u @ shift_down
 
     @staticmethod
     def qsd(orig_u: UnitaryMatrix) -> Circuit:
-        '''
+        """
         Perform the Quantum Shannon Decomposition on a unitary matrix.
+
         Args:
             orig_u (UnitaryMatrix): The unitary matrix to decompose
 
         Returns:
             Circuit: The circuit that decomposes the unitary
-        '''
+        """
         # Shift the unitary qubits down by one
         u = QSDPass.mod_unitaries(orig_u)
 
         # Perform CS Decomp to solve for multiplexed unitaries and theta_y
         (u1, u2), theta_y, (v1h, v2h) = cossin(
-            u._utry, p=u.shape[0] / 2, q=u.shape[1] / 2, separate=True,
+            u._utry,
+            p=u.shape[0] / 2,
+            q=u.shape[1] / 2,
+            separate=True,
         )
-        assert (len(theta_y) == u.shape[0] / 2)
+        assert len(theta_y) == u.shape[0] / 2
 
         # Create the multiplexed circuit
         # This generates 2 circuits that multipex U,V with an MPRY gate
@@ -491,13 +510,15 @@ class QSDPass(BasePass):
         all_qubits = list(range(u.num_qudits))
         circ_1 = QSDPass.create_multiplexed_circ(
             [
-                UnitaryMatrix(v1h), UnitaryMatrix(v2h),
+                UnitaryMatrix(v1h),
+                UnitaryMatrix(v2h),
             ],
             select_qubits,
         )
         circ_2 = QSDPass.create_multiplexed_circ(
             [
-                UnitaryMatrix(u1), UnitaryMatrix(u2),
+                UnitaryMatrix(u1),
+                UnitaryMatrix(u2),
             ],
             select_qubits,
         )
@@ -505,7 +526,8 @@ class QSDPass(BasePass):
 
         circ_1.append_gate(gate_2, CircuitLocation(all_qubits), 2 * theta_y)
         circ_1.append_circuit(
-            circ_2, CircuitLocation(list(range(u.num_qudits))),
+            circ_2,
+            CircuitLocation(list(range(u.num_qudits))),
         )
         return circ_1
 
@@ -514,8 +536,10 @@ class QSDPass(BasePass):
         circuit: Circuit,
         min_qudit_size: int,
     ) -> tuple[list[UnitaryMatrix], list[CircuitPoint], list[CircuitLocation]]:
-        """Get all VariableUnitary Gates in the circuit wider than
-        `min_qudit_size` and return their unitaries, points, and locations."""
+        """
+        Get all VariableUnitary Gates in the circuit wider than
+        `min_qudit_size` and return their unitaries, points, and locations.
+        """
         unitaries: list[UnitaryMatrix] = []
         pts: list[CircuitPoint] = []
         locations: list[CircuitLocation] = []
@@ -524,9 +548,8 @@ class QSDPass(BasePass):
 
         # Gather all of the VariableUnitary unitaries
         for cyc, op in all_ops:
-            if (
-                op.num_qudits > min_qudit_size
-                and isinstance(op.gate, VariableUnitaryGate)
+            if op.num_qudits > min_qudit_size and isinstance(
+                op.gate, VariableUnitaryGate
             ):
                 num_ops += 1
                 unitaries.append(op.get_unitary())
@@ -536,10 +559,13 @@ class QSDPass(BasePass):
         return unitaries, pts, locations
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
-        """Perform a single pass of Quantum Shannon Decomposition on the
-        circuit."""
+        """
+        Perform a single pass of Quantum Shannon Decomposition on the
+        circuit.
+        """
         unitaries, pts, locations = QSDPass.get_variable_unitary_pts(
-            circuit, self.min_qudit_size,
+            circuit,
+            self.min_qudit_size,
         )
 
         if len(unitaries) > 0:

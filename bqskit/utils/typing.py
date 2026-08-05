@@ -1,4 +1,5 @@
 """This module implements many helper functions to check types."""
+
 from __future__ import annotations
 
 import logging
@@ -12,7 +13,6 @@ from typing import TypeGuard
 
 import numpy as np
 import numpy.typing as npt
-
 
 _logger = logging.getLogger(__name__)
 
@@ -94,14 +94,14 @@ def is_valid_radixes(
     Returns:
         bool: True if the radixes are valid.
     """
-
     if not is_sequence(radixes):
         return False
 
     if not all([is_integer(qudit) for qudit in radixes]):
         fail_idx = [is_integer(qudit) for qudit in radixes].index(False)
         _logger.debug(
-            'Radixes is not a tuple of ints, got: %s.' % type(
+            'Radixes is not a tuple of ints, got: %s.'
+            % type(
                 radixes[fail_idx],
             ),
         )
@@ -120,7 +120,6 @@ def is_valid_radixes(
 
 def is_vector(V: np.typing.ArrayLike) -> bool:
     """Return true if V is a vector."""
-
     if not isinstance(V, np.ndarray):
         V = np.array(V)
 
@@ -137,7 +136,6 @@ def is_vector(V: np.typing.ArrayLike) -> bool:
 
 def is_matrix(M: np.typing.ArrayLike) -> bool:
     """Return true if M is a matrix."""
-
     if not isinstance(M, np.ndarray):
         M = np.array(M)
 
@@ -154,7 +152,6 @@ def is_matrix(M: np.typing.ArrayLike) -> bool:
 
 def is_square_matrix(M: np.typing.ArrayLike) -> bool:
     """Return true if M is a square matrix."""
-
     if not isinstance(M, np.ndarray):
         M = np.array(M)
 
@@ -169,7 +166,6 @@ def is_square_matrix(M: np.typing.ArrayLike) -> bool:
 
 def is_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
     """Return true if H is a hermitian matrix."""
-
     if not is_square_matrix(H):
         return False
 
@@ -177,8 +173,7 @@ def is_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
         if _logger.isEnabledFor(logging.DEBUG):
             norm = np.linalg.norm(H - H.conj().T)
             _logger.debug(
-                'Failed hermitian condition, ||H - H^d|| = %e'
-                % norm,
+                'Failed hermitian condition, ||H - H^d|| = %e' % norm,
             )
         return False
 
@@ -187,7 +182,6 @@ def is_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
 
 def is_skew_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
     """Return true if H is a skew hermitian matrix."""
-
     if not is_square_matrix(H):
         return False
 
@@ -195,8 +189,7 @@ def is_skew_hermitian(H: npt.NDArray[np.complex128], tol: float = 1e-8) -> bool:
         if _logger.isEnabledFor(logging.DEBUG):
             norm = np.linalg.norm(-H - H.conj().T)
             _logger.debug(
-                'Failed skew hermitian condition, ||H - H^d|| = %e'
-                % norm,
+                'Failed skew hermitian condition, ||H - H^d|| = %e' % norm,
             )
         return False
 

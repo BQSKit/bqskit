@@ -29,7 +29,9 @@ def circular_circuit(n: int) -> Circuit:
     + sum([[(n, i) for i in range(3, n**2, 2)] for n in range(2, 6)], []),
 )
 def test_circular_to_grid(
-    grid_size: int, logical_qudits: int, compiler: Compiler,
+    grid_size: int,
+    logical_qudits: int,
+    compiler: Compiler,
 ) -> None:
     circuit = circular_circuit(logical_qudits)
     cg = CouplingGraph.grid(grid_size, grid_size)

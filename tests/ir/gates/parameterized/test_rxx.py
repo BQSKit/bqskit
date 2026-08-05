@@ -1,4 +1,5 @@
 """This module tests the RXXGate class."""
+
 from __future__ import annotations
 
 import numpy as np

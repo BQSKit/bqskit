@@ -1,4 +1,5 @@
 """This module implements the IToffoliGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import Controlled as _Controlled
@@ -36,5 +37,6 @@ class IToffoliGate(Gate, CachedClass):
     _num_qudits = 3
     _qasm_name = 'iccx'
     _expr = _Controlled(
-        _UnitaryExpression('iX() { [[0,i],[i,0]] }'), [2, 2],
+        _UnitaryExpression('iX() { [[0,i],[i,0]] }'),
+        [2, 2],
     )

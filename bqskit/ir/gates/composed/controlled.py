@@ -1,4 +1,5 @@
 """This module implements the ControlledGate class."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -360,8 +361,7 @@ class ControlledGate(ComposedGate):
         _, control_radixes, control_levels = params
 
         elementary_projection_list = [
-            np.zeros((r, r), dtype=np.complex128)
-            for r in control_radixes
+            np.zeros((r, r), dtype=np.complex128) for r in control_radixes
         ]
 
         for i, projection in enumerate(elementary_projection_list):
@@ -412,8 +412,7 @@ class ControlledGate(ComposedGate):
 
         if control_levels is None:
             control_levels = [
-                [control_radixes[i] - 1]
-                for i in range(num_controls)
+                [control_radixes[i] - 1] for i in range(num_controls)
             ]
 
         if is_integer(control_levels):
@@ -431,10 +430,7 @@ class ControlledGate(ComposedGate):
         ]
 
         if any(not is_sequence_of_int(levels) for levels in ctrl_lvl_lists):
-            bad = [
-                not is_sequence_of_int(levels)
-                for levels in ctrl_lvl_lists
-            ]
+            bad = [not is_sequence_of_int(levels) for levels in ctrl_lvl_lists]
             bad_index = bad.index(True)
             raise TypeError(
                 'Expected sequence of sequence of integers for control_levels,'

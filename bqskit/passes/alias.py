@@ -1,4 +1,5 @@
 """This module implements the PassAlias class."""
+
 from __future__ import annotations
 
 import abc

@@ -54,6 +54,7 @@ you will need to install the `pytket` package.
     supermarq_parallelism
     supermarq_liveness
 """
+
 from __future__ import annotations
 
 from bqskit.ext.cirq.models import Sycamore23Model
@@ -79,6 +80,7 @@ from bqskit.ext.supermarq import supermarq_entanglement_ratio
 from bqskit.ext.supermarq import supermarq_liveness
 from bqskit.ext.supermarq import supermarq_parallelism
 from bqskit.ext.supermarq import supermarq_program_communication
+
 # TODO: Deprecate imports from __init__, use lazy import to deprecate
 
 

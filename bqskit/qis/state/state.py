@@ -1,14 +1,15 @@
 """This module implements the StateVector class."""
+
 from __future__ import annotations
 
 import logging
 import typing
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Any
-from typing import cast
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -21,8 +22,9 @@ from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from typing import TypeGuard
-    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
     from bqskit.ir.location import CircuitLocationLike
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 _logger = logging.getLogger(__name__)
 
@@ -141,14 +143,15 @@ class StateVector(NDArrayOperatorsMixin):
         return self._vec.__iter__()
 
     def __getitem__(
-            self, index: Any,
+        self,
+        index: Any,
     ) -> np.complex128 | npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         return self._vec[index]
 
     def get_probs(self) -> tuple[float, ...]:
         """Return the probabilities for each classical outcome."""
-        return tuple(np.abs(elem)**2 for elem in self)
+        return tuple(np.abs(elem) ** 2 for elem in self)
 
     def is_qubit_only(self) -> bool:
         """Return true if this unitary can only act on qubits."""
@@ -185,12 +188,16 @@ class StateVector(NDArrayOperatorsMixin):
             return True
 
         from bqskit.qis.state import StateSystem
+
         if isinstance(V, StateSystem):
             return False
 
         try:
             if not np.allclose(
-                np.sum(np.square(np.abs(V))), 1, rtol=0, atol=tol,
+                np.sum(np.square(np.abs(V))),
+                1,
+                rtol=0,
+                atol=tol,
             ):
                 _logger.debug('Failed pure state criteria.')
                 return False
@@ -328,18 +335,11 @@ class StateVector(NDArrayOperatorsMixin):
 
         location = cast(CircuitLocation, location)
         qudits = list(range(self.num_qudits))
-        identity_action_perm = [
-            x
-            for x in qudits
-            if x not in location
-        ]
+        identity_action_perm = [x for x in qudits if x not in location]
         unitary_action_perm = list(location)
 
         left_dim = int(
-            np.prod([
-                self.radixes[x]
-                for x in unitary_action_perm
-            ]),
+            np.prod([self.radixes[x] for x in unitary_action_perm]),
         )
 
         utry = utry.dagger if inverse else utry
@@ -411,7 +411,8 @@ class StateVector(NDArrayOperatorsMixin):
         # if only states are involved
         # and state vectors are closed under the specific operation.
         convert_back = (
-            not non_state_involved and ufunc.__name__ == 'conjugate'
+            not non_state_involved
+            and ufunc.__name__ == 'conjugate'
             or (
                 ufunc.__name__ == 'multiply'
                 and all(
@@ -420,7 +421,8 @@ class StateVector(NDArrayOperatorsMixin):
                 )
                 and all(
                     np.abs(np.abs(input) - 1) <= 1e-14
-                    for input in inputs if np.isscalar(input)
+                    for input in inputs
+                    if np.isscalar(input)
                 )
             )
         )

@@ -1,4 +1,5 @@
 """This module implements the DoWhileLoopPass class."""
+
 from __future__ import annotations
 
 import logging
@@ -9,9 +10,9 @@ from bqskit.compiler.workflow import Workflow
 from bqskit.passes.control.predicate import PassPredicate
 
 if TYPE_CHECKING:
-    from bqskit.ir.circuit import Circuit
     from bqskit.compiler.passdata import PassData
     from bqskit.compiler.workflow import WorkflowLike
+    from bqskit.ir.circuit import Circuit
 
 
 _logger = logging.getLogger(__name__)

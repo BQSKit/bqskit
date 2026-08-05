@@ -1,4 +1,5 @@
 """This module implements the CRYGate."""
+
 from __future__ import annotations
 
 import numpy as np

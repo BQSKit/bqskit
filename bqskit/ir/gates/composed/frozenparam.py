@@ -1,4 +1,5 @@
 """This module implements the FrozenParameterGate."""
+
 from __future__ import annotations
 
 import typing
@@ -65,10 +66,7 @@ class FrozenParameterGate(
                 % type(values[fail_idx]),
             )
         if not all(0 <= p < gate.num_params for p in keys):
-            fail_idx = [
-                0 <= p < gate.num_params
-                for p in keys
-            ].index(False)
+            fail_idx = [0 <= p < gate.num_params for p in keys].index(False)
             raise ValueError(
                 'Expected parameter index to be non-negative integer'
                 ' < %d, got %d.' % (gate.num_params, keys[fail_idx]),
@@ -80,13 +78,13 @@ class FrozenParameterGate(
         self._radixes = gate.radixes
         self.frozen_params = frozen_params
         self.unfixed_param_idxs = [
-            i for i in range(gate.num_params)
+            i
+            for i in range(gate.num_params)
             if i not in self.frozen_params.keys()
         ]
-        self._name = '{}({}, {})'.format(
-            self.__class__.__name__,
-            self.gate.name,
-            str(self.frozen_params),
+        self._name = (
+            f'{self.__class__.__name__}'
+            f'({self.gate.name}, {str(self.frozen_params)})'
         )
         # TODO: If new gate is constant; cache its unitary
 
@@ -124,10 +122,7 @@ class FrozenParameterGate(
         See :class:`LocallyOptimizableUnitary` for more info.
         """
         params = self.gate.optimize(env_matrix)  # type: ignore
-        return [
-            p for i, p in enumerate(params)
-            if i in self.unfixed_param_idxs
-        ]
+        return [p for i, p in enumerate(params) if i in self.unfixed_param_idxs]
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -166,8 +161,8 @@ class FrozenParameterGate(
 
 
 def with_frozen_params(
-        self: Gate,
-        frozen_params: dict[int, float],
+    self: Gate,
+    frozen_params: dict[int, float],
 ) -> FrozenParameterGate:
     """
     Freeze some of a gate's parameters so they don't change from optimization.

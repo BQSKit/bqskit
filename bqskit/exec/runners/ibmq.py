@@ -24,13 +24,14 @@ class IBMQRunner(CircuitRunner):
 
         # 2. Convert to Qiskit IR
         from qiskit import QuantumCircuit
+
         qiskit_circ = QuantumCircuit.from_qasm_str(circuit.to('qasm'))
         qiskit_circ.measure_all()
 
         # 3. Run circuit
         result = self.backend.run(qiskit_circ).result()
         shots = result.results[0].shots
-        probs = [0.0 for i in range(2 ** circuit.num_qudits)]
+        probs = [0.0 for i in range(2**circuit.num_qudits)]
         for bit_str, count in result.get_counts().items():
             probs[int(bit_str, 2)] = count / shots
 

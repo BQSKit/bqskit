@@ -1,11 +1,12 @@
 """This module implements the UnitaryMatrix class."""
+
 from __future__ import annotations
 
 import logging
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Any
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
 
 import numpy as np
@@ -29,8 +30,10 @@ if TYPE_CHECKING:
 if not building_docs():
     from numpy.lib.mixins import NDArrayOperatorsMixin
 else:
+
     class NDArrayOperatorsMixin:  # type: ignore
         pass
+
 
 _logger = logging.getLogger(__name__)
 
@@ -244,7 +247,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         num = np.abs(np.trace(self.conj().T @ other))
         dem = self.dim
         frac = min(num / dem, 1)
-        dist = np.power(1 - (frac ** degree), 1.0 / degree)
+        dist = np.power(1 - (frac**degree), 1.0 / degree)
         return dist if dist > 0.0 else 0.0
 
     def isclose(self, other: UnitaryLike, tol: float = 1e-6) -> bool:
@@ -403,7 +406,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         np.savetxt(filename, self.numpy)
 
     def __getitem__(
-            self, index: Any,
+        self,
+        index: Any,
     ) -> np.complex128 | npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         return self._utry[index]
@@ -430,6 +434,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             return True
 
         from bqskit.qis.state import StateSystem
+
         if isinstance(U, StateSystem):
             return False
 
@@ -450,8 +455,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             if _logger.isEnabledFor(logging.DEBUG):
                 norm = np.linalg.norm(X - I)
                 _logger.debug(
-                    'Failed unitary condition, ||UU^d - I|| = %e' %
-                    norm,
+                    'Failed unitary condition, ||UU^d - I|| = %e' % norm,
                 )
             return False
 
@@ -459,8 +463,7 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
             if _logger.isEnabledFor(logging.DEBUG):
                 norm = np.linalg.norm(Y - I)
                 _logger.debug(
-                    'Failed unitary condition, ||U^dU - I|| = %e' %
-                    norm,
+                    'Failed unitary condition, ||U^dU - I|| = %e' % norm,
                 )
             return False
 
@@ -502,7 +505,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
         # if only unitaries are involved
         # and unitaries are closed under the specific operation.
         convert_back = (
-            not non_unitary_involved and (
+            not non_unitary_involved
+            and (
                 ufunc.__name__ == 'conjugate'
                 or ufunc.__name__ == 'matmul'
                 or ufunc.__name__ == 'negative'
@@ -516,7 +520,8 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
                 )
                 and all(
                     np.abs(np.abs(input) - 1) <= 1e-14
-                    for input in inputs if np.isscalar(input)
+                    for input in inputs
+                    if np.isscalar(input)
                 )
             )
         )

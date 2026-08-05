@@ -1,4 +1,5 @@
 """This module tests the circuit constructor."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -23,12 +24,14 @@ def test_example() -> None:
     circ.append_gate(HGate(), 0)
     circ.append_gate(CXGate(), (0, 1))
     circ.append_gate(HGate(), 1)
-    assert circ.get_unitary() == np.array([
-        [0.5 + 0.j, 0.5 + 0.j, 0.5 + 0.j, 0.5 + 0.j],
-        [0.5 + 0.j, -0.5 + 0.j, 0.5 + 0.j, -0.5 + 0.j],
-        [0.5 + 0.j, 0.5 + 0.j, -0.5 + 0.j, -0.5 + 0.j],
-        [-0.5 + 0.j, 0.5 + 0.j, 0.5 + 0.j, -0.5 + 0.j],
-    ])
+    assert circ.get_unitary() == np.array(
+        [
+            [0.5 + 0.0j, 0.5 + 0.0j, 0.5 + 0.0j, 0.5 + 0.0j],
+            [0.5 + 0.0j, -0.5 + 0.0j, 0.5 + 0.0j, -0.5 + 0.0j],
+            [0.5 + 0.0j, 0.5 + 0.0j, -0.5 + 0.0j, -0.5 + 0.0j],
+            [-0.5 + 0.0j, 0.5 + 0.0j, 0.5 + 0.0j, -0.5 + 0.0j],
+        ]
+    )
     assert circ.get_statevector([1, 0, 0, 0]) == np.array(
-        [0.5 + 0.j, 0.5 + 0.j, 0.5 + 0.j, -0.5 + 0.j],
+        [0.5 + 0.0j, 0.5 + 0.0j, 0.5 + 0.0j, -0.5 + 0.0j],
     )

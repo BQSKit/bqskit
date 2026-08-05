@@ -1,4 +1,5 @@
 """This test module verifies all circuit qudit methods."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -424,7 +425,8 @@ class TestInsertQudit:
     def test_multi_gate_2(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         three_qubit_gate = ConstantUnitaryGate(
-            gen_random_utry_np(12), [2, 2, 3],
+            gen_random_utry_np(12),
+            [2, 2, 3],
         )
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
@@ -444,7 +446,8 @@ class TestInsertQudit:
     def test_multi_gate_3(self, gen_random_utry_np: Any) -> None:
         circuit = Circuit(4)
         three_qubit_gate = ConstantUnitaryGate(
-            gen_random_utry_np(12), [2, 2, 3],
+            gen_random_utry_np(12),
+            [2, 2, 3],
         )
         circuit.insert_qudit(2, 3)
         assert circuit.num_qudits == 5
@@ -591,7 +594,9 @@ class TestPopQudit:
 
     @pytest.mark.parametrize('qudit_index', [-4, -3, -2, -1, 0, 1, 2, 3])
     def test_multi_gate_1(
-            self, qudit_index: int, gen_random_utry_np: Any,
+        self,
+        qudit_index: int,
+        gen_random_utry_np: Any,
     ) -> None:
         circuit = Circuit(4)
         three_qubit_gate = ConstantUnitaryGate(gen_random_utry_np(8))
@@ -614,11 +619,14 @@ class TestPopQudit:
 
     @pytest.mark.parametrize('qudit_index', [-2, -1, 2, 3])
     def test_multi_gate_2(
-            self, qudit_index: int, gen_random_utry_np: Any,
+        self,
+        qudit_index: int,
+        gen_random_utry_np: Any,
     ) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         three_qubit_gate = ConstantUnitaryGate(
-            gen_random_utry_np(12), [2, 2, 3],
+            gen_random_utry_np(12),
+            [2, 2, 3],
         )
         circuit.append_gate(three_qubit_gate, [0, 1, 3])
         circuit.append_gate(three_qubit_gate, [0, 1, 2])
@@ -687,7 +695,8 @@ class TestIsQuditIdle:
         pass
 
     def test_return_type(
-            self, r6_qudit_circuit: Circuit,
+        self,
+        r6_qudit_circuit: Circuit,
     ) -> None:
         for i in range(6):
             assert isinstance(r6_qudit_circuit.is_qudit_idle(i), bool)

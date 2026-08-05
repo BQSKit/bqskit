@@ -1,15 +1,16 @@
 """This module defines a standard `compile` function using BQSKit."""
+
 from __future__ import annotations
 
 import logging
 import math
 import warnings
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Literal
-from typing import overload
-from typing import TYPE_CHECKING
 from typing import Union
+from typing import overload
 
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
@@ -32,8 +33,8 @@ from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
 from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.passes.control.foreach import ForEachBlockPass
-from bqskit.passes.control.foreach import gen_replace_filter
 from bqskit.passes.control.foreach import ReplaceFilterFn
+from bqskit.passes.control.foreach import gen_replace_filter
 from bqskit.passes.control.ifthenelse import IfThenElsePass
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate
@@ -118,8 +119,7 @@ def compile(
     compiler: Compiler | None = ...,
     seed: int | None = ...,
     **compiler_kwargs: Any,
-) -> Circuit:
-    ...
+) -> Circuit: ...
 
 
 @overload
@@ -136,8 +136,7 @@ def compile(
     compiler: Compiler | None = ...,
     seed: int | None = ...,
     **compiler_kwargs: Any,
-) -> list[Circuit]:
-    ...
+) -> list[Circuit]: ...
 
 
 @overload
@@ -154,8 +153,7 @@ def compile(
     compiler: Compiler | None = ...,
     seed: int | None = ...,
     **compiler_kwargs: Any,
-) -> tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
-    ...
+) -> tuple[Circuit, tuple[int, ...], tuple[int, ...]]: ...
 
 
 @overload
@@ -172,8 +170,7 @@ def compile(
     compiler: Compiler | None = ...,
     seed: int | None = ...,
     **compiler_kwargs: Any,
-) -> list[tuple[Circuit, tuple[int, ...], tuple[int, ...]]]:
-    ...
+) -> list[tuple[Circuit, tuple[int, ...], tuple[int, ...]]]: ...
 
 
 @overload
@@ -190,8 +187,7 @@ def compile(
     compiler: Compiler | None = ...,
     seed: int | None = ...,
     **compiler_kwargs: Any,
-) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]:
-    ...
+) -> Circuit | tuple[Circuit, tuple[int, ...], tuple[int, ...]]: ...
 
 
 @overload
@@ -208,8 +204,7 @@ def compile(
     compiler: Compiler | None = ...,
     seed: int | None = ...,
     **compiler_kwargs: Any,
-) -> list[Circuit] | list[tuple[Circuit, tuple[int, ...], tuple[int, ...]]]:
-    ...
+) -> list[Circuit] | list[tuple[Circuit, tuple[int, ...], tuple[int, ...]]]: ...
 
 
 def compile(
@@ -437,8 +432,7 @@ def compile(
     # Check `error_sim_size`
     if not is_integer(error_sim_size):
         raise TypeError(
-            'Expected integer for error_sim_size'
-            f', got{type(error_sim_size)}.',
+            f'Expected integer for error_sim_size, got{type(error_sim_size)}.',
         )
 
     if error_sim_size < max_synthesis_size:
@@ -492,7 +486,8 @@ def compile(
             ) from e
 
         assert isinstance(
-            input, (
+            input,
+            (
                 Circuit,
                 UnitaryMatrix,
                 StateVector,
@@ -683,7 +678,8 @@ def build_workflow(
             if any(
                 g.num_qudits > max_synthesis_size
                 and not isinstance(
-                    g, (
+                    g,
+                    (
                         MeasurementPlaceholder,
                         BarrierPlaceholder,
                     ),
@@ -1085,7 +1081,8 @@ def build_multi_qudit_retarget_workflow(
                     ),
                 ],
             ),
-        ], name='Multi Qudit Retargeting',
+        ],
+        name='Multi Qudit Retargeting',
     )
 
 
@@ -1175,7 +1172,8 @@ def build_single_qudit_retarget_workflow(
                     UnfoldPass(),
                 ],
             ),
-        ], name='Single Qudit Retargeting',
+        ],
+        name='Single Qudit Retargeting',
     )
 
 
@@ -1196,7 +1194,8 @@ def build_sabre_mapping_workflow() -> Workflow:
             GreedyPlacementPass(),
             GeneralizedSabreLayoutPass(),
             GeneralizedSabreRoutingPass(),
-        ], name='SABRE Mapping',
+        ],
+        name='SABRE Mapping',
     )
 
 
@@ -1306,7 +1305,6 @@ def build_seqpam_mapping_optimization_workflow(
                 post_pam_seq,
                 UnfoldPass(),
                 RestoreModelConnectivityPass(),
-
                 LogPass('Recaching permutation-aware synthesis results.'),
                 SubtopologySelectionPass(block_size),
                 QuickPartitioner(block_size),
@@ -1398,7 +1396,8 @@ def build_resynthesis_optimization_workflow(
                 max_synthesis_size,
                 None if error_threshold is None else error_sim_size,
             ),
-        ], name='Resynthesis Optimization',
+        ],
+        name='Resynthesis Optimization',
     )
 
     if iterative:
@@ -1408,7 +1407,8 @@ def build_resynthesis_optimization_workflow(
                     GateCountPredicate('multi'),
                     core_workflow,
                 ),
-            ], name='Iterative Resynthesis Optimization',
+            ],
+            name='Iterative Resynthesis Optimization',
         )
 
     return core_workflow
@@ -1425,7 +1425,6 @@ def _opt1_workflow(
     return [
         # Initializing
         SetModelPass(model),
-
         build_multi_qudit_retarget_workflow(
             1,
             synthesis_epsilon,
@@ -1433,9 +1432,7 @@ def _opt1_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_sabre_mapping_workflow(),
-
         build_multi_qudit_retarget_workflow(
             1,
             synthesis_epsilon,
@@ -1443,7 +1440,6 @@ def _opt1_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_single_qudit_retarget_workflow(
             1,
             synthesis_epsilon,
@@ -1451,7 +1447,6 @@ def _opt1_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         # Finalizing
         LogErrorPass(),
         ApplyPlacement(),
@@ -1469,7 +1464,6 @@ def _opt2_workflow(
     return [
         # Initializing
         SetModelPass(model),
-
         build_multi_qudit_retarget_workflow(
             2,
             synthesis_epsilon,
@@ -1477,10 +1471,7 @@ def _opt2_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_sabre_mapping_workflow(),
-
-
         build_multi_qudit_retarget_workflow(
             2,
             synthesis_epsilon,
@@ -1488,7 +1479,6 @@ def _opt2_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_single_qudit_retarget_workflow(
             2,
             synthesis_epsilon,
@@ -1496,7 +1486,6 @@ def _opt2_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_gate_deletion_optimization_workflow(
             2,
             synthesis_epsilon,
@@ -1504,7 +1493,6 @@ def _opt2_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         # Finalizing
         LogErrorPass(),
         ApplyPlacement(),
@@ -1522,7 +1510,6 @@ def _opt3_workflow(
     return [
         # Initializing
         SetModelPass(model),
-
         build_multi_qudit_retarget_workflow(
             3,
             synthesis_epsilon,
@@ -1530,10 +1517,7 @@ def _opt3_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_sabre_mapping_workflow(),
-
-
         build_multi_qudit_retarget_workflow(
             3,
             synthesis_epsilon,
@@ -1541,7 +1525,6 @@ def _opt3_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_resynthesis_optimization_workflow(
             3,
             synthesis_epsilon,
@@ -1550,7 +1533,6 @@ def _opt3_workflow(
             error_sim_size,
             True,
         ),
-
         build_single_qudit_retarget_workflow(
             3,
             synthesis_epsilon,
@@ -1558,7 +1540,6 @@ def _opt3_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_gate_deletion_optimization_workflow(
             3,
             synthesis_epsilon,
@@ -1567,7 +1548,6 @@ def _opt3_workflow(
             error_sim_size,
             True,
         ),
-
         # Finalizing
         LogErrorPass(),
         ApplyPlacement(),
@@ -1590,14 +1570,12 @@ def _opt4_workflow(
 
     return [
         SetModelPass(model),
-
         build_seqpam_mapping_optimization_workflow(
             4,
             synthesis_epsilon,
             block_size=max_synthesis_size,
             error_sim_size=None if error_threshold is None else error_sim_size,
         ),
-
         build_multi_qudit_retarget_workflow(
             4,
             synthesis_epsilon,
@@ -1605,7 +1583,6 @@ def _opt4_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_resynthesis_optimization_workflow(
             4,
             synthesis_epsilon,
@@ -1614,7 +1591,6 @@ def _opt4_workflow(
             error_sim_size,
             True,
         ),
-
         build_single_qudit_retarget_workflow(
             4,
             synthesis_epsilon,
@@ -1622,7 +1598,6 @@ def _opt4_workflow(
             error_threshold,
             error_sim_size,
         ),
-
         build_gate_deletion_optimization_workflow(
             4,
             synthesis_epsilon,
@@ -1631,7 +1606,6 @@ def _opt4_workflow(
             error_sim_size,
             True,
         ),
-
         # Finalizing
         LogErrorPass(),
     ]
@@ -1662,7 +1636,9 @@ def _synthesis_workflow(
             'method': 'minimization',
             'minimizer': ScipyMinimizer(),
             'cost_fn_gen': HilbertSchmidtCostGenerator(),
-        } if input.radixes == (2,) else {},
+        }
+        if input.radixes == (2,)
+        else {},
     )
 
     qsearch = QSearchSynthesisPass(
@@ -1953,21 +1929,25 @@ def _get_single_qudit_gate_rebase_pass(model: MachineModel) -> BasePass:
             instantiate_options=instantiate_options,
         )
 
-    return PassGroup([
-        IfThenElsePass(
-            NotPredicate(SinglePhysicalPredicate()),
-            [
-                GroupSingleQuditGatePass(),
-                ForEachBlockPass([
-                    IfThenElsePass(
-                        NotPredicate(SinglePhysicalPredicate()),
-                        core_sq_rebase,
+    return PassGroup(
+        [
+            IfThenElsePass(
+                NotPredicate(SinglePhysicalPredicate()),
+                [
+                    GroupSingleQuditGatePass(),
+                    ForEachBlockPass(
+                        [
+                            IfThenElsePass(
+                                NotPredicate(SinglePhysicalPredicate()),
+                                core_sq_rebase,
+                            ),
+                        ]
                     ),
-                ]),
-                UnfoldPass(),
-            ],
-        ),
-    ])
+                    UnfoldPass(),
+                ],
+            ),
+        ]
+    )
 
 
 def _gen_replace_filter(model: MachineModel) -> ReplaceFilterFn:

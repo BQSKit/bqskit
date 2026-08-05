@@ -1,4 +1,5 @@
 """This module implements the CNOTGate/CXGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import Controlled as _Controlled

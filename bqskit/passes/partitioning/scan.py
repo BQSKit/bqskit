@@ -1,4 +1,5 @@
 """This module defines the ScanPartitioner pass."""
+
 from __future__ import annotations
 
 import logging
@@ -80,10 +81,12 @@ class ScanPartitioner(BasePass):
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
-            circuit.fold({
-                qudit_index: (0, circuit.num_cycles - 1)
-                for qudit_index in range(circuit.num_qudits)
-            })
+            circuit.fold(
+                {
+                    qudit_index: (0, circuit.num_cycles - 1)
+                    for qudit_index in range(circuit.num_qudits)
+                }
+            )
             return
 
         # Cache maximum cycles in circuit
@@ -109,7 +112,6 @@ class ScanPartitioner(BasePass):
 
         # Form regions until there are no more gates to partition
         while any(cycle < num_cycles for cycle in divider):
-
             # Select best block from current potential blocks
             best_region = self.find_best_block(potential_blocks)
             regions.append(best_region)
@@ -127,7 +129,9 @@ class ScanPartitioner(BasePass):
             for qudit_group in adjacent_groups:
                 starting_cycles = [divider[q] for q in qudit_group]
                 new_block = self.calculate_block(
-                    qudit_group, circuit, starting_cycles,
+                    qudit_group,
+                    circuit,
+                    starting_cycles,
                 )
                 potential_blocks[qudit_group] = new_block
 
@@ -143,11 +147,13 @@ class ScanPartitioner(BasePass):
         folded_circuit = Circuit(circuit.num_qudits, circuit.radixes)
 
         for region in regions:
-            ops_and_cycles = list({
-                (point[0], circuit[point])
-                for point in region.points
-                if not circuit.is_point_idle(point)
-            })
+            ops_and_cycles = list(
+                {
+                    (point[0], circuit[point])
+                    for point in region.points
+                    if not circuit.is_point_idle(point)
+                }
+            )
             ops_and_cycles.sort(key=lambda x: (x[0], *x[1].location))
             ops = [op for _, op in ops_and_cycles]
             qudits = list(set(sum((tuple(op.location) for op in ops), ())))
@@ -299,17 +305,21 @@ class ScanPartitioner(BasePass):
                 break
 
         return (
-            CircuitRegion({
-                q: (starting_cycles[i], stopped_cycles[q] - 1)
-                for i, q in enumerate(qudit_group)
-                if stopped_cycles[q] - 1 >= starting_cycles[i]
-            }),
+            CircuitRegion(
+                {
+                    q: (starting_cycles[i], stopped_cycles[q] - 1)
+                    for i, q in enumerate(qudit_group)
+                    if stopped_cycles[q] - 1 >= starting_cycles[i]
+                }
+            ),
             op_list,
         )
 
     class FastRegionIterator(Iterator[tuple[int, Operation]]):
-        """A circuit iterator designed to be efficient for the ScanPartitioner's
-        use case."""
+        """
+        A circuit iterator designed to be efficient for the ScanPartitioner's
+        use case.
+        """
 
         def __init__(
             self,
@@ -320,8 +330,10 @@ class ScanPartitioner(BasePass):
             """Construct a FastRegionIterator."""
             self.qudits = qudits
             self.starting_cycles = {
-                q: s for q, s in zip(
-                    qudits, starting_cycles,
+                q: s
+                for q, s in zip(
+                    qudits,
+                    starting_cycles,
                 )
             }
             self.circuit = circuit

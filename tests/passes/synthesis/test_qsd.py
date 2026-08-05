@@ -13,10 +13,12 @@ def create_random_unitary_circ(num_qudits: int) -> Circuit:
     """Create a Circuit with a random VariableUnitaryGate."""
     circuit = Circuit(num_qudits)
     utry = UnitaryMatrix.random(num_qudits)
-    utry_params = np.concatenate((
-        np.real(utry._utry).flatten(),
-        np.imag(utry._utry).flatten(),
-    ))
+    utry_params = np.concatenate(
+        (
+            np.real(utry._utry).flatten(),
+            np.imag(utry._utry).flatten(),
+        )
+    )
     circuit.append_gate(
         VariableUnitaryGate(num_qudits),
         list(range(num_qudits)),

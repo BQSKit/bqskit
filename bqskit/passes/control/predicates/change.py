@@ -1,4 +1,5 @@
 """This module implements the ChangePredicate class."""
+
 from __future__ import annotations
 
 import logging
@@ -26,7 +27,6 @@ class ChangePredicate(PassPredicate):
 
     def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
-
         # If first call, record data and return true
         if self.key not in data:
             _logger.debug(f'Could not find {self.key} key.')

@@ -4,11 +4,12 @@ This module implements the Gate base class.
 A gate is a potentially-parameterized, immutable, unitary operation that can be
 applied to a circuit.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import ClassVar
 from typing import TYPE_CHECKING
+from typing import ClassVar
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import Unitary
@@ -18,8 +19,9 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
     from openqudit.expressions import UnitaryExpression
-    from bqskit.qis.unitary.unitary import RealVector
+
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
+    from bqskit.qis.unitary.unitary import RealVector
 
 
 class Gate(Unitary):
@@ -186,6 +188,7 @@ class Gate(Unitary):
             return self
 
         from bqskit.ir.gates.composed import DaggerGate
+
         return getattr(self, '_inverse', DaggerGate(self))
         # TODO: Fill out inverse definitions throughout the gate library
 

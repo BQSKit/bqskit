@@ -1,4 +1,5 @@
 """This module implements the UnitaryMeta metaclass."""
+
 from __future__ import annotations
 
 import abc

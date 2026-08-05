@@ -1,4 +1,5 @@
 """This module implements the ArbitraryCPhaseGate."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

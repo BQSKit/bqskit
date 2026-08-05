@@ -1,4 +1,5 @@
 """This module defines the ClusteringPartitioner pass."""
+
 from __future__ import annotations
 
 import logging
@@ -67,10 +68,12 @@ class ClusteringPartitioner(BasePass):
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
-            circuit.fold({
-                qudit_index: (0, circuit.num_cycles)
-                for qudit_index in range(circuit.num_qudits)
-            })
+            circuit.fold(
+                {
+                    qudit_index: (0, circuit.num_cycles)
+                    for qudit_index in range(circuit.num_qudits)
+                }
+            )
             return
 
         for i in range(self.num_points):

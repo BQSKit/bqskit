@@ -1,4 +1,5 @@
 """This module implements the CircuitRegion class."""
+
 from __future__ import annotations
 
 import logging
@@ -15,6 +16,7 @@ from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_mapping
+
 _logger = logging.getLogger(__name__)
 
 
@@ -216,14 +218,15 @@ class CircuitRegion(Mapping[int, CycleInterval]):
                 f'Cannot shift region to the left by {amount_to_shift}.',
             )
 
-        return CircuitRegion({
-            qudit_index:
-            CycleInterval(
-                interval[0] - amount_to_shift,
-                interval[1] - amount_to_shift,
-            )
-            for qudit_index, interval in self._intervals.items()
-        })
+        return CircuitRegion(
+            {
+                qudit_index: CycleInterval(
+                    interval[0] - amount_to_shift,
+                    interval[1] - amount_to_shift,
+                )
+                for qudit_index, interval in self._intervals.items()
+            }
+        )
 
     def shift_right(self, amount_to_shift: int) -> CircuitRegion:
         """
@@ -244,14 +247,15 @@ class CircuitRegion(Mapping[int, CycleInterval]):
         if amount_to_shift < 0:
             return self.shift_left(-amount_to_shift)
 
-        return CircuitRegion({
-            qudit_index:
-            CycleInterval(
-                interval[0] + amount_to_shift,
-                interval[1] + amount_to_shift,
-            )
-            for qudit_index, interval in self._intervals.items()
-        })
+        return CircuitRegion(
+            {
+                qudit_index: CycleInterval(
+                    interval[0] + amount_to_shift,
+                    interval[1] + amount_to_shift,
+                )
+                for qudit_index, interval in self._intervals.items()
+            }
+        )
 
     def overlaps(self, other: CircuitPointLike | CircuitRegionLike) -> bool:
         """Return true if `other` overlaps this region."""
@@ -335,8 +339,7 @@ class CircuitRegion(Mapping[int, CycleInterval]):
             return {}
 
         qudit_cycles: dict[int, list[int]] = {
-            i: []
-            for i in range(self.min_cycle, self.max_cycle + 1)
+            i: [] for i in range(self.min_cycle, self.max_cycle + 1)
         }
 
         for qudit_index, intervals in sorted(self.items()):
@@ -460,7 +463,8 @@ class CircuitRegion(Mapping[int, CycleInterval]):
                 reversed(sorted({x.upper for x in other.values()})),
             )
             return (lower_intervals, upper_intervals) < (
-                other_lower_intervals, other_upper_intervals,
+                other_lower_intervals,
+                other_upper_intervals,
             )
 
         return NotImplemented

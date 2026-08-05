@@ -91,10 +91,7 @@ class TestControlledQASM:
     def test_ch(self) -> None:
 
         input_qasm = (
-            'OPENQASM 2.0;\n'
-            'include "qelib1.inc";\n'
-            'qreg q[2];\n'
-            'ch q[0], q[1];\n'
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\nch q[0], q[1];\n'
         )
         try:
             OPENQASM2Language().decode(input_qasm)

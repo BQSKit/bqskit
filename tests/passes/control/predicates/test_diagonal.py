@@ -43,7 +43,7 @@ def test_diagonal_predicate(num_qudits: int, num_gadgets: int) -> None:
 
 @given(integers(1, 10))
 def test_single_qubit_diagonal_predicate(exponent: int) -> None:
-    angle = 10 ** - exponent
+    angle = 10**-exponent
     circuit = Circuit(1)
     circuit.append_gate(RZGate(), (0), [angle])
     circuit.append_gate(SXGate(), (0))

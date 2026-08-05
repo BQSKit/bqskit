@@ -1,4 +1,5 @@
 """This module implements the CouplingGraph class."""
+
 from __future__ import annotations
 
 import copy
@@ -10,19 +11,22 @@ from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Mapping
 from random import shuffle
-from typing import Any
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
 
 import numpy as np
 
 if TYPE_CHECKING:
     from typing import TypeGuard
+
     from bqskit.ir.location import CircuitLocationLike
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_iterable, is_mapping, is_real_number
+from bqskit.utils.typing import is_iterable
+from bqskit.utils.typing import is_mapping
+from bqskit.utils.typing import is_real_number
 
 _logger = logging.getLogger(__name__)
 
@@ -82,14 +86,12 @@ class CouplingGraph(Collection[tuple[int, int]]):
 
         if num_qudits is not None and not is_integer(num_qudits):
             raise TypeError(
-                'Expected integer for num_qudits,'
-                f' got {type(num_qudits)}',
+                f'Expected integer for num_qudits, got {type(num_qudits)}',
             )
 
         if num_qudits is not None and num_qudits < 0:
             raise ValueError(
-                'Expected nonnegative num_qudits,'
-                f' got {num_qudits}.',
+                f'Expected nonnegative num_qudits, got {num_qudits}.',
             )
 
         if not CouplingGraph.is_valid_coupling_graph(remote_edges):
@@ -120,12 +122,10 @@ class CouplingGraph(Collection[tuple[int, int]]):
                 f' got {type(edge_weights_overrides)}',
             )
 
-        if any(
-            not is_real_number(v)
-            for v in edge_weights_overrides.values()
-        ):
+        if any(not is_real_number(v) for v in edge_weights_overrides.values()):
             invalids = [
-                v for v in edge_weights_overrides.values()
+                v
+                for v in edge_weights_overrides.values()
                 if not is_real_number(v)
             ]
             raise TypeError(
@@ -134,10 +134,7 @@ class CouplingGraph(Collection[tuple[int, int]]):
             )
 
         if any(edge not in graph for edge in edge_weights_overrides):
-            invalids = [
-                e for e in edge_weights_overrides
-                if e not in graph
-            ]
+            invalids = [e for e in edge_weights_overrides if e not in graph]
             raise ValueError(
                 f'Edges {invalids} from edge_weights_overrides are not in '
                 'the graph. All edge_weights_overrides must also be '
@@ -167,8 +164,7 @@ class CouplingGraph(Collection[tuple[int, int]]):
         self.num_qudits = calc_num_qudits if num_qudits is None else num_qudits
         self._edges = {g if g[0] <= g[1] else (g[1], g[0]) for g in graph}
         self._remote_edges = {
-            e if e[0] <= e[1] else (e[1], e[0])
-            for e in remote_edges
+            e if e[0] <= e[1] else (e[1], e[0]) for e in remote_edges
         }
         self.default_weight = default_weight
         self.default_remote_weight = default_remote_weight
@@ -553,17 +549,12 @@ class CouplingGraph(Collection[tuple[int, int]]):
                 return False
 
             if not all(
-                qudit < num_qudits
-                for pair in coupling_graph
-                for qudit in pair
+                qudit < num_qudits for pair in coupling_graph for qudit in pair
             ):
                 _logger.debug('Coupling graph has invalid qudits.')
                 return False
 
-        if not all([
-            len(pair) == len(set(pair))
-            for pair in coupling_graph
-        ]):
+        if not all([len(pair) == len(set(pair)) for pair in coupling_graph]):
             _logger.debug('Coupling graph has an invalid pair.')
             return False
 
@@ -630,8 +621,9 @@ class CouplingGraph(Collection[tuple[int, int]]):
         vertices: set[int] = set()
 
         edge_list = [
-            (u, v) for (u, v) in self._edges if (u, v) not in edges_to_ignore
-            and (v, u) not in edges_to_ignore
+            (u, v)
+            for (u, v) in self._edges
+            if (u, v) not in edges_to_ignore and (v, u) not in edges_to_ignore
         ]
         if randomize:
             shuffle(edge_list)
@@ -836,13 +828,17 @@ class CouplingGraph(Collection[tuple[int, int]]):
 
         # Check if the current renumbering works
         for renumbering in it.permutations(
-            range(graph.num_qudits), self.num_qudits,
+            range(graph.num_qudits),
+            self.num_qudits,
         ):
             renum = {q: renumbering[q] for q in range(self.num_qudits)}
-            if all([
-                (min([renum[u], renum[v]]), max([renum[u], renum[v]]))
-                in graph for u, v in self._edges
-            ]):
+            if all(
+                [
+                    (min([renum[u], renum[v]]), max([renum[u], renum[v]]))
+                    in graph
+                    for u, v in self._edges
+                ]
+            ):
                 return True
         return False
 

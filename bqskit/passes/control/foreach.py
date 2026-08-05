@@ -1,12 +1,13 @@
 """This module implements the ForEachBlockPass class."""
+
 from __future__ import annotations
 
 import functools
 import logging
 from collections.abc import Callable
 
-from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
@@ -38,9 +39,7 @@ class ForEachBlockPass(BasePass):
     pass_down_key_prefix = 'ForEachBlockPass_pass_down_'
     """If a key exists in the pass data with this prefix, pass it to blocks."""
 
-    pass_down_block_specific_key_prefix = (
-        'ForEachBlockPass_specific_pass_down_'
-    )
+    pass_down_block_specific_key_prefix = 'ForEachBlockPass_specific_pass_down_'
     """
     Data specific to the processing of individual blocks in a partitioned
     circuit can be injected into the `PassData` in `run` by using this prefix.
@@ -130,6 +129,7 @@ class ForEachBlockPass(BasePass):
         """
         if batch_size is not None:
             import warnings
+
             warnings.warn(
                 'Batch size is no longer supported, this warning will'
                 ' become an error in a future update.',
@@ -188,7 +188,6 @@ class ForEachBlockPass(BasePass):
         subcircuits: list[Circuit] = []
         block_datas: list[PassData] = []
         for i, (cycle, op) in enumerate(blocks):
-
             # Form Subcircuit
             if isinstance(op.gate, CircuitGate):
                 subcircuit = op.gate._circuit.copy()
@@ -215,9 +214,12 @@ class ForEachBlockPass(BasePass):
             for key in data:
                 if key.startswith(self.pass_down_key_prefix):
                     block_data[key] = data[key]
-                elif key.startswith(
-                    self.pass_down_block_specific_key_prefix,
-                ) and i in data[key]:
+                elif (
+                    key.startswith(
+                        self.pass_down_block_specific_key_prefix,
+                    )
+                    and i in data[key]
+                ):
                     block_data[key] = data[key][i]
             block_data.seed = data.seed
 
@@ -275,7 +277,8 @@ class ForEachBlockPass(BasePass):
 
 def default_collection_filter(op: Operation) -> bool:
     return isinstance(
-        op.gate, (
+        op.gate,
+        (
             CircuitGate,
             ConstantUnitaryGate,
             VariableUnitaryGate,
@@ -374,8 +377,10 @@ def _less_than_fn_respecting(
     model: MachineModel,
     fn: ReplaceFilterFn,
 ) -> bool:
-    """Return true if the new circuit has fewer gates or the old doesn't respect
-    the model."""
+    """
+    Return true if the new circuit has fewer gates or the old doesn't respect
+    the model.
+    """
     if isinstance(old.gate, CircuitGate):
         if not _is_respecting(old.gate._circuit, old.location, model):
             if not _is_respecting(new, old.location, model):
@@ -395,8 +400,10 @@ def _less_than_fn_respecting_fully(
     model: MachineModel,
     fn: ReplaceFilterFn,
 ) -> bool:
-    """Return true if the new circuit has fewer gates or the old doesn't respect
-    the model."""
+    """
+    Return true if the new circuit has fewer gates or the old doesn't respect
+    the model.
+    """
     if isinstance(old.gate, CircuitGate):
         if not _is_respecting(old.gate._circuit, old.location, model, True):
             if not _is_respecting(new, old.location, model, True):
@@ -417,26 +424,34 @@ def gen_always(model: MachineModel) -> ReplaceFilterFn:
 
 
 def gen_less_than(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    gates."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    gates.
+    """
     return _less_than
 
 
 def gen_less_than_multi(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    multi-qudit gates."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    multi-qudit gates.
+    """
     return _less_than_multi
 
 
 def gen_less_than_many(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    many-qudit gates."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    many-qudit gates.
+    """
     return _less_than_many
 
 
 def gen_less_than_rspt(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    gates or the old doesn't respect the model."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    gates or the old doesn't respect the model.
+    """
     return functools.partial(
         _less_than_fn_respecting,
         model=model,
@@ -445,8 +460,10 @@ def gen_less_than_rspt(model: MachineModel) -> ReplaceFilterFn:
 
 
 def gen_less_than_rspt_multi(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    multi-qudit gates or the old doesn't respect the model."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    multi-qudit gates or the old doesn't respect the model.
+    """
     return functools.partial(
         _less_than_fn_respecting,
         model=model,
@@ -455,8 +472,10 @@ def gen_less_than_rspt_multi(model: MachineModel) -> ReplaceFilterFn:
 
 
 def gen_less_than_rspt_many(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    many-qudit gates or the old doesn't respect the model."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    many-qudit gates or the old doesn't respect the model.
+    """
     return functools.partial(
         _less_than_fn_respecting,
         model=model,
@@ -465,8 +484,10 @@ def gen_less_than_rspt_many(model: MachineModel) -> ReplaceFilterFn:
 
 
 def gen_less_than_rspt_fully(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    gates or the old doesn't respect the model."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    gates or the old doesn't respect the model.
+    """
     return functools.partial(
         _less_than_fn_respecting_fully,
         model=model,
@@ -475,8 +496,10 @@ def gen_less_than_rspt_fully(model: MachineModel) -> ReplaceFilterFn:
 
 
 def gen_less_than_rspt_fully_multi(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    multi-qudit gates or the old doesn't respect the model."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    multi-qudit gates or the old doesn't respect the model.
+    """
     return functools.partial(
         _less_than_fn_respecting_fully,
         model=model,
@@ -485,8 +508,10 @@ def gen_less_than_rspt_fully_multi(model: MachineModel) -> ReplaceFilterFn:
 
 
 def gen_less_than_rspt_fully_many(model: MachineModel) -> ReplaceFilterFn:
-    """Generate a replace filter that replaces if the new circuit has fewer
-    many-qudit gates or the old doesn't respect the model."""
+    """
+    Generate a replace filter that replaces if the new circuit has fewer
+    many-qudit gates or the old doesn't respect the model.
+    """
     return functools.partial(
         _less_than_fn_respecting_fully,
         model=model,

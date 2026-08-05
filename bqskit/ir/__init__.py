@@ -55,6 +55,7 @@ instantiation, a core primitive in quantum synthesis.
    :no-inherited-members:
    :no-special-members:
 """
+
 from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit
@@ -72,7 +73,6 @@ from bqskit.ir.point import CircuitPointLike
 from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
 from bqskit.ir.structure import CircuitStructure
-
 
 # Register supported languages
 _register_language('qasm', _qasm())

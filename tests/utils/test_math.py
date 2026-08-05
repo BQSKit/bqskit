@@ -1,4 +1,5 @@
 """This module tests the math library."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -47,7 +48,8 @@ def dexpm_exact(
 
 class TestDexpmv:
     @pytest.mark.parametrize(
-        'alpha', [np.random.random(16) for i in range(100)],
+        'alpha',
+        [np.random.random(16) for i in range(100)],
     )
     def test_single(self, alpha: npt.NDArray[np.float64]) -> None:
         paulis = PauliMatrices(2)
@@ -61,7 +63,8 @@ class TestDexpmv:
             assert np.allclose(dF0, dF1)
 
     @pytest.mark.parametrize(
-        'alpha', [np.random.random(16) for i in range(100)],
+        'alpha',
+        [np.random.random(16) for i in range(100)],
     )
     def test_vector(self, alpha: npt.NDArray[np.float64]) -> None:
         paulis = PauliMatrices(2)
@@ -211,7 +214,8 @@ class TestCanonicalUnitary:
         'phase, num_qudits',
         [
             (np.exp(1j * 2 * np.pi * np.random.randn()), qudits)
-            for qudits in range(1, 6) for _ in range(100)
+            for qudits in range(1, 6)
+            for _ in range(100)
         ],
     )
     def test_canonical_unitary(
@@ -230,7 +234,7 @@ class TestDiagonalDistance:
     @pytest.mark.parametrize(
         'num_qudits, epsilon, threshold_list',
         [
-            (n, 10 ** -e, [10 ** -t for t in range(1, 10)])
+            (n, 10**-e, [10**-t for t in range(1, 10)])
             for n in range(1, 4)
             for e in range(1, 10)
         ],
@@ -241,7 +245,7 @@ class TestDiagonalDistance:
         epsilon: float,
         threshold_list: list[float],
     ) -> None:
-        N = 2 ** num_qudits
+        N = 2**num_qudits
         off_diag = epsilon / (N - 1)
         on_diag = 1 - epsilon
         matrix = -off_diag * np.ones((N, N), dtype=np.complex128)

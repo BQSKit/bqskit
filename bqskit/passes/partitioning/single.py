@@ -1,4 +1,5 @@
 """This module implements the GroupSingleQuditGatePass."""
+
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass
@@ -21,7 +22,6 @@ class GroupSingleQuditGatePass(BasePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         # Go through each qudit individually
         for q in range(circuit.num_qudits):
-
             single_qubit_regions = []
             region_start = None
 
@@ -30,15 +30,13 @@ class GroupSingleQuditGatePass(BasePass):
                     continue
 
                 op = circuit[c, q]
-                if (
-                    op.num_qudits == 1
-                    and not isinstance(
-                        op.gate, (
-                            BarrierPlaceholder,
-                            MeasurementPlaceholder,
-                            Reset,
-                        ),
-                    )
+                if op.num_qudits == 1 and not isinstance(
+                    op.gate,
+                    (
+                        BarrierPlaceholder,
+                        MeasurementPlaceholder,
+                        Reset,
+                    ),
                 ):
                     if region_start is None:
                         region_start = c

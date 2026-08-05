@@ -1,4 +1,5 @@
 """This file tests the register_workflow function."""
+
 from __future__ import annotations
 
 from itertools import combinations
@@ -73,7 +74,6 @@ def simple_circuit(num_qudits: int, gate_set: list[Gate]) -> Circuit:
 
 
 class TestRegisterWorkflow:
-
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # global _compile_registry
@@ -99,22 +99,26 @@ class TestRegisterWorkflow:
         assert machine in _compile_circuit_registry
         assert 1 in _compile_circuit_registry[machine]
         assert workflow_match(
-            _compile_circuit_registry[machine][1], circuit_workflow,
+            _compile_circuit_registry[machine][1],
+            circuit_workflow,
         )
         assert machine in _compile_unitary_registry
         assert 1 in _compile_unitary_registry[machine]
         assert workflow_match(
-            _compile_unitary_registry[machine][1], other_workflow,
+            _compile_unitary_registry[machine][1],
+            other_workflow,
         )
         assert machine in _compile_statemap_registry
         assert 1 in _compile_statemap_registry[machine]
         assert workflow_match(
-            _compile_statemap_registry[machine][1], other_workflow,
+            _compile_statemap_registry[machine][1],
+            other_workflow,
         )
         assert machine in _compile_stateprep_registry
         assert 1 in _compile_stateprep_registry[machine]
         assert workflow_match(
-            _compile_stateprep_registry[machine][1], other_workflow,
+            _compile_stateprep_registry[machine][1],
+            other_workflow,
         )
 
     def test_custom_compile_machine(self) -> None:

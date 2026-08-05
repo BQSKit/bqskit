@@ -1,4 +1,5 @@
 """This module tests the FrozenParameterGate class."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -14,8 +15,10 @@ from bqskit.ir.gates import U3Gate
 # 8.988465674311579e30 = max double size / 2
 @given(
     floats(
-        min_value=-1e15, max_value=1e15,
-        allow_nan=False, allow_infinity=False,
+        min_value=-1e15,
+        max_value=1e15,
+        allow_nan=False,
+        allow_infinity=False,
     ),
 )
 def test_u3_rx(angle: float) -> None:

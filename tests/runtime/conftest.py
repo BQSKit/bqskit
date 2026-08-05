@@ -21,8 +21,11 @@ def server_compiler(request: Any) -> Iterator[Compiler]:
         )
         server = subprocess.Popen(
             [
-                sys.executable, '-m', 'bqskit.runtime.detached',
-                'localhost', '-i',
+                sys.executable,
+                '-m',
+                'bqskit.runtime.detached',
+                'localhost',
+                '-i',
             ],
         )
         compiler = Compiler('localhost')

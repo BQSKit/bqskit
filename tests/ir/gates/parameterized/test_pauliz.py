@@ -1,4 +1,5 @@
 """This module tests the PauliZGate class."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -19,9 +20,9 @@ class TestInit:
     def test_valid(self, num_qudits: int) -> None:
         g = PauliZGate(num_qudits)
         assert g.num_qudits == num_qudits
-        assert g.num_params == 2 ** num_qudits
-        identity = np.identity(2 ** num_qudits)
-        assert g.get_unitary([0] * 2 ** num_qudits) == identity
+        assert g.num_params == 2**num_qudits
+        identity = np.identity(2**num_qudits)
+        assert g.get_unitary([0] * 2**num_qudits) == identity
 
     @given(integers(max_value=0))
     def test_invalid(self, num_qudits: int) -> None:

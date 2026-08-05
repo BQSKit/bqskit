@@ -1,4 +1,5 @@
 """This module implements the CZToCNOTPass."""
+
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass

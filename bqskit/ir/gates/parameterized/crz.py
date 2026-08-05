@@ -1,4 +1,5 @@
 """This module implements the CRZGate."""
+
 from __future__ import annotations
 
 import numpy as np

@@ -1,4 +1,5 @@
 """This module implements the PauliZGate."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -55,7 +56,7 @@ class PauliZGate(GeneralGate):
         else:
             self.sigmav = (-1j / 2) * paulizs.numpy
 
-        dim = 2 ** num_qudits
+        dim = 2**num_qudits
         rows = [['0'] * dim for _ in range(dim)]
         for d in range(dim):
             terms = []
@@ -66,7 +67,8 @@ class PauliZGate(GeneralGate):
         row_strs = ['[' + ','.join(row) + ']' for row in rows]
         params_str = ','.join('t%d' % k for k in range(self._num_params))
         self._expr = _UnitaryExpression(
-            'PauliZ%d<%s>(%s) { [%s] }' % (
+            'PauliZ%d<%s>(%s) { [%s] }'
+            % (
                 num_qudits,
                 ','.join(['2'] * num_qudits),
                 params_str,

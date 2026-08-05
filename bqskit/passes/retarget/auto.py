@@ -1,4 +1,5 @@
 """This module implements the Rebase2QuditGatePass."""
+
 from __future__ import annotations
 
 import logging
@@ -13,6 +14,7 @@ from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
+
 _logger = logging.getLogger(__name__)
 
 
@@ -98,7 +100,8 @@ class AutoRebase2QuditGatePass(Rebase2QuditGatePass):
         """Perform the pass's operation, see :class:`BasePass` for more."""
         new_gates = [g for g in data.gate_set if g.num_qudits == 2]
         old_gates = [
-            g for g in circuit.gate_set_no_blocks
+            g
+            for g in circuit.gate_set_no_blocks
             if g not in new_gates and g.num_qudits == 2
         ]
         circs, counts, overdrive, msgs = self.generate_new_gate_templates(

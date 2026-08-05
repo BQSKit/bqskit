@@ -1,16 +1,14 @@
 """This module defines the GTQCPartitioner pass."""
+
 from __future__ import annotations
 
 import copy
 import itertools
 import logging
+from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Sequence
-from typing import Callable
 
-from ._partitioning_utils import CachedSingleQuditIterator
-from ._partitioning_utils import PriorityQueueSet
-from ._partitioning_utils import SingleQuditIterator
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -18,6 +16,10 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.region import CircuitRegion
 from bqskit.utils.typing import is_integer
+
+from ._partitioning_utils import CachedSingleQuditIterator
+from ._partitioning_utils import PriorityQueueSet
+from ._partitioning_utils import SingleQuditIterator
 
 _logger = logging.getLogger(__name__)
 
@@ -80,7 +82,6 @@ class GTQCPartitioner(BasePass):
         Raises:
             ValueError: If `block_size` is less than 2.
         """
-
         if not is_integer(block_size):
             raise TypeError(
                 f'Expected integer for block_size, got {type(block_size)}.',
@@ -97,16 +98,17 @@ class GTQCPartitioner(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
-
         if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
-            circuit.fold({
-                qudit_index: (0, circuit.num_cycles - 1)
-                for qudit_index in range(circuit.num_qudits)
-            })
+            circuit.fold(
+                {
+                    qudit_index: (0, circuit.num_cycles - 1)
+                    for qudit_index in range(circuit.num_qudits)
+                }
+            )
             return
 
         # Cache maximum cycles in circuit
@@ -148,19 +150,23 @@ class GTQCPartitioner(BasePass):
         # We arbitrarily designate the qudit with the min index as the "primary"
         self.qudit_op_cache: dict[int, list[int]] = {
             n: [
-                cycle for cycle,
-                op in SingleQuditIterator(circuit, n, 0)
+                cycle
+                for cycle, op in SingleQuditIterator(circuit, n, 0)
                 if n == min(op.location)
             ]
             for n in circuit.active_qudits
         }
 
         single_qudits = {
-            qudit for qudit in range(
+            qudit
+            for qudit in range(
                 circuit.num_qudits,
-            ) if qudit in active_qudits and len(
+            )
+            if qudit in active_qudits
+            and len(
                 self.qudit_gate_cache[qudit],
-            ) == 0
+            )
+            == 0
         }
 
         # block any qudits which do not have multiqudit gates,
@@ -192,13 +198,13 @@ class GTQCPartitioner(BasePass):
             tuple[
                 int,
                 frozenset[int],
-            ], set[int],
+            ],
+            set[int],
         ] = dict()
         self.gate_visit_set: dict[tuple[int, frozenset[int]], set[int]] = dict()
 
         # Form regions until there are no more gates to partition
         while any(cycle < num_cycles for cycle in divider):
-
             target_qudits = qudits_to_update.copy()
             qudit_groups_to_remove = list()
 
@@ -207,7 +213,7 @@ class GTQCPartitioner(BasePass):
             #   target set (since new circuit paths may be open for
             #   these qudits)
             for group in potential_blocks.keys():
-                if (not group.isdisjoint(qudits_to_update)):
+                if not group.isdisjoint(qudits_to_update):
                     target_qudits.update(group)
                     qudit_groups_to_remove.append(group)
 
@@ -216,20 +222,28 @@ class GTQCPartitioner(BasePass):
 
             # Update the gate dependencies using a breadth first search
             self.update_gate_dependencies(
-                circuit, divider, self.gate_dependencies, self.gate_visit_set,
-                target_qudits, to_visit,
+                circuit,
+                divider,
+                self.gate_dependencies,
+                self.gate_visit_set,
+                target_qudits,
+                to_visit,
             )
 
             # Calculate all groups of qudits starting from the target qudits
             #   that can exist based on current circuit
             new_qudit_groups = self.calculate_all_bounds_recursive(
-                circuit, divider, target_qudits,
+                circuit,
+                divider,
+                target_qudits,
             )
 
             # Update the map of potential blocks
             potential_blocks.update(
                 self.calculate_blocks_from_boundaries(
-                    new_qudit_groups, circuit, divider,
+                    new_qudit_groups,
+                    circuit,
+                    divider,
                 ),
             )
 
@@ -241,8 +255,11 @@ class GTQCPartitioner(BasePass):
             # Remove the influence of the gates in the removed block on the
             #   gate dependencies
             to_visit = self.clear_gate_dependencies(
-                circuit, divider, self.gate_dependencies,
-                self.gate_visit_set, set(
+                circuit,
+                divider,
+                self.gate_dependencies,
+                self.gate_visit_set,
+                set(
                     best_region.keys(),
                 ),
             )
@@ -304,15 +321,18 @@ class GTQCPartitioner(BasePass):
         return folded_circuit
 
     def update_gate_dependencies(
-        self, circuit: Circuit, divider: list[int],
+        self,
+        circuit: Circuit,
+        divider: list[int],
         dependencies: dict[tuple[int, frozenset[int]], set[int]],
         visit_set: dict[tuple[int, frozenset[int]], set[int]],
         target_group: set[int],
         to_visit: PriorityQueueSet[tuple[int, frozenset[int]]],
     ) -> None:
-        """Sweep the `circuit` starting at the `divider` and update
-        `dependencies` and `visit_set` for all qudits in the `target_group`."""
-
+        """
+        Sweep the `circuit` starting at the `divider` and update
+        `dependencies` and `visit_set` for all qudits in the `target_group`.
+        """
         for qudit in target_group:
             try:
                 single_iter = CachedSingleQuditIterator(
@@ -337,14 +357,16 @@ class GTQCPartitioner(BasePass):
             visit_set.setdefault(gate, set()).add(qudit)
             to_visit.push(gate)
 
-        while (len(to_visit) > 0):
+        while len(to_visit) > 0:
             gate = to_visit.pop()
             (cycle, location) = gate
             # if all operation qudits are active and the gate has listed
             #   dependencies (is reachable)
-            if gate in dependencies and \
-                    len(dependencies[gate]) <= self.block_size and \
-                    len(visit_set[gate]) == len(location):
+            if (
+                gate in dependencies
+                and len(dependencies[gate]) <= self.block_size
+                and len(visit_set[gate]) == len(location)
+            ):
                 for qudit in location:
                     try:
                         single_iter = CachedSingleQuditIterator(
@@ -372,14 +394,17 @@ class GTQCPartitioner(BasePass):
                     to_visit.push(next_gate)
 
     def clear_gate_dependencies(
-        self, circuit: Circuit, divider: list[int],
+        self,
+        circuit: Circuit,
+        divider: list[int],
         dependencies: dict[tuple[int, frozenset[int]], set[int]],
         visit_set: dict[tuple[int, frozenset[int]], set[int]],
         removed_group: set[int],
     ) -> PriorityQueueSet[tuple[int, frozenset[int]]]:
-        """Sweep the `circuit` starting at the `divider` and remove all qudits
-        in the `removed_group` from the `dependencies` and `visit_set`."""
-
+        """
+        Sweep the `circuit` starting at the `divider` and remove all qudits
+        in the `removed_group` from the `dependencies` and `visit_set`.
+        """
         to_visit: PriorityQueueSet[
             tuple[
                 int,
@@ -405,9 +430,9 @@ class GTQCPartitioner(BasePass):
             except StopIteration:
                 continue
             gate = (cycle, frozenset(op.location))
-            if (gate in dependencies):
+            if gate in dependencies:
                 to_visit.push(gate)
-                if (not dependencies[gate] <= removed_group):
+                if not dependencies[gate] <= removed_group:
                     dependencies[gate] -= removed_group
                     visit_set[gate] -= removed_group
                     to_update.push(gate)
@@ -415,7 +440,7 @@ class GTQCPartitioner(BasePass):
                     del dependencies[gate]
                     del visit_set[gate]
 
-        while (len(to_visit) > 0):
+        while len(to_visit) > 0:
             gate = to_visit.pop()
             (cycle, location) = gate
             for qudit in location:
@@ -430,9 +455,9 @@ class GTQCPartitioner(BasePass):
                 except StopIteration:
                     continue
                 next_gate = (next_cycle, frozenset(next_op.location))
-                if (next_gate in dependencies):
+                if next_gate in dependencies:
                     to_visit.push(next_gate)
-                    if (not dependencies[next_gate] <= removed_group):
+                    if not dependencies[next_gate] <= removed_group:
                         dependencies[next_gate] -= removed_group
                         visit_set[next_gate] -= removed_group
                         to_update.push(next_gate)
@@ -444,8 +469,9 @@ class GTQCPartitioner(BasePass):
 
     def gate_dependencies_valid(self, gate: tuple[int, frozenset[int]]) -> bool:
         (cycle, location) = gate
-        return gate in self.gate_dependencies and \
-            len(self.gate_visit_set[gate]) == len(location)
+        return gate in self.gate_dependencies and len(
+            self.gate_visit_set[gate]
+        ) == len(location)
 
     def calculate_all_bounds_recursive(
         self,
@@ -453,8 +479,10 @@ class GTQCPartitioner(BasePass):
         divider: list[int],
         target_qudits: set[int],
     ) -> dict[frozenset[int], dict[int, int]]:
-        """Finds a set of relevant qudit groups and partial partition boundary
-        for the given `circuit`, `divider`, and `target_qudits`."""
+        """
+        Finds a set of relevant qudit groups and partial partition boundary
+        for the given `circuit`, `divider`, and `target_qudits`.
+        """
         blocks: dict[frozenset[int], dict[int, int]] = dict()
 
         target_set = frozenset(target_qudits)
@@ -464,8 +492,13 @@ class GTQCPartitioner(BasePass):
         to_remove: set[frozenset[int]] = set()
 
         self.calculate_all_bounds_recursive_inner(
-            circuit, divider, blocks, to_remove, target_set,
-            in_qudits, bounds,
+            circuit,
+            divider,
+            blocks,
+            to_remove,
+            target_set,
+            in_qudits,
+            bounds,
         )
 
         # remove all superceded groups
@@ -501,7 +534,7 @@ class GTQCPartitioner(BasePass):
             )
             # Find the furthest gate which leaves the
             #   dependencies at <= k qudits
-            while (True):
+            while True:
                 # this try block stops the loop at the end of the circuit
                 try:
                     (cycle, op) = next(qudit_iter)
@@ -527,8 +560,9 @@ class GTQCPartitioner(BasePass):
             blocks.setdefault(best_dependencies, dict()).update(bounds)
             if qudit not in blocks[best_dependencies]:
                 blocks[best_dependencies][qudit] = cycle - 1
-            new_targets: frozenset[int] = best_dependencies - \
-                (in_qudits | {qudit})
+            new_targets: frozenset[int] = best_dependencies - (
+                in_qudits | {qudit}
+            )
             # schedule the old group for removal, since it is a subset of this
             # group (and therefore the resulting partition is no larger)
             if self.discard_subset_groups and len(new_targets) > 0:
@@ -536,14 +570,21 @@ class GTQCPartitioner(BasePass):
             # if we have not seen this group before, there are new qudits, and
             # there is room for more qudits, make a recursive call
             if recur:
-                if len(best_dependencies) < self.block_size and \
-                        len(new_targets) > 0:
+                if (
+                    len(best_dependencies) < self.block_size
+                    and len(new_targets) > 0
+                ):
                     new_bounds = bounds.copy()
                     if qudit not in new_bounds:
                         new_bounds[qudit] = cycle - 1
                     self.calculate_all_bounds_recursive_inner(
-                        circuit, divider, blocks, to_remove, new_targets,
-                        best_dependencies, new_bounds,
+                        circuit,
+                        divider,
+                        blocks,
+                        to_remove,
+                        new_targets,
+                        best_dependencies,
+                        new_bounds,
                     )
 
     def calculate_blocks_from_boundaries(
@@ -552,14 +593,17 @@ class GTQCPartitioner(BasePass):
         circuit: Circuit,
         divider: Sequence[int],
     ) -> dict[
-        frozenset[int], tuple[
-            dict[int, tuple[int, int]], Callable[[], float],
+        frozenset[int],
+        tuple[
+            dict[int, tuple[int, int]],
+            Callable[[], float],
         ],
     ]:
-        """Calculates the set of possible partitions given a `circuit`,
+        """
+        Calculates the set of possible partitions given a `circuit`,
         `divider` and set of qudit groups with partial boundary
-        `qudit_groups`."""
-
+        `qudit_groups`.
+        """
         # stores the calculated blocks for each group, which are composed of:
         #   - a cycle range along each qudit representing the circuit region
         #   - a set of operations contained by the region
@@ -567,7 +611,8 @@ class GTQCPartitioner(BasePass):
         blocks: dict[
             frozenset[int],
             tuple[
-                dict[int, tuple[int, int]], Callable[[], float],
+                dict[int, tuple[int, int]],
+                Callable[[], float],
             ],
         ] = {}
 
@@ -584,7 +629,7 @@ class GTQCPartitioner(BasePass):
                     divider[qudit],
                 )
                 cycle = circuit.num_cycles
-                while (True):
+                while True:
                     try:
                         (cycle, op) = next(qudit_iter)
                     except StopIteration:
@@ -609,12 +654,10 @@ class GTQCPartitioner(BasePass):
             ]
 
             blocks[group] = (
-                {
-                    q: (divider[q], ends[q])
-                    for q in group
-                },
-                lambda op_list=op_list:     # type: ignore[misc]
-                self.scoring_fn(itertools.chain.from_iterable(op_list)),
+                {q: (divider[q], ends[q]) for q in group},
+                lambda op_list=op_list: (  # type: ignore[misc]
+                    self.scoring_fn(itertools.chain.from_iterable(op_list))
+                ),
             )
 
         return blocks
@@ -624,7 +667,8 @@ class GTQCPartitioner(BasePass):
         potential_blocks: dict[
             frozenset[int],
             tuple[
-                dict[int, tuple[int, int]], Callable[[], float],
+                dict[int, tuple[int, int]],
+                Callable[[], float],
             ],
         ],
     ) -> CircuitRegion:

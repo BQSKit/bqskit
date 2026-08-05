@@ -1,4 +1,5 @@
 """This module implements the CircuitGate class."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -118,8 +119,7 @@ class CircuitGate(Gate):
         param_index = 0
         for op in self._circuit:
             params = [
-                f'p{i}'
-                for i in range(param_index, param_index + op.num_params)
+                f'p{i}' for i in range(param_index, param_index + op.num_params)
             ]
             if isinstance(op.gate, CircuitGate):
                 op_id = hash(op.gate)

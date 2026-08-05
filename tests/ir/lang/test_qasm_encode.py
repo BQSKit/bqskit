@@ -49,9 +49,6 @@ class TestCircuitGates:
 
         qasm = OPENQASM2Language().encode(circuit)
         expected = (
-            'OPENQASM 2.0;\n'
-            'include "qelib1.inc";\n'
-            'qreg q[1];\n'
-            'reset q[0];\n'
+            'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[1];\nreset q[0];\n'
         )
         assert qasm == expected

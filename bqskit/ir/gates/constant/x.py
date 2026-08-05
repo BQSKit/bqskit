@@ -1,4 +1,5 @@
 """This module implements the XGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import XGate as _XGate

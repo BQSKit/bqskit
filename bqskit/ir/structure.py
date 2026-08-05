@@ -1,4 +1,5 @@
 """This module implements the CircuitStructure Class."""
+
 from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit

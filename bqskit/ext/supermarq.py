@@ -6,6 +6,7 @@ References:
     2022 IEEE International Symposium on High-Performance Computer
     Architecture (HPCA). IEEE, 2022.
 """
+
 from __future__ import annotations
 
 import numpy as np

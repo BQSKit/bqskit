@@ -1,4 +1,5 @@
 """This module implements the QuditGate base class."""
+
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate

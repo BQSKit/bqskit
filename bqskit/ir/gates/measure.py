@@ -1,4 +1,5 @@
 """This module implements the MeasurementPlaceholder class."""
+
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate

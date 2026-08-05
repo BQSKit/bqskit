@@ -1,4 +1,5 @@
 """This module tests the RZGate class."""
+
 from __future__ import annotations
 
 import numpy as np

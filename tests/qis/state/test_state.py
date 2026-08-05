@@ -1,4 +1,5 @@
 """This module tests the StateVector class."""
+
 from __future__ import annotations
 
 import numpy as np

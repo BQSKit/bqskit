@@ -1,4 +1,5 @@
 """This module tests the CircuitGate class."""
+
 from __future__ import annotations
 
 import pickle

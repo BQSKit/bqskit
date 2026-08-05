@@ -1,4 +1,5 @@
 """This module implements the SqrtCNOTGate."""
+
 from __future__ import annotations
 
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression

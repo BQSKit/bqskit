@@ -1,4 +1,5 @@
 """This module implements the ScanningGateRemovalPass."""
+
 from __future__ import annotations
 
 import logging
@@ -12,6 +13,7 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.utils.typing import is_real_number
+
 _logger = logging.getLogger(__name__)
 
 
@@ -108,7 +110,6 @@ class ScanningGateRemovalPass(BasePass):
         circuit_copy = circuit.copy()
         reverse_iter = not self.start_from_left
         for cycle, op in circuit.operations_with_cycles(reverse=reverse_iter):
-
             if not self.collection_filter(op):
                 _logger.debug(f'Skipping operation {op} at cycle {cycle}.')
                 continue

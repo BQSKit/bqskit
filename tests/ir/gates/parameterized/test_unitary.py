@@ -1,4 +1,5 @@
 """This module tests the VariableUnitaryGate class."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -19,7 +20,7 @@ class TestInit:
         vug = VariableUnitaryGate(num_qudits, radixes)
         assert vug.num_qudits == num_qudits
         assert vug.radixes == radixes
-        assert vug.num_params == 2 * int(np.prod(radixes))**2
+        assert vug.num_params == 2 * int(np.prod(radixes)) ** 2
 
     @given(integers(max_value=0))
     def test_invalid(self, num_qudits: int) -> None:
@@ -30,16 +31,18 @@ class TestInit:
 class TestGetUnitary:
     @given(unitaries())
     def test_exact(self, utry: UnitaryMatrix) -> None:
-        params = list(np.reshape(np.real(utry.numpy), (-1,))) + \
-            list(np.reshape(np.imag(utry.numpy), (-1,)))
+        params = list(np.reshape(np.real(utry.numpy), (-1,))) + list(
+            np.reshape(np.imag(utry.numpy), (-1,))
+        )
         vug = VariableUnitaryGate(utry.num_qudits, utry.radixes)
         assert vug.get_unitary(params) == utry
 
     @given(unitaries())
     def test_phase(self, utry: UnitaryMatrix) -> None:
         utry2 = -1 * utry
-        params = list(np.reshape(np.real(utry2.numpy), (-1,))) + \
-            list(np.reshape(np.imag(utry2.numpy), (-1,)))
+        params = list(np.reshape(np.real(utry2.numpy), (-1,))) + list(
+            np.reshape(np.imag(utry2.numpy), (-1,))
+        )
         vug = VariableUnitaryGate(utry.num_qudits, utry.radixes)
         assert vug.get_unitary(params).get_distance_from(utry) < 1e-7
 

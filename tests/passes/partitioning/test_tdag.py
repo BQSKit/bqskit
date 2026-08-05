@@ -13,17 +13,18 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 class TestTDAGPartitioner:
     def test_run_r6(
-        self, r6_qudit_circuit: Circuit,
+        self,
+        r6_qudit_circuit: Circuit,
         compiler: Compiler,
     ) -> None:
         utry = r6_qudit_circuit.get_unitary()
         r6_qudit_circuit = compiler.compile(
-            r6_qudit_circuit, [TDAGPartitioner(3)],
+            r6_qudit_circuit,
+            [TDAGPartitioner(3)],
         )
 
         assert all(
-            isinstance(op.gate, CircuitGate)
-            or len(op.location) > 3
+            isinstance(op.gate, CircuitGate) or len(op.location) > 3
             for op in r6_qudit_circuit
         )
         assert r6_qudit_circuit.get_unitary() == utry
@@ -36,8 +37,10 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                5, 1,
+            ),
+            [
+                5,
+                1,
             ],
         )
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [2])
@@ -49,16 +52,21 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(3),
-            ), [
-                5, 1, 3,
+            ),
+            [
+                5,
+                1,
+                3,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                4, 1,
+            ),
+            [
+                4,
+                1,
             ],
         )
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [3])
@@ -66,16 +74,17 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                1, 3,
+            ),
+            [
+                1,
+                3,
             ],
         )
         utry = circuit.get_unitary()
         circuit = compiler.compile(circuit, [TDAGPartitioner(3)])
 
         assert all(
-            isinstance(op.gate, CircuitGate)
-            or len(op.location) > 3
+            isinstance(op.gate, CircuitGate) or len(op.location) > 3
             for op in circuit
         )
         assert circuit.get_unitary() == utry
@@ -88,8 +97,10 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                4, 0,
+            ),
+            [
+                4,
+                0,
             ],
         )
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
@@ -103,23 +114,29 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                2, 0,
+            ),
+            [
+                2,
+                0,
             ],
         )
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                5, 3,
+            ),
+            [
+                5,
+                3,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                1, 0,
+            ),
+            [
+                1,
+                0,
             ],
         )
 
@@ -127,8 +144,7 @@ class TestTDAGPartitioner:
         circuit = compiler.compile(circuit, [TDAGPartitioner(3)])
 
         assert all(
-            isinstance(op.gate, CircuitGate)
-            or len(op.location) > 3
+            isinstance(op.gate, CircuitGate) or len(op.location) > 3
             for op in circuit
         )
         assert circuit.get_unitary() == utry
@@ -141,8 +157,10 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                0, 1,
+            ),
+            [
+                0,
+                1,
             ],
         )
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [2])
@@ -152,48 +170,63 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(3),
-            ), [
-                0, 1, 3,
+            ),
+            [
+                0,
+                1,
+                3,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                5, 0,
+            ),
+            [
+                5,
+                0,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                0, 1,
+            ),
+            [
+                0,
+                1,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(3),
-            ), [
-                4, 0, 1,
+            ),
+            [
+                4,
+                0,
+                1,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(3),
-            ), [
-                1, 0, 3,
+            ),
+            [
+                1,
+                0,
+                3,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                4, 0,
+            ),
+            [
+                4,
+                0,
             ],
         )
 
@@ -201,8 +234,7 @@ class TestTDAGPartitioner:
         circuit = compiler.compile(circuit, [TDAGPartitioner(3)])
 
         assert all(
-            isinstance(op.gate, CircuitGate)
-            or len(op.location) > 3
+            isinstance(op.gate, CircuitGate) or len(op.location) > 3
             for op in circuit
         )
         assert circuit.get_unitary() == utry
@@ -215,8 +247,10 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                5, 0,
+            ),
+            [
+                5,
+                0,
             ],
         )
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [1])
@@ -226,8 +260,11 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(3),
-            ), [
-                1, 0, 2,
+            ),
+            [
+                1,
+                0,
+                2,
             ],
         )
         circuit.append_gate(ConstantUnitaryGate(UnitaryMatrix.random(1)), [3])
@@ -235,16 +272,21 @@ class TestTDAGPartitioner:
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(3),
-            ), [
-                5, 0, 1,
+            ),
+            [
+                5,
+                0,
+                1,
             ],
         )
 
         circuit.append_gate(
             ConstantUnitaryGate(
                 UnitaryMatrix.random(2),
-            ), [
-                4, 0,
+            ),
+            [
+                4,
+                0,
             ],
         )
 
@@ -256,8 +298,7 @@ class TestTDAGPartitioner:
         circuit = compiler.compile(circuit, [TDAGPartitioner(3)])
 
         assert all(
-            isinstance(op.gate, CircuitGate)
-            or len(op.location) > 3
+            isinstance(op.gate, CircuitGate) or len(op.location) > 3
             for op in circuit
         )
         assert circuit.get_unitary() == utry
@@ -277,8 +318,7 @@ class TestTDAGPartitioner:
         circuit = compiler.compile(circuit, [TDAGPartitioner(3)])
 
         assert all(
-            isinstance(op.gate, CircuitGate)
-            or len(op.location) > 3
+            isinstance(op.gate, CircuitGate) or len(op.location) > 3
             for op in circuit
         )
         assert circuit.num_operations == 3
@@ -293,39 +333,49 @@ class TestTDAGPartitioner:
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(1),
-                ), [0],
+                ),
+                [0],
             )
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(1),
-                ), [1],
+                ),
+                [1],
             )
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(1),
-                ), [2],
+                ),
+                [2],
             )
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(1),
-                ), [3],
+                ),
+                [3],
             )
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(1),
-                ), [4],
+                ),
+                [4],
             )
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(1),
-                ), [5],
+                ),
+                [5],
             )
 
             circuit.append_gate(
                 ConstantUnitaryGate(
                     UnitaryMatrix.random(4),
-                ), [
-                    1, 2, 3, 4,
+                ),
+                [
+                    1,
+                    2,
+                    3,
+                    4,
                 ],
             )
             with pytest.raises(RuntimeError):

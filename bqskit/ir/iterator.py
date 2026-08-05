@@ -1,4 +1,5 @@
 """This module implements the CircuitIterator class."""
+
 from __future__ import annotations
 
 import heapq
@@ -23,14 +24,14 @@ class CircuitIterator(Iterator[Union[Operation, tuple[int, Operation]]]):
     """A CircuitIterator iterates through a circuit in a simulation order."""
 
     def __init__(
-            self,
-            circuit: Circuit,
-            start: CircuitPointLike = CircuitPoint(0, 0),
-            end: CircuitPointLike | None = None,
-            qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
-            exclude: bool = False,
-            reverse: bool = False,
-            and_cycles: bool = False,
+        self,
+        circuit: Circuit,
+        start: CircuitPointLike = CircuitPoint(0, 0),
+        end: CircuitPointLike | None = None,
+        qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
+        exclude: bool = False,
+        reverse: bool = False,
+        and_cycles: bool = False,
     ) -> None:
         """
         Construct a CircuitIterator.
@@ -148,14 +149,14 @@ class CircuitGridIterator(CircuitIterator):
     """
 
     def __init__(
-            self,
-            circuit: Circuit,
-            start: CircuitPointLike = CircuitPoint(0, 0),
-            end: CircuitPointLike | None = None,
-            qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
-            exclude: bool = False,
-            reverse: bool = False,
-            and_cycles: bool = False,
+        self,
+        circuit: Circuit,
+        start: CircuitPointLike = CircuitPoint(0, 0),
+        end: CircuitPointLike | None = None,
+        qudits_or_region: CircuitRegionLike | Sequence[int] | None = None,
+        exclude: bool = False,
+        reverse: bool = False,
+        and_cycles: bool = False,
     ) -> None:
         """
         Construct a CircuitGridIterator.
@@ -215,10 +216,9 @@ class CircuitGridIterator(CircuitIterator):
         if qudits_or_region is None:
             # iterate through the entire circuit normally
             self.qudits = list(range(self.circuit.num_qudits))
-            self.region = CircuitRegion({
-                qudit: (0, self.circuit.num_cycles)
-                for qudit in self.qudits
-            })
+            self.region = CircuitRegion(
+                {qudit: (0, self.circuit.num_cycles) for qudit in self.qudits}
+            )
 
         elif CircuitRegion.is_region(qudits_or_region):
             # iterate through the region in the circuit
@@ -237,10 +237,9 @@ class CircuitGridIterator(CircuitIterator):
                 raise ValueError('Invalid sequence of qudit indices.')
 
             self.qudits = list(qudits_or_region)
-            self.region = CircuitRegion({
-                qudit: (0, self.circuit.num_cycles)
-                for qudit in self.qudits
-            })
+            self.region = CircuitRegion(
+                {qudit: (0, self.circuit.num_cycles) for qudit in self.qudits}
+            )
 
         self.max_qudit = max(self.qudits)
         self.min_qudit = min(self.qudits)

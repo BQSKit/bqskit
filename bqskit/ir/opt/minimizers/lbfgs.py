@@ -1,4 +1,5 @@
 """This module implements the LBFGSMinimizer class."""
+
 from __future__ import annotations
 
 import logging

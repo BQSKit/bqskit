@@ -12,7 +12,8 @@ def test_single_qudit_grouper(
     compiler: Compiler,
 ) -> None:
     r6_qudit_circuit = compiler.compile(
-        r6_qudit_circuit, [GroupSingleQuditGatePass()],
+        r6_qudit_circuit,
+        [GroupSingleQuditGatePass()],
     )
 
     # All single-qudit gates should be in a CircuitGate

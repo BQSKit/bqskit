@@ -1,4 +1,5 @@
 """This module implements the RXXGate."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -41,13 +42,17 @@ class RXXGate(
         """
         self.check_env_matrix(env_matrix)
         a = np.real(
-            env_matrix[0, 0] + env_matrix[1, 1]
-            + env_matrix[2, 2] + env_matrix[3, 3],
+            env_matrix[0, 0]
+            + env_matrix[1, 1]
+            + env_matrix[2, 2]
+            + env_matrix[3, 3],
         )
         b = np.imag(
-            env_matrix[0, 3] + env_matrix[1, 2]
-            + env_matrix[2, 1] + env_matrix[3, 0],
+            env_matrix[0, 3]
+            + env_matrix[1, 2]
+            + env_matrix[2, 1]
+            + env_matrix[3, 0],
         )
-        theta = np.arccos(a / np.sqrt(a ** 2 + b ** 2))
+        theta = np.arccos(a / np.sqrt(a**2 + b**2))
         theta *= -2 if b < 0 else 2
         return [theta]

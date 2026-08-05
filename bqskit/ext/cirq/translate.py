@@ -1,7 +1,9 @@
 """This module implements functions for translating to and from Cirq."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     import cirq
 

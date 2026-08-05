@@ -1,4 +1,5 @@
 """This package contains LayerGenerator definitions."""
+
 from __future__ import annotations
 
 from bqskit.passes.search.generators.discrete import DiscreteLayerGenerator

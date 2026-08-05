@@ -1,4 +1,5 @@
 """This module implements the CSUMDGate."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -72,11 +73,11 @@ class CSUMGate(QuditGate, CachedClass):
                 col = self.radix * i + j
                 matrix[row, col] = 1.0
 
-        dim = self.radix ** 2
+        dim = self.radix**2
         rows = [
-            '[' + ','.join(
-                '1' if matrix[r, c] else '0' for c in range(dim)
-            ) + ']'
+            '['
+            + ','.join('1' if matrix[r, c] else '0' for c in range(dim))
+            + ']'
             for r in range(dim)
         ]
         self._expr = _UnitaryExpression(
