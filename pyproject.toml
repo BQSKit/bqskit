@@ -1,9 +1,129 @@
+[project]
+name = "bqskit"
+description = "Berkeley Quantum Synthesis Toolkit"
+readme = "README.md"
+requires-python = ">=3.10, <4"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [
+  { name = "LBNL - BQSKit developers", email = "edyounis@lbl.gov" },
+]
+keywords = [
+  "berkeley",
+  "partitioning",
+  "quantum",
+  "synthesis",
+  "toolkit",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Software Development :: Compilers",
+  "Typing :: Typed",
+]
+dependencies = [
+  "bqskitrs>=0.4.1",
+  "dill>=0.3.8",
+  "lark",
+  "numpy>=1.22.0",
+  "openqudit>=0.3.4",
+  "scipy>=1.8.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/BQSKit/bqskit/issues"
+Documentation = "https://bqskit.readthedocs.io/en/latest"
+"Source Code" = "https://github.com/BQSKit/bqskit"
+
+[project.scripts]
+bqskit-manager = "bqskit.runtime.manager:start_manager"
+bqskit-server = "bqskit.runtime.detached:start_server"
+bqskit-worker = "bqskit.runtime.worker:start_worker_rank"
+
+[project.optional-dependencies]
+docs = [
+  "Sphinx>=4.5.0",
+  "sphinx-rtd-theme>=1.0.0",
+  "sphinx-togglebutton>=0.2.3",
+  "sphinx-autodoc-typehints>=2.3.0",
+  "sphinxcontrib-applehelp>=1.0.2",
+  "sphinxcontrib-devhelp>=1.0.2",
+  "sphinxcontrib-htmlhelp>=2.0.0",
+  "sphinxcontrib-jsmath>=1.0.1",
+  "sphinxcontrib-qthelp>=1.0.3",
+  "sphinxcontrib-serializinghtml>=1.1.5",
+  "myst-parser>=0.15.2",
+  "jupyter-sphinx>=0.3.2",
+  "nbsphinx>=0.8.7",
+  "pandoc>=2.1",
+]
+
+[dependency-groups]
+dev = [
+  "pre-commit",
+  { include-group = "test" },
+]
+test = [
+  "cirq>=1.0.0",
+  "hypothesis[numpy,zoneinfo]>=6.14.5",
+  "nbval",
+  "psutil",
+  "pytest>=2.8",
+  "pytket>=1.5.0",
+  "pytket-qiskit",
+  "qiskit>=0.37.1",
+  "qutip>=4.7.0",
+  "qutip-qip",
+  "tzdata",
+]
+
 [build-system]
 requires = [
-    "wheel",
-    "setuptools>=40.1.0",
-    "oldest-supported-numpy",
+  "setuptools>=61",
+  "wheel",
 ]
+build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+allow_redefinition = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+pretty = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile*"
+minversion = "2.8"
+norecursedirs = ".env"
+python_files = "test*.py"
+testpaths = ["tests/"]
+
+[tool.setuptools.dynamic]
+version = { attr = "bqskit._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["bqskit*"]
 
 [tool.tox]
 legacy_tox_ini = """
@@ -34,22 +154,3 @@ deps = pre-commit
 commands = pre-commit run --all-files --show-diff-on-failure
 basepython=py312
 """
-
-[tool.pytest.ini_options]
-minversion = "2.8"
-testpaths = ["tests/"]
-python_files = "test*.py"
-norecursedirs = ".env"
-addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile*"
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-allow_redefinition = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-pretty = true
-warn_unused_configs = true
