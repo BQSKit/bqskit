@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import numpy as np
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class SubSwapGate(ConstantGate, QuditGate):
+class SubSwapGate(QuditGate, CachedClass):
     """
     The two-qudit subspace SWAP gate.
 
@@ -54,7 +55,7 @@ class SubSwapGate(ConstantGate, QuditGate):
 
         self._radix = radix
         level1, level2 = self.decode_qudit_level_string(qudit_levels)
-        self._utry = self.calculate_level_swap_unitary(radix, level1, level2)
+        self._expr = self.calculate_level_swap_expr(radix, level1, level2)
 
     @staticmethod
     def calculate_level_swap_unitary(
@@ -105,6 +106,33 @@ class SubSwapGate(ConstantGate, QuditGate):
         utry[i, j] = 1
         utry[j, i] = 1
         return UnitaryMatrix(utry, [radix, radix])
+
+    @staticmethod
+    def calculate_level_swap_expr(
+            radix: int,
+            level1: tuple[int, int],
+            level2: tuple[int, int],
+    ) -> _UnitaryExpression:
+        """Build the QGL expression for a qudit level swap."""
+        i = level1[0] * radix + level1[1]
+        j = level2[0] * radix + level2[1]
+        dim = radix * radix
+
+        rows = []
+        for r in range(dim):
+            row = ['0'] * dim
+            if r == i:
+                row[j] = '1'
+            elif r == j:
+                row[i] = '1'
+            else:
+                row[r] = '1'
+            rows.append('[' + ','.join(row) + ']')
+
+        qgl = 'SubSwap_%d_%d_%d<%d,%d>() { [%s] }' % (
+            radix, i, j, radix, radix, ','.join(rows),
+        )
+        return _UnitaryExpression(qgl)
 
     @staticmethod
     def decode_qudit_level_string(

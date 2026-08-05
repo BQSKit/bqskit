@@ -44,8 +44,8 @@ from bqskit.qis.state.state import StateLike
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.statemap import StateVectorMap
 from bqskit.qis.state.system import StateSystem
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarybuilder import UnitaryBuilder
 from bqskit.qis.unitary.unitarymatrix import UnitaryLike
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -64,7 +64,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
+class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     """
     A Circuit is a quantum program composed of operation objects.
 
@@ -284,10 +284,7 @@ class Circuit(DifferentiableUnitary, StateVectorMap, Collection[Operation]):
 
     def is_differentiable(self) -> bool:
         """Check if all gates are differentiable."""
-        return all(
-            isinstance(gate, DifferentiableUnitary)
-            for gate in self.gate_set
-        )
+        return all(gate.is_differentiable() for gate in self.gate_set)
 
     # endregion
 

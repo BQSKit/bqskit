@@ -1,14 +1,13 @@
 """This module implements the SqrtTGate."""
 from __future__ import annotations
 
-import cmath
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SqrtTGate(ConstantGate, QubitGate):
+class SqrtTGate(Gate, CachedClass):
     """
     The single-qubit square root T gate.
 
@@ -22,9 +21,4 @@ class SqrtTGate(ConstantGate, QubitGate):
 
     _num_qudits = 1
     _qasm_name = 'st'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0],
-            [0, cmath.exp(1j * cmath.pi / 8)],
-        ],
-    )
+    _expr = _UnitaryExpression('SqrtT() { [[1,0],[0,e^(i*pi/8)]] }')

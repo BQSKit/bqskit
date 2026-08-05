@@ -1,12 +1,14 @@
 """This module implements the CZGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import ZGate as _ZGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class CZGate(ConstantGate, QubitGate):
+class CZGate(Gate, CachedClass):
     """
     The Controlled-Z gate.
 
@@ -24,11 +26,4 @@ class CZGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'cz'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, -1],
-        ],
-    )
+    _expr = _Controlled(_ZGate())

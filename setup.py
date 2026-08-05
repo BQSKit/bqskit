@@ -66,6 +66,7 @@ setup(
     },
     packages=find_packages(exclude=['examples*', 'test*']),
     install_requires=[
+        'openqudit==0.3.4',
         'bqskitrs>=0.4.1',
         'lark',
         'numpy>=1.22.0',
@@ -73,7 +74,7 @@ setup(
         'typing-extensions>=4.0.0',
         'dill>=0.3.8',
     ],
-    python_requires='>=3.8, <4',
+    python_requires='>=3.10, <4',
     entry_points={
         'console_scripts': [
             'bqskit-server = bqskit.runtime.detached:start_server',

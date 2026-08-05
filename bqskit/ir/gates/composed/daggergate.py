@@ -6,7 +6,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -16,7 +15,6 @@ from bqskit.utils.docs import building_docs
 class DaggerGate(
     ComposedGate,
     LocallyOptimizableUnitary,
-    DifferentiableUnitary,
 ):
     """
     An arbitrary inverted gate.
@@ -61,7 +59,7 @@ class DaggerGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
 
         Notes:
             The derivative of the conjugate transpose of matrix is equal
@@ -70,7 +68,7 @@ class DaggerGate(
         if hasattr(self, 'utry'):
             return np.array([])
 
-        grads = self.gate.get_grad(params)  # type: ignore
+        grads = self.gate.get_grad(params)
         return np.transpose(grads.conj(), (0, 2, 1))
 
     def get_unitary_and_grad(
@@ -80,12 +78,12 @@ class DaggerGate(
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if hasattr(self, 'utry'):
             return self.utry, np.array([])
 
-        utry, grads = self.gate.get_unitary_and_grad(params)  # type: ignore
+        utry, grads = self.gate.get_unitary_and_grad(params)
         return utry.dagger, np.transpose(grads.conj(), (0, 2, 1))
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:

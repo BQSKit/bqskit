@@ -1,14 +1,13 @@
 """This module implements the ZZGate."""
 from __future__ import annotations
 
-import math
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class ZZGate(ConstantGate, QubitGate):
+class ZZGate(Gate, CachedClass):
     """
     The Ising ZZ coupling gate.
 
@@ -26,11 +25,9 @@ class ZZGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'rzz(pi/2)'
-    _utry = UnitaryMatrix(
-        [
-            [math.sqrt(2) / 2 - 1j * math.sqrt(2) / 2, 0, 0, 0],
-            [0, math.sqrt(2) / 2 + 1j * math.sqrt(2) / 2, 0, 0],
-            [0, 0, math.sqrt(2) / 2 + 1j * math.sqrt(2) / 2, 0],
-            [0, 0, 0, math.sqrt(2) / 2 - 1j * math.sqrt(2) / 2],
-        ],
+    _expr = _UnitaryExpression(
+        'ZZ() { [[sqrt(2)/2-i*sqrt(2)/2,0,0,0],'
+        '[0,sqrt(2)/2+i*sqrt(2)/2,0,0],'
+        '[0,0,sqrt(2)/2+i*sqrt(2)/2,0],'
+        '[0,0,0,sqrt(2)/2-i*sqrt(2)/2]] }',
     )

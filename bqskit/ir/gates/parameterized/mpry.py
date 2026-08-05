@@ -5,9 +5,9 @@ import typing
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -35,8 +35,7 @@ def get_indices(
 
 
 class MPRYGate(
-    QubitGate,
-    DifferentiableUnitary,
+    Gate,
     CachedClass,
     LocallyOptimizableUnitary,
 ):
@@ -64,6 +63,7 @@ class MPRYGate(
         target_qubit: int = -1,
     ) -> None:
         self._num_qudits = num_qudits
+        self._radixes = tuple([2] * num_qudits)
         # 1 param for each configuration of the selec qubits
         self._num_params = 2 ** (num_qudits - 1)
         # By default, the controlled qubit is the last qubit
@@ -71,6 +71,25 @@ class MPRYGate(
             target_qubit = num_qudits - 1
         self.target_qubit = target_qubit
         super().__init__()
+
+        dim = 2 ** num_qudits
+        rows = [['0'] * dim for _ in range(dim)]
+        for i in range(self._num_params):
+            x1, x2 = get_indices(i, self.target_qubit, num_qudits)
+            rows[x1][x1] = 'cos(t%d/2)' % i
+            rows[x2][x2] = 'cos(t%d/2)' % i
+            rows[x2][x1] = 'sin(t%d/2)' % i
+            rows[x1][x2] = '~sin(t%d/2)' % i
+        row_strs = ['[' + ','.join(row) + ']' for row in rows]
+        params_str = ','.join('t%d' % i for i in range(self._num_params))
+        self._expr = _UnitaryExpression(
+            'MPRY%d<%s>(%s) { [%s] }' % (
+                num_qudits,
+                ','.join(['2'] * num_qudits),
+                params_str,
+                ','.join(row_strs),
+            ),
+        )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -100,37 +119,6 @@ class MPRYGate(
             matrix[x1, x2] = -1 * sin
 
         return UnitaryMatrix(matrix)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-
-        grad = np.zeros(
-            (
-                len(params), 2 ** self.num_qudits,
-                2 ** self.num_qudits,
-            ), dtype=np.complex128,
-        )
-
-        # For each parameter, calculate the derivative
-        # with respect to that parameter
-        for i, param in enumerate(typing.cast(typing.Sequence[float], params)):
-            dcos = -np.sin(param / 2) / 2
-            dsin = -1j * np.cos(param / 2) / 2
-
-            # Again, get indices based on target qubit.
-            x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
-
-            grad[i, x1, x1] = dcos
-            grad[i, x2, x2] = dcos
-            grad[i, x2, x1] = dsin
-            grad[i, x1, x2] = -1 * dsin
-
-        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

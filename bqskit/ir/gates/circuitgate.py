@@ -49,7 +49,7 @@ class CircuitGate(Gate):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         return self._circuit.get_grad(params)
 
@@ -60,7 +60,7 @@ class CircuitGate(Gate):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         return self._circuit.get_unitary_and_grad(params)
 

@@ -1,12 +1,14 @@
 """This module implements the CNOTGate/CXGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import XGate as _XGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class CNOTGate(ConstantGate, QubitGate):
+class CNOTGate(Gate, CachedClass):
     """
     The Controlled-Not or Controlled-X gate.
 
@@ -22,16 +24,9 @@ class CNOTGate(ConstantGate, QubitGate):
         \\end{pmatrix}
     """
 
-    _num_qudits = 2
+    _name = 'CNOTGate'
     _qasm_name = 'cx'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, 1],
-            [0, 0, 1, 0],
-        ],
-    )
+    _expr = _Controlled(_XGate())
 
 
 CXGate = CNOTGate

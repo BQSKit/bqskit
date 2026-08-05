@@ -139,8 +139,12 @@ def state_likes(
     return draw(sampled_from([vec, vec.numpy]))
 
 
+_GATE_BASE_CLASSES = {'ComposedGate', 'QuditGate', 'GeneralGate'}
+
 gate_instances: list[Gate] = []
 for gate_class_str in bqskit.ir.gates.__all__:
+    if gate_class_str in _GATE_BASE_CLASSES:
+        continue
     gate_class = getattr(bqskit.ir.gates, gate_class_str)
     gate_params = inspect.signature(gate_class.__init__).parameters
     if (
@@ -149,7 +153,6 @@ for gate_class_str in bqskit.ir.gates.__all__:
         and 'args' in gate_params
         and 'kwargs' in gate_params
         and not inspect.isabstract(gate_class)
-        and not gate_class.__name__ == 'ConstantGate'
     ):
         gate_instances.append(gate_class())
 

@@ -1,15 +1,14 @@
 """This module implements the ShiftGate."""
 from __future__ import annotations
 
-import numpy as np
+from openqudit.expressions import XGate as _XGate
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class ShiftGate(ConstantGate, QuditGate):
+class ShiftGate(QuditGate, CachedClass):
     """
     The one-qudit shift (X) gate. This is a Weyl-Heisenberg gate.
 
@@ -60,9 +59,4 @@ class ShiftGate(ConstantGate, QuditGate):
             raise ValueError(f'Radix must be greater than 1, got {radix}.')
 
         self._radix = radix
-
-        # Calculate unitary
-        matrix = np.zeros([radix, radix])
-        for j in range(radix):
-            matrix[(j + 1) % radix, j] = 1
-        self._utry = UnitaryMatrix(matrix, self.radixes)
+        self._expr = _XGate(radix)

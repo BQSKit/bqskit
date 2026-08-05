@@ -1,12 +1,14 @@
 """This module implements the CCXGate/ToffoliGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import XGate as _XGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class CCXGate(ConstantGate, QubitGate):
+class CCXGate(Gate, CachedClass):
     """
     The toffoli gate, equal to an X gate with two controls.
 
@@ -28,18 +30,7 @@ class CCXGate(ConstantGate, QubitGate):
 
     _num_qudits = 3
     _qasm_name = 'ccx'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1],
-            [0, 0, 0, 0, 0, 0, 1, 0],
-        ],
-    )
+    _expr = _Controlled(_XGate(), [2, 2])
 
 
 ToffoliGate = CCXGate

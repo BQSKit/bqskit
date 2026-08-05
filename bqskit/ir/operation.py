@@ -11,13 +11,13 @@ from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.location import CircuitLocationLike
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
+from bqskit.qis.unitary.unitary import Unitary
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
 
 
-class Operation(DifferentiableUnitary):
+class Operation(Unitary):
     """An Operation groups together a gate, its parameters and location."""
 
     def __init__(
@@ -119,12 +119,12 @@ class Operation(DifferentiableUnitary):
         """
         Return the gradient for this operation.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if len(params) != 0:
-            return self.gate.get_grad(params)  # type: ignore
+            return self.gate.get_grad(params)
 
-        return self.gate.get_grad(self.params)  # type: ignore
+        return self.gate.get_grad(self.params)
 
     def get_unitary_and_grad(
         self,
@@ -133,12 +133,12 @@ class Operation(DifferentiableUnitary):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if len(params) != 0:
-            return self.gate.get_unitary_and_grad(params)  # type: ignore
+            return self.gate.get_unitary_and_grad(params)
 
-        return self.gate.get_unitary_and_grad(self.params)  # type: ignore
+        return self.gate.get_unitary_and_grad(self.params)
 
     def __eq__(self, rhs: Any) -> bool:
         """Check for equality."""
@@ -167,4 +167,4 @@ class Operation(DifferentiableUnitary):
 
     def is_differentiable(self) -> bool:
         """Check if operation is differentiable."""
-        return isinstance(self.gate, DifferentiableUnitary)
+        return self.gate.is_differentiable()

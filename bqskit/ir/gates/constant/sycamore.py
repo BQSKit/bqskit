@@ -1,15 +1,13 @@
 """This module implements the SycamoreGate."""
 from __future__ import annotations
 
-import cmath
-import math
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SycamoreGate(ConstantGate, QubitGate):
+class SycamoreGate(Gate, CachedClass):
     """
     The SycamoreGate gate.
 
@@ -27,11 +25,7 @@ class SycamoreGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'syc'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 0, -1j, 0],
-            [0, -1j, 0, 0],
-            [0, 0, 0, cmath.exp(-1j * math.pi / 6)],
-        ],
+    _expr = _UnitaryExpression(
+        'Sycamore() { [[1,0,0,0],[0,0,~i,0],'
+        '[0,~i,0,0],[0,0,0,e^(~i*pi/6)]] }',
     )

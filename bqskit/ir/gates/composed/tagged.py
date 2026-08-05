@@ -8,7 +8,6 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -18,7 +17,6 @@ from bqskit.utils.docs import building_docs
 class TaggedGate(
     ComposedGate,
     LocallyOptimizableUnitary,
-    DifferentiableUnitary,
 ):
     """
     The TaggedGate Class.
@@ -60,12 +58,12 @@ class TaggedGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if hasattr(self, 'utry'):
             return np.array([])
 
-        return self.gate.get_grad(params)  # type: ignore
+        return self.gate.get_grad(params)
 
     def get_unitary_and_grad(
         self,
@@ -74,12 +72,12 @@ class TaggedGate(
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         if hasattr(self, 'utry'):
             return self.utry, np.array([])
 
-        return self.gate.get_unitary_and_grad(params)  # type: ignore
+        return self.gate.get_unitary_and_grad(params)
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

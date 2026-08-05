@@ -2,16 +2,15 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class PhasedXZGate(QubitGate, DifferentiableUnitary, CachedClass):
+class PhasedXZGate(Gate, CachedClass):
     """
     A gate representing an Google's PhasedXZGate.
 
@@ -22,6 +21,13 @@ class PhasedXZGate(QubitGate, DifferentiableUnitary, CachedClass):
     _num_qudits = 1
     _num_params = 3
     _qasm_name = 'pxz'
+    _expr = _UnitaryExpression(
+        'PhasedXZ(t0,t1,t2) { '
+        '[[e^(i*pi*t0/2)*cos(pi*t0/2),'
+        ' e^(i*pi*(t0/2-t2))*(~i*sin(pi*t0/2))],'
+        '[e^(i*pi*(t0/2+t1+t2))*(~i*sin(pi*t0/2)),'
+        ' e^(i*pi*(t0/2+t1))*cos(pi*t0/2)]] }',
+    )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -42,47 +48,4 @@ class PhasedXZGate(QubitGate, DifferentiableUnitary, CachedClass):
                 [e1 * cos, e2 * sin],
                 [e3 * sin, e4 * cos],
             ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-
-        x = params[0]
-        z = params[1]
-        a = params[2]
-        cos = np.cos(np.pi * x / 2)
-        sin = -1j * np.sin(np.pi * x / 2)
-        dcos = -np.pi * np.sin(np.pi * x / 2) / 2
-        dsin = -1j * np.pi * np.cos(np.pi * x / 2) / 2
-        e1 = np.exp(1j * np.pi * x / 2)
-        e2 = np.exp(1j * np.pi * (x / 2 - a))
-        e3 = np.exp(1j * np.pi * (x / 2 + z + a))
-        e4 = np.exp(1j * np.pi * (x / 2 + z))
-
-        return np.array(
-            [
-                [
-                    [
-                        (e1 * dcos) + (1j * np.pi / 2 * e1 * cos),
-                        (e2 * dsin) + (1j * np.pi / 2 * e2 * sin),
-                    ],
-                    [
-                        (e3 * dsin) + (1j * np.pi / 2 * e3 * sin),
-                        (e4 * dcos) + (1j * np.pi / 2 * e4 * cos),
-                    ],
-                ],
-                [
-                    [0, 0],
-                    [1j * np.pi * e3 * sin, 1j * np.pi * e4 * cos],
-                ],
-                [
-                    [0, -1j * np.pi * e2 * sin],
-                    [1j * np.pi * e3 * sin, 0],
-                ],
-            ], dtype=np.complex128,
         )

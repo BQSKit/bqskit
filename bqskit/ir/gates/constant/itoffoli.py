@@ -1,12 +1,14 @@
 """This module implements the IToffoliGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class IToffoliGate(ConstantGate, QubitGate):
+class IToffoliGate(Gate, CachedClass):
     """
     The IToffoliGate gate, equal to an iX gate with two controls.
 
@@ -33,15 +35,6 @@ class IToffoliGate(ConstantGate, QubitGate):
 
     _num_qudits = 3
     _qasm_name = 'iccx'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 1j],
-            [0, 0, 0, 0, 0, 0, 1j, 0],
-        ],
+    _expr = _Controlled(
+        _UnitaryExpression('iX() { [[0,i],[i,0]] }'), [2, 2],
     )

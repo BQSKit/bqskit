@@ -1,12 +1,14 @@
 """This module implements the CYGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import YGate as _YGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class CYGate(ConstantGate, QubitGate):
+class CYGate(Gate, CachedClass):
     """
     The Controlled-Y gate.
 
@@ -24,11 +26,4 @@ class CYGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'cy'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, -1j],
-            [0, 0, 1j, 0],
-        ],
-    )
+    _expr = _Controlled(_YGate())

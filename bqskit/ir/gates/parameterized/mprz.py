@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
+from bqskit.ir.gate import Gate
 from bqskit.ir.gates.parameterized.mpry import get_indices
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -17,8 +16,7 @@ from bqskit.utils.cachedclass import CachedClass
 
 
 class MPRZGate(
-    QubitGate,
-    DifferentiableUnitary,
+    Gate,
     CachedClass,
     LocallyOptimizableUnitary,
 ):
@@ -74,6 +72,23 @@ class MPRZGate(
         self.target_qubit = target_qubit
         super().__init__()
 
+        # This gate only ever touches diagonal entries, so each parameter's
+        # pair of entries can be embedded independently regardless of
+        # whether their indices happen to be contiguous.
+        self._expr = _UnitaryExpression.identity(
+            'MPRZ', [2] * num_qudits,
+        )
+        for i in range(self._num_params):
+            x1, x2 = get_indices(i, self.target_qubit, num_qudits)
+            neg = _UnitaryExpression(
+                'Neg%d(t%d) { [[e^(~i*t%d/2)]] }' % (i, i, i),
+            )
+            pos = _UnitaryExpression(
+                'Pos%d(t%d) { [[e^(i*t%d/2)]] }' % (i, i, i),
+            )
+            self._expr.embed(neg, x1, x1)
+            self._expr.embed(pos, x2, x2)
+
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
@@ -95,35 +110,6 @@ class MPRZGate(
             matrix[x2, x2] = pos
 
         return UnitaryMatrix(matrix)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-
-        grad = np.zeros(
-            (
-                len(params), 2 ** self.num_qudits,
-                2 ** self.num_qudits,
-            ), dtype=np.complex128,
-        )
-
-        # For each parameter, calculate the derivative
-        # with respect to that parameter
-        for i, param in enumerate(typing.cast(Sequence[float], params)):
-            dpos = 1j * np.exp(1j * param / 2) / 2
-            dneg = -1j * np.exp(-1j * param / 2) / 2
-
-            # Again, get indices based on target qubit.
-            x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
-
-            grad[i, x1, x1] = dpos
-            grad[i, x2, x2] = dneg
-
-        return grad
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

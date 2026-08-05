@@ -1,21 +1,15 @@
 """This module implements the HGate."""
 from __future__ import annotations
 
-from math import pi
-from math import sqrt
-
-from numpy import array
-from numpy import complex128
-from numpy import exp
-from numpy import zeros
+from openqudit.expressions import HGate as _HGate
 
 from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class HGate(ConstantGate, QuditGate):
+class HGate(ConstantGate, QuditGate, CachedClass):
     """
     The one-qudit Hadamard gate. This is a Clifford gate.
 
@@ -50,6 +44,7 @@ class HGate(ConstantGate, QuditGate):
     """
 
     _num_qudits = 1
+    _num_params = 0
     _qasm_name = 'h'
 
     def __init__(self, radix: int = 2) -> None:
@@ -64,31 +59,10 @@ class HGate(ConstantGate, QuditGate):
             ValueError: if radix < 2
         """
         if not is_integer(radix):
-            raise TypeError(f'Expected integer for radix, got {type(radix)}.')
+            raise TypeError(f"Expected integer for radix, got {type(radix)}.")
 
         if radix < 2:
-            raise ValueError(f'Radix must be greater than 1, got {radix}.')
+            raise ValueError(f"Radix must be greater than 1, got {radix}.")
 
         self._radix = radix
-
-        # Calculate unitary
-        if radix == 2:
-            matrix = array(
-                [
-                    [sqrt(2) / 2, sqrt(2) / 2],
-                    [sqrt(2) / 2, -sqrt(2) / 2],
-                ],
-                dtype=complex128,
-            )
-            self._utry = UnitaryMatrix(matrix)
-
-        else:
-            matrix = zeros([radix] * 2, dtype=complex128)
-            omega = exp(2j * pi / radix)
-            for i in range(radix):
-                for j in range(i, radix):
-                    val = omega ** (i * j)
-                    matrix[i, j] = val
-                    matrix[j, i] = val
-            matrix *= 1 / sqrt(radix)
-            self._utry = UnitaryMatrix(matrix, self.radixes)
+        self._expr = _HGate(radix)

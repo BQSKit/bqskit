@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import numpy as np
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class CSUMGate(ConstantGate, QuditGate):
+class CSUMGate(QuditGate, CachedClass):
     """
     The two-qudit Conditional-SUM gate.
 
@@ -71,4 +71,15 @@ class CSUMGate(ConstantGate, QuditGate):
                 row = self.radix * i + ((i + j) % self.radix)
                 col = self.radix * i + j
                 matrix[row, col] = 1.0
-        self._utry = UnitaryMatrix(matrix, self.radixes)
+
+        dim = self.radix ** 2
+        rows = [
+            '[' + ','.join(
+                '1' if matrix[r, c] else '0' for c in range(dim)
+            ) + ']'
+            for r in range(dim)
+        ]
+        self._expr = _UnitaryExpression(
+            'CSUM%d<%d,%d>() { [%s] }'
+            % (self.radix, self.radix, self.radix, ','.join(rows)),
+        )

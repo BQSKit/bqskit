@@ -1,15 +1,14 @@
 """This module implements the PDGate."""
 from __future__ import annotations
 
-import numpy as np
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class PDGate(ConstantGate, QuditGate):
+class PDGate(QuditGate, CachedClass):
     """
     The one-qudit P[i] gate.
 
@@ -57,16 +56,23 @@ class PDGate(ConstantGate, QuditGate):
         if not is_integer(index):
             raise TypeError(f'Expected integer for index, got {type(index)}.')
 
-        if index >= radix:
+        if index < 0 or index >= radix:
             raise ValueError(
-                'PDGate index must be less than number of levels:'
-                f'got: {index=} >= {radix=}.',
+                'PDGate index must be less radix and above 0:'
+                f'got: {index=}; {radix=}.',
             )
 
         self._radix = radix
         self.index = index
 
-        # Calculate unitary
-        omega = np.exp(2j * np.pi * index / radix)
-        diags = [(-omega ** 2) if i == index else 1 for i in range(radix)]
-        self._utry = UnitaryMatrix(np.diag(diags), self.radixes)
+        diag = '~e^(i*4*%d*π/%d)' % (index, radix)
+        rows = [
+            '[' + ','.join(
+                (diag if r == index else '1') if r == c else '0'
+                for c in range(radix)
+            ) + ']'
+            for r in range(radix)
+        ]
+        self._expr = _UnitaryExpression(
+            'PD%d_%d<%d>() { [%s] }' % (index, radix, radix, ','.join(rows)),
+        )

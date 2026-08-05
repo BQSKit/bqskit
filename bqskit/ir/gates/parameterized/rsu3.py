@@ -2,17 +2,30 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qutritgate import QutritGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
+_SU3_GENERATOR_QGL = {
+    0: 'RSU3_0(t0) { [[cos(t0),~i*sin(t0),0],[~i*sin(t0),cos(t0),0],[0,0,1]] }',
+    1: 'RSU3_1(t0) { [[cos(t0),~sin(t0),0],[sin(t0),cos(t0),0],[0,0,1]] }',
+    2: 'RSU3_2(t0) { [[e^(~i*t0),0,0],[0,e^(i*t0),0],[0,0,1]] }',
+    3: 'RSU3_3(t0) { [[cos(t0),0,~i*sin(t0)],[0,1,0],[~i*sin(t0),0,cos(t0)]] }',
+    4: 'RSU3_4(t0) { [[cos(t0),0,~sin(t0)],[0,1,0],[sin(t0),0,cos(t0)]] }',
+    5: 'RSU3_5(t0) { [[1,0,0],[0,cos(t0),~i*sin(t0)],[0,~i*sin(t0),cos(t0)]] }',
+    6: 'RSU3_6(t0) { [[1,0,0],[0,cos(t0),~sin(t0)],[0,sin(t0),cos(t0)]] }',
+    7: (
+        'RSU3_7(t0) { [[e^(~i*t0/sqrt(3)),0,0],'
+        '[0,e^(~i*t0/sqrt(3)),0],[0,0,e^(2*i*t0/sqrt(3))]] }'
+    ),
+}
 
-class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
+
+class RSU3Gate(Gate, CachedClass):
     """
     Rotation by SU3 generator for a single qutrit gate.
 
@@ -53,6 +66,7 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
             raise ValueError(f'Expected index between 0 and 7, got {index}.')
 
         self.index = index
+        self._expr = _UnitaryExpression(_SU3_GENERATOR_QGL[index])
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -102,59 +116,3 @@ class RSU3Gate(QutritGate, DifferentiableUnitary, CachedClass):
             matrix[1, 1] = np.exp(-1j * params[0] / np.sqrt(3))
             matrix[2, 2] = np.exp(2j * params[0] / np.sqrt(3))
         return UnitaryMatrix(matrix, self.radixes)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-
-        cos = np.cos(params[0])
-        sin = np.sin(params[0])
-
-        matrix = np.zeros(
-            (3, 3),
-            dtype=np.complex128,
-        )
-        if self.index == 0:
-            matrix[0, 0] = -sin
-            matrix[1, 1] = -sin
-            matrix[0, 1] = -1j * cos
-            matrix[1, 0] = -1j * cos
-        elif self.index == 1:
-            matrix[0, 0] = -sin
-            matrix[1, 1] = -sin
-            matrix[0, 1] = -cos
-            matrix[1, 0] = cos
-        elif self.index == 2:
-            matrix[0, 0] = -1j * np.exp(-1j * params[0])
-            matrix[1, 1] = 1j * np.exp(1j * params[0])
-        elif self.index == 3:
-            matrix[0, 0] = -sin
-            matrix[2, 2] = -sin
-            matrix[0, 2] = -1j * cos
-            matrix[2, 0] = -1j * cos
-        elif self.index == 4:
-            matrix[0, 0] = -sin
-            matrix[2, 2] = -sin
-            matrix[0, 2] = -cos
-            matrix[2, 0] = cos
-        elif self.index == 5:
-            matrix[1, 1] = sin
-            matrix[2, 2] = sin
-            matrix[1, 2] = -1j * cos
-            matrix[2, 1] = -1j * cos
-        elif self.index == 6:
-            matrix[1, 1] = sin
-            matrix[2, 2] = sin
-            matrix[1, 2] = -cos
-            matrix[2, 1] = cos
-        elif self.index == 7:
-            matrix[0, 0] = -1j / np.sqrt(3) * \
-                np.exp(-1j * params[0] / np.sqrt(3))
-            matrix[1, 1] = -1j / np.sqrt(3) * \
-                np.exp(-1j * params[0] / np.sqrt(3))
-            matrix[2, 2] = 2j / np.sqrt(3) * np.exp(2j * params[0] / np.sqrt(3))
-        return np.array([matrix], dtype=np.complex128)

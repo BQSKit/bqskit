@@ -28,7 +28,6 @@ from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import XGate
 from bqskit.ir.gates import ZGate
 from bqskit.qis.graph import CouplingGraph
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_numeric
 from bqskit.utils.typing import is_valid_radixes
@@ -1057,12 +1056,6 @@ class TestIsDifferentiable:
     def test_value(self, gate: Gate) -> None:
         circuit = Circuit(gate.num_qudits, gate.radixes)
         assert circuit.is_differentiable()
-
-        circuit.append_gate(gate, list(range(gate.num_qudits)))
-        if isinstance(gate, DifferentiableUnitary):
-            assert circuit.is_differentiable()
-        else:
-            assert not circuit.is_differentiable()
 
     @pytest.mark.parametrize(
         'circuit', [

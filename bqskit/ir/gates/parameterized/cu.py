@@ -2,18 +2,16 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
 class CUGate(
-    QubitGate,
-    DifferentiableUnitary,
+    Gate,
     CachedClass,
 ):
     """
@@ -36,6 +34,11 @@ class CUGate(
     _num_qudits = 2
     _num_params = 4
     _qasm_name = 'cu'
+    _expr = _UnitaryExpression(
+        'CU(t0,t1,t2,t3) { [[1,0,0,0],[0,1,0,0],'
+        '[0,0,e^(i*t3)*cos(t0/2),~e^(i*(t3+t2))*sin(t0/2)],'
+        '[0,0,e^(i*(t3+t1))*sin(t0/2),e^(i*(t3+t1+t2))*cos(t0/2)]] }',
+    )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -60,56 +63,4 @@ class CUGate(
                 [0, 0, eg * ct, -eg * el * st],
                 [0, 0, eg * ep * st, eg * ep * el * ct],
             ],
-        )
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-
-        ct = np.cos(params[0] / 2)
-        st = np.sin(params[0] / 2)
-        cp = np.cos(params[1])
-        sp = np.sin(params[1])
-        cl = np.cos(params[2])
-        sl = np.sin(params[2])
-        cg = np.cos(params[3])
-        sg = np.sin(params[3])
-        el = cl + 1j * sl
-        ep = cp + 1j * sp
-        eg = cg + 1j * sg
-        del_ = -sl + 1j * cl
-        dep_ = -sp + 1j * cp
-        deg_ = -sg + 1j * cg
-
-        return np.array(
-            [
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, -0.5 * eg * st, -0.5 * eg * ct * el],
-                    [0, 0, 0.5 * ct * ep * eg, -0.5 * st * el * ep * eg],
-                ],
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, eg * st * dep_, eg * ct * el * dep_],
-                ],
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, 0, -eg * st * del_],
-                    [0, 0, 0, eg * ct * ep * del_],
-                ],
-                [
-                    [0, 0, 0, 0],
-                    [0, 0, 0, 0],
-                    [0, 0, deg_ * ct, -deg_ * el * st],
-                    [0, 0, deg_ * ep * st, deg_ * ep * el * ct],
-                ],
-            ], dtype=np.complex128,
         )

@@ -3,15 +3,15 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import U2Gate as _U2Gate
 
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
+from bqskit.ir.gate import Gate
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.cachedclass import CachedClass
 
 
-class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
+class U2Gate(Gate, CachedClass):
     """
     The U2 single qubit gate.
 
@@ -26,9 +26,8 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
         \\end{pmatrix}
     """
 
-    _num_qudits = 1
-    _num_params = 2
     _qasm_name = 'u2'
+    _expr = _U2Gate()
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
@@ -49,7 +48,7 @@ class U2Gate(QubitGate, DifferentiableUnitary, CachedClass):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

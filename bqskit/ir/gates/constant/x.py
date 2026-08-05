@@ -1,12 +1,13 @@
 """This module implements the XGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import XGate as _XGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class XGate(ConstantGate, QubitGate):
+class XGate(Gate, CachedClass):
     """
     The Pauli X gate.
 
@@ -22,9 +23,4 @@ class XGate(ConstantGate, QubitGate):
 
     _num_qudits = 1
     _qasm_name = 'x'
-    _utry = UnitaryMatrix(
-        [
-            [0, 1],
-            [1, 0],
-        ],
-    )
+    _expr = _XGate()

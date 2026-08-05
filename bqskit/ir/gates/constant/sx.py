@@ -1,12 +1,13 @@
 """This module implements the SqrtXGate/SXGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import SXGate as _SXGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class SqrtXGate(ConstantGate, QubitGate):
+class SqrtXGate(Gate, CachedClass):
     """
     The Sqrt(X) gate.
 
@@ -22,12 +23,7 @@ class SqrtXGate(ConstantGate, QubitGate):
 
     _num_qudits = 1
     _qasm_name = 'sx'
-    _utry = UnitaryMatrix(
-        [
-            [0.5 + 0.5j, 0.5 - 0.5j],
-            [0.5 - 0.5j, 0.5 + 0.5j],
-        ],
-    )
+    _expr = _SXGate()
 
 
 SXGate = SqrtXGate

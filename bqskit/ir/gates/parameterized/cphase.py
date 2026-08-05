@@ -5,9 +5,9 @@ from collections.abc import Sequence
 
 import numpy as np
 import numpy.typing as npt
+from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -17,7 +17,6 @@ from bqskit.utils.typing import is_sequence
 
 class ArbitraryCPhaseGate(
     Gate,
-    DifferentiableUnitary,
     CachedClass,
     LocallyOptimizableUnitary,
 ):
@@ -40,23 +39,27 @@ class ArbitraryCPhaseGate(
         self._num_qudits = len(radixes)
         self._radixes = tuple(radixes)
 
+        dim = self.dim
+        rows = []
+        for r in range(dim):
+            row = ['0'] * dim
+            row[r] = 'e^(i*t0)' if r == dim - 1 else '1'
+            rows.append('[' + ','.join(row) + ']')
+
+        self._expr = _UnitaryExpression(
+            'ArbitraryCPhase_{}<{}>(t0) {{ [{}] }}'.format(
+                '_'.join(str(r) for r in self._radixes),
+                ','.join(str(r) for r in self._radixes),
+                ','.join(rows),
+            ),
+        )
+
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
         self.check_parameters(params)
         U = np.identity(self.dim, dtype=np.complex128)
         U[-1, -1] = np.exp(1j * params[0])
         return UnitaryMatrix(U)
-
-    def get_grad(self, params: RealVector = []) -> npt.NDArray[np.complex128]:
-        """
-        Return the gradient for this gate.
-
-        See :class:`DifferentiableUnitary` for more info.
-        """
-        self.check_parameters(params)
-        dU = np.zeros((1, self.dim, self.dim), dtype=np.complex128)
-        dU[-1, -1, -1] = 1j * np.exp(1j * params[0])
-        return dU
 
     def optimize(self, env_matrix: npt.NDArray[np.complex128]) -> list[float]:
         """

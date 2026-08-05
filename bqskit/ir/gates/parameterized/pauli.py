@@ -8,9 +8,7 @@ import numpy.typing as npt
 import scipy as sp
 
 from bqskit.ir.gates.generalgate import GeneralGate
-from bqskit.ir.gates.qubitgate import QubitGate
 from bqskit.qis.pauli import PauliMatrices
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
@@ -20,7 +18,7 @@ from bqskit.utils.math import pauli_expansion
 from bqskit.utils.math import unitary_log_no_i
 
 
-class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
+class PauliGate(GeneralGate):
     """
     A gate representing an arbitrary rotation.
 
@@ -50,6 +48,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
 
         self._name = 'PauliGate(%s)' % num_qudits
         self._num_qudits = num_qudits
+        self._radixes = tuple([2] * num_qudits)
         self.paulis = PauliMatrices(self.num_qudits)
         self._num_params = len(self.paulis)
         if building_docs():
@@ -69,7 +68,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 
@@ -84,7 +83,7 @@ class PauliGate(QubitGate, DifferentiableUnitary, GeneralGate):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         self.check_parameters(params)
 

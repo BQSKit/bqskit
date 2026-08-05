@@ -1,12 +1,14 @@
 """This module implements the CSGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.ir.gates.qubitgate import QubitGate
-from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+from openqudit.expressions import Controlled as _Controlled
+from openqudit.expressions import SGate as _SGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 
 
-class CSGate(ConstantGate, QubitGate):
+class CSGate(Gate, CachedClass):
     """
     The Controlled-S gate.
 
@@ -24,11 +26,4 @@ class CSGate(ConstantGate, QubitGate):
 
     _num_qudits = 2
     _qasm_name = 'cs'
-    _utry = UnitaryMatrix(
-        [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1j],
-        ],
-    )
+    _expr = _Controlled(_SGate())

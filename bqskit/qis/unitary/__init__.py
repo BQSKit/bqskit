@@ -2,12 +2,10 @@
 The Unitary package.
 
 This package exports the Unitary base class and several children
-classes: UnitaryMatrix, UnitaryBuilder, DifferentiableUnitary, and
-LocallyOptimizableUnitary.
+classes: UnitaryMatrix, UnitaryBuilder, and LocallyOptimizableUnitary.
 """
 from __future__ import annotations
 
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitary import Unitary
@@ -21,6 +19,5 @@ __all__ = [
     'UnitaryLike',
     'UnitaryMatrix',
     'UnitaryBuilder',
-    'DifferentiableUnitary',
     'LocallyOptimizableUnitary',
 ]

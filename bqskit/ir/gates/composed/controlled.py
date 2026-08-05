@@ -9,16 +9,14 @@ import numpy.typing as npt
 
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_sequence_of_int
 
 
-class ControlledGate(ComposedGate, DifferentiableUnitary):
+class ControlledGate(ComposedGate):
     """
     An arbitrary controlled gate.
 
@@ -260,10 +258,10 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
         self.num_controls, self.control_radixes, self.control_levels = params
 
         self._radixes = tuple(tuple(control_radixes) + self.gate.radixes)
-        self._num_qudits = gate._num_qudits + self.num_controls
+        self._num_qudits = gate.num_qudits + self.num_controls
         # TODO: Incorporate control radixes/levels into name with function def.
         self._name = 'Controlled(%s)' % self.gate.name
-        self._num_params = self.gate._num_params
+        self._num_params = self.gate.num_params
 
         iden_gate = np.identity(self.gate.dim, dtype=np.complex128)
         """Identity is applied when controls are not properly activated."""
@@ -275,11 +273,6 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
         """Identity projection matrix determines if it shouldn't activate."""
         self.ihalf = np.kron(iden_proj, iden_gate)
         """Identity half of the final unitary equation."""
-        # If input is a constant gate, we can cache the unitary.
-        if self.num_params == 0 and not building_docs():
-            U = self.gate.get_unitary()
-            ctrl_U = np.kron(self.ctrl, U) + self.ihalf
-            self._utry = UnitaryMatrix(ctrl_U, self.radixes)
 
     @property
     def qasm_name(self) -> str:
@@ -310,9 +303,6 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
-        if hasattr(self, '_utry'):
-            return self._utry
-
         U = self.gate.get_unitary(params)
         ctrl_U = np.kron(self.ctrl, U) + self.ihalf
         return UnitaryMatrix(ctrl_U, self.radixes)
@@ -321,13 +311,10 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
-        if hasattr(self, '_utry'):
-            return np.array([])
-
-        grads = self.gate.get_grad(params)  # type: ignore
-        return np.kron(self.ctrl, grads)
+        grads = self.gate.get_grad(params)
+        return np.kron(self.ctrl, grads).astype(np.complex128)
 
     def get_unitary_and_grad(
         self,
@@ -336,14 +323,11 @@ class ControlledGate(ComposedGate, DifferentiableUnitary):
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
-        if hasattr(self, '_utry'):
-            return self._utry, np.array([])
-
-        U, grads = self.gate.get_unitary_and_grad(params)  # type: ignore
+        U, grads = self.gate.get_unitary_and_grad(params)
         ctrl_U = np.kron(self.ctrl, U) + self.ihalf
-        ctl_grads = np.kron(self.ctrl, grads)
+        ctl_grads = np.kron(self.ctrl, grads).astype(np.complex128)
         return UnitaryMatrix(ctrl_U, self.radixes), ctl_grads
 
     def __eq__(self, other: object) -> bool:

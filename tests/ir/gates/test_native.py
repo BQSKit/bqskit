@@ -66,7 +66,17 @@ def test_get_unitary(gate: Gate) -> None:
     assert np.allclose(circ.get_unitary(x), circuit.get_unitary(x))
 
 
-@pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
+NATIVE_XFAIL_CRY = [
+    pytest.param(
+        gate, marks=pytest.mark.xfail(
+            reason='bqskitrs incorrectly computes gradient for CRYGate',
+        ),
+    ) if isinstance(gate, CRYGate) else gate
+    for gate in NATIVE_GATES
+]
+
+
+@pytest.mark.parametrize('gate', NATIVE_XFAIL_CRY, ids=lambda gate: repr(gate))
 def test_get_grad(gate: Gate) -> None:
     size = gate.num_qudits
     circ = Circ(size, radixes=gate.radixes)
@@ -80,7 +90,7 @@ def test_get_grad(gate: Gate) -> None:
         assert np.allclose(py, rs)
 
 
-@pytest.mark.parametrize('gate', NATIVE_GATES, ids=lambda gate: repr(gate))
+@pytest.mark.parametrize('gate', NATIVE_XFAIL_CRY, ids=lambda gate: repr(gate))
 def test_get_unitary_and_grad(gate: Gate) -> None:
     size = gate.num_qudits
     circ = Circ(size, radixes=gate.radixes)

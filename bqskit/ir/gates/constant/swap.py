@@ -1,12 +1,14 @@
 """This module implements the SwapGate."""
 from __future__ import annotations
 
-from bqskit.ir.gates.constantgate import ConstantGate
-from bqskit.qis.permutation import PermutationMatrix
+from openqudit.expressions import SwapGate as _SwapGate
+
+from bqskit.ir.gate import Gate
+from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class SwapGate(ConstantGate):
+class SwapGate(Gate, CachedClass):
     """
     The two-qudit swap gate.
 
@@ -43,7 +45,7 @@ class SwapGate(ConstantGate):
         self._num_qudits = 2
         self._radixes = (radix, radix)
         self._dim = radix * radix
-        self._utry = PermutationMatrix.gen_swap_unitary(radix)
+        self._expr = _SwapGate(radix)
         self._qasm_name = 'swap'
 
     def __eq__(self, other: object) -> bool:

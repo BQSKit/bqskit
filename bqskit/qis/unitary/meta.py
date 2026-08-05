@@ -16,20 +16,14 @@ class UnitaryMeta(abc.ABCMeta):
         """
         Check if an instance is a `Unitary` instance.
 
-        Additional checks for DifferentiableUnitary and
-        LocallyOptimizableUnitary. We check if the object has the
-        is_differentiable or is_locally_optimizable callable, an instance method
-        that maps nothing to a bool. If the object has the method, then it must
-        return true for isinstance to pass.
+        Additional check for LocallyOptimizableUnitary. We check if the
+        object has the is_locally_optimizable callable, an instance method
+        that maps nothing to a bool. If the object has the method, then it
+        must return true for isinstance to pass.
 
         This can be used with composed classes to implement conditional
         inheritance.
         """
-        if cls.__name__ == 'DifferentiableUnitary':
-            if hasattr(instance, 'is_differentiable'):
-                if not instance.is_differentiable():
-                    return False
-
         if cls.__name__ == 'LocallyOptimizableUnitary':
             if hasattr(instance, 'is_locally_optimizable'):
                 if not instance.is_locally_optimizable():

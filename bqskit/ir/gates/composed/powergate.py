@@ -9,17 +9,13 @@ import numpy.typing as npt
 from bqskit.ir.gate import Gate
 from bqskit.ir.gates.composed.daggergate import DaggerGate
 from bqskit.ir.gates.composedgate import ComposedGate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.docs import building_docs
 from bqskit.utils.typing import is_integer
 
 
-class PowerGate(
-    ComposedGate,
-    DifferentiableUnitary,
-):
+class PowerGate(ComposedGate):
     """
     An arbitrary inverted gate.
 
@@ -69,7 +65,7 @@ class PowerGate(
         """
         Return the gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
 
         Notes:
             The derivative of the integer power of matrix is equal
@@ -90,7 +86,7 @@ class PowerGate(
         """
         Return the unitary and gradient for this gate.
 
-        See :class:`DifferentiableUnitary` for more info.
+        See :class:`~bqskit.ir.gate.Gate` for more info.
         """
         # Constant gate case
         if hasattr(self, 'utry'):
@@ -121,7 +117,7 @@ class PowerGate(
         max_power_of_2 = max(binary_decomp)
 
         # Base Case: 2^0
-        utrys[0], grads[0] = gate.get_unitary_and_grad(params)  # type: ignore
+        utrys[0], grads[0] = gate.get_unitary_and_grad(params)
 
         # Loop over powers of 2
         for i in range(1, max_power_of_2 + 1):

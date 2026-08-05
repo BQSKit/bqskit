@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from bqskit.ir.gate import Gate
-from bqskit.qis.unitary.differentiable import DifferentiableUnitary
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary
 
 
@@ -24,12 +23,9 @@ class ComposedGate(Gate):
     def is_differentiable(self) -> bool:
         """Check if all sub gates are differentiable."""
         if hasattr(self, 'gate'):
-            return isinstance(self.gate, DifferentiableUnitary)
+            return self.gate.is_differentiable()
         if hasattr(self, 'gates'):
-            return all(
-                isinstance(gate, DifferentiableUnitary)
-                for gate in self.gates
-            )
+            return all(gate.is_differentiable() for gate in self.gates)
 
         raise AttributeError(
             'Expected gate or gates field for composed gate %s.'
