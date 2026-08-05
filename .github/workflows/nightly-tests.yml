@@ -28,4 +28,5 @@ jobs:
     - name: Run tests
       env:
         NUMBER_RANDOM_CIRCUITS: 100
-      run: pytest
+      # runs all tests
+      run: pytest -m "slow or not slow"

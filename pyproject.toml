@@ -113,7 +113,10 @@ pretty = true
 warn_unused_configs = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile*"
+addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile* -m 'not slow'"
+markers = [
+  "slow: many randomized circuits / long-running synthesis; nightly only",
+]
 minversion = "2.8"
 norecursedirs = ".env"
 python_files = "test*.py"
