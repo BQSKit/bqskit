@@ -17,6 +17,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.region import CircuitRegion
+from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 
 _logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ def default_scoring_fn(ops: Iterable[tuple[int, Operation]]) -> float:
     return score
 
 
+@cite(doi='10.1109/QCE57702.2023.00089')
 class GTQCPartitioner(BasePass):
     """
     The GTQCPartitioner Pass.
