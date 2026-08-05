@@ -84,13 +84,12 @@ test = [
   "cirq>=1.0.0",
   "hypothesis[numpy,zoneinfo]>=6.14.5",
   "nbval",
+  "ply",
   "psutil",
   "pytest>=2.8",
   "pytket>=1.5.0",
   "pytket-qiskit",
   "qiskit>=0.37.1",
-  "qutip>=4.7.0",
-  "qutip-qip",
   "tzdata",
 ]
 
@@ -119,7 +118,6 @@ markers = [
   "slow: many randomized circuits / long-running synthesis; nightly only",
 ]
 minversion = "2.8"
-norecursedirs = ".env"
 python_files = "test*.py"
 testpaths = ["tests/"]
 
@@ -178,31 +176,15 @@ version = { attr = "bqskit._version.__version__" }
 include = ["bqskit*"]
 
 [tool.tox]
-legacy_tox_ini = """
-[tox]
-minversion = 3.3.0
-envlist = pre-commit,py38,py39,py310,py311,py312
+requires = ["tox>=4.22"]
+env_list = ["py310", "py311", "py312", "py313", "py314"]
 skip_missing_interpreters = true
 
-[testenv]
-passenv =
-    TERM
-deps =
-    numpy>=1.22
-    pytest>=2.8
-    hypothesis[numpy,zoneinfo]>=6.14.5
-    qiskit>=0.37.1
-    pytket>=1.5.0
-    cirq>=1.0.0
-    qutip>=4.7.0
-    pytket-qiskit
-    tzdata
-commands =
-    pytest {posargs}
-
-[testenv:pre-commit]
-skip_install = true
-deps = pre-commit
-commands = pre-commit run --all-files --show-diff-on-failure
-basepython=py312
-"""
+[tool.tox.env_run_base]
+description = "run the test suite under {env_name}"
+runner = "uv-venv-lock-runner"
+dependency_groups = ["test"]
+pass_env = ["TERM"]
+commands = [
+  ["pytest", { replace = "posargs", default = [], extend = true }],
+]

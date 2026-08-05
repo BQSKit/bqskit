@@ -155,15 +155,13 @@ dev = [
     { name = "cirq", version = "1.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "hypothesis", extra = ["numpy", "zoneinfo"] },
     { name = "nbval" },
+    { name = "ply" },
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "pytest" },
     { name = "pytket" },
     { name = "pytket-qiskit" },
     { name = "qiskit" },
-    { name = "qutip", version = "5.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "qutip", version = "5.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "qutip-qip" },
     { name = "ruff" },
     { name = "tzdata" },
 ]
@@ -172,14 +170,12 @@ test = [
     { name = "cirq", version = "1.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "hypothesis", extra = ["numpy", "zoneinfo"] },
     { name = "nbval" },
+    { name = "ply" },
     { name = "psutil" },
     { name = "pytest" },
     { name = "pytket" },
     { name = "pytket-qiskit" },
     { name = "qiskit" },
-    { name = "qutip", version = "5.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "qutip", version = "5.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "qutip-qip" },
     { name = "tzdata" },
 ]
 
@@ -213,14 +209,13 @@ dev = [
     { name = "cirq", specifier = ">=1.0.0" },
     { name = "hypothesis", extras = ["numpy", "zoneinfo"], specifier = ">=6.14.5" },
     { name = "nbval" },
+    { name = "ply" },
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "pytest", specifier = ">=2.8" },
     { name = "pytket", specifier = ">=1.5.0" },
     { name = "pytket-qiskit" },
     { name = "qiskit", specifier = ">=0.37.1" },
-    { name = "qutip", specifier = ">=4.7.0" },
-    { name = "qutip-qip" },
     { name = "ruff" },
     { name = "tzdata" },
 ]
@@ -228,13 +223,12 @@ test = [
     { name = "cirq", specifier = ">=1.0.0" },
     { name = "hypothesis", extras = ["numpy", "zoneinfo"], specifier = ">=6.14.5" },
     { name = "nbval" },
+    { name = "ply" },
     { name = "psutil" },
     { name = "pytest", specifier = ">=2.8" },
     { name = "pytket", specifier = ">=1.5.0" },
     { name = "pytket-qiskit" },
     { name = "qiskit", specifier = ">=0.37.1" },
-    { name = "qutip", specifier = ">=4.7.0" },
-    { name = "qutip-qip" },
     { name = "tzdata" },
 ]
 
@@ -4114,115 +4108,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ea/e4/0229893ae295763a9273e47a7b1a8f10599ee49c2963750440d56a4b0023/qiskit_qasm3_import-0.6.0.tar.gz", hash = "sha256:6b763ee58538b33eaf5aaa8126b687f3c03f26c4d28e6a4f04f9be24a6b184ff", size = 37141, upload-time = "2025-06-10T16:34:11.287Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3e/7e/b8bbfbf1acfe0b40872727ef4741b54794beb65da34c4c327dc31a73d35d/qiskit_qasm3_import-0.6.0-py3-none-any.whl", hash = "sha256:2109b65a6859bec4a51e7b61bd525365f298f67f19b3952bf602423c6d21d697", size = 29490, upload-time = "2025-06-10T16:34:10.035Z" },
-]
-
-[[package]]
-name = "qutip"
-version = "5.2.3"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" } },
-    { name = "packaging" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" } },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/af/ae/4e1ffb06ae76b0d5e79bfc8cc649768c5fbdf68a9207dc23dc981d3ebc76/qutip-5.2.3.tar.gz", hash = "sha256:a095df67f0afafa5db8ee67c342580de3fbfa0259320c9572ff820f51029baae", size = 7459768, upload-time = "2026-01-26T17:30:53.742Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/6f/e917bda9b3c08947a80faad5bc535099a37f1cce286ee51d549b84445988/qutip-5.2.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d7201b3589a9d55741ef15311c64f0d25644dd0ddf0be0581e3da21688b8add6", size = 11299512, upload-time = "2026-01-26T17:30:04.415Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/2f/42ee92d1f65646abd900fb5f25725d4594b57a0a0cc02d67a669b17ae69a/qutip-5.2.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:5fe3091377e4983f71202bb599e55a5ee3680cfb00213f6f05eaf8b2f4c168ab", size = 11139158, upload-time = "2026-01-26T17:30:06.979Z" },
-    { url = "https://files.pythonhosted.org/packages/47/03/45cfa9bf12ada3dede5dfb48c1f8469e58e3847ab9fe0673c7888198e8b7/qutip-5.2.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:86c27cf53cadb938d187cba6a60f4e54c52d7d6ec1efd2698a6055ef086ebfde", size = 31970718, upload-time = "2026-01-26T17:30:08.926Z" },
-    { url = "https://files.pythonhosted.org/packages/83/69/127b8c8440e694ecad86092c53996752a661f871d4005ab81b5087e64b2e/qutip-5.2.3-cp310-cp310-win_amd64.whl", hash = "sha256:6e0f2c2cbc95d28d7a25cc48788185aa8cb2101a252d3bd3305608e5e3e157e9", size = 10755231, upload-time = "2026-01-26T17:30:11.563Z" },
-    { url = "https://files.pythonhosted.org/packages/7b/99/d9c187616666be4d811e4019e4f3fe82e05e14640c24371ccff87fcc6dfe/qutip-5.2.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:04a08b15fb4009270e072d530e213927a2e26d4708ee4abaedd1b24f6a86bf4f", size = 11279862, upload-time = "2026-01-26T17:30:13.576Z" },
-    { url = "https://files.pythonhosted.org/packages/e0/97/30610b291f5b4c6502d1005f7f8df7a5f47a16390fc3760b1cf95b0972b1/qutip-5.2.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:a50211e628decb9c639f7d6c7234bf33fca6ea6bc85e2795a2e296c8dd7cf268", size = 11120233, upload-time = "2026-01-26T17:30:15.435Z" },
-    { url = "https://files.pythonhosted.org/packages/11/55/a3dd950a72e648b693c999b6c77d80485557b27515b5c7364ea9e3b3b0e3/qutip-5.2.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ec9cc919ae4e6225f8b0d54898523ff1cd63b76dd4fb407f28ac6a0fb79e4b97", size = 33285959, upload-time = "2026-01-26T17:30:17.342Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/0f/ef5bd69b10fc702cdb21bb95dc2bd3888cdbe34450d51356c76055a1d7b3/qutip-5.2.3-cp311-cp311-win_amd64.whl", hash = "sha256:6899f1d034299fbb5a64ec94095b408c18b758a99a3cfe14c7fbe58c47a6332b", size = 10757600, upload-time = "2026-01-26T17:30:19.784Z" },
-    { url = "https://files.pythonhosted.org/packages/62/5f/b83dacebb4c7f53e8ac1c3998d504d58a3920caada5b155a329030b16b8f/qutip-5.2.3-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:cf4742aa2bd5695a6b7d5c1cd0d5e3ca2da37a9de37b42a65977e30d36747d1b", size = 11239581, upload-time = "2026-01-26T17:30:21.642Z" },
-    { url = "https://files.pythonhosted.org/packages/f8/9f/1e4ded98586129f0857f3a5274e622313b31e53301624efb4a2d9b98f08b/qutip-5.2.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c9b3fc0e6ad593949bb8c4933d26c051f92ddc0528a968534fb0e66e7029f138", size = 11096532, upload-time = "2026-01-26T17:30:23.787Z" },
-    { url = "https://files.pythonhosted.org/packages/16/46/4f0cfacc04b5bb45f91654998418e56151e5316549bc6074a4231d0e0f4f/qutip-5.2.3-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2d775e4655be142ad2725ba30e4570affe5a92cca072d6e81ec60519cc8155c1", size = 33079056, upload-time = "2026-01-26T17:30:26.478Z" },
-    { url = "https://files.pythonhosted.org/packages/f4/be/7eddcffc16f91ced5249aa624f67a350f45fb18f28a374752cf0d0e240ff/qutip-5.2.3-cp312-cp312-win_amd64.whl", hash = "sha256:56cbbce1667a5a28027357dd14eb5f4453124ed2630f002200183964880640b1", size = 10704721, upload-time = "2026-01-26T17:30:33.817Z" },
-    { url = "https://files.pythonhosted.org/packages/47/e2/a257391edc5c12a786d05ca475392e34f8da5f0360e02bda77b893845a14/qutip-5.2.3-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:e6fee9cf35ba2c323b398cfd90874337499f747f132aa3a931b17cd442eb6e7c", size = 11213675, upload-time = "2026-01-26T17:30:36.06Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/17/b1724f33d1fc52a11895d6649bcb9df4015c0ff521a04e82f01ff1680df3/qutip-5.2.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ad70ceac878dd9c35b84697e83936e5f4e7c9659987a8a6104d7ecfd08e3ed51", size = 11073582, upload-time = "2026-01-26T17:30:37.992Z" },
-    { url = "https://files.pythonhosted.org/packages/db/f6/66a3355fe828b7342c86d6d56c741e57a15c98a13512d3016cd88733d370/qutip-5.2.3-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ed6c54a04aa02e8b22f5bd31e0314e6bfe22e3c11697910816aa38e2c51eeb30", size = 32908243, upload-time = "2026-01-26T17:30:40.328Z" },
-    { url = "https://files.pythonhosted.org/packages/14/bd/2912700775e1fd2d7f4b4e8d099dd32f04b90c7f178fc3d59f8fe0bb78d7/qutip-5.2.3-cp313-cp313-win_amd64.whl", hash = "sha256:53ca716ac2b0ceabc7e5ed51b593cb79d42faa31a6fa72c47681fc491140a058", size = 10703167, upload-time = "2026-01-26T17:30:42.348Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/31/38d488bc45cf82c2a8ecdcb7fc628f48246bfcfaef96b4d1139f3ea279ae/qutip-5.2.3-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:7d05210a8e8dc869bc9c8f33c37077df2240f50da2849e78cc3f6d9de4e3bfe5", size = 11347553, upload-time = "2026-01-26T17:30:44.189Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/37/9d602a6f005100f31ef20b2c391e02de445e7cafff3e38d2cc69d6486727/qutip-5.2.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:0cba2254afa1b2196cf2a062d3a8c3023c4e78ce49b9229e955689a6b6dc868f", size = 11234832, upload-time = "2026-01-26T17:30:46.327Z" },
-    { url = "https://files.pythonhosted.org/packages/77/c2/5777b2cdb46acfae7558d69921d23e654054f17ff83e1ff23b38618c5862/qutip-5.2.3-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b4dc81468d163d9fc698dc00b1b183cf908f59b5d160daecc90c680dd6714940", size = 32839604, upload-time = "2026-01-26T17:30:48.434Z" },
-    { url = "https://files.pythonhosted.org/packages/c0/26/303cd6f43344d5a69bc064d984b8c44563f195ab03ddd7d46dff89b2217b/qutip-5.2.3-cp314-cp314-win_amd64.whl", hash = "sha256:324218baa374a82f32d2c23871835019880d4eb9313bda2caf082adec8e3be6e", size = 10843778, upload-time = "2026-01-26T17:30:51.274Z" },
-]
-
-[[package]]
-name = "qutip"
-version = "5.3.1"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.13.*' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and sys_platform == 'win32'",
-    "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.12.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "packaging" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/9e/7a864718df6aec8d37ce43279f4f9edc6edc1235b1114ae25c128c6c9f82/qutip-5.3.1.tar.gz", hash = "sha256:056206b40cbe97c3c7e4f85eff11873406669cd72b2db039fa1a3812767395e9", size = 6931453, upload-time = "2026-08-04T04:35:22.044Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/af/c7a3e4b1b725c241ea24e5799cc2bdf2687f138cc94a273f8531a2eec391/qutip-5.3.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:e60af909389ba890c53c4d74f0256bb46b35b9cc5de157af64343a516469944d", size = 10280388, upload-time = "2026-08-04T04:34:18.622Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/9d/13e158ad5f3ae56b885562d8651658dcba99e58c13479af67d147998e063/qutip-5.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:75248ffb91acd09885b992166d297764af6d037ac993e00c9757cae21c9e81c9", size = 10176654, upload-time = "2026-08-04T04:34:20.856Z" },
-    { url = "https://files.pythonhosted.org/packages/18/e6/4d6e806061137d6680bd753ab7382cf56e0c30ebeacd8762ee596c392e48/qutip-5.3.1-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1947d62bb932ddb455a0b21d6965139eb9576be68027e8aeba112f4a24a1447e", size = 28735281, upload-time = "2026-08-04T04:34:23.193Z" },
-    { url = "https://files.pythonhosted.org/packages/cc/f1/466285b1da7ed20dd6736c270492ce26968092ddfdb8ac8a6fbc7ea807ca/qutip-5.3.1-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8353fd3a5c438e3154068b229a4c7ea4b420411c7c967b84ba9a97f5f439fa50", size = 28713784, upload-time = "2026-08-04T04:34:26.284Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/b0/bf6cf83fe488bd65e9df341b06612f44cc9fca417ae1204a63d10d27a80b/qutip-5.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:a8d885ed40d1a4c0ed7f55b091f04a66dab368ec09bd3a0f6bc6fbf996d4f9fe", size = 9856946, upload-time = "2026-08-04T04:34:28.809Z" },
-    { url = "https://files.pythonhosted.org/packages/42/e7/0dba15ad1dd620c1b6756c286cd422c3760a3bce34951f24f9239acd6301/qutip-5.3.1-cp311-cp311-win_arm64.whl", hash = "sha256:e2a719d8f3d9b1b29907f0b94ae4917f541c4dda95f26e70ee2c4b7ca4dd222a", size = 9446586, upload-time = "2026-08-04T04:34:31.371Z" },
-    { url = "https://files.pythonhosted.org/packages/95/ea/c75266ef53a470e015a77ab04b477bbf115f4dbcce91a19de3284922d70f/qutip-5.3.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:17933eeb2a1bc73318369fa660d8f1314615f20ffa4d2668e039909f36f56f16", size = 10276901, upload-time = "2026-08-04T04:34:33.464Z" },
-    { url = "https://files.pythonhosted.org/packages/5e/39/f6469c6f7afbb1cf5613c8e68f4eaca42bb20e9ad58a0df344722c82b512/qutip-5.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:3daedeec808c87f4b3f899fd874720cf7a5609171afacbc8d2fcdcf7f31a177b", size = 10194790, upload-time = "2026-08-04T04:34:36.15Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/92/11621d6a5d8f791bb788923a817b6a028dab61918fc7673bbdd76238599c/qutip-5.3.1-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d88da28f1757f1ce02ae3a3b6b3432474969302dacef56f996d1b068ed36faed", size = 28611305, upload-time = "2026-08-04T04:34:38.508Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/7e/2b7b1583bc1e194229c269a41a5efb31cd37b90b5065185cd0cc9b1cfb19/qutip-5.3.1-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:63217730f61da7d410684f77f71498347f8afee22995fa7c93578d32b5623640", size = 28856297, upload-time = "2026-08-04T04:34:41.399Z" },
-    { url = "https://files.pythonhosted.org/packages/44/c7/f136af877138a74020b98414f20917859e793146b6d5edcd33604407f1ad/qutip-5.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:300bd4a8ab301dae405611928a5eeaf4ac8b7dcdddb59652efc130558d71b2ea", size = 9861273, upload-time = "2026-08-04T04:34:43.956Z" },
-    { url = "https://files.pythonhosted.org/packages/53/78/b28020d879c9ae2446cc3a2b3e2e65dfded461fa0c09165b282406d69845/qutip-5.3.1-cp312-cp312-win_arm64.whl", hash = "sha256:73732d1c294d7a53a239225f93ff776470260126377b545a575ccd46e9671d14", size = 9432379, upload-time = "2026-08-04T04:34:46.062Z" },
-    { url = "https://files.pythonhosted.org/packages/d5/68/2fe03b6525a135e53b4a637aea8ab555fc3e78fc3854371f652f45c870c9/qutip-5.3.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:de0a97c26817c1937606d30dcae2246acb3eae45bce826e29d3fc7cccb50acb1", size = 10253227, upload-time = "2026-08-04T04:34:48.339Z" },
-    { url = "https://files.pythonhosted.org/packages/65/47/fed03ed6fb5242dde9bdc6081633598c39c2be9c3b9e0bc7c37e35914cc5/qutip-5.3.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:8e6070cc3ca6f1d006fbecb4a357eecc7e1420016579719925d0cdf93abb37b8", size = 10168933, upload-time = "2026-08-04T04:34:51.274Z" },
-    { url = "https://files.pythonhosted.org/packages/a3/61/9cb2a2125e034e7bd10e1e15d805ac051767a10933bfb0274285fdc57b98/qutip-5.3.1-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:45ed41d771fb2aa250fca920af8604affde55563cbe1921280f585bd86ba3a17", size = 28214089, upload-time = "2026-08-04T04:34:55.028Z" },
-    { url = "https://files.pythonhosted.org/packages/81/85/94a0f48707f1101a971aa410a34ae68f6ef233d2254d96eb9a482f95fb4c/qutip-5.3.1-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a95248e9d06f2d6d7ca9ccdcb77c184066a4e4284eb97408f0354a705043c8cd", size = 28530702, upload-time = "2026-08-04T04:34:58.492Z" },
-    { url = "https://files.pythonhosted.org/packages/d5/5b/60d6dce22e7565d9b9c2f3350a1d5c04d0ab927a404b0da153098ef0d822/qutip-5.3.1-cp313-cp313-win_amd64.whl", hash = "sha256:5b3f95ceb0b7c4c0003c82f3022b674e1881bd40e8b0728305efc59605c05ac5", size = 9844378, upload-time = "2026-08-04T04:35:01.191Z" },
-    { url = "https://files.pythonhosted.org/packages/aa/0f/af06dd5f6301ab02c62557a3890a599427f25ff0f1871c3a70bd86c7349f/qutip-5.3.1-cp313-cp313-win_arm64.whl", hash = "sha256:34abc3daf2dd7c73514e39cbece84076e9a27fe8abfc3f051004b263c4289cdd", size = 9419078, upload-time = "2026-08-04T04:35:03.626Z" },
-    { url = "https://files.pythonhosted.org/packages/96/95/3791a66a05294d0a5afb3f9b0a640fd9a7772688e844156317c19dca4a3b/qutip-5.3.1-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:2ad0a6e5098a2e6390cf939cecef09082d49e558d6d2750e3cceb9672aa3ed67", size = 10380334, upload-time = "2026-08-04T04:35:06.005Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/c2/4c0c5749464729372f7b5570e9d8676f67d8b4af9b202dbe122677c4f4a2/qutip-5.3.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:624f738f284579b24757b741dbca898d371450f13dcb4100a3a3031da44335f2", size = 10317471, upload-time = "2026-08-04T04:35:08.254Z" },
-    { url = "https://files.pythonhosted.org/packages/66/19/493e14c9865c6af439c4b8d24f330bf4be5a751b3e30f28978c769674dbe/qutip-5.3.1-cp314-cp314-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b6c1f2119ad530764dea638b65bec0843f63164bb4bdc3d6404e2084d486fd6a", size = 28209297, upload-time = "2026-08-04T04:35:11.388Z" },
-    { url = "https://files.pythonhosted.org/packages/2c/74/8ec1e89ea6acdd98e207ed65a455f6cbad9722d4d6d779e8b60cdaaff168/qutip-5.3.1-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:252db589f736318540bd8e04b5162273aaab4e96a78beda6bb941c4865c2f58a", size = 28474728, upload-time = "2026-08-04T04:35:14.774Z" },
-    { url = "https://files.pythonhosted.org/packages/6c/d4/bc9f58aebc04963b838f1b7be62392515487e395f4c152cfe944adc83019/qutip-5.3.1-cp314-cp314-win_amd64.whl", hash = "sha256:7b891aa2cc71377a8870d3b33d1616874f7308fb93e75c72fce51377ddc084cd", size = 9989879, upload-time = "2026-08-04T04:35:17.443Z" },
-    { url = "https://files.pythonhosted.org/packages/af/f1/48e5571ce69dda9c89f10c4a6efe527deb15042a36b8b123c631df82ff8f/qutip-5.3.1-cp314-cp314-win_arm64.whl", hash = "sha256:c09c138c81fd2187e5d34d37e9ecc62eae9004ba3b801caf732cca093da59462", size = 9572801, upload-time = "2026-08-04T04:35:20.024Z" },
-]
-
-[[package]]
-name = "qutip-qip"
-version = "0.4.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "packaging" },
-    { name = "qutip", version = "5.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "qutip", version = "5.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/63/e9/9f4174514a33ae47a572a98273c14ec2b50dc7e02fc98c51753404082bae/qutip_qip-0.4.2.tar.gz", hash = "sha256:9c7ecd7be72de2b6ade4a5c139dfa449f0f2c9663a21fd8f964f98898f0a3eab", size = 161769, upload-time = "2026-06-23T08:15:10.97Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/a1/e006622842ca5e1a667b461cda3ebfa0798439502be2f9b37779e386b92d/qutip_qip-0.4.2-py3-none-any.whl", hash = "sha256:1188517b88ecd26ac8a32d1110f4267d8251167e57c42dbaa67856c8a30445a4", size = 140747, upload-time = "2026-06-23T08:15:09.796Z" },
 ]
 
 [[package]]
