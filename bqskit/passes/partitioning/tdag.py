@@ -15,6 +15,7 @@ from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.region import CircuitRegion
+from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 
 
@@ -116,6 +117,7 @@ def default_scoring_fn(ops: list[Operation]) -> float:
     return score
 
 
+@cite(doi='10.1145/3583781.3590234')
 class TDAGPartitioner(BasePass):
     """
     The TDAGPartitioner Pass.
