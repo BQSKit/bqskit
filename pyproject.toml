@@ -77,6 +77,7 @@ docs = [
 [dependency-groups]
 dev = [
   "pre-commit",
+  "ruff",
   { include-group = "test" },
 ]
 test = [
@@ -121,6 +122,54 @@ minversion = "2.8"
 norecursedirs = ".env"
 python_files = "test*.py"
 testpaths = ["tests/"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 80
+# TEMP: Old toolchain never linted/formatted ipynb
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.format]
+# TEMP: Old `double-quote-string-fixer` pre-commit hook
+# enforces single quotes (despite its name...)
+quote-style = "single"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "D", "T10", "D213"]
+ignore = [
+  "E741",
+  "E731",
+  # TEMP: google convention picks D212 but BQSKit uses D213
+  "D212",
+  # TEMP: Missing docstring enforcement;
+  # track as a follow-up
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D107",
+  # TEMP:
+  # Docstring content-quality checks on existing docstrings;
+  # needs manual edits
+  "D205",
+  "D301",
+  "D415",
+  "D417",
+  # TEMP: Old pyupgrade did not check this
+  "UP031",
+  # TEMP: Union -> |; will fix later
+  "UP007",
+]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+# Force single lines to match the old style
+force-single-line = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.setuptools.dynamic]
 version = { attr = "bqskit._version.__version__" }
