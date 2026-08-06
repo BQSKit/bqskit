@@ -22,7 +22,7 @@ cd bqskit
 uv sync
 ```
 
-`uv sync` creates a `.venv` with BQSKit installed in editable mode, plus everything needed for development (pytest, ruff, pre-commit, etc.). You can then run anything inside that environment with `uv run <command>` (e.g. `uv run pytest`). If you're working on or testing documentation, `uv sync --extra docs` will additionally install the Sphinx toolchain.
+`uv sync` creates a `.venv` with BQSKit installed in editable mode, plus everything needed for development (pytest, ruff, pre-commit, etc.). You can then run anything inside that environment with `uv run <command>` (e.g. `uv run pytest`). If you're working on or testing documentation, `uv sync --group docs` will additionally install the Sphinx toolchain.
 
 To build and preview the docs locally after that:
 
@@ -47,7 +47,7 @@ source .venv/bin/activate  # .venv\Scripts\activate on Windows
 pip install -e . --group dev
 ```
 
-This installs BQSKit in editable mode, as well as the same development dependencies as `uv sync`. For the documentation toolchain, use the `docs` extra instead: `pip install -e '.[docs]'`.
+This installs BQSKit in editable mode, as well as the same development dependencies as `uv sync`. For the documentation toolchain, use the `docs` group instead: `pip install -e . --group docs`.
 
 > [!NOTE]
 > This environment may differ than the one installed via `uv sync` as pip resolves `--group dev` fresh each time, rather than reading `uv.lock`. This means that it is not guaranteed to produce the same exact dependency versions CI uses. If you hit a test failure that only happens in a pip-managed environment, try reproducing it with `uv sync`.
