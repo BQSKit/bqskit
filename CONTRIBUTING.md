@@ -78,6 +78,8 @@ class GeneralizedSabreAlgorithm:
 
 After making any changes, it is essential to ensure that all the previous tests still pass. Run `uv run pytest` to execute the test suite. If your change touches version-sensitive code, you can also run the full suite against every supported Python version with `uvx --with tox-uv tox` (see [Development Environment](#Development-Environment) above).
 
+Some tests are marked `slow` (long-running synthesis, many randomized circuits, etc.) and are excluded by default; `uv run pytest` with no path or `-m` argument skips them and prints a note saying how many were excluded. If you instead point pytest at a specific path (e.g. `uv run pytest tests/compiler/compile`) OR pass an explicit marker expression (e.g. `-m "slow or not slow"`), everything in scope will run, `slow` included.
+
 Additionally, you will want to write tests for any appropriate changes. Our test suite resides in the `tests` folder and uses a combination of `pytest` and `hypothesis`.
 
 - [pytest](https://docs.pytest.org/en/6.2.x/)

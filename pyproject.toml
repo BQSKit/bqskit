@@ -81,7 +81,7 @@ docs = [
 
   # bqskit.utils.test is documented via autosummary and needs pytest/hypothesis
   "hypothesis[numpy]>=6.14.5",
-  "pytest>=2.8",
+  "pytest>=7.2",
 ]
 test = [
   "cirq>=1.0.0",
@@ -89,7 +89,7 @@ test = [
   "nbval",
   "ply",
   "psutil",
-  "pytest>=2.8",
+  "pytest>=7.2",
   "pytket>=1.5.0",
   "pytket-qiskit",
   "qiskit>=0.37.1",
@@ -115,11 +115,11 @@ pretty = true
 warn_unused_configs = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile* -m 'not slow'"
+addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile*"
 markers = [
   "slow: many randomized circuits / long-running synthesis; nightly only",
 ]
-minversion = "2.8"
+minversion = "7.2"
 python_files = "test*.py"
 testpaths = ["tests/"]
 
