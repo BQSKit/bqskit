@@ -66,6 +66,14 @@ Please follow the below short list of guidelines when contributing.
 
 4. BQSKit is a type-annotated Python package, which helps catch some bugs early with static code analysis tools like [Mypy](http://mypy-lang.org/). You can see [PEP 484: Type Annotations](https://www.python.org/dev/peps/pep-0484/) for more information. Please annotate your contribution with types. Sometimes, this can be tricky. If you need help, please don't hesitate to ask.
 
+5. If you have added a new algorithm and/or compiler pass that references one or more publications, please use the `@cite` decorator, which cites by DOI. For example, from [bqskit/passes/mapping/sabre.py](./bqskit/passes/mapping/sabre.py):
+
+```py
+@cite(doi='10.1145/3297858.3304023')
+@cite(doi='10.1145/3445814.3446718')
+class GeneralizedSabreAlgorithm:
+```
+
 ## Testing
 
 After making any changes, it is essential to ensure that all the previous tests still pass. Run `uv run pytest` to execute the test suite. If your change touches version-sensitive code, you can also run the full suite against every supported Python version with `uvx --with tox-uv tox` (see [Development Environment](#Development-Environment) above).
