@@ -98,3 +98,5 @@ to tests. Any test that starts with a `given` decorator uses Hypothesis
 to generate inputs according to some strategy. BQSKit has several custom
 strategies that can be found in `bqskit.utils.test` module. We recommend
 using `hypothesis` to test complex functionality that may have corner cases.
+
+BQSKit also uses [nbval](https://github.com/computationalmodelling/nbval) to check that the tutorial notebooks under `examples/tutorials/` still execute correctly. This isn't part of the default `uv run pytest` (only `tests/` is collected by default), so if you change a public API or edit a tutorial notebook, please run it explicitly before pushing with `uv run pytest --nbval-lax examples/tutorials/`.
