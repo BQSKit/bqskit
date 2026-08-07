@@ -126,41 +126,44 @@ testpaths = ["tests/"]
 [tool.ruff]
 target-version = "py310"
 line-length = 80
-# TEMP: Old toolchain never linted/formatted ipynb
+# TODO / TEMP: Old toolchain never linted/formatted ipynb
 extend-exclude = ["*.ipynb"]
 
-[tool.ruff.format]
-# TEMP: Old `double-quote-string-fixer` pre-commit hook
-# enforces single quotes (despite its name...)
-quote-style = "single"
-
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "UP", "D", "T10", "D213"]
+select = ["E", "W", "F", "I", "UP", "D", "T10", "D212"]
 ignore = [
-  "E741",
-  "E731",
-  # TEMP: google convention picks D212 but BQSKit uses D213
-  "D212",
-  # TEMP: Missing docstring enforcement;
-  # track as a follow-up
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
-  "D105",
-  "D107",
-  # TEMP:
-  # Docstring content-quality checks on existing docstrings;
-  # needs manual edits
-  "D205",
-  "D301",
-  "D415",
-  "D417",
-  # TEMP: Old pyupgrade did not check this
-  "UP031",
-  # TEMP: Union -> |; will fix later
-  "UP007",
+  # "ECODE", # error-name; instances-in-codebase
+  # ignoring due to pre-existing lack of enforcement
+  "D102",  # undocumented-public-method; 766
+  "D212",  # multi-line-summary-first-line; 627
+  "D103",  # undocumented-public-function; 405
+  "UP031",  # printf-string-formatting; 203
+  "D101",  # undocumented-public-class; 156
+  "D105",  # undocumented-magic-method; 99
+  "D100",  # undocumented-public-module; 91
+  "D205",  # missing-blank-line-after-summary; 66
+  "E741",  # ambiguous-variable-name; 64
+  "D301",  # escape-sequence-in-docstring; 59
+  "D209",  # new-line-after-last-paragraph; 42
+  "D104",  # undocumented-public-package; 37
+  "D202",  # blank-line-after-function; 34
+  "D415",  # missing-terminal-punctuation; 22
+  "D417",  # undocumented-param; 21
+  "E731",  # lambda-assignment; 18
+  "UP007",  # non-pep604-annotation-union; 16
+  "D107",  # undocumented-public-init; 12
+  # TODO: TEMP (will fix in follow-up PR)
+  "I001",  # unsorted-imports; 111
+  "D412",  # blank-lines-between-header-and-content; 4
+  "E713",  # not-in-test; 3
+  "UP035",  # deprecated-import; 3
+  "UP039",  # unnecessary-class-parentheses; 3
+  "UP045",  # non-pep604-annotation-optional; 3
+  "D214",  # overindented-section; 2
+  "D405",  # non-capitalized-section-name; 2
+  "D411",  # no-blank-line-before-section; 2
+  "D300",  # triple-single-quotes; 1
+  "UP032",  # f-string; 1
 ]
 
 [tool.ruff.lint.isort]

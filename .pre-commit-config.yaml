@@ -8,6 +8,7 @@ repos:
     -   id: end-of-file-fixer
     -   id: check-docstring-first
         exclude: 'bqskit/ext/rigetti.py'
+    -   id: double-quote-string-fixer
     -   id: name-tests-test
         args: [--django]
     -   id: check-case-conflict
@@ -16,12 +17,28 @@ repos:
     -   id: check-added-large-files
         args: ['--maxkb=8192']
     -   id: fix-byte-order-marker
-# -   repo: https://github.com/astral-sh/ruff-pre-commit
-#     rev: v0.16.1
-#     hooks:
-#     -   id: ruff-check
-#         args: [--fix]
-#     -   id: ruff-format
+
+-   repo: https://github.com/hhatto/autopep8
+    rev: v2.3.2
+    hooks:
+    -   id: autopep8
+        args:
+            - --in-place
+            - --max-line-length=80
+            - --ignore=E731
+        exclude: 'tests/ext.*'
+
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.1
+    hooks:
+    -   id: ruff-check
+        # args: [--fix]
+
+-   repo: https://github.com/asottile/add-trailing-comma
+    rev: v4.0.0
+    hooks:
+    -   id: add-trailing-comma
+
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.0.0
     hooks:
