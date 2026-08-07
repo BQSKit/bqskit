@@ -127,7 +127,7 @@ dependencies = [
 dev = [
     { name = "cirq", version = "1.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "cirq", version = "1.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "hypothesis", extra = ["numpy", "zoneinfo"] },
+    { name = "hypothesis", extra = ["numpy"] },
     { name = "nbval" },
     { name = "ply" },
     { name = "pre-commit" },
@@ -137,10 +137,9 @@ dev = [
     { name = "pytket-qiskit" },
     { name = "qiskit" },
     { name = "ruff" },
-    { name = "tzdata" },
 ]
 docs = [
-    { name = "hypothesis", extra = ["numpy", "zoneinfo"] },
+    { name = "hypothesis", extra = ["numpy"] },
     { name = "jupyter-sphinx" },
     { name = "myst-parser", version = "4.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "myst-parser", version = "5.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -165,7 +164,7 @@ docs = [
 test = [
     { name = "cirq", version = "1.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "cirq", version = "1.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "hypothesis", extra = ["numpy", "zoneinfo"] },
+    { name = "hypothesis", extra = ["numpy"] },
     { name = "nbval" },
     { name = "ply" },
     { name = "psutil" },
@@ -173,7 +172,6 @@ test = [
     { name = "pytket" },
     { name = "pytket-qiskit" },
     { name = "qiskit" },
-    { name = "tzdata" },
 ]
 
 [package.metadata]
@@ -189,7 +187,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "cirq", specifier = ">=1.0.0" },
-    { name = "hypothesis", extras = ["numpy", "zoneinfo"], specifier = ">=6.14.5" },
+    { name = "hypothesis", extras = ["numpy"], specifier = ">=6.14.5" },
     { name = "nbval" },
     { name = "ply" },
     { name = "pre-commit" },
@@ -199,10 +197,9 @@ dev = [
     { name = "pytket-qiskit" },
     { name = "qiskit", specifier = ">=0.37.1" },
     { name = "ruff" },
-    { name = "tzdata" },
 ]
 docs = [
-    { name = "hypothesis", extras = ["numpy", "zoneinfo"], specifier = ">=6.14.5" },
+    { name = "hypothesis", extras = ["numpy"], specifier = ">=6.14.5" },
     { name = "jupyter-sphinx", specifier = ">=0.3.2" },
     { name = "myst-parser", specifier = ">=0.15.2" },
     { name = "nbsphinx", specifier = ">=0.8.7" },
@@ -221,7 +218,7 @@ docs = [
 ]
 test = [
     { name = "cirq", specifier = ">=1.0.0" },
-    { name = "hypothesis", extras = ["numpy", "zoneinfo"], specifier = ">=6.14.5" },
+    { name = "hypothesis", extras = ["numpy"], specifier = ">=6.14.5" },
     { name = "nbval" },
     { name = "ply" },
     { name = "psutil" },
@@ -229,7 +226,6 @@ test = [
     { name = "pytket", specifier = ">=1.5.0" },
     { name = "pytket-qiskit" },
     { name = "qiskit", specifier = ">=0.37.1" },
-    { name = "tzdata" },
 ]
 
 [[package]]
@@ -1669,9 +1665,6 @@ numpy = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-zoneinfo = [
-    { name = "tzdata", marker = "sys_platform == 'emscripten' or sys_platform == 'win32'" },
 ]
 
 [[package]]
