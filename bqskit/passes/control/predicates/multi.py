@@ -1,5 +1,4 @@
 """This module implements the MultiPhysicalPredicate class."""
-
 from __future__ import annotations
 
 import logging

@@ -9,7 +9,7 @@ from bqskit.passes.partitioning.quick import QuickPartitioner
 
 
 def test_reset_stop_partitioning_across_some_circuit(
-    compiler: Compiler,
+        compiler: Compiler,
 ) -> None:
     circuit = Circuit(4)
     circuit.append_gate(CXGate(), (0, 1))
@@ -20,7 +20,8 @@ def test_reset_stop_partitioning_across_some_circuit(
     output_circuit = compiler.compile(circuit, [QuickPartitioner(2)])
     assert output_circuit.num_operations == 4
     assert all(
-        isinstance(op.gate, (CircuitGate, Reset)) for op in output_circuit
+        isinstance(op.gate, (CircuitGate, Reset))
+        for op in output_circuit
     )
     assert isinstance(output_circuit[0, 0].gate, CircuitGate)
     assert output_circuit[0, 0].gate._circuit.num_qudits == 2

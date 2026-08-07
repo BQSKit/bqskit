@@ -1,5 +1,4 @@
 """This module implements the MiddleOutLayerGenerator class."""
-
 from __future__ import annotations
 
 import itertools as it
@@ -43,17 +42,13 @@ class MiddleOutLayerGenerator(SimpleLayerGenerator):
 
         # Generate successors
         successors = []
-        for edge, cycle in it.product(
-            coupling_graph,
-            range(circuit.num_cycles),
+        for (edge, cycle) in it.product(
+                coupling_graph, range(circuit.num_cycles),
         ):
             successor = circuit.copy()
             successor.insert_gate(
-                cycle,
-                self.two_qudit_gate,
-                [
-                    edge[0],
-                    edge[1],
+                cycle, self.two_qudit_gate, [
+                    edge[0], edge[1],
                 ],
             )
             successor.insert_gate(cycle, self.single_qudit_gate_1, edge[0])

@@ -26,7 +26,6 @@ Classes and Functions (:mod:`bqskit.utils`)
     test.strategies
     test.types
 """
-
 from __future__ import annotations
 
 from bqskit.utils.cachedclass import CachedClass

@@ -1,5 +1,4 @@
 """This module implements the GateCountPredicate class."""
-
 from __future__ import annotations
 
 import logging
@@ -67,14 +66,12 @@ class GateCountPredicate(PassPredicate):
     def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
         if isinstance(self.gate, str):
-            gates = list(
-                {
-                    'sq': circuit.gate_set.single_qudit_gates,
-                    'tq': circuit.gate_set.two_qudit_gates,
-                    'multi': circuit.gate_set.multi_qudit_gates,
-                    'many': circuit.gate_set.many_qudit_gates,
-                }[self.gate]
-            )
+            gates = list({
+                'sq': circuit.gate_set.single_qudit_gates,
+                'tq': circuit.gate_set.two_qudit_gates,
+                'multi': circuit.gate_set.multi_qudit_gates,
+                'many': circuit.gate_set.many_qudit_gates,
+            }[self.gate])
 
         else:
             gates = self.gate

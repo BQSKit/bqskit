@@ -1,5 +1,4 @@
 """This module implements the MachineModel class."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -77,8 +76,7 @@ class MachineModel:
             coupling_graph = CouplingGraph.all_to_all(num_qudits)
 
         if not CouplingGraph.is_valid_coupling_graph(
-            coupling_graph,
-            num_qudits,
+                coupling_graph, num_qudits,
         ):
             raise TypeError('Invalid coupling graph, expected list of tuples')
 

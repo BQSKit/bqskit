@@ -1,5 +1,4 @@
 """This module implements the TGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import TGate as _TGate

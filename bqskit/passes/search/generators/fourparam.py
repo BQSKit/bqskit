@@ -1,5 +1,4 @@
 """This module implements the FourParamGenerator class."""
-
 from __future__ import annotations
 
 import logging
@@ -15,7 +14,6 @@ from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
 _logger = logging.getLogger(__name__)
 
 
@@ -76,6 +74,7 @@ class FourParamGenerator(LayerGenerator):
         # Generate successors
         successors = []
         for edge in coupling_graph:
+
             if self.count_outer_cnots(circuit, edge) >= 3:
                 # No need to build circuits with more than 3 cnots in a row
                 if circuit.num_qudits != 2:

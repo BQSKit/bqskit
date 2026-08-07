@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from bqskit import MachineModel
 from bqskit import compile
+from bqskit import MachineModel
 from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
@@ -11,7 +11,7 @@ from bqskit.ir.gates import U3Gate
 
 
 def test_compile_blocked_input_circuit_unfold_rebase_correctly(
-    compiler: Compiler,
+        compiler: Compiler,
 ) -> None:
     circuit = Circuit(2)
     circuit.append_gate(U3Gate(), 0)

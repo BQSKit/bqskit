@@ -1,5 +1,4 @@
 """This module implements the PermutationGate."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -42,10 +41,9 @@ class PermutationGate(Gate, CachedClass):
         self._radixes = tuple([2] * num_qudits)
         self.location = tuple(location)
 
-        dim = 2**num_qudits
+        dim = 2 ** num_qudits
         entries = PermutationMatrix.from_qubit_location(
-            num_qudits,
-            self.location,
+            num_qudits, self.location,
         ).numpy.real
         rows = [
             ','.join('1' if entries[r, c] > 0.5 else '0' for c in range(dim))
@@ -63,7 +61,8 @@ class PermutationGate(Gate, CachedClass):
 
     def __eq__(self, other: object) -> bool:
         return (
-            isinstance(other, PermutationGate) and self._expr() == other._expr()
+            isinstance(other, PermutationGate)
+            and self._expr() == other._expr()
         )
 
     def __hash__(self) -> int:

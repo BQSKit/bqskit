@@ -1,5 +1,4 @@
 """This module implements the AStarHeuristic class."""
-
 from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit
@@ -50,7 +49,8 @@ class AStarHeuristic(HeuristicFunction):
 
         if not is_real_number(cost_factor):
             raise TypeError(
-                'Expected float for cost_factor, got %s.' % type(cost_factor),
+                'Expected float for cost_factor, got %s.'
+                % type(cost_factor),
             )
 
         if not isinstance(cost_gen, CostFunctionGenerator):

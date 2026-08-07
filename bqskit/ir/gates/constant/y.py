@@ -1,5 +1,4 @@
 """This module implements the YGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import YGate as _YGate

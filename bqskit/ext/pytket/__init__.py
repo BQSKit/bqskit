@@ -1,5 +1,4 @@
 """This package contains integrations with the PyTKet framework."""
-
 from __future__ import annotations
 
 from bqskit.ext.pytket.translate import bqskit_to_pytket

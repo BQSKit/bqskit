@@ -1,5 +1,4 @@
 """This module implements the GreedyHeuristic class."""
-
 from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit

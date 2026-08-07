@@ -1,5 +1,4 @@
 """This module implements the ManyQuditGatesPredicate class."""
-
 from __future__ import annotations
 
 import logging

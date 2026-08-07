@@ -11,8 +11,8 @@ from bqskit.qis.permutation import PermutationMatrix
 
 
 def test_compile_with_mapping(
-    compiler: Compiler,
-    optimization_level: int,
+        compiler: Compiler,
+        optimization_level: int,
 ) -> None:
     circuit = Circuit(3)
     circuit.append_gate(U3Gate(), [0], [0, 1, 2])

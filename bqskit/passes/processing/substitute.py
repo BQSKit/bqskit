@@ -1,5 +1,4 @@
 """This module implements the SubstitutePass."""
-
 from __future__ import annotations
 
 import itertools as it
@@ -15,7 +14,6 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.utils.typing import is_real_number
-
 _logger = logging.getLogger(__name__)
 
 
@@ -111,7 +109,8 @@ class SubstitutePass(BasePass):
         for point in points:
             if circuit[point].num_qudits < self.gate.num_qudits:
                 raise RuntimeError(
-                    f'Cannot substitute {circuit[point]} with {self.gate}.',
+                    f'Cannot substitute {circuit[point]}'
+                    f' with {self.gate}.',
                 )
 
         # Attempt substitution

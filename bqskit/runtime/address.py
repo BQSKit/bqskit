@@ -1,5 +1,4 @@
 """This module implements the RuntimeAddress NamedTuple."""
-
 from __future__ import annotations
 
 from typing import NamedTuple

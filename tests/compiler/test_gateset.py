@@ -1,5 +1,4 @@
 """This file tests the GateSet class."""
-
 from __future__ import annotations
 
 import pytest
@@ -89,7 +88,6 @@ def test_gate_set_build_layer_generator_qutrit() -> None:
     assert layergen.single_qudit_gate_1 == VariableUnitaryGate(1, [3])
     assert layergen.single_qudit_gate_2 == VariableUnitaryGate(1, [3])
 
-
 # TODO: Add tests for build_layer_generator with hybrid qudits
 
 
@@ -129,14 +127,11 @@ def test_gate_set_get_general_sq_gate() -> None:
     gate_set = GateSet({ArbitraryCPhaseGate([3, 3]), U8Gate()})
     assert gate_set.get_general_sq_gate() == U8Gate()
 
-    gate_set = GateSet(
-        {
-            ArbitraryCPhaseGate(
-                [3, 3],
-            ),
-            VariableUnitaryGate(1, [3]),
-        }
-    )
+    gate_set = GateSet({
+        ArbitraryCPhaseGate(
+            [3, 3],
+        ), VariableUnitaryGate(1, [3]),
+    })
     assert gate_set.get_general_sq_gate() == VariableUnitaryGate(1, [3])
 
 
@@ -216,8 +211,7 @@ def test_gate_set_intesection() -> None:
     assert gate_set.intersection({CNOTGate()}) == {CNOTGate()}
     assert gate_set.intersection({U3Gate()}) == {U3Gate()}
     assert gate_set.intersection({CNOTGate(), U3Gate()}) == {
-        CNOTGate(),
-        U3Gate(),
+        CNOTGate(), U3Gate(),
     }
     assert len(GateSet({U3Gate()}).intersection(gate_set)) == 1
 
@@ -446,13 +440,9 @@ def test_gate_set_or_other_set() -> None:
     assert gate_set | {CNOTGate(), U3Gate()} == gate_set
     assert gate_set | {CNOTGate()} == gate_set
     assert gate_set | {U3Gate()} == gate_set
-    assert gate_set | {CNOTGate(), U3Gate(), ToffoliGate()} == GateSet(
-        {
-            CNOTGate(),
-            U3Gate(),
-            ToffoliGate(),
-        }
-    )
+    assert gate_set | {CNOTGate(), U3Gate(), ToffoliGate()} == GateSet({
+        CNOTGate(), U3Gate(), ToffoliGate(),
+    })
     assert gate_set | {ToffoliGate()} == GateSet(
         {CNOTGate(), U3Gate(), ToffoliGate()},
     )
@@ -480,9 +470,7 @@ def test_gate_set_xor_other_set() -> None:
     assert gate_set ^ {CNOTGate()} == GateSet({U3Gate()})
     assert gate_set ^ {U3Gate()} == GateSet({CNOTGate()})
     assert gate_set ^ {
-        CNOTGate(),
-        U3Gate(),
-        ToffoliGate(),
+        CNOTGate(), U3Gate(), ToffoliGate(),
     } == GateSet({ToffoliGate()})
     assert gate_set ^ {ToffoliGate()} == GateSet(
         {CNOTGate(), U3Gate(), ToffoliGate()},
@@ -496,9 +484,8 @@ def test_gate_set_sub() -> None:
     assert gate_set - GateSet({CNOTGate(), U3Gate()}) == GateSet({})
     assert gate_set - GateSet({CNOTGate()}) == GateSet({U3Gate()})
     assert gate_set - GateSet({U3Gate()}) == GateSet({CNOTGate()})
-    assert gate_set - GateSet({CNOTGate(), U3Gate(), ToffoliGate()}) == GateSet(
-        {}
-    )
+    assert gate_set - \
+        GateSet({CNOTGate(), U3Gate(), ToffoliGate()}) == GateSet({})
     assert gate_set - GateSet({ToffoliGate()}) == gate_set
     assert gate_set - GateSet({}) == gate_set
 

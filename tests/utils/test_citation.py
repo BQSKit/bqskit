@@ -33,6 +33,5 @@ def test_citations() -> None:
 
     assert len(gathered) == 2  # test1 and test2, deduplicated
     assert set(gathered['test1']) == {
-        'PassA',
-        'PassC',
+        'PassA', 'PassC',
     }  # both passes with test1

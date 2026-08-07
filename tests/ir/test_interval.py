@@ -1,5 +1,4 @@
 """This module tests the CycleInterval class."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -130,9 +129,8 @@ class TestCycleIntervalIntersection:
         pass
 
     @given(
-        tuples(cycle_intervals(), cycle_intervals()).filter(
-            lambda x: x[0] < x[1]
-        ),
+        tuples(cycle_intervals(), cycle_intervals())
+        .filter(lambda x: x[0] < x[1]),
     )
     def test_invalid_value(
         self,
@@ -142,9 +140,8 @@ class TestCycleIntervalIntersection:
             interval[0].intersection(interval[1])
 
     @given(
-        tuples(cycle_intervals(), cycle_intervals()).filter(
-            lambda x: x[0].overlaps(x[1])
-        ),
+        tuples(cycle_intervals(), cycle_intervals())
+        .filter(lambda x: x[0].overlaps(x[1])),
     )
     def test_valid(
         self,
@@ -168,9 +165,8 @@ class TestCycleIntervalUnion:
         pass
 
     @given(
-        tuples(cycle_intervals(), cycle_intervals()).filter(
-            lambda x: x[0] < x[1] and x[0].upper < x[1].lower - 1
-        ),
+        tuples(cycle_intervals(), cycle_intervals())
+        .filter(lambda x: x[0] < x[1] and x[0].upper < x[1].lower - 1),
     )
     def test_invalid(
         self,
@@ -180,9 +176,8 @@ class TestCycleIntervalUnion:
             interval[0].union(interval[1])
 
     @given(
-        tuples(cycle_intervals(), cycle_intervals()).filter(
-            lambda x: x[0].overlaps(x[1])
-        ),
+        tuples(cycle_intervals(), cycle_intervals())
+        .filter(lambda x: x[0].overlaps(x[1])),
     )
     def test_valid(
         self,

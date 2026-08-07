@@ -9,7 +9,6 @@ from bqskit.ir.opt.cost import HilbertSchmidtCostGenerator
 def test_hilbert_schmidt_cost(r3_qubit_circuit: Circuit) -> None:
     x0 = np.random.random((r3_qubit_circuit.num_params,))
     cost = HilbertSchmidtCostGenerator().gen_cost(
-        r3_qubit_circuit,
-        r3_qubit_circuit.get_unitary(x0),
+        r3_qubit_circuit, r3_qubit_circuit.get_unitary(x0),
     )
     assert cost.get_cost(x0) < 1e-10

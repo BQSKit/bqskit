@@ -1,5 +1,4 @@
 """This module implements the CachedClass base classes."""
-
 from __future__ import annotations
 
 import logging
@@ -12,7 +11,6 @@ from bqskit.utils.docs import building_docs
 if not building_docs():
     from numpy.lib.mixins import NDArrayOperatorsMixin
 else:
-
     class NDArrayOperatorsMixin:  # type: ignore
         pass
 
@@ -41,7 +39,6 @@ class CachedClass:
         >>> x is z
         False
     """
-
     _instances: dict[Any, CachedClass] = {}
 
     def __new__(cls: type[T], *args: Any, **kwargs: Any) -> T:

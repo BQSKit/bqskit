@@ -44,7 +44,6 @@ def test_rc3x() -> None:
     c.append_gate(TdgGate(), 3)
     c.append_gate(HGate(), 3)
     import numpy as np
-
     print(np.round(c.get_unitary(), 1))
 
     assert c.get_unitary().get_distance_from(RC3XGate().get_unitary()) < 3e-8

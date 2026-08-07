@@ -14,7 +14,6 @@ There are four sets of randomly-generated circuits that are used to test
     r3_qutrit_circuit
     r6_qudit_circuit
 """
-
 from __future__ import annotations
 
 from typing import Any

@@ -1,5 +1,4 @@
 """This module implements the AttachedServer runtime."""
-
 from __future__ import annotations
 
 import logging
@@ -14,6 +13,7 @@ from bqskit.runtime.base import ServerBase
 from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.detached import ServerMailbox
 from bqskit.runtime.direction import MessageDirection
+
 
 _logger = logging.getLogger(__name__)
 

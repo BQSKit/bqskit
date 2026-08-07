@@ -1,5 +1,4 @@
 """This package implements BQSKit's rule-based passes."""
-
 from __future__ import annotations
 
 from bqskit.passes.rules.ch2cnot import CHToCNOTPass

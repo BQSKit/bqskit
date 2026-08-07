@@ -1,5 +1,4 @@
 """This module implements the RYGate."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -41,6 +40,6 @@ class RYGate(
         self.check_env_matrix(env_matrix)
         a = np.real(env_matrix[0, 0] + env_matrix[1, 1])
         b = np.real(env_matrix[1, 0] - env_matrix[0, 1])
-        theta = 2 * np.arccos(a / np.sqrt(a**2 + b**2))
+        theta = 2 * np.arccos(a / np.sqrt(a ** 2 + b ** 2))
         theta *= -1 if b > 0 else 1
         return [theta]

@@ -1,5 +1,4 @@
 """This module implements the SycamoreGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
@@ -27,5 +26,6 @@ class SycamoreGate(Gate, CachedClass):
     _num_qudits = 2
     _qasm_name = 'syc'
     _expr = _UnitaryExpression(
-        'Sycamore() { [[1,0,0,0],[0,0,~i,0],[0,~i,0,0],[0,0,0,e^(~i*pi/6)]] }',
+        'Sycamore() { [[1,0,0,0],[0,0,~i,0],'
+        '[0,~i,0,0],[0,0,0,e^(~i*pi/6)]] }',
     )

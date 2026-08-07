@@ -1,5 +1,4 @@
 """This module implements the RandomStartGenerator class."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -11,7 +10,6 @@ from bqskit.utils.typing import is_integer
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.state.system import StateSystem

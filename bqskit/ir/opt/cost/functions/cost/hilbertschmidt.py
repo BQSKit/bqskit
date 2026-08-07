@@ -1,8 +1,5 @@
-"""
-This module implements the HilbertSchmidtCost and
-HilbertSchmidtCostGenerator.
-"""
-
+"""This module implements the HilbertSchmidtCost and
+HilbertSchmidtCostGenerator."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -16,8 +13,8 @@ from bqskit.qis.state.system import StateSystem
 
 if TYPE_CHECKING:
     from bqskit.ir.circuit import Circuit
-    from bqskit.ir.opt.cost.function import CostFunction
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+    from bqskit.ir.opt.cost.function import CostFunction
 
 
 class HilbertSchmidtCost(

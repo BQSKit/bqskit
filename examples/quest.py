@@ -1,5 +1,4 @@
 """This script synthesizes and executes a circuit using the Quest algorithm."""
-
 from __future__ import annotations
 
 import logging

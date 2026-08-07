@@ -1,5 +1,4 @@
 """This module implements the IterativeScanningGateRemovalPass."""
-
 from __future__ import annotations
 
 import logging
@@ -16,7 +15,6 @@ from bqskit.passes.partitioning import ScanPartitioner
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.util import UnfoldPass
 from bqskit.utils.typing import is_integer
-
 _logger = logging.getLogger(__name__)
 
 
@@ -75,7 +73,8 @@ class IterativeScanningGateRemovalPass(PassAlias):
 
         if width_to_partition <= block_size:
             raise ValueError(
-                'Expected width to partition at to be greater than block size.',
+                'Expected width to partition at to be greater'
+                ' than block size.',
             )
 
         scan = ScanningGateRemovalPass(*args, **kwargs)

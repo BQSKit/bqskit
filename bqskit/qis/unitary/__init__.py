@@ -4,7 +4,6 @@ The Unitary package.
 This package exports the Unitary base class and several children
 classes: UnitaryMatrix, UnitaryBuilder, and LocallyOptimizableUnitary.
 """
-
 from __future__ import annotations
 
 from bqskit.qis.unitary.optimizable import LocallyOptimizableUnitary

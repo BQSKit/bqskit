@@ -1,5 +1,4 @@
 """This module implements the QPredictDecompositionPass class."""
-
 from __future__ import annotations
 
 import logging
@@ -154,7 +153,8 @@ class QPredictDecompositionPass(SynthesisPass):
 
         if max_depth is not None and not is_integer(max_depth):
             raise TypeError(
-                'Expected max_depth to be an integer, got %s' % type(max_depth),
+                'Expected max_depth to be an integer, got %s'
+                % type(max_depth),
             )
 
         if max_depth is not None and max_depth <= 0:
@@ -227,6 +227,7 @@ class QPredictDecompositionPass(SynthesisPass):
             sorted_locations = self.analyze_remainder(remainder, locations)
 
             for loc in sorted_locations:
+
                 # Never predict the previous location
                 if loc == last_loc:
                     continue
@@ -300,7 +301,8 @@ class QPredictDecompositionPass(SynthesisPass):
                     location_scores_by_size[len(loc)][loc] += np.abs(coef)
 
         sorted_locations_by_size: dict[int, list[CircuitLocation]] = {
-            size: sorted(
+            size:
+            sorted(
                 list(location_scores.keys()),
                 key=lambda x: location_scores[x],
                 reverse=True,

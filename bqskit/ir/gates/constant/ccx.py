@@ -1,5 +1,4 @@
 """This module implements the CCXGate/ToffoliGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import Controlled as _Controlled

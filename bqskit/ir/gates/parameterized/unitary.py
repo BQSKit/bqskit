@@ -1,5 +1,4 @@
 """This module implements the VariableUnitaryGate."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -41,8 +40,7 @@ class VariableUnitaryGate(GeneralGate):
         self.shape = (self.dim, self.dim)
         self._num_params = 2 * self.dim**2
         self._name = 'VariableUnitaryGate(%d, %s)' % (
-            self.num_qudits,
-            str(self.radixes),
+            self.num_qudits, str(self.radixes),
         )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

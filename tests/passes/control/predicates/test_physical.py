@@ -13,8 +13,7 @@ from bqskit.passes.control.predicates import PhysicalPredicate
 
 
 @pytest.mark.parametrize(
-    'gate_set',
-    [
+    'gate_set', [
         set(),
         {HGate()},
         {XGate()},

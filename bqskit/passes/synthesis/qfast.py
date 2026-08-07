@@ -1,5 +1,4 @@
 """This module implements the QFASTDecompositionPass class."""
-
 from __future__ import annotations
 
 import copy
@@ -107,8 +106,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
         if max_depth is not None and not is_integer(max_depth):
             raise TypeError(
-                'Expected max_depth to be an integer, got %s'
-                % type(
+                'Expected max_depth to be an integer, got %s' % type(
                     max_depth,
                 ),
             )
@@ -159,6 +157,7 @@ class QFASTDecompositionPass(SynthesisPass):
 
         # Main loop
         while True:
+
             # Instantiate circuit
             circuit.instantiate(utry, **instantiate_options)
             dist = self.cost.calc_cost(circuit, utry)

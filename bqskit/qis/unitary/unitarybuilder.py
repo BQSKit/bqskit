@@ -1,11 +1,10 @@
 """This module implements the UnitaryBuilder class."""
-
 from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 from typing import cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -52,14 +51,17 @@ class UnitaryBuilder(Unitary):
         Examples:
             >>> builder = UnitaryBuilder(4)  # Creates a 4-qubit builder.
         """
+
         if not is_integer(num_qudits):
             raise TypeError(
-                'Expected int for num_qudits, got %s.' % type(num_qudits),
+                'Expected int for num_qudits, got %s.' %
+                type(num_qudits),
             )
 
         if num_qudits <= 0:
             raise ValueError(
-                'Expected positive number for num_qudits, got %d.' % num_qudits,
+                'Expected positive number for num_qudits, got %d.' %
+                num_qudits,
             )
 
         self._num_qudits = num_qudits
@@ -127,7 +129,6 @@ class UnitaryBuilder(Unitary):
             - This operation is performed using tensor contraction.
         """
         from bqskit.ir.location import CircuitLocation
-
         if check_arguments:
             if not isinstance(utry, UnitaryMatrix):
                 raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
@@ -206,7 +207,6 @@ class UnitaryBuilder(Unitary):
             - This operation is performed using tensor contraction.
         """
         from bqskit.ir.location import CircuitLocation
-
         if check_arguments:
             if not isinstance(utry, UnitaryMatrix):
                 raise TypeError('Expected UnitaryMatrix, got %s', type(utry))
@@ -225,11 +225,18 @@ class UnitaryBuilder(Unitary):
 
         location = cast(CircuitLocation, location)
         left_perm = list(range(self.num_qudits))
-        mid_perm = [x + self.num_qudits for x in left_perm if x not in location]
+        mid_perm = [
+            x + self.num_qudits
+            for x in left_perm
+            if x not in location
+        ]
         right_perm = [x + self.num_qudits for x in location]
 
         right_dim = int(
-            np.prod([self.radixes[x - self.num_qudits] for x in right_perm]),
+            np.prod([
+                self.radixes[x - self.num_qudits]
+                for x in right_perm
+            ]),
         )
 
         utry = utry.dagger if inverse else utry
@@ -256,7 +263,6 @@ class UnitaryBuilder(Unitary):
         See :func:`apply_right` for more info.
         """
         from bqskit.ir.location import CircuitLocation
-
         left_perm = list(cast(CircuitLocation, location))
         mid_perm = [x for x in range(self.num_qudits) if x not in left_perm]
         right_perm = [x + self.num_qudits for x in range(self.num_qudits)]
@@ -288,14 +294,20 @@ class UnitaryBuilder(Unitary):
         See :func:`apply_left` for more info.
         """
         from bqskit.ir.location import CircuitLocation
-
         location = cast(CircuitLocation, location)
         left_perm = list(range(self.num_qudits))
-        mid_perm = [x + self.num_qudits for x in left_perm if x not in location]
+        mid_perm = [
+            x + self.num_qudits
+            for x in left_perm
+            if x not in location
+        ]
         right_perm = [x + self.num_qudits for x in location]
 
         right_dim = int(
-            np.prod([self.radixes[x - self.num_qudits] for x in right_perm]),
+            np.prod([
+                self.radixes[x - self.num_qudits]
+                for x in right_perm
+            ]),
         )
 
         perm = left_perm + mid_perm + right_perm
@@ -313,19 +325,17 @@ class UnitaryBuilder(Unitary):
         return out_M
 
     def calc_env_matrix(
-        self,
-        location: Sequence[int],
+            self, location: Sequence[int],
     ) -> npt.NDArray[np.complex128]:
         """
         Calculates the environment matrix w.r.t.
 
         the specified location.
-
-        Args:
+                Args:
                     location (Sequence[int]): Calculate the environment matrix
                         with respect to the qudit indices in location.
 
-        Returns:
+                Returns:
                     np.ndarray: The environmental matrix.
         """
         left_perm = list(range(self.num_qudits))
@@ -336,8 +346,7 @@ class UnitaryBuilder(Unitary):
         perm = left_perm + right_perm
         a = np.transpose(self.tensor, perm)
         a = np.reshape(
-            a,
-            (
+            a, (
                 2 ** (self.num_qudits - len(location)),
                 2 ** (self.num_qudits - len(location)),
                 2 ** len(location),

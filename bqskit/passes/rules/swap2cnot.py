@@ -1,5 +1,4 @@
 """This module implements the SwapToCNOTPass."""
-
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass

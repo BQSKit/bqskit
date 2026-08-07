@@ -1,5 +1,4 @@
 """This module implements the Manager class."""
-
 from __future__ import annotations
 
 import argparse
@@ -10,17 +9,19 @@ from collections.abc import Sequence
 from multiprocessing.connection import Connection
 from typing import Any
 from typing import cast
+from typing import Optional
 
 from bqskit.runtime import default_manager_port
 from bqskit.runtime import default_worker_port
 from bqskit.runtime.address import RuntimeAddress
-from bqskit.runtime.base import ServerBase
 from bqskit.runtime.base import import_tests_package
 from bqskit.runtime.base import parse_ipports
+from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
+
 
 _logger = logging.getLogger(__name__)
 
@@ -145,6 +146,7 @@ class Manager(ServerBase):
     ) -> None:
         """Process the message coming from `direction`."""
         if direction == MessageDirection.ABOVE:
+
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.most_recent_read_submit = rtask.unique_id
@@ -178,6 +180,7 @@ class Manager(ServerBase):
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 
         elif direction == MessageDirection.BELOW:
+
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.send_up_or_schedule_tasks([rtask])
@@ -191,7 +194,7 @@ class Manager(ServerBase):
                 self.handle_result_from_below(result)
 
             elif msg == RuntimeMessage.WAITING:
-                p = cast(tuple[int, RuntimeAddress | None], payload)
+                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
                 num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
                 self.update_upstream_idle_workers()
@@ -254,13 +257,11 @@ class Manager(ServerBase):
             self.update_upstream_idle_workers()
 
         if len(tasks) > num_idle:
-            self.outgoing.put(
-                (
-                    self.upstream,
-                    RuntimeMessage.SUBMIT_BATCH,
-                    tasks[num_idle:],
-                )
-            )
+            self.outgoing.put((
+                self.upstream,
+                RuntimeMessage.SUBMIT_BATCH,
+                tasks[num_idle:],
+            ))
 
     def handle_result_from_below(self, result: RuntimeResult) -> None:
         """Forward the result to its destination and track the completion."""
@@ -298,49 +299,42 @@ def start_manager() -> None:
         description='Launch a BQSKit runtime manager process.',
     )
     parser.add_argument(
-        '-n',
-        '--num-workers',
+        '-n', '--num-workers',
         default=-1,
         type=int,
         help='The number of workers to spawn. If negative, will spawn'
         ' one worker for each available CPU. Defaults to -1.',
     )
     parser.add_argument(
-        '-m',
-        '--managers',
+        '-m', '--managers',
         nargs='+',
         help='The ip and port pairs were managers are expected to be waiting.',
     )
     parser.add_argument(
-        '-p',
-        '--port',
+        '-p', '--port',
         type=int,
         default=default_manager_port,
         help='The port this manager will listen for servers on.',
     )
     parser.add_argument(
-        '-w',
-        '--worker-port',
+        '-w', '--worker-port',
         type=int,
         default=default_worker_port,
         help='The port this manager will listen for workers on.',
     )
     parser.add_argument(
-        '-x',
-        '--only-connect',
+        '-x', '--only-connect',
         action='store_true',
         help='Do not spawn workers, only connect to them.',
     )
     parser.add_argument(
-        '-v',
-        '--verbose',
+        '-v', '--verbose',
         action='count',
         default=0,
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     parser.add_argument(
-        '-i',
-        '--import-tests',
+        '-i', '--import-tests',
         action='store_true',
         help='Import the bqskit tests package; used during testing.',
     )

@@ -1,5 +1,4 @@
 """This module tests the pauli library in bqskit.qis.pauli."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -37,7 +36,7 @@ class TestPauliMatricesConstructor:
     def test_size_1(self) -> None:
         num_qubits = 1
         paulis = PauliMatrices(num_qubits)
-        assert len(paulis) == 4**num_qubits
+        assert len(paulis) == 4 ** num_qubits
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
@@ -52,7 +51,7 @@ class TestPauliMatricesConstructor:
     def test_size_2(self) -> None:
         num_qubits = 2
         paulis = PauliMatrices(num_qubits)
-        assert len(paulis) == 4**num_qubits
+        assert len(paulis) == 4 ** num_qubits
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
@@ -79,7 +78,7 @@ class TestPauliMatricesConstructor:
     def test_size_3(self) -> None:
         num_qubits = 3
         paulis = PauliMatrices(num_qubits)
-        assert len(paulis) == 4**num_qubits
+        assert len(paulis) == 4 ** num_qubits
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         X = np.array([[0, 1], [1, 0]], dtype=np.complex128)
@@ -506,8 +505,7 @@ class TestPauliMatricesDotProduct:
             PauliMatrices(1).dot_product(invalid_alpha)
 
     @pytest.mark.parametrize(
-        'alpha, prod',
-        [
+        'alpha, prod', [
             ([1, 0, 0, 0], PauliMatrices.I),
             ([0, 1, 0, 0], PauliMatrices.X),
             ([0, 0, 1, 0], PauliMatrices.Y),
@@ -516,7 +514,9 @@ class TestPauliMatricesDotProduct:
             ([0, 2, 0, 1], 2 * PauliMatrices.X + PauliMatrices.Z),
             (
                 [1, 0, 3, 1],
-                PauliMatrices.I + 3 * PauliMatrices.Y + PauliMatrices.Z,
+                PauliMatrices.I
+                + 3 * PauliMatrices.Y
+                + PauliMatrices.Z,
             ),
             (
                 [91.3, 1.3, 1.7, 1],
@@ -531,8 +531,7 @@ class TestPauliMatricesDotProduct:
         assert np.allclose(PauliMatrices(1).dot_product(alpha), prod)
 
     @pytest.mark.parametrize(
-        'alpha, prod',
-        [
+        'alpha, prod', [
             (
                 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 np.kron(PauliMatrices.I, PauliMatrices.I),
@@ -610,8 +609,7 @@ class TestPauliMatricesDotProduct:
         ],
     )
     def test_size_2(
-        self,
-        alpha: RealVector,
+        self, alpha: RealVector,
         prod: npt.NDArray[np.complex128],
     ) -> None:
         assert np.allclose(PauliMatrices(2).dot_product(alpha), prod)
@@ -636,8 +634,7 @@ class TestPauliMatricesFromString:
         pass
 
     @pytest.mark.parametrize(
-        'invalid_str',
-        [
+        'invalid_str', [
             'ABC',
             'IXYZA',
             '\t AIXYZ  ,, \n\r\tabc\t',
@@ -651,8 +648,7 @@ class TestPauliMatricesFromString:
             PauliMatrices.from_string(invalid_str)
 
     @pytest.mark.parametrize(
-        'pauli_str, pauli_mat',
-        [
+        'pauli_str, pauli_mat', [
             (
                 'XYZ',
                 np.kron(
@@ -687,8 +683,7 @@ class TestPauliMatricesFromString:
         ],
     )
     def test_single(
-        self,
-        pauli_str: str,
+        self, pauli_str: str,
         pauli_mat: npt.NDArray[np.complex128],
     ) -> None:
         assert isinstance(PauliMatrices.from_string(pauli_str), np.ndarray)
@@ -698,11 +693,9 @@ class TestPauliMatricesFromString:
         )
 
     @pytest.mark.parametrize(
-        'pauli_str, pauli_mats',
-        [
+        'pauli_str, pauli_mats', [
             (
-                'XYZ, XYZ',
-                [
+                'XYZ, XYZ', [
                     np.kron(
                         np.kron(
                             PauliMatrices.X,
@@ -720,8 +713,7 @@ class TestPauliMatricesFromString:
                 ],
             ),
             (
-                'XYZ, XII',
-                [
+                'XYZ, XII', [
                     np.kron(
                         np.kron(
                             PauliMatrices.X,
@@ -739,8 +731,7 @@ class TestPauliMatricesFromString:
                 ],
             ),
             (
-                'XYZ, XII, IIX',
-                [
+                'XYZ, XII, IIX', [
                     np.kron(
                         np.kron(
                             PauliMatrices.X,
@@ -765,8 +756,7 @@ class TestPauliMatricesFromString:
                 ],
             ),
             (
-                'XYZ, XII, IIX, \t\n\r  ,, \t\n\rIXXY',
-                [
+                'XYZ, XII, IIX, \t\n\r  ,, \t\n\rIXXY', [
                     np.kron(
                         np.kron(
                             PauliMatrices.X,
@@ -803,8 +793,7 @@ class TestPauliMatricesFromString:
         ],
     )
     def test_multi(
-        self,
-        pauli_str: str,
+        self, pauli_str: str,
         pauli_mats: list[npt.NDArray[np.complex128]],
     ) -> None:
         paulis = PauliMatrices.from_string(pauli_str)
@@ -834,7 +823,7 @@ class TestPauliZMatricesConstructor:
     def test_size_1(self) -> None:
         num_qubits = 1
         paulis = PauliZMatrices(num_qubits)
-        assert len(paulis) == 2**num_qubits
+        assert len(paulis) == 2 ** num_qubits
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
@@ -845,7 +834,7 @@ class TestPauliZMatricesConstructor:
     def test_size_2(self) -> None:
         num_qubits = 2
         paulis = PauliZMatrices(num_qubits)
-        assert len(paulis) == 2**num_qubits
+        assert len(paulis) == 2 ** num_qubits
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
@@ -858,7 +847,7 @@ class TestPauliZMatricesConstructor:
     def test_size_3(self) -> None:
         num_qubits = 3
         paulis = PauliZMatrices(num_qubits)
-        assert len(paulis) == 2**num_qubits
+        assert len(paulis) == 2 ** num_qubits
 
         I = np.array([[1, 0], [0, 1]], dtype=np.complex128)
         Z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
@@ -1083,8 +1072,7 @@ class TestPauliZMatricesDotProduct:
             PauliZMatrices(1).dot_product(invalid_alpha)
 
     @pytest.mark.parametrize(
-        'alpha, prod',
-        [
+        'alpha, prod', [
             ([1, 0], PauliZMatrices.I),
             ([0, 1], PauliZMatrices.Z),
             ([1, 1], PauliZMatrices.I + PauliZMatrices.Z),
@@ -1094,8 +1082,7 @@ class TestPauliZMatricesDotProduct:
         assert np.allclose(PauliZMatrices(1).dot_product(alpha), prod)
 
     @pytest.mark.parametrize(
-        'alpha, prod',
-        [
+        'alpha, prod', [
             (
                 [1, 0, 0, 0],
                 np.kron(PauliZMatrices.I, PauliZMatrices.I),
@@ -1125,8 +1112,7 @@ class TestPauliZMatricesDotProduct:
         ],
     )
     def test_size_2(
-        self,
-        alpha: RealVector,
+        self, alpha: RealVector,
         prod: npt.NDArray[np.complex128],
     ) -> None:
         assert np.allclose(PauliZMatrices(2).dot_product(alpha), prod)
@@ -1151,8 +1137,7 @@ class TestPauliZMatricesFromString:
         pass
 
     @pytest.mark.parametrize(
-        'invalid_str',
-        [
+        'invalid_str', [
             'ABC',
             'IXYZA',
             '\t AIXYZ  ,, \n\r\tabc\t',
@@ -1166,8 +1151,7 @@ class TestPauliZMatricesFromString:
             PauliZMatrices.from_string(invalid_str)
 
     @pytest.mark.parametrize(
-        'pauli_str, pauli_mat',
-        [
+        'pauli_str, pauli_mat', [
             (
                 'IZZ',
                 np.kron(
@@ -1213,11 +1197,9 @@ class TestPauliZMatricesFromString:
         )
 
     @pytest.mark.parametrize(
-        'pauli_str, pauli_mats',
-        [
+        'pauli_str, pauli_mats', [
             (
-                'IIZ, IIZ',
-                [
+                'IIZ, IIZ', [
                     np.kron(
                         np.kron(
                             PauliZMatrices.I,
@@ -1235,8 +1217,7 @@ class TestPauliZMatricesFromString:
                 ],
             ),
             (
-                'ZIZ, ZZI',
-                [
+                'ZIZ, ZZI', [
                     np.kron(
                         np.kron(
                             PauliZMatrices.Z,
@@ -1254,8 +1235,7 @@ class TestPauliZMatricesFromString:
                 ],
             ),
             (
-                'IIZ, IZI, ZZZ',
-                [
+                'IIZ, IZI, ZZZ', [
                     np.kron(
                         np.kron(
                             PauliZMatrices.I,
@@ -1282,8 +1262,7 @@ class TestPauliZMatricesFromString:
         ],
     )
     def test_multi(
-        self,
-        pauli_str: str,
+        self, pauli_str: str,
         pauli_mats: list[npt.NDArray[np.complex128]],
     ) -> None:
         paulis = PauliZMatrices.from_string(pauli_str)

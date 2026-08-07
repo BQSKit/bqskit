@@ -1,5 +1,4 @@
 """This module implements the ISwapGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression

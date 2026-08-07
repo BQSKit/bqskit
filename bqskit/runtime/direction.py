@@ -1,5 +1,4 @@
 """This module implements the MessageDirection enum."""
-
 from __future__ import annotations
 
 from enum import IntEnum

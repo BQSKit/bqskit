@@ -27,12 +27,12 @@ def test_csum_gate_proj() -> None:
         csum = CSUMGate(radix)
         csum_unitary = csum.get_unitary()
 
-        expected = np.zeros((radix**2, radix**2), dtype=np.complex128)
+        expected = np.zeros((radix ** 2, radix ** 2), dtype=np.complex128)
         for i in range(radix):
             for j in range(radix):
                 ket = i * radix + ((i + j) % radix)
                 bra = i * radix + j
-                expected += build_proj_matrix(ket, bra, radix**2)
+                expected += build_proj_matrix(ket, bra, radix ** 2)
 
         assert np.allclose(csum_unitary, expected)
 
@@ -102,7 +102,7 @@ def test_pd_gate_proj() -> None:
             expected = np.zeros((radix, radix), dtype=np.complex128)
             for j in range(radix):
                 proj = build_proj_matrix(j, j, radix)
-                expected += ((-(omega**2)) ** (1 if i == j else 0)) * proj
+                expected += ((-omega ** 2) ** (1 if i == j else 0)) * proj
 
             assert np.allclose(pd_unitary, expected)
 
@@ -132,17 +132,17 @@ def test_sub_swap_proj() -> None:
                 subswap = SubSwapGate(radix, f'{i},{j};{j},{i}')
                 subswap_unitary = subswap.get_unitary()
 
-                dim = (radix**2, radix**2)
+                dim = (radix ** 2, radix ** 2)
                 expected = np.zeros(dim, dtype=np.complex128)
                 for k in range(radix):
                     for l in range(radix):
                         ind = k * radix + l
                         inv = l * radix + k
                         if (k == i and l == j) or (k == j and l == i):
-                            expected += build_proj_matrix(ind, inv, radix**2)
+                            expected += build_proj_matrix(ind, inv, radix ** 2)
 
                         else:
-                            expected += build_proj_matrix(ind, ind, radix**2)
+                            expected += build_proj_matrix(ind, ind, radix ** 2)
 
                 assert np.allclose(subswap_unitary, expected)
 

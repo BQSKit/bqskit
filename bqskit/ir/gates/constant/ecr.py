@@ -1,5 +1,4 @@
 """This module implements the ECRGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
@@ -29,7 +28,8 @@ class ECRGate(Gate, CachedClass):
     _num_qudits = 2
     _qasm_name = 'ecr'
     _expr = _UnitaryExpression(
-        'ECR() { 1/sqrt(2) * [[0,0,1,i],[0,0,i,1],[1,~i,0,0],[~i,1,0,0]] }',
+        'ECR() { 1/sqrt(2) * '
+        '[[0,0,1,i],[0,0,i,1],[1,~i,0,0],[~i,1,0,0]] }',
     )
 
     def __init__(self) -> None:

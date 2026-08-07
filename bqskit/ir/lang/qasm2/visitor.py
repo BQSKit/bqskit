@@ -1,13 +1,12 @@
 """This module implements a OPENQASM parse tree visitor."""
-
 from __future__ import annotations
 
 import logging
 import os
 from dataclasses import dataclass
 from typing import Any
-from typing import NamedTuple
 from typing import cast
+from typing import NamedTuple
 
 import lark
 import numpy as np
@@ -74,6 +73,7 @@ from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -131,10 +131,8 @@ class CustomGateDef:
         param_exps: list[lark.Tree | float],
         params: list[float],
     ) -> list[float]:
-        """
-        Substitute params into the place holders in param_exp and
-        evaluate.
-        """
+        """Substitute params into the place holders in param_exp and
+        evaluate."""
         eval_params = []
         for exp in param_exps:
             if isinstance(exp, float):
@@ -239,10 +237,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['sqisw'] = GateDef('sqisw', 0, 2, SqrtISwapGate())
         self.gate_defs['swap'] = GateDef('swap', 0, 2, SwapGate())
         self.gate_defs['cswap'] = GateDef(
-            'cswap',
-            0,
-            3,
-            ControlledGate(SwapGate()),
+            'cswap', 0, 3, ControlledGate(SwapGate()),
         )
         self.gate_defs['sx'] = GateDef('sx', 0, 1, SXGate())
         self.gate_defs['v'] = GateDef('v', 0, 1, SXGate())
@@ -259,10 +254,7 @@ class OPENQASMVisitor(Visitor):
         self.gate_defs['c3x'] = GateDef('c3x', 0, 4, ControlledGate(XGate(), 3))
         self.gate_defs['c4x'] = GateDef('c4x', 0, 5, ControlledGate(XGate(), 4))
         self.gate_defs['c3sqrtx'] = GateDef(
-            'c3sqrtx',
-            0,
-            4,
-            ControlledGate(SXGate(), 3),
+            'c3sqrtx', 0, 4, ControlledGate(SXGate(), 3),
         )
         self.gate_defs['rccx'] = GateDef('rccx', 0, 3, RCCXGate())
         self.gate_defs['rc3x'] = GateDef('rc3x', 0, 4, RC3XGate())
@@ -553,9 +545,9 @@ class OPENQASMVisitor(Visitor):
     def incstmt(self, tree: lark.Tree) -> None:
         """Include statement node."""
         file_name = str(tree.children[0])
-        if file_name[0] == '"':
+        if file_name[0] == "\"":
             file_name = file_name[1:]
-        if file_name[-1] == '"':
+        if file_name[-1] == "\"":
             file_name = file_name[:-1]
 
         if not os.path.isfile(file_name):
@@ -660,7 +652,8 @@ class OPENQASMVisitor(Visitor):
             self.op_list.append(op)
         else:
             locations = [
-                CircuitLocation(i) for i in range(self.qubit_regs[0][1])
+                CircuitLocation(i)
+                for i in range(self.qubit_regs[0][1])
             ]
             for location in locations:
                 op = Operation(Reset(), location, params)

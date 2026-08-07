@@ -1,5 +1,4 @@
 """This module implements the DetachedServer runtime."""
-
 from __future__ import annotations
 
 import argparse
@@ -15,16 +14,18 @@ from multiprocessing.connection import Listener
 from threading import Thread
 from typing import Any
 from typing import cast
+from typing import Optional
 
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
-from bqskit.runtime.base import ServerBase
 from bqskit.runtime.base import import_tests_package
 from bqskit.runtime.base import parse_ipports
+from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
+
 
 _logger = logging.getLogger(__name__)
 
@@ -122,6 +123,7 @@ class DetachedServer(ServerBase):
     ) -> None:
         """Process the message coming from `direction`."""
         if direction == MessageDirection.CLIENT:
+
             if msg == RuntimeMessage.CONNECT:
                 paths = cast(list[str], payload)
                 self.handle_connect(conn, paths)
@@ -148,6 +150,7 @@ class DetachedServer(ServerBase):
                 raise RuntimeError(f'Unexpected message type: {msg.name}')
 
         elif direction == MessageDirection.BELOW:
+
             if msg == RuntimeMessage.SUBMIT:
                 rtask = cast(RuntimeTask, payload)
                 self.schedule_tasks([rtask])
@@ -174,7 +177,7 @@ class DetachedServer(ServerBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                p = cast(tuple[int, RuntimeAddress | None], payload)
+                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
                 num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
 
@@ -250,7 +253,7 @@ class DetachedServer(ServerBase):
             self.handle_cancel_comp_task(task_id)
 
         tasks_to_pop = []
-        for task_id, (tid, other_conn) in self.tasks.items():
+        for (task_id, (tid, other_conn)) in self.tasks.items():
             if other_conn == conn:
                 tasks_to_pop.append((task_id, tid))
 
@@ -267,7 +270,6 @@ class DetachedServer(ServerBase):
     ) -> None:
         """Convert a :class:`CompilationTask` into an internal one."""
         from bqskit.compiler.task import CompilationTask
-
         mailbox_id = self._get_new_mailbox_id()
         self.tasks[task.task_id] = (mailbox_id, conn)
         self.mailbox_to_task_dict[mailbox_id] = task.task_id
@@ -316,7 +318,6 @@ class DetachedServer(ServerBase):
     def handle_status(self, conn: Connection, request: uuid.UUID) -> None:
         """Inform the client if the task is finished or not."""
         from bqskit.compiler.status import CompilationStatus
-
         if request not in self.clients[conn] or request not in self.tasks:
             # This task is unknown to the system
             m = (conn, RuntimeMessage.STATUS, CompilationStatus.UNKNOWN)
@@ -428,22 +429,19 @@ def start_server() -> None:
         help='The ip and port pairs were managers are expected to be waiting.',
     )
     parser.add_argument(
-        '-p',
-        '--port',
+        '-p', '--port',
         type=int,
         default=default_server_port,
         help='The port this server will listen for clients on.',
     )
     parser.add_argument(
-        '--verbose',
-        '-v',
+        '--verbose', '-v',
         action='count',
         default=0,
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     parser.add_argument(
-        '--import-tests',
-        '-i',
+        '--import-tests', '-i',
         action='store_true',
         help='Import the bqskit tests package; used during testing.',
     )

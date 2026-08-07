@@ -1,5 +1,4 @@
 """This module defines the PassPredicate base class."""
-
 from __future__ import annotations
 
 import abc

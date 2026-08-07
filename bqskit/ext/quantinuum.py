@@ -1,5 +1,4 @@
 """This module implemenets Quantinuum QPU models."""
-
 from __future__ import annotations
 
 from bqskit.compiler.machine import MachineModel

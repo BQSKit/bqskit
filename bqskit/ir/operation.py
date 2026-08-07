@@ -1,5 +1,4 @@
 """This module implements the Operation class."""
-
 from __future__ import annotations
 
 import typing

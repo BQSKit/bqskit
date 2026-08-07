@@ -1,5 +1,4 @@
 """This module implements hypothesis strategies for BQSKit."""
-
 from __future__ import annotations
 
 import inspect
@@ -7,7 +6,6 @@ from collections.abc import Sequence
 from typing import Any
 
 from hypothesis.control import assume
-from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import composite
 from hypothesis.strategies import deferred
 from hypothesis.strategies import dictionaries
@@ -19,6 +17,7 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
 from hypothesis.strategies import permutations
 from hypothesis.strategies import sampled_from
+from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 
@@ -94,9 +93,7 @@ def unitaries(
     """Hypothesis strategy for generating `UnitaryMatrix`'s."""
     num_qudits, radixes = draw(
         num_qudits_and_radixes(
-            max_num_qudits,
-            allowed_bases,
-            min_num_qudits,
+            max_num_qudits, allowed_bases, min_num_qudits,
         ),
     )
     return UnitaryMatrix.random(num_qudits, radixes)
@@ -124,9 +121,7 @@ def state_vectors(
     """Hypothesis strategy for generating `StateVector`'s."""
     num_qudits, radixes = draw(
         num_qudits_and_radixes(
-            max_num_qudits,
-            allowed_bases,
-            min_num_qudits,
+            max_num_qudits, allowed_bases, min_num_qudits,
         ),
     )
     return StateVector.random(num_qudits, radixes)
@@ -302,16 +297,14 @@ def operations(
         ),
     )
     params = draw(
-        one_of(
-            [
-                lists(floats(), max_size=0),
-                lists(
-                    floats(allow_nan=False, allow_infinity=False, width=16),
-                    min_size=gate.num_params,
-                    max_size=gate.num_params,
-                ),
-            ]
-        ),
+        one_of([
+            lists(floats(), max_size=0),
+            lists(
+                floats(allow_nan=False, allow_infinity=False, width=16),
+                min_size=gate.num_params,
+                max_size=gate.num_params,
+            ),
+        ]),
     )
     return Operation(gate, location, params)
 
@@ -325,6 +318,7 @@ def circuits(
     constant: bool = False,
 ) -> Circuit:
     """Hypothesis strategy for generating circuits."""
+
     if not isinstance(max_gates, int):
         raise TypeError(f'Expected int for max_gates, got: f{type(max_gates)}.')
 

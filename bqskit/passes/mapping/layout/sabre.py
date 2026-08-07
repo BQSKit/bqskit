@@ -1,5 +1,4 @@
 """This module implements the GeneralizedSabreLayoutPass class."""
-
 from __future__ import annotations
 
 import logging
@@ -52,7 +51,8 @@ class GeneralizedSabreLayoutPass(BasePass, GeneralizedSabreAlgorithm):
         """
         if not isinstance(total_passes, int):
             raise TypeError(
-                f'Expected int for total_passes, got {type(total_passes)}',
+                'Expected int for total_passes'
+                f', got {type(total_passes)}',
             )
 
         if total_passes < 1:

@@ -1,5 +1,4 @@
 """This module implements the VariableLocationGate."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -114,13 +113,11 @@ class VariableLocationGate(ComposedGate):
 
         self.extension_size = self.num_qudits - self.gate.num_qudits
         # TODO: This needs to changed for radixes
-        self.I = np.identity(2**self.extension_size)
-        self.perms = np.array(
-            [
-                PermutationMatrix.from_qubit_location(self.num_qudits, l)  # type: ignore  # noqa
-                for l in self.locations
-            ]
-        )
+        self.I = np.identity(2 ** self.extension_size)
+        self.perms = np.array([
+            PermutationMatrix.from_qubit_location(self.num_qudits, l)  # type: ignore  # noqa
+            for l in self.locations
+        ])
 
     def get_location(self, params: RealVector) -> tuple[int, ...]:
         """Returns the gate's location."""
@@ -133,8 +130,8 @@ class VariableLocationGate(ComposedGate):
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Split params into subgate params and location params."""
         return (
-            np.array(params[: self.gate.num_params]),
-            np.array(params[self.gate.num_params :]),
+            np.array(params[:self.gate.num_params]),
+            np.array(params[self.gate.num_params:]),
         )
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:

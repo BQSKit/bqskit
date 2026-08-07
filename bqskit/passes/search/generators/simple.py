@@ -1,5 +1,4 @@
 """This module implements the SimpleLayerGenerator class."""
-
 from __future__ import annotations
 
 import logging
@@ -13,7 +12,6 @@ from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
-
 _logger = logging.getLogger(__name__)
 
 
@@ -126,13 +124,15 @@ class SimpleLayerGenerator(LayerGenerator):
         if two_radix_1 != single_qudit_gate_1.radixes[0]:
             raise ValueError(
                 'Radix mismatch between two_qudit_gate and single_qudit_gate_1'
-                ': %d != %d.' % (two_radix_1, single_qudit_gate_1.radixes[0]),
+                ': %d != %d.'
+                % (two_radix_1, single_qudit_gate_1.radixes[0]),
             )
 
         if two_radix_2 != single_qudit_gate_2.radixes[0]:
             raise ValueError(
                 'Radix mismatch between two_qudit_gate and single_qudit_gate_2'
-                ': %d != %d.' % (two_radix_2, single_qudit_gate_2.radixes[0]),
+                ': %d != %d.'
+                % (two_radix_2, single_qudit_gate_2.radixes[0]),
             )
 
         self.two_qudit_gate = two_qudit_gate

@@ -1,8 +1,5 @@
-"""
-This module implements the ExtractMeasurements and RestoreMeasurements
-passes.
-"""
-
+"""This module implements the ExtractMeasurements and RestoreMeasurements
+passes."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +9,6 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates.measure import MeasurementPlaceholder
 from bqskit.ir.point import CircuitPoint
-
 _logger = logging.getLogger(__name__)
 
 

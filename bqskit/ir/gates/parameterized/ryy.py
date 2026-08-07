@@ -1,5 +1,4 @@
 """This module implements the RYYGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import RYYGate as _RYYGate

@@ -1,8 +1,5 @@
-"""
-This package implements necessary algorithms and objects for circuit template
-instantiation and cost minimization.
-"""
-
+"""This package implements necessary algorithms and objects for circuit template
+instantiation and cost minimization."""
 from __future__ import annotations
 
 from bqskit.ir.opt.cost.function import CostFunction

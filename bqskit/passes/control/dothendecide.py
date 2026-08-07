@@ -1,5 +1,4 @@
 """This module implements the DoThenDecide class."""
-
 from __future__ import annotations
 
 import logging

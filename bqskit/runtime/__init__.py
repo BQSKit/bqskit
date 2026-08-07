@@ -89,16 +89,15 @@ logging interface. On client processes -- the ones where you create the
 Compiler object -- you can configure python loggers like normal before
 submitting tasks and have the entire system honor that configuration.
 """
-
 from __future__ import annotations
 
 import faulthandler
 import os
 from collections.abc import Callable
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 from typing import Any
 from typing import Protocol
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bqskit.runtime.future import RuntimeFuture
@@ -338,7 +337,6 @@ def get_runtime() -> RuntimeHandle:
     See :class:`RuntimeHandle` for more info.
     """
     from bqskit.runtime.worker import get_worker
-
     return get_worker()
 
 

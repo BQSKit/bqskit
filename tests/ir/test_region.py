@@ -1,5 +1,4 @@
 """This module tests the CircuitRegion class."""
-
 from __future__ import annotations
 
 import pytest
@@ -196,9 +195,8 @@ class TestShiftLeft:
         pass
 
     @given(
-        tuples(circuit_regions(empty=False), integers(0, 20)).filter(
-            lambda x: 0 < x[1] <= x[0].min_cycle
-        ),
+        tuples(circuit_regions(empty=False), integers(0, 20))
+        .filter(lambda x: 0 < x[1] <= x[0].min_cycle),
     )
     def test_valid(self, data: tuple[CircuitRegion, int]) -> None:
         region, amount_to_shift = data
@@ -251,9 +249,8 @@ class TestShiftRight:
         assert region is not shifted_region
 
     @given(
-        tuples(circuit_regions(empty=False), integers(-20, -1)).filter(
-            lambda x: 0 < -x[1] <= x[0].min_cycle
-        ),
+        tuples(circuit_regions(empty=False), integers(-20, -1))
+        .filter(lambda x: 0 < -x[1] <= x[0].min_cycle),
     )
     def test_negative(self, data: tuple[CircuitRegion, int]) -> None:
         region, amount_to_shift = data

@@ -1,5 +1,4 @@
 """This module tests the UnitaryMeta's isinstance checks."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -18,8 +17,7 @@ class TestIsLocallyOptimizable:
                 pass
 
             def optimize(  # type: ignore  # noqa
-                self,
-                env_matrix: npt.NDArray[np.complex128],
+                    self, env_matrix: npt.NDArray[np.complex128],
             ) -> list[float]:
                 pass
 
@@ -32,8 +30,7 @@ class TestIsLocallyOptimizable:
                 pass
 
             def optimize(  # type: ignore  # noqa
-                self,
-                env_matrix: npt.NDArray[np.complex128],
+                    self, env_matrix: npt.NDArray[np.complex128],
             ) -> list[float]:
                 pass
 
@@ -49,8 +46,7 @@ class TestIsLocallyOptimizable:
                 pass
 
             def optimize(  # type: ignore  # noqa
-                self,
-                env_matrix: npt.NDArray[np.complex128],
+                    self, env_matrix: npt.NDArray[np.complex128],
             ) -> list[float]:
                 pass
 

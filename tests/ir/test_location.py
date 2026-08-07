@@ -1,5 +1,4 @@
 """This module tests the CircuitLocation class."""
-
 from __future__ import annotations
 
 from hypothesis import given

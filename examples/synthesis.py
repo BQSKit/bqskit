@@ -1,5 +1,4 @@
 """This example shows how to synthesize a circuit with BQSKit."""
-
 from __future__ import annotations
 
 from bqskit import compile

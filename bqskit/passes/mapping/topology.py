@@ -1,5 +1,4 @@
 """This module implements the SubtopologySelectionPass pass."""
-
 from __future__ import annotations
 
 import copy
@@ -56,7 +55,7 @@ def all_coupling_graphs_of_size(n: int) -> list[CouplingGraph]:
     return to_ret
 
 
-class GraphDAGNode:
+class GraphDAGNode():
     """A node in the GraphDAG."""
 
     def __init__(self, graph_id: int):
@@ -69,7 +68,7 @@ class GraphDAGNode:
         return self.indices[0]
 
 
-class GraphDAG:
+class GraphDAG():
     """
     DAG for organizing the embeddability relations of graphs.
 
@@ -121,7 +120,9 @@ class GraphDAG:
 
         # Check for node to be predessor
         for other_node in nodes_to_check:
-            other_graph = self.graph_list[other_node.peek_index()]
+            other_graph = self.graph_list[
+                other_node.peek_index()
+            ]
 
             if other_graph.is_embedded_in(graph):
                 # Handle isomorphic case
@@ -147,10 +148,8 @@ class GraphDAG:
         self,
         graphs: list[CouplingGraph] | CouplingGraph,
     ) -> list[int]:
-        """
-        Given a list of graphs, return the indices of subgraphs in the
-        `self.graph_list` list that are embedded in a subgraph in `graphs`.
-        """
+        """Given a list of graphs, return the indices of subgraphs in the
+        `self.graph_list` list that are embedded in a subgraph in `graphs`."""
         embedded_indices: set[int] = set()
         if isinstance(graphs, CouplingGraph):
             graphs = [graphs]
@@ -219,7 +218,10 @@ def filter_compatible_subgraphs(
     # Sort graphs by number of edge
     locations = graph.get_subgraphs_of_size(blocksize)
     induced_subgraphs: list[CouplingGraph] = sorted(
-        (graph.get_subgraph(l) for l in locations),
+        (
+            graph.get_subgraph(l)
+            for l in locations
+        ),
         key=lambda x: -len(x),
     )
     candidates = sorted(candidate_subgraphs, key=lambda x: len(x))
@@ -227,8 +229,7 @@ def filter_compatible_subgraphs(
     indices_of_interest = dag.get_embedded_indices(induced_subgraphs)
 
     to_return = [
-        candidates[i]
-        for i in range(len(candidates))
+        candidates[i] for i in range(len(candidates))
         if i in indices_of_interest
     ]
     # Do not return empty set used as root

@@ -26,9 +26,7 @@ def test_list_structures(compiler: Compiler) -> None:
     for edge in [(0, 1), (1, 2), (1, 2), (0, 2), (0, 2), (0, 2)]:
         circuit.append_gate(CNOTGate(), edge)
     circuit, data = compiler.compile(
-        circuit,
-        [partitioner, analyzer],
-        request_data=True,
+        circuit, [partitioner, analyzer], request_data=True,
     )
 
     pass_structures = data['structures']

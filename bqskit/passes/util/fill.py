@@ -1,5 +1,4 @@
 """This module implements the FillSingleQuditGatesPass class."""
-
 from __future__ import annotations
 
 import logging
@@ -8,6 +7,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.point import CircuitPoint
+
 
 _logger = logging.getLogger(__name__)
 
@@ -33,8 +33,10 @@ class FillSingleQuditGatesPass(BasePass):
             complete_circuit.append_gate(sq_gate, qudit_index, id_params)
 
         for cycle, op in circuit.operations_with_cycles():
+
             # Single-qudit gates get converted to general gates
             if op.num_qudits == 1:
+
                 # Check for already existing single-qudit gates
                 last_point = complete_circuit.last_on(op.location[0])
                 if last_point is not None:

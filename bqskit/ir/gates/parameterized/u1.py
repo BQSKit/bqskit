@@ -1,5 +1,4 @@
 """This module implements the U1Gate."""
-
 from __future__ import annotations
 
 import numpy as np

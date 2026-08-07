@@ -1,5 +1,4 @@
 """This module implements the PauliGate."""
-
 from __future__ import annotations
 
 from typing import Any

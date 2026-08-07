@@ -1,5 +1,4 @@
 """This module implements the SGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import SGate as _SGate

@@ -1,5 +1,4 @@
 """This module tests the U3Gate class."""
-
 from __future__ import annotations
 
 from bqskit.ir.gates import U8Gate

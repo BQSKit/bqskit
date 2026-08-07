@@ -1,9 +1,7 @@
 """This module implements functions for translating to and from PyTKet."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     import pytket
 

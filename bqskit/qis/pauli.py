@@ -1,13 +1,12 @@
 """This module implements the PauliMatrices class."""
-
 from __future__ import annotations
 
 import itertools as it
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 from typing import overload
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -32,8 +31,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         [
             [0, 1],
             [1, 0],
-        ],
-        dtype=np.complex128,
+        ], dtype=np.complex128,
     )
     """The Pauli X Matrix."""
 
@@ -41,8 +39,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         [
             [0, -1j],
             [1j, 0],
-        ],
-        dtype=np.complex128,
+        ], dtype=np.complex128,
     )
     """The Pauli Y Matrix."""
 
@@ -50,8 +47,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         [
             [1, 0],
             [0, -1],
-        ],
-        dtype=np.complex128,
+        ], dtype=np.complex128,
     )
     """The Pauli Z Matrix."""
 
@@ -59,8 +55,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         [
             [1, 0],
             [0, 1],
-        ],
-        dtype=np.complex128,
+        ], dtype=np.complex128,
     )
     """The Identity Matrix."""
 
@@ -76,13 +71,13 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         """
         if not is_integer(num_qudits):
             raise TypeError(
-                'Expected integer for num_qudits, got %s.' % type(num_qudits),
+                'Expected integer for num_qudits, got %s.' %
+                type(num_qudits),
             )
 
         if num_qudits <= 0:
             raise ValueError(
-                'Expected positive integer for num_qudits, got %s.'
-                % type(
+                'Expected positive integer for num_qudits, got %s.' % type(
                     num_qudits,
                 ),
             )
@@ -111,10 +106,12 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         return self.paulis.__iter__()
 
     @overload
-    def __getitem__(self, index: int) -> npt.NDArray[np.complex128]: ...
+    def __getitem__(self, index: int) -> npt.NDArray[np.complex128]:
+        ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[npt.NDArray[np.complex128]]: ...
+    def __getitem__(self, index: slice) -> list[npt.NDArray[np.complex128]]:
+        ...
 
     def __getitem__(
         self,
@@ -141,8 +138,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         return np.array(self.paulis, dtype)
 
     def get_projection_matrices(
-        self,
-        q_set: Iterable[int],
+            self, q_set: Iterable[int],
     ) -> list[npt.NDArray[np.complex128]]:
         """
         Return the Pauli matrices that act only on qubits in `q_set`.
@@ -212,7 +208,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
 
     @staticmethod
     def from_string(
-        pauli_string: str,
+            pauli_string: str,
     ) -> npt.NDArray[np.complex128] | list[npt.NDArray[np.complex128]]:
         """
         Construct pauli matrices from a string description.
@@ -232,8 +228,7 @@ class PauliMatrices(Sequence[npt.NDArray[np.complex128]]):
         """
         if not isinstance(pauli_string, str):
             raise TypeError(
-                'Expected string for pauli_string, got %s'
-                % type(
+                'Expected string for pauli_string, got %s' % type(
                     pauli_string,
                 ),
             )

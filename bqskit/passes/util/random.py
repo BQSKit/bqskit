@@ -1,5 +1,4 @@
 """This module implements the SetRandomSeedPass class."""
-
 from __future__ import annotations
 
 import logging
@@ -8,6 +7,7 @@ from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.utils.typing import is_integer
+
 
 _logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ class SetRandomSeedPass(BasePass):
         Args:
             seed (int): The value to set the random seed to.
         """
+
         if not is_integer(seed):
             raise TypeError('Expected integer seed, got %s.' % type(seed))
 

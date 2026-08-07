@@ -1,5 +1,4 @@
 """This module implements the Unitary abstract base class."""
-
 from __future__ import annotations
 
 import abc
@@ -115,7 +114,8 @@ class Unitary(metaclass=UnitaryMeta):
         """
         if not is_sequence(params):
             raise TypeError(
-                'Expected a sequence type for params, got %s.' % type(params),
+                'Expected a sequence type for params, got %s.'
+                % type(params),
             )
 
         if not all(is_real_number(p) for p in params):
@@ -128,7 +128,8 @@ class Unitary(metaclass=UnitaryMeta):
 
         if len(params) != self.num_params:
             raise ValueError(
-                'Expected %d params, got %d.' % (self.num_params, len(params)),
+                'Expected %d params, got %d.'
+                % (self.num_params, len(params)),
             )
 
     def is_self_inverse(self, params: RealVector = []) -> bool:

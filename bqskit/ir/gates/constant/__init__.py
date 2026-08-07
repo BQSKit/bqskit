@@ -1,5 +1,4 @@
 """This package defines constant gates."""
-
 from __future__ import annotations
 
 from bqskit.ir.gates.constant.b import BGate

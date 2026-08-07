@@ -1,5 +1,4 @@
 """This module implements the EmbedAllPermutationsPass pass."""
-
 from __future__ import annotations
 
 import copy
@@ -17,6 +16,7 @@ from bqskit.passes.synthesis.synthesis import SynthesisPass
 from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.runtime import get_runtime
+
 
 _logger = logging.getLogger(__name__)
 
@@ -136,10 +136,8 @@ class EmbedAllPermutationsPass(BasePass):
         datas = []
         for graph in graphs:
             model = MachineModel(
-                circuit.num_qudits,
-                graph,
-                data.gate_set,
-                data.model.radixes,
+                circuit.num_qudits, graph,
+                data.gate_set, data.model.radixes,
             )
             target_data = copy.deepcopy(data)
             target_data.model = model

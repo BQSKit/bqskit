@@ -1,5 +1,4 @@
 """This module tests the runtime's ability to wake tasks on first result."""
-
 from __future__ import annotations
 
 import time
@@ -24,7 +23,7 @@ class TestNoDuplicateResult(BasePass):
         int_ids = await get_runtime().next(future)
         seen = [0]
         for int_id in int_ids:
-            assert int_id[1] not in seen
+            assert not int_id[1] in seen
             seen.append(int_id[1])
 
 
@@ -35,13 +34,13 @@ class TestNoDuplicateResultsInTwoNexts(BasePass):
         int_ids = await get_runtime().next(future)
 
         for int_id in int_ids:
-            assert int_id[1] not in seen
+            assert not int_id[1] in seen
             seen.append(int_id[1])
 
         int_ids = await get_runtime().next(future)
 
         for int_id in int_ids:
-            assert int_id[1] not in seen
+            assert not int_id[1] in seen
             seen.append(int_id[1])
 
 
@@ -67,12 +66,11 @@ class TestNextNeverlosesResults(BasePass):
         time.sleep(0.2)
         int_ids = await get_runtime().next(future)
         assert len(int_ids) == 1  # Only one should have been received
-        assert int_ids[0] == (0, 0.1)  # the 0th index 1 element
+        assert int_ids[0] == (0, .1)  # the 0th index 1 element
 
 
 @pytest.mark.parametrize(
-    'test_pass',
-    [
+    'test_pass', [
         TestNoDuplicateResult(),
         TestNoDuplicateResultsInTwoNexts(),
         TestFutureAwaitGivesAllResultsAfterNext(),

@@ -1,5 +1,4 @@
 """This module implements the U1qGate."""
-
 from __future__ import annotations
 
 import math

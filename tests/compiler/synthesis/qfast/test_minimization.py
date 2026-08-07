@@ -1,8 +1,5 @@
-"""
-This test will ensure that the circuit's built by QFAST can be minimized
-successfully.
-"""
-
+"""This test will ensure that the circuit's built by QFAST can be minimized
+successfully."""
 from __future__ import annotations
 
 from scipy.stats import unitary_group

@@ -3,7 +3,6 @@ This module implements the Full Block ZXZ Decomposition.
 
 Additionally, it defines the Block ZXZ Decomposition for a single pass.
 """
-
 from __future__ import annotations
 
 import logging
@@ -33,6 +32,7 @@ from bqskit.qis.unitary.unitary import RealVector
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.citation import cite
+
 
 _logger = logging.getLogger(__name__)
 
@@ -159,9 +159,7 @@ class BlockZXZPass(BasePass):
         self.min_qudit_size = min_qudit_size
 
     @staticmethod
-    def initial_decompose(
-        U: UnitaryMatrix,
-    ) -> tuple[
+    def initial_decompose(U: UnitaryMatrix) -> tuple[
         UnitaryMatrix,
         UnitaryMatrix,
         UnitaryMatrix,
@@ -185,10 +183,10 @@ class BlockZXZPass(BasePass):
         # The upper left block is X, the upper right block is Y, the lower left
         # block is U_21, and the lower right block is U_22.
 
-        X = U[0 : len(U) // 2, 0 : len(U) // 2]
-        Y = U[0 : len(U) // 2, len(U) // 2 :]
-        U_21 = U[len(U) // 2 :, 0 : len(U) // 2]
-        U_22 = U[len(U) // 2 :, len(U) // 2 :]
+        X = U[0:len(U) // 2, 0:len(U) // 2]
+        Y = U[0:len(U) // 2, len(U) // 2:]
+        U_21 = U[len(U) // 2:, 0:len(U) // 2]
+        U_22 = U[len(U) // 2:, len(U) // 2:]
 
         # We let X = V_X @ s_X @ W_X where V_X and W_X are unitary and s_X is
         # a diagonal matrix of singular values. We use the SVD to find these
@@ -258,10 +256,8 @@ class BlockZXZPass(BasePass):
 
     @staticmethod
     def zxz(orig_u: UnitaryMatrix) -> Circuit:
-        """
-        Return the circuit that is generated from one levl of Block ZXZ
-        decomposition.
-        """
+        """Return the circuit that is generated from one levl of Block ZXZ
+        decomposition."""
         # First calculate the A, B, and C matrices for the initial decomp
         A_1, A_2, B, C = BlockZXZPass.initial_decompose(orig_u)
 
@@ -277,7 +273,8 @@ class BlockZXZPass(BasePass):
         Z = ZGate(1).get_unitary()
         B_tilde_1 = UnitaryMatrix(WA @ VC)
         B_tilde_2 = UnitaryMatrix(
-            np.kron(Z, small_I) @ WA @ B @ VC @ np.kron(Z, small_I),
+            np.kron(Z, small_I) @
+            WA @ B @ VC @ np.kron(Z, small_I),
         )
         VB, BZ_params, WB = BlockZXZPass.demultiplex(B_tilde_1, B_tilde_2)
 
@@ -312,8 +309,7 @@ class BlockZXZPass(BasePass):
         # Add the decomposed B-tilde gates WB and a Hadamard
         combo_1_gate, combo_1_params = QSDPass.create_unitary_gate(WB)
         circ.append_gate(
-            combo_1_gate,
-            CircuitLocation(select_qubits),
+            combo_1_gate, CircuitLocation(select_qubits),
             combo_1_params,
         )
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
@@ -326,8 +322,7 @@ class BlockZXZPass(BasePass):
         # Now add the decomposed B-tilde gates VB and a Hadamard
         combo_2_gate, combo_2_params = QSDPass.create_unitary_gate(VB)
         circ.append_gate(
-            combo_2_gate,
-            CircuitLocation(select_qubits),
+            combo_2_gate, CircuitLocation(select_qubits),
             combo_2_params,
         )
         circ.append_gate(HGate(), CircuitLocation((controlled_qubit,)))
@@ -353,8 +348,7 @@ class BlockZXZPass(BasePass):
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform a single level of the Block ZXZ decomposition."""
         unitaries, pts, locations = QSDPass.get_variable_unitary_pts(
-            circuit,
-            self.min_qudit_size,
+            circuit, self.min_qudit_size,
         )
 
         if len(unitaries) > 0:

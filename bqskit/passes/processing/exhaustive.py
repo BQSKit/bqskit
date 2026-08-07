@@ -1,5 +1,4 @@
 """This module implements the ExhaustiveGateRemovalPass."""
-
 from __future__ import annotations
 
 import logging
@@ -17,7 +16,6 @@ from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.ir.structure import CircuitStructure
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_real_number
-
 _logger = logging.getLogger(__name__)
 
 
@@ -40,6 +38,7 @@ class ExhaustiveGateRemovalPass(BasePass):
         Construct a ExhaustiveGateRemovalPass.
 
         Args:
+
             success_threshold (float): The distance threshold that
                 determines successful termintation. Measured in cost
                 described by the hilbert schmidt cost function.
@@ -125,6 +124,7 @@ class ExhaustiveGateRemovalPass(BasePass):
 
         # Keep removing until no more successful circuits
         while len(frontier) > 0:
+
             # Expand each element of frontier by removing gates
             expanded_circuits = []
 

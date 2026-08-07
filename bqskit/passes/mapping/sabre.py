@@ -1,5 +1,4 @@
 """This module implements the GeneralizedSabreAlgorithm class."""
-
 from __future__ import annotations
 
 import copy
@@ -75,7 +74,8 @@ class GeneralizedSabreAlgorithm:
         """
         if not isinstance(decay_delta, float):
             raise TypeError(
-                f'Expected float for decay_delta, got {type(decay_delta)}',
+                'Expected float for decay_delta'
+                f', got {type(decay_delta)}',
             )
 
         if not isinstance(decay_reset_interval, int):
@@ -154,6 +154,7 @@ class GeneralizedSabreAlgorithm:
 
         # Main Loop
         while len(F) > 0:
+
             # Retrieve executable gates giving the current mapping `pi`
             execute_list = [n for n in F if self._can_exe(circuit[n], pi, cg)]
 
@@ -266,6 +267,7 @@ class GeneralizedSabreAlgorithm:
 
         # Main Loop
         while len(F) > 0:
+
             # Retrieve executable gates giving the current mapping: pi
             execute_list = [n for n in F if self._can_exe(circuit[n], pi, cg)]
 
@@ -499,7 +501,9 @@ class GeneralizedSabreAlgorithm:
         center_qudit = min(
             logical_qudits,
             key=lambda q: sum(
-                D[pi[q]][pi[p]] for p in logical_qudits if p != q
+                D[pi[q]][pi[p]]
+                for p in logical_qudits
+                if p != q
             ),
         )
 

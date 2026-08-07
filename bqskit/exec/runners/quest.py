@@ -1,5 +1,4 @@
 """This module implements the QuestRunner CircuitRunner."""
-
 from __future__ import annotations
 
 import logging
@@ -109,9 +108,7 @@ class QuestRunner(CircuitRunner):
             started = True
 
         blocked_circuit, data = self.compiler.compile(
-            circuit.copy(),
-            pass_list,
-            True,
+            circuit.copy(), pass_list, True,
         )
 
         # 2. Gather partial solutions
@@ -182,7 +179,8 @@ class QuestRunner(CircuitRunner):
         approx_circuits: list[Circuit] = []
         dists = [[psol[1] for psol in psol_list] for psol_list in psols]
         utrys = [
-            [psol[0].get_unitary() for psol in psol_list] for psol_list in psols
+            [psol[0].get_unitary() for psol in psol_list]
+            for psol_list in psols
         ]
         n_cxs = [
             [psol[0].count(CNOTGate()) for psol in psol_list]
@@ -223,7 +221,10 @@ class QuestRunner(CircuitRunner):
                 _logger.debug('Generated a repeat approximate circuit.')
                 break
 
-            approx_dist = sum(psols[b][ind][1] for b, ind in enumerate(blocks))
+            approx_dist = sum(
+                psols[b][ind][1]
+                for b, ind in enumerate(blocks)
+            )
 
             if approx_dist > approx_threshold:
                 _logger.debug('Approximate circuit has high distance.')
@@ -253,12 +254,15 @@ class QuestRunner(CircuitRunner):
     ) -> Circuit:
         """Assemble a circuit from a list of block indices."""
         circuit_gates = [
-            CircuitGate(psol_list[b][0]) for b, psol_list in zip(blocks, psols)
+            CircuitGate(psol_list[b][0])
+            for b, psol_list
+            in zip(blocks, psols)
         ]
         locations = [circuit[pt].location for pt in pts]
         operations = [
             Operation(cg, loc, cg._circuit.params)
-            for cg, loc in zip(circuit_gates, locations)
+            for cg, loc
+            in zip(circuit_gates, locations)
         ]
         copied_circuit = circuit.copy()
         copied_circuit.batch_replace(pts, operations)

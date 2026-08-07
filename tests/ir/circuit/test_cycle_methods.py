@@ -1,5 +1,4 @@
 """This test module verifies all circuit cycle methods."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -168,18 +167,14 @@ class TestIsCycleUnoccupied:
         ],
     )
     def test_return_type_1(
-        self,
-        valid_int: int,
-        location: Sequence[int],
+            self, valid_int: int, location: Sequence[int],
     ) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         circuit.append_gate(CNOTGate(), [0, 1])
         assert isinstance(
             circuit.is_cycle_unoccupied(
-                valid_int,
-                location,
-            ),
-            (bool, np.bool_),
+                valid_int, location,
+            ), (bool, np.bool_),
         )
 
     @pytest.mark.parametrize(
@@ -192,23 +187,18 @@ class TestIsCycleUnoccupied:
         ],
     )
     def test_return_type_2(
-        self,
-        valid_int: int,
-        location: Sequence[int],
+            self, valid_int: int, location: Sequence[int],
     ) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CNOTGate(), [0, 1])
         assert isinstance(
             circuit.is_cycle_unoccupied(
-                valid_int,
-                location,
-            ),
-            (bool, np.bool_),
+                valid_int, location,
+            ), (bool, np.bool_),
         )
 
     @pytest.mark.parametrize(
@@ -220,20 +210,16 @@ class TestIsCycleUnoccupied:
         ],
     )
     def test_true(
-        self,
-        cycle_index: int,
-        location: Sequence[int],
+            self, cycle_index: int, location: Sequence[int],
     ) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CPIGate(), [2, 3])
         assert circuit.is_cycle_unoccupied(cycle_index, location)
@@ -252,20 +238,16 @@ class TestIsCycleUnoccupied:
         ],
     )
     def test_false(
-        self,
-        cycle_index: int,
-        location: Sequence[int],
+            self, cycle_index: int, location: Sequence[int],
     ) -> None:
         circuit = Circuit(4, [2, 2, 3, 3])
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CNOTGate(), [0, 1])
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CPIGate(), [2, 3])
         assert not circuit.is_cycle_unoccupied(cycle_index, location)
@@ -295,8 +277,7 @@ class TestFindAvailableCycle:
         circuit = Circuit(4, [2, 2, 3, 3])
         circuit.append_gate(ConstantUnitaryGate(np.identity(2), [2]), [1])
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(ConstantUnitaryGate(np.identity(3), [3]), [3])
         assert isinstance(circuit.find_available_cycle(location), int)
@@ -306,14 +287,12 @@ class TestFindAvailableCycle:
         circuit.append_gate(CNOTGate(), [0, 1])
         assert circuit.find_available_cycle([2, 3]) == 0
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CNOTGate(), [0, 1])
         assert circuit.find_available_cycle([2, 3]) == 2
         circuit.append_gate(
-            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]),
-            [0, 1, 2, 3],
+            ConstantUnitaryGate(np.identity(36), [2, 2, 3, 3]), [0, 1, 2, 3],
         )
         circuit.append_gate(CPIGate(), [2, 3])
         assert circuit.find_available_cycle([0, 1]) == 4

@@ -1,5 +1,4 @@
 """This module implements the SqrtXGate/SXGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import SXGate as _SXGate

@@ -1,5 +1,4 @@
 """This module implements the PDGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
@@ -68,12 +67,10 @@ class PDGate(QuditGate, CachedClass):
 
         diag = '~e^(i*4*%d*π/%d)' % (index, radix)
         rows = [
-            '['
-            + ','.join(
+            '[' + ','.join(
                 (diag if r == index else '1') if r == c else '0'
                 for c in range(radix)
-            )
-            + ']'
+            ) + ']'
             for r in range(radix)
         ]
         self._expr = _UnitaryExpression(

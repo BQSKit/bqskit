@@ -1,5 +1,4 @@
 """This module implements the CycleInterval class."""
-
 from __future__ import annotations
 
 import logging
@@ -9,7 +8,6 @@ from typing import TypeGuard
 from typing import Union
 
 from bqskit.utils.typing import is_integer
-
 _logger = logging.getLogger(__name__)
 
 
@@ -150,7 +148,8 @@ class CycleInterval(tuple[int, int]):
         other = CycleInterval(other)
 
         if not self.overlaps(other) and (
-            self.upper + 1 != other[0] and self.lower - 1 != other[1]
+            self.upper + 1 != other[0]
+            and self.lower - 1 != other[1]
         ):
             raise ValueError('Union would lead to invalid interval.')
 

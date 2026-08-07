@@ -1,5 +1,4 @@
 """This module implements the GeneralGate base class."""
-
 from __future__ import annotations
 
 import abc

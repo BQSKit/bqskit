@@ -1,5 +1,4 @@
 """This package contains integrations with the Qiskit framework."""
-
 from __future__ import annotations
 
 from bqskit.ext.qiskit.models import model_from_backend

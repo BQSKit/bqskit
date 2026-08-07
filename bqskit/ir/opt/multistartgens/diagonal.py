@@ -1,5 +1,4 @@
 """This module implements the DiagonalStartGenerator base class."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -12,7 +11,6 @@ from bqskit.utils.typing import is_integer
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
@@ -56,9 +54,7 @@ class DiagonalStartGenerator(MultiStartGenerator):
             )
 
         return [
-            2
-            * np.pi
-            * np.random.uniform(
+            2 * np.pi * np.random.uniform(
                 (i - 1) / multistarts,
                 i / multistarts,
                 (circuit.num_params,),

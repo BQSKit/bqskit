@@ -1,13 +1,12 @@
 """This module implements the PauliZMatrices class."""
-
 from __future__ import annotations
 
 import itertools as it
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 from typing import overload
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -49,8 +48,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         [
             [1, 0],
             [0, -1],
-        ],
-        dtype=np.complex128,
+        ], dtype=np.complex128,
     )
     """The Pauli Z Matrix."""
 
@@ -58,8 +56,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         [
             [1, 0],
             [0, 1],
-        ],
-        dtype=np.complex128,
+        ], dtype=np.complex128,
     )
     """The Identity Matrix."""
 
@@ -74,15 +71,16 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         Raises:
             ValueError: If `num_qudits` is less than or equal to 0.
         """
+
         if not is_integer(num_qudits):
             raise TypeError(
-                'Expected integer for num_qudits, got %s.' % type(num_qudits),
+                'Expected integer for num_qudits, got %s.' %
+                type(num_qudits),
             )
 
         if num_qudits <= 0:
             raise ValueError(
-                'Expected positive integer for num_qudits, got %s.'
-                % type(
+                'Expected positive integer for num_qudits, got %s.' % type(
                     num_qudits,
                 ),
             )
@@ -109,10 +107,12 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         return self.paulizs.__iter__()
 
     @overload
-    def __getitem__(self, index: int) -> npt.NDArray[np.complex128]: ...
+    def __getitem__(self, index: int) -> npt.NDArray[np.complex128]:
+        ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[npt.NDArray[np.complex128]]: ...
+    def __getitem__(self, index: slice) -> list[npt.NDArray[np.complex128]]:
+        ...
 
     def __getitem__(
         self,
@@ -139,8 +139,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         return np.array(self.paulizs, dtype)
 
     def get_projection_matrices(
-        self,
-        q_set: Iterable[int],
+            self, q_set: Iterable[int],
     ) -> list[npt.NDArray[np.complex128]]:
         """
         Return the Pauli Z matrices that act only on qubits in `q_set`.
@@ -195,6 +194,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         Raises:
             ValueError: If `alpha` and `self.paulizs` are incompatible.
         """
+
         if not is_sequence(alpha) or not all(is_numeric(a) for a in alpha):
             msg = f'Expected a sequence of numbers, got {type(alpha)}.'
             raise TypeError(msg)
@@ -228,6 +228,7 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
         Raises:
             ValueError: if `pauliz_string` is invalid.
         """
+
         if not isinstance(pauliz_string, str):
             msg = f'Expected str for pauliz_string, got {type(pauliz_string)}.'
             raise TypeError(msg)

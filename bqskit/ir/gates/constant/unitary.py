@@ -1,5 +1,4 @@
 """This module implements the ConstantUnitaryGate."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -17,7 +16,7 @@ def _qgl_num(x: float) -> str:
     """Render a float as a QGL constant (no exponent, unary '~' for negation)"""
     if x == 0.0:
         return '0'
-    s = format(Decimal(x), 'f')  # exact, never scientific notation
+    s = format(Decimal(x), 'f')          # exact, never scientific notation
     return f'~{s[1:]}' if s.startswith('-') else s
 
 
@@ -33,7 +32,8 @@ def _qgl_entry(z: complex) -> str:
 def _utry_to_qgl(utry: UnitaryMatrix, name: str) -> str:
     m = utry.numpy
     rows = ',\n    '.join(
-        '[' + ', '.join(_qgl_entry(z) for z in row) + ']' for row in m
+        '[' + ', '.join(_qgl_entry(z) for z in row) + ']'
+        for row in m
     )
     radices = ', '.join(str(r) for r in utry.radixes)
     return f'{name}<{radices}>() {{\n  [{rows}]\n}}'
@@ -64,7 +64,8 @@ class ConstantUnitaryGate(Gate, CachedClass):
 
     def __eq__(self, other: object) -> bool:
         return (
-            isinstance(other, ConstantUnitaryGate) and self._utry == other._utry
+            isinstance(other, ConstantUnitaryGate)
+            and self._utry == other._utry
         )
 
     def __hash__(self) -> int:

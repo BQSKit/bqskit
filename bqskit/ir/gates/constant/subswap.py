@@ -1,5 +1,4 @@
 """This module implements the SubSwapGate."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -99,7 +98,7 @@ class SubSwapGate(QuditGate, CachedClass):
                 f', got |{level1}> swaps |{level2}> when {radix=}.',
             )
 
-        utry = np.identity(radix**2, dtype=np.complex128)
+        utry = np.identity(radix ** 2, dtype=np.complex128)
         i = level1[0] * radix + level1[1]
         j = level2[0] * radix + level2[1]
         utry[i, i] = 0
@@ -110,9 +109,9 @@ class SubSwapGate(QuditGate, CachedClass):
 
     @staticmethod
     def calculate_level_swap_expr(
-        radix: int,
-        level1: tuple[int, int],
-        level2: tuple[int, int],
+            radix: int,
+            level1: tuple[int, int],
+            level2: tuple[int, int],
     ) -> _UnitaryExpression:
         """Build the QGL expression for a qudit level swap."""
         i = level1[0] * radix + level1[1]
@@ -131,12 +130,7 @@ class SubSwapGate(QuditGate, CachedClass):
             rows.append('[' + ','.join(row) + ']')
 
         qgl = 'SubSwap_%d_%d_%d<%d,%d>() { [%s] }' % (
-            radix,
-            i,
-            j,
-            radix,
-            radix,
-            ','.join(rows),
+            radix, i, j, radix, radix, ','.join(rows),
         )
         return _UnitaryExpression(qgl)
 

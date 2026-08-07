@@ -1,5 +1,4 @@
 """This package contains integrations with the QuTiP framework."""
-
 from __future__ import annotations
 
 from bqskit.ext.qutip.translate import bqskit_to_qutip

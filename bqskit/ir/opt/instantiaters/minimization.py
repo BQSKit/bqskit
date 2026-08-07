@@ -1,9 +1,8 @@
 """This module implements the Minimization class."""
-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -73,7 +72,8 @@ class Minimization(Instantiater):
     def is_capable(circuit: Circuit) -> bool:
         """Return true if the circuit can be instantiated."""
         return all(
-            not isinstance(g, VariableUnitaryGate) for g in circuit.gate_set
+            not isinstance(g, VariableUnitaryGate)
+            for g in circuit.gate_set
         )
 
     @staticmethod
@@ -126,7 +126,6 @@ class Minimization(Instantiater):
         See Instantiater for more info.
         """
         from bqskit.runtime import get_runtime
-
         target = self.check_target(target)
         start_gen = RandomStartGenerator()
         starts = start_gen.gen_starting_points(num_starts, circuit, target)

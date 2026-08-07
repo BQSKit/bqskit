@@ -1,8 +1,5 @@
-"""
-This test module verifies all circuit operation, gate, and circuit
-methods.
-"""
-
+"""This test module verifies all circuit operation, gate, and circuit
+methods."""
 from __future__ import annotations
 
 import numpy as np
@@ -126,8 +123,7 @@ class TestGetOperation:
         pass
 
     @pytest.mark.parametrize(
-        'point',
-        [
+        'point', [
             (0, 0),
             (1, 1),
             (2, 2),
@@ -146,8 +142,7 @@ class TestGetOperation:
         assert isinstance(circuit.get_operation(point), Operation)
 
     @pytest.mark.parametrize(
-        'point',
-        [
+        'point', [
             (-1000, 0),
             (1, -100),
             (-8, -8),
@@ -290,11 +285,13 @@ class TestPoint:
 
         opH = Operation(HGate(), [0])
         circuit.append(opH)
-        assert circuit.point(opH).__repr__() == '(0, 0)'
+        assert circuit.point(opH).__repr__(
+        ) == '(0, 0)'
 
         opX = Operation(XGate(), [0])
         circuit.append(opX)
-        assert circuit.point(opX).__repr__() == '(1, 0)'
+        assert circuit.point(opX).__repr__(
+        ) == '(1, 0)'
 
 
 class TestAppend:

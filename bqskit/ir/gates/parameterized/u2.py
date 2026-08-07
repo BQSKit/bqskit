@@ -1,5 +1,4 @@
 """This module implements the U2Gate."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -65,10 +64,10 @@ class U2Gate(Gate, CachedClass):
                     [0, 0],
                     [deip * sq2, deip * eil * sq2],
                 ],
+
                 [  # wrt params[1]
                     [0, -deil * sq2],
                     [0, eip * deil * sq2],
                 ],
-            ],
-            dtype=np.complex128,
+            ], dtype=np.complex128,
         )

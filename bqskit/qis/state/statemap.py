@@ -1,5 +1,4 @@
 """This module implements the StateVectorMap base class."""
-
 from __future__ import annotations
 
 import abc

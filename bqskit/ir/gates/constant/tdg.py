@@ -1,5 +1,4 @@
 """This module implements the TdgGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import Dagger as _Dagger

@@ -1,5 +1,4 @@
 """This module contains functions to generate strategies from annotations."""
-
 from __future__ import annotations
 
 import collections
@@ -18,7 +17,6 @@ from hypothesis import given
 from hypothesis.extra.numpy import complex_number_dtypes
 from hypothesis.extra.numpy import floating_dtypes
 from hypothesis.extra.numpy import from_dtype
-from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import booleans
 from hypothesis.strategies import complex_numbers
 from hypothesis.strategies import data
@@ -29,6 +27,7 @@ from hypothesis.strategies import iterables
 from hypothesis.strategies import just
 from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
+from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import sets
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
@@ -51,10 +50,12 @@ def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
     Calculate the powerset of an iterable.
 
     Examples:
+
         >>> list(_powerset([1,2,3]))
         [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
 
     References:
+
         https://stackoverflow.com/questions/18035595/powersets-in-python-using-
         itertools.
     """
@@ -80,7 +81,7 @@ def _split_generic_arguments(args: str) -> list[str]:
     to_return: list[str] = []
     last_index = 0
     for comma_index in comma_indices:
-        to_return.append(args[last_index:comma_index])
+        to_return.append(args[last_index: comma_index])
         last_index = comma_index + 1
     to_return.append(args[last_index:])
     return to_return
@@ -441,8 +442,8 @@ def type_annotation_to_invalid_strategy(annotation: str) -> SearchStrategy[Any]:
 
 
 def invalid_type_test(
-    func_to_test: Callable[..., Any],
-    other_allowed_errors: list[type] = [],
+        func_to_test: Callable[..., Any],
+        other_allowed_errors: list[type] = [],
 ) -> Callable[..., Callable[..., None]]:
     """
     Decorator to generate invalid type tests.
@@ -495,7 +496,6 @@ def invalid_type_test(
 
     def inner(f: Callable[..., Any]) -> Callable[..., None]:
         if 'self' in inspect.signature(f).parameters:
-
             @pytest.mark.parametrize('strategy', strategies)
             @given(data=data())
             def invalid_type_test(self: Any, strategy: Any, data: Any) -> None:
@@ -505,7 +505,6 @@ def invalid_type_test(
 
             return invalid_type_test
         else:
-
             @pytest.mark.parametrize('strategy', strategies)
             @given(data=data())
             def invalid_type_test(strategy: Any, data: Any) -> None:
@@ -519,7 +518,7 @@ def invalid_type_test(
 
 
 def valid_type_test(
-    func_to_test: Callable[..., Any],
+        func_to_test: Callable[..., Any],
 ) -> Callable[..., Callable[..., None]]:
     """
     Decorator to generate valid type tests.
@@ -559,7 +558,6 @@ def valid_type_test(
 
     def inner(f: Callable[..., Any]) -> Callable[..., None]:
         if 'self' in inspect.signature(f).parameters:
-
             @given(data=strategy)
             def valid_type_test(self: Any, data: Any) -> None:
                 try:
@@ -571,7 +569,6 @@ def valid_type_test(
 
             return valid_type_test
         else:
-
             @given(data=strategy)
             def valid_type_test(data: Any) -> None:
                 try:

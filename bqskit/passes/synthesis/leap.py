@@ -1,5 +1,4 @@
 """This module implements the LEAPSynthesisPass."""
-
 from __future__ import annotations
 
 import logging
@@ -319,8 +318,12 @@ class LEAPSynthesisPass(SynthesisPass):
 
             best_dist (float): The current best distance in search.
         """
-        better_layer = dist < best_dist and (
-            best_dist >= self.success_threshold or layer <= best_layer
+        better_layer = (
+            dist < best_dist
+            and (
+                best_dist >= self.success_threshold
+                or layer <= best_layer
+            )
         )
         better_dist_and_layer = (
             dist < self.success_threshold and layer < best_layer

@@ -9,17 +9,15 @@ from bqskit.passes.partitioning.quick import QuickPartitioner
 
 
 def test_measurement_stop_partitioning_across_some_circuit(
-    compiler: Compiler,
+        compiler: Compiler,
 ) -> None:
     circuit = Circuit(4)
     circuit.append_gate(CXGate(), (0, 1))
     measurements = {0: ('c', 0), 1: ('c', 1)}
     circuit.append_gate(
         MeasurementPlaceholder(
-            [('c', 2)],
-            measurements,
-        ),
-        (0, 1),
+            [('c', 2)], measurements,
+        ), (0, 1),
     )
     circuit.append_gate(CXGate(), (0, 1))
     circuit.append_gate(CXGate(), (2, 3))

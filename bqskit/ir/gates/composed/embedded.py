@@ -1,5 +1,4 @@
 """This module implements the ControlledGate class."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -97,6 +96,7 @@ class EmbeddedGate(ComposedGate):
                  the new radixes.
 
         Raises:
+
             ValueError: If any radix is less than 2.
 
             ValueError: If radixes is given as a sequence and its length

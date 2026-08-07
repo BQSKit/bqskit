@@ -1,5 +1,4 @@
 """This module implements the various intermediate results classes."""
-
 from __future__ import annotations
 
 import logging
@@ -54,9 +53,8 @@ class SaveIntermediatePass(BasePass):
             raise ValueError(
                 f'Path {path_to_save_dir} does not exist',
             )
-        self.projname = (
-            project_name if project_name is not None else 'unnamed_project'
-        )
+        self.projname = project_name if project_name is not None \
+            else 'unnamed_project'
 
         enum = 1
         if exists(self.pathdir + self.projname):
@@ -75,6 +73,7 @@ class SaveIntermediatePass(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see BasePass for more info."""
+
         # Gather and enumerate CircuitGates to save
         blocks_to_save: list[tuple[int, Operation]] = []
         for enum, op in enumerate(circuit):
@@ -109,8 +108,7 @@ class SaveIntermediatePass(BasePass):
                     f.write(OPENQASM2Language().encode(subcircuit))
             else:
                 with open(
-                    f'{block_skeleton}{enum}.pickle',
-                    'wb',
+                    f'{block_skeleton}{enum}.pickle', 'wb',
                 ) as f:
                     pickle.dump(subcircuit, f)
 

@@ -1,5 +1,4 @@
 """This module defines the OPENQASM 2.0 Grammer and Lark Parser for it."""
-
 from __future__ import annotations
 
 from lark import Lark

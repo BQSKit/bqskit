@@ -1,5 +1,4 @@
 """This module implements the DaggerGate Class."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -99,7 +98,10 @@ class DaggerGate(
         return self.gate.optimize(env_matrix.conj().T)  # type: ignore
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, DaggerGate) and self.gate == other.gate
+        return (
+            isinstance(other, DaggerGate)
+            and self.gate == other.gate
+        )
 
     def __hash__(self) -> int:
         return hash(self.gate)

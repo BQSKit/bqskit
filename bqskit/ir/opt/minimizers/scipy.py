@@ -1,5 +1,4 @@
 """This module implements the ScipyMinimizer class."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -10,10 +9,9 @@ from scipy.optimize import minimize
 from bqskit.ir.opt.minimizer import Minimizer
 
 if TYPE_CHECKING:
-    import numpy.typing as npt
-
     from bqskit.ir.opt.cost import CostFunction
     from bqskit.qis.unitary.unitary import RealVector
+    import numpy.typing as npt
 
 
 class ScipyMinimizer(Minimizer):

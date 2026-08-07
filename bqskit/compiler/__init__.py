@@ -34,7 +34,6 @@ function definition.
     Workflow
     WorkflowLike
 """
-
 from __future__ import annotations
 
 from typing import Any
@@ -56,7 +55,6 @@ def __getattr__(name: str) -> Any:
     if name == 'compile':
         # TODO: fix this (high-priority), overlap between module and function
         from bqskit.compiler.compile import compile
-
         return compile
 
     # TODO: Move compile to a different subpackage and deprecate import

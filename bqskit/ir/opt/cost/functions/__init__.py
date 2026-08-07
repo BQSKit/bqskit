@@ -1,5 +1,4 @@
 """This packages includes CostFunction and generator implementations."""
-
 from __future__ import annotations
 
 from bqskit.ir.opt.cost.functions.cost import HilbertSchmidtCost

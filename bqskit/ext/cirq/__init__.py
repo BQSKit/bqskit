@@ -1,5 +1,4 @@
 """This package contains integrations with the Cirq framework."""
-
 from __future__ import annotations
 
 from bqskit.ext.cirq.translate import bqskit_to_cirq

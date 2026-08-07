@@ -1,5 +1,4 @@
 """This module implements the PAMRoutingPass."""
-
 from __future__ import annotations
 
 import logging
@@ -16,6 +15,7 @@ _logger = logging.getLogger(__name__)
 
 
 class PAMRoutingPass(PermutationAwareMappingAlgorithm, BasePass):
+
     out_data_key = '_pam_routing_block_out_data'
 
     async def run(self, circuit: Circuit, data: PassData) -> None:

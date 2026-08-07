@@ -257,14 +257,11 @@ class TestFold:
         coupling_graph = [(0, 1), (1, 2), (2, 3)]
         circuits = [
             create_circuit(
-                coupling_graph,
-                [[0, 1], [2, 3]],
-                4,
-            )
-            for x in range(10)
+                coupling_graph, [[0, 1], [2, 3]], 4,
+            ) for x in range(10)
         ]
 
-        for a, b in coupling_graph:
+        for (a, b) in coupling_graph:
             region = {a: (0, circuits[0].depth), b: (0, circuits[0].depth)}
 
             operations = circuits[0][region]
@@ -384,11 +381,9 @@ class TestSurround:
         circuit.append_gate(CNOTGate(), [5, 6])
 
         region = circuit.surround(
-            (1, 3),
-            4,
-            None,
-            None,
-            lambda region: region.min_qudit > 1 and region.max_qudit < 6,
+            (1, 3), 4, None, None, lambda region: (
+                region.min_qudit > 1 and region.max_qudit < 6
+            ),
         )
         assert region.location == CircuitLocation([2, 3, 4, 5])
 
@@ -406,11 +401,9 @@ class TestSurround:
             return circuit.get_slice(region.points).coupling_graph.is_linear()
 
         region = circuit.surround(
-            (4, 1),
-            4,
-            None,
-            None,
-            lambda region: region_filter(region),
+            (4, 1), 4, None, None, lambda region: (
+                region_filter(region)
+            ),
         )
         assert circuit.is_valid_region(region)
         assert region.location == CircuitLocation([1, 2, 3, 4])

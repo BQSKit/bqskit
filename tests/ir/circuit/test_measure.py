@@ -14,9 +14,11 @@ class TestCircuitRemoveAllMeasurements:
         """
         circuit = OPENQASM2Language().decode(input)
         assert any(
-            isinstance(g, MeasurementPlaceholder) for g in circuit.gate_set
+            isinstance(g, MeasurementPlaceholder)
+            for g in circuit.gate_set
         )
         circuit.remove_all_measurements()
         assert not any(
-            isinstance(g, MeasurementPlaceholder) for g in circuit.gate_set
+            isinstance(g, MeasurementPlaceholder)
+            for g in circuit.gate_set
         )

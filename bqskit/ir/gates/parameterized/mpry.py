@@ -1,5 +1,4 @@
 """This module implements the MPRYGate."""
-
 from __future__ import annotations
 
 import typing
@@ -22,7 +21,7 @@ def get_indices(
 ) -> tuple[int, int]:
     """Get indices for the matrix based on the target qubit."""
     shift_qubit = num_qudits - target_qudit - 1
-    shift = 2**shift_qubit
+    shift = 2 ** shift_qubit
     # Split into two parts around target qubit
     # 100 | 111
     left = index // shift
@@ -30,7 +29,7 @@ def get_indices(
 
     # Now, shift left by one spot to
     # make room for the target qubit
-    left *= shift * 2
+    left *= (shift * 2)
     # Now add 0 * new_ind and 1 * new_ind to get indices
     return left + right, left + shift + right
 
@@ -73,7 +72,7 @@ class MPRYGate(
         self.target_qubit = target_qubit
         super().__init__()
 
-        dim = 2**num_qudits
+        dim = 2 ** num_qudits
         rows = [['0'] * dim for _ in range(dim)]
         for i in range(self._num_params):
             x1, x2 = get_indices(i, self.target_qubit, num_qudits)
@@ -84,8 +83,7 @@ class MPRYGate(
         row_strs = ['[' + ','.join(row) + ']' for row in rows]
         params_str = ','.join('t%d' % i for i in range(self._num_params))
         self._expr = _UnitaryExpression(
-            'MPRY%d<%s>(%s) { [%s] }'
-            % (
+            'MPRY%d<%s>(%s) { [%s] }' % (
                 num_qudits,
                 ','.join(['2'] * num_qudits),
                 params_str,
@@ -99,10 +97,9 @@ class MPRYGate(
 
         matrix = np.zeros(
             (
-                2**self.num_qudits,
-                2**self.num_qudits,
-            ),
-            dtype=np.complex128,
+                2 ** self.num_qudits,
+                2 ** self.num_qudits,
+            ), dtype=np.complex128,
         )
         for i, param in enumerate(typing.cast(typing.Sequence[float], params)):
             cos = np.cos(param / 2)
@@ -136,16 +133,14 @@ class MPRYGate(
             x1, x2 = get_indices(i, self.target_qubit, self.num_qudits)
             a = np.real(env_matrix[x1, x1] + env_matrix[x2, x2])
             b = np.real(env_matrix[x2, x1] - env_matrix[x1, x2])
-            theta = 2 * np.arccos(a / np.sqrt(a**2 + b**2))
+            theta = 2 * np.arccos(a / np.sqrt(a ** 2 + b ** 2))
             theta *= -1 if b > 0 else 1
             thetas[i] = theta
 
         return thetas
 
     @staticmethod
-    def get_decomposition(
-        params: RealVector = [],
-    ) -> tuple[
+    def get_decomposition(params: RealVector = []) -> tuple[
         RealVector,
         RealVector,
     ]:

@@ -1,5 +1,4 @@
 """This module implements the DaggerGate Class."""
-
 from __future__ import annotations
 
 import re

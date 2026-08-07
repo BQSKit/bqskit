@@ -1,5 +1,4 @@
 """This module implements the SwapGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import SwapGate as _SwapGate
@@ -50,7 +49,10 @@ class SwapGate(Gate, CachedClass):
         self._qasm_name = 'swap'
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, SwapGate) and self.radixes == other.radixes
+        return (
+            isinstance(other, SwapGate)
+            and self.radixes == other.radixes
+        )
 
     def __hash__(self) -> int:
         return hash(('swapgate', self.radixes[0]))

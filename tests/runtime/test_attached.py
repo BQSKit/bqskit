@@ -1,5 +1,4 @@
 """Checks the attached runtime's process management and ability to cleanup."""
-
 from __future__ import annotations
 
 import os
@@ -16,6 +15,7 @@ from bqskit.compiler import Compiler
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.runtime import get_runtime
+
 
 # @pytest.mark.parametrize('num_workers', [1, -1])
 # def test_startup_shutdown_transparently(num_workers: int) -> None:
@@ -55,14 +55,11 @@ def test_cleanup_with_clause(num_workers: int) -> None:
 def test_create_workers(num_workers: int) -> None:
     compiler = Compiler(num_workers=num_workers)
     assert compiler.p is not None
-    assert (
-        len(
-            psutil.Process(compiler.p.pid).children(
-                recursive=True,
-            ),
-        )
-        >= num_workers
-    )
+    assert len(
+        psutil.Process(compiler.p.pid).children(
+            recursive=True,
+        ),
+    ) >= num_workers
     compiler.close()
 
 
@@ -76,14 +73,9 @@ def test_two_thread_per_worker() -> None:
     compiler = Compiler(num_workers=1)
     assert compiler.p is not None
     if sys.version_info >= (3, 14):
-        assert (
-            psutil.Process(compiler.p.pid)
-            .children(
-                recursive=True,
-            )[-1]
-            .num_threads()
-            == 2
-        )
+        assert psutil.Process(compiler.p.pid).children(
+            recursive=True,
+        )[-1].num_threads() == 2
     else:
         assert psutil.Process(compiler.p.pid).children()[0].num_threads() == 2
     compiler.close()
@@ -105,18 +97,15 @@ def test_interrupt_handling() -> None:
         sig = signal.SIGINT
 
     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))
-    p = subprocess.Popen(
-        [
-            sys.executable,
-            '-c',
-            """
+    p = subprocess.Popen([
+        sys.executable, '-c',
+        """
         import time
         from bqskit.compiler import Compiler
         compiler = Compiler(num_workers=1)
         time.sleep(10)
         """,
-        ]
-    )
+    ])
     p.send_signal(sig)
 
     if sys.platform != 'win32':

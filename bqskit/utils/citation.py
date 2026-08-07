@@ -1,8 +1,7 @@
 """This module implements the Citation object and @cite decorator."""
-
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import Callable
 from typing import TypeVar
 
 T = TypeVar('T')

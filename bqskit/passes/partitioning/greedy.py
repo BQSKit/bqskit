@@ -1,5 +1,4 @@
 """This module defines the GreedyPartitioner pass."""
-
 from __future__ import annotations
 
 import bisect
@@ -67,12 +66,10 @@ class GreedyPartitioner(BasePass):
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
-            circuit.fold(
-                {
-                    qudit_index: (0, circuit.num_cycles)
-                    for qudit_index in range(circuit.num_qudits)
-                }
-            )
+            circuit.fold({
+                qudit_index: (0, circuit.num_cycles)
+                for qudit_index in range(circuit.num_qudits)
+            })
             return
 
         # For each gate, calculate the best region surrounding it
@@ -101,6 +98,7 @@ class GreedyPartitioner(BasePass):
         # Form regions until there are no more gates to partition
         num_partitioned_gates = 0
         while num_partitioned_gates < total_num_gates:
+
             # Pick largest region
             s = sorted(potential_regions.values(), key=lambda x: x[0])
             num_gates, best_region = s[-1]
@@ -136,8 +134,7 @@ class GreedyPartitioner(BasePass):
                     # find first bound with lower larger than cycle
                     if len(bounds_list) == 0:
                         bounding_region[qudit] = (
-                            0,
-                            circuit.num_cycles - 1,
+                            0, circuit.num_cycles - 1,
                         )
                         continue
 

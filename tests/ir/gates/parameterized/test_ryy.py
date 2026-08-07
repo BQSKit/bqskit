@@ -1,5 +1,4 @@
 """This module tests the RYYGate class."""
-
 from __future__ import annotations
 
 import numpy as np

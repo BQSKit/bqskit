@@ -1,5 +1,4 @@
 """This module implements the PAMVerificationSequence and helper passes."""
-
 from __future__ import annotations
 
 from bqskit.compiler.basepass import BasePass
@@ -14,8 +13,8 @@ from bqskit.passes.mapping.pam import PAMBlockResultDict
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.partitioning import QuickPartitioner
 from bqskit.passes.util.unfold import UnfoldPass
-from bqskit.utils.typing import Sequence
 from bqskit.utils.typing import is_integer
+from bqskit.utils.typing import Sequence
 
 
 class TagPAMBlockDataPass(BasePass):
@@ -62,21 +61,16 @@ class CalculatePAMErrorsPass(BasePass):
                 n = in_utry.num_qudits
                 exact_circuit.append_gate(
                     PermutationGate(
-                        n,
-                        CalculatePAMErrorsPass.get_opp_perm(pi),
-                    ),
-                    op.location,
+                        n, CalculatePAMErrorsPass.get_opp_perm(pi),
+                    ), op.location,
                 )
                 exact_circuit.append_gate(
-                    ConstantUnitaryGate(in_utry),
-                    op.location,
+                    ConstantUnitaryGate(in_utry), op.location,
                 )
                 exact_circuit.append_gate(
                     PermutationGate(
-                        n,
-                        CalculatePAMErrorsPass.get_opp_perm(pf),
-                    ),
-                    op.location,
+                        n, CalculatePAMErrorsPass.get_opp_perm(pf),
+                    ), op.location,
                 )
 
             else:

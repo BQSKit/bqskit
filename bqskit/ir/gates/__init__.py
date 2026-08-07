@@ -134,7 +134,6 @@ BQSKit Gates (:mod:`bqskit.ir.gates`) =====================================
     QuditGate
     GeneralGate
 """
-
 from __future__ import annotations
 
 from bqskit.ir.gates.barrier import BarrierPlaceholder
@@ -155,10 +154,8 @@ __all__ = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate']
 __all__ += ['QuditGate']
 __all__ += [
-    'CircuitGate',
-    'MeasurementPlaceholder',
-    'Reset',
-    'BarrierPlaceholder',
+    'CircuitGate', 'MeasurementPlaceholder',
+    'Reset', 'BarrierPlaceholder',
 ]
 __all__ += ['GeneralGate']
 

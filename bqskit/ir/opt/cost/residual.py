@@ -1,5 +1,4 @@
 """This module implements the ResidualFunction base classes."""
-
 from __future__ import annotations
 
 import abc

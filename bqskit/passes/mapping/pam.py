@@ -1,13 +1,12 @@
 """This module implements the PAMRoutingPass class."""
-
 from __future__ import annotations
 
 import itertools as it
 import logging
 from collections.abc import Sequence
 from typing import Literal
-from typing import TypedDict
 from typing import overload
+from typing import TypedDict
 
 import numpy as np
 
@@ -93,7 +92,8 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         cg: CouplingGraph,
         perm_data: dict[CircuitPoint, PAMBlockTAPermData],
         modify_circuit: Literal[False] = False,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def forward_pass(
@@ -103,7 +103,8 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
         cg: CouplingGraph,
         perm_data: dict[CircuitPoint, PAMBlockTAPermData],
         modify_circuit: Literal[True],
-    ) -> PAMBlockResultDict: ...
+    ) -> PAMBlockResultDict:
+        ...
 
     def forward_pass(  # type: ignore
         self,
@@ -146,6 +147,7 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
         # Main Loop
         while len(F) > 0:
+
             # Retrieve executable gates giving the current mapping `pi`
             execute_list = [n for n in F if self._can_exe(circuit[n], pi, cg)]
 
@@ -283,7 +285,8 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
         # Global perms capture local perms' effect on the full logical space
         global_perms = [
-            tuple(qudits[i] for i in lperm) for lperm in local_perms
+            tuple(qudits[i] for i in lperm)
+            for lperm in local_perms
         ]
 
         # Inverted Permutations
@@ -294,7 +297,8 @@ class PermutationAwareMappingAlgorithm(GeneralizedSabreAlgorithm):
 
         # Inverted Global Permutations
         inv_global_perms = [
-            tuple(qudits[i] for i in ilperm) for ilperm in inv_local_perms
+            tuple(qudits[i] for i in ilperm)
+            for ilperm in inv_local_perms
         ]
 
         # Gather valid pre, circ, post triples

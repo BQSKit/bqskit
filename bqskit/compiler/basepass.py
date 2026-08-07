@@ -1,5 +1,4 @@
 """This module implements the BasePass abstract base class."""
-
 from __future__ import annotations
 
 import abc
@@ -8,14 +7,13 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any
-
     from bqskit.compiler.machine import MachineModel
     from bqskit.compiler.passdata import PassData
     from bqskit.compiler.workflow import Workflow
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.graph import CouplingGraph
-    from bqskit.qis.state.state import StateVector
     from bqskit.qis.state.system import StateSystem
+    from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 

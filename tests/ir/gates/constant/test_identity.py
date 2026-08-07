@@ -1,5 +1,4 @@
 """This module tests the IdentityGate class."""
-
 from __future__ import annotations
 
 import numpy as np

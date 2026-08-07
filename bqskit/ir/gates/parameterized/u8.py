@@ -1,5 +1,4 @@
 """This module implements the U8Gate."""
-
 from __future__ import annotations
 
 import numpy as np

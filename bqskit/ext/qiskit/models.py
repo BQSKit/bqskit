@@ -1,20 +1,18 @@
 """This module implements functions for working with IBM Backends."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from qiskit.providers import BackendV1
 
 from bqskit.compiler.machine import MachineModel
 from bqskit.ir.gate import Gate
-from bqskit.ir.gates.constant import ECRGate
-from bqskit.ir.gates.constant import IdentityGate
 from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.constant.cz import CZGate
 from bqskit.ir.gates.constant.sx import SXGate
 from bqskit.ir.gates.constant.x import XGate
+from bqskit.ir.gates.constant import IdentityGate
+from bqskit.ir.gates.constant import ECRGate
 from bqskit.ir.gates.parameterized import RZGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 from bqskit.ir.gates.parameterized.u2 import U2Gate

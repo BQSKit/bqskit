@@ -1,5 +1,4 @@
 """This module tests the CircuitIterator class."""
-
 from __future__ import annotations
 
 from typing import cast

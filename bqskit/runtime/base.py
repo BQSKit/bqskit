@@ -1,5 +1,4 @@
 """This module implements the NodeBase abstract class."""
-
 from __future__ import annotations
 
 import abc
@@ -33,6 +32,7 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
+
 
 _logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class ServerBase:
     def __init__(self) -> None:
         """Initialize a runtime node component."""
         self.lower_id_bound = 0
-        self.upper_id_bound = int(2**30)
+        self.upper_id_bound = int(2 ** 30)
         """
         The node starts with an ID range from 0 -> 2^30.
 
@@ -230,7 +230,7 @@ class ServerBase:
             ub (int): The ID upper bound to send to the manager.
         """
         max_retries = 5
-        wait_time = 0.25
+        wait_time = .25
 
         for _ in range(max_retries):
             try:
@@ -552,8 +552,10 @@ class ServerBase:
 
         # Every employee's id repeated as many time as it has idle workers:
         idle_id_repeated_list: list[int] = sum(
-            ([i] * e.num_idle_workers for i, e in enumerate(self.employees)),
-            [],
+            (
+                [i] * e.num_idle_workers
+                for i, e in enumerate(self.employees)
+            ), [],
         )
 
         # Shuffle to reduce chance of inefficiency described in handle_waiting
@@ -572,17 +574,14 @@ class ServerBase:
         remaining_tasks = list(tasks[-num_remaining_tasks:])
 
         # Sort the employees by how many tasks they have
-        ntasks = sorted(
-            [
-                (
-                    e.num_tasks
-                    + len(assignments[i]),  # Consider idle assignments
-                    random.random(),  # Random value for tie breaker
-                    i,
-                )
-                for i, e in enumerate(self.employees)
-            ]
-        )
+        ntasks = sorted([
+            (
+                e.num_tasks + len(assignments[i]),  # Consider idle assignments
+                random.random(),  # Random value for tie breaker
+                i,
+            )
+            for i, e in enumerate(self.employees)
+        ])
 
         while len(remaining_tasks) > 0:
             num_tasks, r, employee_id = ntasks[0]
@@ -675,7 +674,7 @@ class ServerBase:
 
         old_count = employee.num_idle_workers
         employee.num_idle_workers = adjusted_idle_count
-        self.num_idle_workers += adjusted_idle_count - old_count
+        self.num_idle_workers += (adjusted_idle_count - old_count)
         assert 0 <= self.num_idle_workers <= self.total_workers
 
 
@@ -715,9 +714,7 @@ def import_tests_package() -> None:
     credit: https://www.youtube.com/watch?v=t43zBsVcva0
     """
     sys.path.append(os.path.join(os.getcwd()))
-    import pkgutil
-
     import tests
-
+    import pkgutil
     for mod in pkgutil.walk_packages(tests.__path__, f'{tests.__name__}.'):
         __import__(mod.name, fromlist=['_trash'])

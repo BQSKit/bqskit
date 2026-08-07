@@ -1,5 +1,4 @@
 """This module tests the ScipyMinimizer class."""
-
 from __future__ import annotations
 
 from bqskit.ir.circuit import Circuit

@@ -1,5 +1,4 @@
 """This module implements the ShiftGate."""
-
 from __future__ import annotations
 
 from openqudit.expressions import XGate as _XGate

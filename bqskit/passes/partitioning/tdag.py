@@ -1,12 +1,14 @@
 """This module defines the TDAGPartitioner pass."""
-
 from __future__ import annotations
 
 import copy
 import logging
-from collections.abc import Callable
 from collections.abc import Sequence
+from typing import Callable
 
+from ._partitioning_utils import CachedSingleQuditIterator
+from ._partitioning_utils import PriorityQueueSet
+from ._partitioning_utils import SingleQuditIterator
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -14,10 +16,6 @@ from bqskit.ir.gates.circuitgate import CircuitGate
 from bqskit.ir.operation import Operation
 from bqskit.ir.region import CircuitRegion
 from bqskit.utils.typing import is_integer
-
-from ._partitioning_utils import CachedSingleQuditIterator
-from ._partitioning_utils import PriorityQueueSet
-from ._partitioning_utils import SingleQuditIterator
 
 
 class HasseGraphNode:
@@ -58,10 +56,8 @@ class HasseGraph:
         child: frozenset[int],
         filter: Callable[[frozenset[int]], bool],
     ) -> None:
-        """
-        Adds a child set to an existing parent, and generates all possible
-        combinations among siblings.
-        """
+        """Adds a child set to an existing parent, and generates all possible
+        combinations among siblings."""
         parent_node = self.group_map[parent]
         # loops in the Hasse graph are not allowed
         if parent == child:
@@ -165,6 +161,7 @@ class TDAGPartitioner(BasePass):
         Raises:
             ValueError: If `block_size` is less than 2.
         """
+
         if not is_integer(block_size):
             raise TypeError(
                 f'Expected integer for block_size, got {type(block_size)}.',
@@ -181,17 +178,16 @@ class TDAGPartitioner(BasePass):
 
     async def run(self, circuit: Circuit, data: PassData) -> None:
         """Perform the pass's operation, see :class:`BasePass` for more."""
+
         if self.block_size > circuit.num_qudits:
             _logger.warning(
                 'Configured block size is greater than circuit size; '
                 'blocking entire circuit.',
             )
-            circuit.fold(
-                {
-                    qudit_index: (0, circuit.num_cycles - 1)
-                    for qudit_index in range(circuit.num_qudits)
-                }
-            )
+            circuit.fold({
+                qudit_index: (0, circuit.num_cycles - 1)
+                for qudit_index in range(circuit.num_qudits)
+            })
             return
 
         # Cache maximum cycles in circuit
@@ -233,23 +229,19 @@ class TDAGPartitioner(BasePass):
         # We arbitrarily designate the qudit with the min index as the "primary"
         self.qudit_op_cache: dict[int, list[int]] = {
             n: [
-                cycle
-                for cycle, op in SingleQuditIterator(circuit, n, 0)
+                cycle for cycle,
+                op in SingleQuditIterator(circuit, n, 0)
                 if n == min(op.location)
             ]
             for n in circuit.active_qudits
         }
 
         single_qudits = {
-            qudit
-            for qudit in range(
+            qudit for qudit in range(
                 circuit.num_qudits,
-            )
-            if qudit in active_qudits
-            and len(
+            ) if qudit in active_qudits and len(
                 self.qudit_gate_cache[qudit],
-            )
-            == 0
+            ) == 0
         }
 
         # block any qudits which do not have multiqudit gates,
@@ -281,13 +273,13 @@ class TDAGPartitioner(BasePass):
             tuple[
                 int,
                 frozenset[int],
-            ],
-            set[int],
+            ], set[int],
         ] = dict()
         self.gate_visit_set: dict[tuple[int, frozenset[int]], set[int]] = dict()
 
         # Form regions until there are no more gates to partition
         while any(cycle < num_cycles for cycle in divider):
+
             target_qudits = qudits_to_update.copy()
             qudit_groups_to_remove = list()
 
@@ -295,7 +287,7 @@ class TDAGPartitioner(BasePass):
             # add qudits which share a block with the updated qudits to the
             # target set (since new circuit paths may be open for these qudits)
             for group in potential_blocks.keys():
-                if not group.isdisjoint(qudits_to_update):
+                if (not group.isdisjoint(qudits_to_update)):
                     target_qudits.update(group)
                     qudit_groups_to_remove.append(group)
 
@@ -304,28 +296,20 @@ class TDAGPartitioner(BasePass):
 
             # Update the gate dependencies using a breadth first search
             self.update_gate_dependencies(
-                circuit,
-                divider,
-                self.gate_dependencies,
-                self.gate_visit_set,
-                target_qudits,
-                to_visit,
+                circuit, divider, self.gate_dependencies, self.gate_visit_set,
+                target_qudits, to_visit,
             )
 
             # Calculate all groups of qudits starting from the target qudits
             #   that can exist based on current circuit
             new_qudit_groups = self.calculate_all_qudit_groups(
-                circuit,
-                divider,
-                target_qudits,
+                circuit, divider, target_qudits,
             )
 
             # Update the map of potential blocks
             potential_blocks.update(
                 self.calculate_blocks(
-                    new_qudit_groups,
-                    circuit,
-                    divider,
+                    new_qudit_groups, circuit, divider,
                 ),
             )
 
@@ -337,10 +321,7 @@ class TDAGPartitioner(BasePass):
             # Remove the influence of the gates in the removed block on the
             #   gate dependencies
             to_visit = self.clear_gate_dependencies(
-                circuit,
-                divider,
-                self.gate_dependencies,
-                self.gate_visit_set,
+                circuit, divider, self.gate_dependencies, self.gate_visit_set,
                 set(
                     best_region.keys(),
                 ),
@@ -403,18 +384,15 @@ class TDAGPartitioner(BasePass):
         return folded_circuit
 
     def update_gate_dependencies(
-        self,
-        circuit: Circuit,
-        divider: list[int],
+        self, circuit: Circuit, divider: list[int],
         dependencies: dict[tuple[int, frozenset[int]], set[int]],
         visit_set: dict[tuple[int, frozenset[int]], set[int]],
         target_group: set[int],
         to_visit: PriorityQueueSet[tuple[int, frozenset[int]]],
     ) -> None:
-        """
-        Sweep the `circuit` starting at the `divider` and update
-        `dependencies` and `visit_set` for all qudits in the `target_group`.
-        """
+        """Sweep the `circuit` starting at the `divider` and update
+        `dependencies` and `visit_set` for all qudits in the `target_group`."""
+
         for qudit in target_group:
             try:
                 single_iter = CachedSingleQuditIterator(
@@ -439,16 +417,14 @@ class TDAGPartitioner(BasePass):
             visit_set.setdefault(gate, set()).add(qudit)
             to_visit.push(gate)
 
-        while len(to_visit) > 0:
+        while (len(to_visit) > 0):
             gate = to_visit.pop()
             (cycle, location) = gate
             # if all operation qudits are active and the gate has listed
             #   dependencies (is reachable)
-            if (
-                gate in dependencies
-                and len(dependencies[gate]) <= self.block_size
-                and len(visit_set[gate]) == len(location)
-            ):
+            if gate in dependencies and \
+                    len(dependencies[gate]) <= self.block_size and \
+                    len(visit_set[gate]) == len(location):
                 for qudit in location:
                     try:
                         single_iter = CachedSingleQuditIterator(
@@ -476,17 +452,14 @@ class TDAGPartitioner(BasePass):
                     to_visit.push(next_gate)
 
     def clear_gate_dependencies(
-        self,
-        circuit: Circuit,
-        divider: list[int],
+        self, circuit: Circuit, divider: list[int],
         dependencies: dict[tuple[int, frozenset[int]], set[int]],
         visit_set: dict[tuple[int, frozenset[int]], set[int]],
         removed_group: set[int],
     ) -> PriorityQueueSet[tuple[int, frozenset[int]]]:
-        """
-        Sweep the `circuit` starting at the `divider` and remove all qudits
-        in the `removed_group` from the `dependencies` and `visit_set`.
-        """
+        """Sweep the `circuit` starting at the `divider` and remove all qudits
+        in the `removed_group` from the `dependencies` and `visit_set`."""
+
         to_visit: PriorityQueueSet[
             tuple[
                 int,
@@ -512,9 +485,9 @@ class TDAGPartitioner(BasePass):
             except StopIteration:
                 continue
             gate = (cycle, frozenset(op.location))
-            if gate in dependencies:
+            if (gate in dependencies):
                 to_visit.push(gate)
-                if not dependencies[gate] <= removed_group:
+                if (not dependencies[gate] <= removed_group):
                     dependencies[gate] -= removed_group
                     visit_set[gate] -= removed_group
                     to_update.push(gate)
@@ -522,7 +495,7 @@ class TDAGPartitioner(BasePass):
                     del dependencies[gate]
                     del visit_set[gate]
 
-        while len(to_visit) > 0:
+        while (len(to_visit) > 0):
             gate = to_visit.pop()
             (cycle, location) = gate
             for qudit in location:
@@ -537,9 +510,9 @@ class TDAGPartitioner(BasePass):
                 except StopIteration:
                     continue
                 next_gate = (next_cycle, frozenset(next_op.location))
-                if next_gate in dependencies:
+                if (next_gate in dependencies):
                     to_visit.push(next_gate)
-                    if not dependencies[next_gate] <= removed_group:
+                    if (not dependencies[next_gate] <= removed_group):
                         dependencies[next_gate] -= removed_group
                         visit_set[next_gate] -= removed_group
                         to_update.push(next_gate)
@@ -551,9 +524,8 @@ class TDAGPartitioner(BasePass):
 
     def gate_dependencies_valid(self, gate: tuple[int, frozenset[int]]) -> bool:
         (cycle, location) = gate
-        return gate in self.gate_dependencies and len(
-            self.gate_visit_set[gate]
-        ) == len(location)
+        return gate in self.gate_dependencies and \
+            len(self.gate_visit_set[gate]) == len(location)
 
     def calculate_all_qudit_groups(
         self,
@@ -592,17 +564,13 @@ class TDAGPartitioner(BasePass):
                 continue
 
             gate = (cycle, frozenset(op.location))
-            gate_allowed = (
-                self.gate_dependencies_valid(gate)
-                and len(self.gate_dependencies[gate]) <= self.block_size
-            )
+            gate_allowed = self.gate_dependencies_valid(gate) and \
+                len(self.gate_dependencies[gate]) <= self.block_size
             if gate_allowed:
                 set_graph.add_child(
-                    frozenset({qudit}),
-                    frozenset(
+                    frozenset({qudit}), frozenset(
                         self.gate_dependencies[gate],
-                    ),
-                    reject_too_large,
+                    ), reject_too_large,
                 )
                 if len(self.gate_dependencies[gate]) < self.block_size:
                     active_gates.add(gate)
@@ -628,18 +596,13 @@ class TDAGPartitioner(BasePass):
                     continue
 
                 next_gate = (next_cycle, frozenset(next_op.location))
-                gate_allowed = (
-                    self.gate_dependencies_valid(next_gate)
-                    and len(self.gate_dependencies[next_gate])
-                    <= self.block_size
-                )
+                gate_allowed = self.gate_dependencies_valid(next_gate) and \
+                    len(self.gate_dependencies[next_gate]) <= self.block_size
                 if gate_allowed:
                     set_graph.add_child(
-                        frozenset(self.gate_dependencies[gate]),
-                        frozenset(
+                        frozenset(self.gate_dependencies[gate]), frozenset(
                             self.gate_dependencies[next_gate],
-                        ),
-                        reject_too_large,
+                        ), reject_too_large,
                     )
                     if len(self.gate_dependencies[next_gate]) < self.block_size:
                         active_gates.add(next_gate)
@@ -656,6 +619,7 @@ class TDAGPartitioner(BasePass):
         divider: Sequence[int],
     ) -> dict[frozenset[int], tuple[CircuitRegion, list[Operation]]]:
         """Calculate the initial blocks for all qudit groups."""
+
         blocks: dict[
             frozenset[int],
             tuple[CircuitRegion, list[Operation]],
@@ -663,9 +627,7 @@ class TDAGPartitioner(BasePass):
 
         for qg in qudit_groups:
             blocks[qg] = self.calculate_block(
-                qg,
-                circuit,
-                [divider[q] for q in qg],
+                qg, circuit, [divider[q] for q in qg],
             )
 
         return blocks
@@ -735,12 +697,12 @@ class TDAGPartitioner(BasePass):
         # creating wedge-shaped blocks by removing qudits from the active set
         # when a gate which cannot be included is encountered; continue until
         # there are no active qudits or no gates left to visit
-        while len(in_qudits) > 0 and len(to_visit) > 0:
+        while (len(in_qudits) > 0 and len(to_visit) > 0):
             gate = to_visit.pop()
             (cycle, location) = gate
             # if all operation qudits are active and the gate has valid
             #   dependencies (is reachable)
-            if location <= in_qudits and self.gate_dependencies_valid(gate):
+            if (location <= in_qudits and self.gate_dependencies_valid(gate)):
                 # put current gate in op_list
                 op_list.append(
                     circuit._circuit[cycle][
@@ -771,12 +733,10 @@ class TDAGPartitioner(BasePass):
                 in_qudits -= location
 
         return (
-            CircuitRegion(
-                {
-                    q: (starting_cycles[i], stopped_cycles[q] - 1)
-                    for i, q in enumerate(qudit_group)
-                    if stopped_cycles[q] - 1 >= starting_cycles[i]
-                }
-            ),
+            CircuitRegion({
+                q: (starting_cycles[i], stopped_cycles[q] - 1)
+                for i, q in enumerate(qudit_group)
+                if stopped_cycles[q] - 1 >= starting_cycles[i]
+            }),
             op_list,
         )

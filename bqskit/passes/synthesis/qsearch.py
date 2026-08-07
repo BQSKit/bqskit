@@ -1,5 +1,4 @@
 """This module implements the QSearchSynthesisPass."""
-
 from __future__ import annotations
 
 import logging
@@ -22,6 +21,7 @@ from bqskit.runtime import get_runtime
 from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
+
 
 _logger = logging.getLogger(__name__)
 

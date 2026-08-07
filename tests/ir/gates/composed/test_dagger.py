@@ -1,5 +1,4 @@
 """This module tests the DaggerGate class."""
-
 from __future__ import annotations
 
 from bqskit.ir.gates import DaggerGate

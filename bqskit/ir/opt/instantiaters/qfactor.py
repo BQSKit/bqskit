@@ -1,11 +1,10 @@
 """This module implements the QFactor class."""
-
 from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING
 from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt

@@ -3,7 +3,6 @@ This package implements partitioning passes.
 
 Partitioning passes group together adjacent gates into CircuitGates objects.
 """
-
 from __future__ import annotations
 
 from bqskit.passes.partitioning.cluster import ClusteringPartitioner

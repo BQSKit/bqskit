@@ -4,7 +4,6 @@ BQSKit Tests Root conftest.py.
 This module defines several fixtures for use in this test suite. There are three
 main types of fixtures defined here, unitaries, gates, and circuits.
 """
-
 from __future__ import annotations
 
 import os
@@ -59,7 +58,6 @@ from bqskit.ir.gates import YGate
 from bqskit.ir.gates import ZGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
-
 # from bqskit.ir.gates import CircuitGate
 # from bqskit.ir.gates import ControlledGate
 # from bqskit.ir.gates import PermutationGate
@@ -91,94 +89,46 @@ NUMBER_RANDOM_CIRCUITS = int(
 TOFFOLI = np.asarray(
     [
         [
-            1.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
+            1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            1.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
+            0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            1.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
+            0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            1.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            1.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            1.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            1.0 + 0.0j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j,
         ],
         [
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            0.0 + 0.0j,
-            1.0 + 0.0j,
-            0.0 + 0.0j,
+            0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j,
+            0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j,
         ],
     ],
 )
 
 SWAP = np.asarray(
     [
-        [1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-        [0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j],
-        [0.0 + 0.0j, 1.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j],
-        [0.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.0j],
+        [1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+        [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+        [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+        [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j],
     ],
 )
 
@@ -245,9 +195,8 @@ def random_utry_gen(dims: int | Sequence[int]) -> npt.NDArray[np.complex128]:
 
 
 @pytest.fixture
-def gen_random_utry_np() -> Callable[
-    [int | Sequence[int]], npt.NDArray[np.complex128]
-]:
+def gen_random_utry_np(
+) -> Callable[[int | Sequence[int]], npt.NDArray[np.complex128]]:
     """Provide a method to generate random unitaries."""
     return random_utry_gen
 
@@ -280,9 +229,8 @@ def invalid_utry_gen(dims: int | Sequence[int]) -> npt.NDArray[np.complex128]:
 
 
 @pytest.fixture
-def gen_invalid_utry_np() -> Callable[
-    [int | Sequence[int]], npt.NDArray[np.complex128]
-]:
+def gen_invalid_utry_np(
+) -> Callable[[int | Sequence[int]], npt.NDArray[np.complex128]]:
     """Provide a method to generate random invalid unitaries."""
     return invalid_utry_gen
 
@@ -347,28 +295,32 @@ QUBIT_GATES = [g for g in BQSKIT_GATES if g.is_qubit_only()]
 QUTRIT_GATES = [g for g in BQSKIT_GATES if g.is_qutrit_only()]
 PARAMETERIZED_GATES = [g for g in BQSKIT_GATES if g.is_parameterized()]
 SINGLE_QUBIT_GATES = [
-    g for g in BQSKIT_GATES if g.is_qubit_only() and g.num_qudits == 1
+    g for g in BQSKIT_GATES
+    if g.is_qubit_only() and g.num_qudits == 1
 ]
 SINGLE_QUBIT_GENERAL_GATES = [
-    U3Gate(),
-    VariableUnitaryGate(1, [2]),
-    PauliGate(1),
+    U3Gate(), VariableUnitaryGate(1, [2]), PauliGate(1),
 ]
 SINGLE_QUTRIT_GATES = [
-    g for g in BQSKIT_GATES if g.is_qutrit_only() and g.num_qudits == 1
+    g for g in BQSKIT_GATES
+    if g.is_qutrit_only() and g.num_qudits == 1
 ]
 SINGLE_QUTRIT_GENERAL_GATES = [U8Gate(), VariableUnitaryGate(1, [3])]
 TWO_QUBIT_GATES = [
-    g for g in BQSKIT_GATES if g.is_qubit_only() and g.num_qudits == 2
+    g for g in BQSKIT_GATES
+    if g.is_qubit_only() and g.num_qudits == 2
 ]
 TWO_QUTRIT_GATES = [
-    g for g in BQSKIT_GATES if g.is_qutrit_only() and g.num_qudits == 2
+    g for g in BQSKIT_GATES
+    if g.is_qutrit_only() and g.num_qudits == 2
 ]
 MULTI_QUBIT_GATES = [
-    g for g in BQSKIT_GATES if g.is_qubit_only() and g.num_qudits >= 2
+    g for g in BQSKIT_GATES
+    if g.is_qubit_only() and g.num_qudits >= 2
 ]
 MULTI_QUTRIT_GATES = [
-    g for g in BQSKIT_GATES if g.is_qutrit_only() and g.num_qudits >= 2
+    g for g in BQSKIT_GATES
+    if g.is_qutrit_only() and g.num_qudits >= 2
 ]
 
 
@@ -449,7 +401,6 @@ def multi_qutrit_gate(request: Any) -> Gate:
     """Provides all of MULTI_QUTRIT_GATES as a gate fixture."""
     return request.param
 
-
 # endregion
 
 # region Circuits
@@ -528,13 +479,15 @@ def circuit_gen(
 
     if not isinstance(constant, bool):
         raise TypeError(
-            'Expected bool for constant, got: %s.' % type(constant),
+            'Expected bool for constant, got: %s.' %
+            type(constant),
         )
 
     circuit = Circuit(size, radixes)
 
     # Apply a random gate to a random location `depth` times
     for d in range(depth):
+
         # 1. Select random qudit
         qudit_selected = np.random.randint(0, size)
         qudit_radix = circuit.radixes[qudit_selected]
@@ -548,6 +501,7 @@ def circuit_gen(
 
         # 2b. Find first gate that is compatible
         for gate in shuffled_gates:
+
             # must be compatible with qudit
             if qudit_radix not in gate.radixes:
                 continue
@@ -607,7 +561,6 @@ def circuit_gen(
 def gen_random_circuit() -> Callable[[int, Sequence[int], int, bool], Circuit]:
     """Provide a function to generate random circuits."""
     return circuit_gen
-
 
 # Pregenerated random circuit fixtures:
 

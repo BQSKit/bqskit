@@ -1,5 +1,4 @@
 """This module implements the rotations due to the generatos of SU(3)."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -71,6 +70,7 @@ class RSU3Gate(Gate, CachedClass):
 
     def get_unitary(self, params: RealVector = []) -> UnitaryMatrix:
         """Return the unitary for this gate, see :class:`Unitary` for more."""
+
         self.check_parameters(params)
 
         cos = np.cos(params[0])

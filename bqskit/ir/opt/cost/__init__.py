@@ -8,7 +8,6 @@ the parameters such that the cost value is best minimized. Minimization can be
 used on its own with `circuit.minimize` or as a circuit instantiation method
 with `circuit.instantiate`.
 """
-
 from __future__ import annotations
 
 from bqskit.ir.opt.cost.function import CostFunction

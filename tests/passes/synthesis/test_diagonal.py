@@ -11,6 +11,7 @@ from bqskit.qis.pauliz import PauliZMatrices
 
 
 class TestWalshDiagonalSynthesis:
+
     def test_1_qubit(self, compiler: Compiler) -> None:
         num_qubits = 1
         pauliz = PauliZMatrices(num_qubits)

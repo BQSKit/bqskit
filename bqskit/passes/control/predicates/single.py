@@ -1,5 +1,4 @@
 """This module implements the SinglePhysicalPredicate class."""
-
 from __future__ import annotations
 
 import logging
@@ -53,7 +52,8 @@ class HasGeneralSingleQuditGate(PassPredicate):
     def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
         return any(
-            isinstance(g, GeneralGate) for g in data.gate_set.single_qudit_gates
+            isinstance(g, GeneralGate)
+            for g in data.gate_set.single_qudit_gates
         )
 
 
@@ -63,11 +63,13 @@ class ZXGatePredicate(PassPredicate):
     def get_truth_value(self, circuit: Circuit, data: PassData) -> bool:
         """Call this predicate, see :class:`PassPredicate` for more info."""
         return (
-            RZGate() in data.gate_set.single_qudit_gates
-            or U1Gate() in data.gate_set.single_qudit_gates
-        ) and (
-            SXGate() in data.gate_set.single_qudit_gates
-            or RXGate() in data.gate_set.single_qudit_gates
+            (
+                RZGate() in data.gate_set.single_qudit_gates
+                or U1Gate() in data.gate_set.single_qudit_gates
+            ) and (
+                SXGate() in data.gate_set.single_qudit_gates
+                or RXGate() in data.gate_set.single_qudit_gates
+            )
         )
 
 

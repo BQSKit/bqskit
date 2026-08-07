@@ -1,5 +1,4 @@
 """This module implements the Instantiater base class."""
-
 from __future__ import annotations
 
 import abc
@@ -128,7 +127,6 @@ class Instantiater(abc.ABC):
             BQSKit Runtime during pass execution.
         """
         from bqskit.runtime import get_runtime
-
         target = self.check_target(target)
         start_gen = RandomStartGenerator()
         starts = start_gen.gen_starting_points(num_starts, circuit, target)

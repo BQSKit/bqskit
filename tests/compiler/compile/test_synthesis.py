@@ -4,8 +4,8 @@ import itertools as it
 
 import pytest
 
-from bqskit import MachineModel
 from bqskit import compile
+from bqskit import MachineModel
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.gateset import GateSet
 from bqskit.ext.cirq.models import google_gate_set
@@ -30,15 +30,15 @@ def get_distance_from_pa(U: UnitaryMatrix, V: UnitaryMatrix) -> float:
     Pis = [PermutationMatrix.from_qubit_location(width, p) for p in perms]
     Pos = [PermutationMatrix.from_qubit_location(width, p) for p in perms]
     dists = [
-        U.get_distance_from(Po.T @ V @ Pi, 1) for Pi, Po in it.product(Pis, Pos)
+        U.get_distance_from(Po.T @ V @ Pi, 1)
+        for Pi, Po in it.product(Pis, Pos)
     ]
     return min(dists)
 
 
 @pytest.mark.parametrize('sq_utry', [UnitaryMatrix.random(1) for i in range(5)])
 @pytest.mark.parametrize(
-    'gate_set',
-    [
+    'gate_set', [
         {U3Gate()},
         {PhasedXZGate()},
         {U1qGate(), XGate()},
@@ -71,8 +71,7 @@ def test_single_qudit_synthesis(
 
 @pytest.mark.parametrize('tq_utry', [UnitaryMatrix.random(2) for i in range(5)])
 @pytest.mark.parametrize(
-    'gate_set',
-    [
+    'gate_set', [
         GateSet.default_gate_set(),
         rigetti_gate_set,
         quantinuum_gate_set,
@@ -104,8 +103,7 @@ def test_two_qudit_synthesis(
 
 
 @pytest.mark.parametrize(
-    'gate_set',
-    [
+    'gate_set', [
         GateSet.default_gate_set(),
         rigetti_gate_set,
         quantinuum_gate_set,
@@ -153,13 +151,9 @@ def test_identity_synthesis(
         optimization_level=optimization_level,
         compiler=compiler,
     )
-    assert (
-        out_circuit.get_unitary().get_distance_from(
-            UnitaryMatrix.identity(dim),
-            1,
-        )
-        < 1e-8
-    )
+    assert out_circuit.get_unitary().get_distance_from(
+        UnitaryMatrix.identity(dim), 1,
+    ) < 1e-8
 
     # TODO: Re-enable this check when tree gate deletion hits the OTS.
     # In cases where the identity is synthesized to two cnots surrounded

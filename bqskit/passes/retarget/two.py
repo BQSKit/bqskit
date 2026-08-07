@@ -1,5 +1,4 @@
 """This module implements the Rebase2QuditGatePass."""
-
 from __future__ import annotations
 
 import logging
@@ -19,7 +18,6 @@ from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
-
 _logger = logging.getLogger(__name__)
 
 
@@ -294,12 +292,10 @@ class Rebase2QuditGatePass(BasePass):
                         counts[rop.gate] += 0.5
 
         region = {q: (center.cycle - i, center.cycle + j) for q in qubits}
-        grouped_gate_str = ', '.join(
-            [
-                f'{int(c)} {g}' + ('s' if c > 1 else '')
-                for g, c in counts.items()
-            ]
-        )
+        grouped_gate_str = ', '.join([
+            f'{int(c)} {g}' + ('s' if c > 1 else '')
+            for g, c in counts.items()
+        ])
         _logger.debug(f'Grouped together {grouped_gate_str}.')
         return circuit.fold(region)
 
@@ -343,12 +339,10 @@ class Rebase2QuditGatePass(BasePass):
         replaced_log_messages = []
         for circ in circs + [overdrive]:
             g_counts = [circ.count(g) for g in circ.gate_set]
-            gate_count_str = ', '.join(
-                [
-                    f'{c} {g}' + ('s' if c > 1 else '')
-                    for c, g in zip(g_counts, circ.gate_set)
-                ]
-            )
+            gate_count_str = ', '.join([
+                f'{c} {g}' + ('s' if c > 1 else '')
+                for c, g in zip(g_counts, circ.gate_set)
+            ])
             msg = f'Replaced gate with {gate_count_str}.'
             replaced_log_messages.append(msg)
 

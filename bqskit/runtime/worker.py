@@ -1,5 +1,4 @@
 """This module implements BQSKit Runtime's Worker."""
-
 from __future__ import annotations
 
 import argparse
@@ -30,6 +29,7 @@ from bqskit.runtime.future import RuntimeFuture
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
+
 
 _logger = logging.getLogger(__name__)
 
@@ -80,10 +80,8 @@ class WorkerMailbox:
         return WorkerMailbox(False, num_results, [None] * num_results)
 
     def get_new_results(self) -> list[tuple[int, Any]]:
-        """
-        Return and reset the results that have come in since previous
-        call.
-        """
+        """Return and reset the results that have come in since previous
+        call."""
         assert self.fresh_results is not None
         out = self.fresh_results
         self.fresh_results = []
@@ -220,13 +218,11 @@ class Worker:
                         try:
                             serial = pickle.dumps(record)
                         except (pickle.PicklingError, TypeError):
-                            serial = pickle.dumps(
-                                (
-                                    record.name,
-                                    record.levelno,
-                                    record.getMessage(),
-                                )
-                            )
+                            serial = pickle.dumps((
+                                record.name,
+                                record.levelno,
+                                record.getMessage(),
+                            ))
                         self._conn.send((RuntimeMessage.LOG, (tid, serial)))
             return record
 
@@ -373,7 +369,8 @@ class Worker:
 
         # Remove all tasks that are children of `addr` from delayed tasks
         self._delayed_tasks = [
-            t for t in self._delayed_tasks if not t.is_descendant_of(addr)
+            t for t in self._delayed_tasks
+            if not t.is_descendant_of(addr)
         ]
 
     def _handle_communicate(
@@ -589,7 +586,8 @@ class Worker:
             fnarg,
             RuntimeAddress(self._id, mailbox_id, 0),
             self._active_task.comp_task_id,
-            self._active_task.breadcrumbs + (self._active_task.return_address,),
+            self._active_task.breadcrumbs
+            + (self._active_task.return_address,),
             self._active_task.logging_level,
             self._active_task.max_logging_depth,
             task_name,
@@ -780,7 +778,7 @@ def start_worker(
 
     # Connect to manager
     max_retries = 7
-    wait_time = 0.1
+    wait_time = .1
     conn: Connection | None = None
     family = 'AF_INET' if sys.platform == 'win32' else None
     for _ in range(max_retries):
@@ -851,8 +849,7 @@ def start_worker_rank() -> None:
         help='The number of workers to spawn.',
     )
     parser.add_argument(
-        '--cpus',
-        '-c',
+        '--cpus', '-c',
         nargs='+',
         type=int,
         help='Either one number or a list of numbers equal in length to the'
@@ -861,28 +858,24 @@ def start_worker_rank() -> None:
         ' enumerated starting at that number.',
     )
     parser.add_argument(
-        '-p',
-        '--port',
+        '-p', '--port',
         type=int,
         default=default_worker_port,
         help='The port the workers will try to connect to a manager on.',
     )
     parser.add_argument(
-        '-v',
-        '--verbose',
+        '-v', '--verbose',
         action='count',
         default=0,
         help='Enable logging of increasing verbosity, either -v, -vv, or -vvv.',
     )
     parser.add_argument(
-        '-l',
-        '--log-client',
+        '-l', '--log-client',
         action='store_true',
         help='Log messages from the client process.',
     )
     parser.add_argument(
-        '-t',
-        '--num_blas_threads',
+        '-t', '--num_blas_threads',
         type=int,
         default=1,
         help='The number of threads to use in BLAS libraries.',

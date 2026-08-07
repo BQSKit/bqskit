@@ -1,5 +1,4 @@
 """This module implements the Circuit class."""
-
 from __future__ import annotations
 
 import copy
@@ -11,10 +10,11 @@ from collections.abc import Collection
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 from typing import Any
 from typing import cast
+from typing import Optional
 from typing import overload
+from typing import TYPE_CHECKING
 
 import dill
 import numpy as np
@@ -57,9 +57,9 @@ from bqskit.utils.typing import is_sequence_of_int
 from bqskit.utils.typing import is_valid_radixes
 
 if TYPE_CHECKING:
+    from bqskit.ir.opt.cost.function import CostFunction
     from bqskit.compiler.basepass import BasePass
     from bqskit.compiler.gateset import GateSet
-    from bqskit.ir.opt.cost.function import CostFunction
 
 _logger = logging.getLogger(__name__)
 
@@ -133,6 +133,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.get_statevector([1, 0, 0, 0])
             array([ 0.5+0.j,  0.5+0.j,  0.5+0.j, -0.5+0.j])
         """
+
         if not is_integer(num_qudits):
             raise TypeError(
                 f'Expected integer num_qudits, got {type(num_qudits)}.',
@@ -161,7 +162,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         self._gate_info: dict[Gate, int] = {}
         self._graph_info: dict[tuple[int, int], int] = {}
 
-        _NodePtrs = dict[int, CircuitPoint | None]
+        _NodePtrs = dict[int, Optional[CircuitPoint]]
         self._front: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._rear: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._dag: dict[CircuitPoint, tuple[_NodePtrs, _NodePtrs]] = {}
@@ -222,9 +223,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         if depth == 0:
             return 0
 
-        weighted_num_operations = np.sum(
-            [gate.num_qudits * count for gate, count in self._gate_info.items()]
-        )
+        weighted_num_operations = np.sum([
+            gate.num_qudits * count
+            for gate, count in self._gate_info.items()
+        ])
 
         return float(weighted_num_operations / depth)
 
@@ -246,14 +248,12 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     def gate_set(self) -> GateSet:
         """The set of gates in the circuit."""
         from bqskit.compiler.gateset import GateSet
-
         return GateSet(set(self._gate_info.keys()))
 
     @property
     def gate_set_no_blocks(self) -> GateSet:
         """The set of gates in the circuit, recurses into circuit gates."""
         from bqskit.compiler.gateset import GateSet
-
         gates: set[Gate] = set()
         for g, _ in self._gate_info.items():
             if isinstance(g, CircuitGate):
@@ -396,7 +396,8 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         }
         self._rear[qudit_index] = None
         self._graph_info = {
-            shift_edge(e): i for e, i in self._graph_info.items()
+            shift_edge(e): i
+            for e, i in self._graph_info.items()
         }
         self._dag = {
             shift_point(p): (
@@ -487,7 +488,8 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             if q != qudit_index
         }
         self._graph_info = {
-            shift_edge(e): i for e, i in self._graph_info.items()
+            shift_edge(e): i
+            for e, i in self._graph_info.items()
         }
         self._dag = {
             shift_point(p): (
@@ -512,7 +514,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                 f'Expected integer for qudit_index, got: {type(qudit_index)}',
             )
 
-        return qudit_index < self.num_qudits and qudit_index >= -self.num_qudits
+        return (
+            qudit_index < self.num_qudits
+            and qudit_index >= -self.num_qudits
+        )
 
     def is_qudit_idle(self, qudit_index: int) -> bool:
         """Return true if the qudit is not involved in any operations."""
@@ -560,13 +565,16 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         perm_point_or_none = lambda p: perm_point(p) if p is not None else p
 
         self._graph_info = {
-            (perm[e[0]], perm[e[1]]): i for e, i in self._graph_info.items()
+            (perm[e[0]], perm[e[1]]): i
+            for e, i in self._graph_info.items()
         }
         self._front = {
-            perm[i]: perm_point_or_none(p) for i, p in self._front.items()
+            perm[i]: perm_point_or_none(p)
+            for i, p in self._front.items()
         }
         self._rear = {
-            perm[i]: perm_point_or_none(p) for i, p in self._rear.items()
+            perm[i]: perm_point_or_none(p)
+            for i, p in self._rear.items()
         }
         self._dag = {
             perm_point(p): (
@@ -586,7 +594,8 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         for i in range(self.num_cycles):
             self._circuit[i] = [
-                self._circuit[i][perm.index(q)] for q in range(self.num_qudits)
+                self._circuit[i][perm.index(q)]
+                for q in range(self.num_qudits)
             ]
 
             qudits_to_skip: list[int] = []
@@ -615,15 +624,25 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         shift_point = lambda p: p if p.cycle < cycle_index else inc_point(p)
         shift_point_or_none = lambda p: None if p is None else shift_point(p)
         self._front = {
-            q: shift_point_or_none(p) for q, p in self._front.items()
+            q: shift_point_or_none(p)
+            for q, p in self._front.items()
         }
-        self._rear = {q: shift_point_or_none(p) for q, p in self._rear.items()}
+        self._rear = {
+            q: shift_point_or_none(p)
+            for q, p in self._rear.items()
+        }
         self._dag = {
             shift_point(p): (
                 # Prev
-                {q: shift_point_or_none(p2) for q, p2 in prevs.items()},
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in prevs.items()
+                },
                 # Next
-                {q: shift_point_or_none(p2) for q, p2 in nexts.items()},
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in nexts.items()
+                },
             )
             for p, (prevs, nexts) in self._dag.items()
         }
@@ -662,15 +681,25 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         shift_point = lambda p: p if p.cycle < cycle_index else dec_point(p)
         shift_point_or_none = lambda p: None if p is None else shift_point(p)
         self._front = {
-            q: shift_point_or_none(p) for q, p in self._front.items()
+            q: shift_point_or_none(p)
+            for q, p in self._front.items()
         }
-        self._rear = {q: shift_point_or_none(p) for q, p in self._rear.items()}
+        self._rear = {
+            q: shift_point_or_none(p)
+            for q, p in self._rear.items()
+        }
         self._dag = {
             shift_point(p): (
                 # Prev
-                {q: shift_point_or_none(p2) for q, p2 in ptr_map[0].items()},
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in ptr_map[0].items()
+                },
                 # Next
-                {q: shift_point_or_none(p2) for q, p2 in ptr_map[1].items()},
+                {
+                    q: shift_point_or_none(p2)
+                    for q, p2 in ptr_map[1].items()
+                },
             )
             for p, ptr_map in self._dag.items()
         }
@@ -686,7 +715,10 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                 f'Expected integer for cycle_index, got: {type(cycle_index)}',
             )
 
-        return cycle_index < self.num_cycles and cycle_index >= -self.num_cycles
+        return (
+            cycle_index < self.num_cycles
+            and cycle_index >= -self.num_cycles
+        )
 
     def is_cycle_unoccupied(
         self,
@@ -720,8 +752,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         """
         if not is_integer(cycle_index):
             raise TypeError(
-                'Expected integer for cycle_index, got: %s',
-                type(cycle_index),
+                'Expected integer for cycle_index, got: %s', type(cycle_index),
             )
 
         if not CircuitLocation.is_location(location):
@@ -768,6 +799,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circuit.find_available_cycle([1])
             1
         """
+
         location = CircuitLocation(location)
 
         if max(location) > self.num_qudits:
@@ -807,8 +839,9 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         if not CircuitPoint.is_point(point):
             raise TypeError(f'Expected CircuitPoint, got: {type(point)}.')
 
-        return self.is_cycle_in_range(point[0]) and self.is_qudit_in_range(
-            point[1]
+        return (
+            self.is_cycle_in_range(point[0])
+            and self.is_qudit_in_range(point[1])
         )
 
     def is_point_idle(self, point: CircuitPointLike) -> bool:
@@ -994,6 +1027,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circuit.point(opX)
             (1, 0)
         """
+
         if not isinstance(op, (Operation, Gate)):
             raise TypeError(f'Expected gate or operation, got {type(op)}.')
 
@@ -1018,12 +1052,12 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         if isinstance(op, Operation):
             qudit_index = op.location[0]
-            for i, cycle in enumerate(self._circuit[start[0] : end[0] + 1]):
+            for i, cycle in enumerate(self._circuit[start[0]:end[0] + 1]):
                 if cycle[qudit_index] is not None and cycle[qudit_index] == op:
                     return CircuitPoint(start[0] + i, qudit_index)
         else:
-            for i, cycle in enumerate(self._circuit[start[0] : end[0] + 1]):
-                for q, _op in enumerate(cycle[start[1] : end[1] + 1]):
+            for i, cycle in enumerate(self._circuit[start[0]:end[0] + 1]):
+                for q, _op in enumerate(cycle[start[1]:end[1] + 1]):
                     if _op is not None and _op.gate == op:
                         return CircuitPoint(start[0] + i, start[1] + q)
 
@@ -1266,6 +1300,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         prevs: dict[int, CircuitPoint | None] = {i: None for i in op.location}
         nexts: dict[int, CircuitPoint | None] = {i: None for i in op.location}
         for qudit_index in op.location:
+
             # Update front pointers if necessary
             if self._front[qudit_index] is None:
                 self._front[qudit_index] = point
@@ -1503,6 +1538,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.count(op)
             2
         """
+
         count = 0
         if isinstance(op, Operation):
             self.check_valid_operation(op)
@@ -1548,6 +1584,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             >>> circ.num_operations
             0
         """
+
         # Use given point
         if point is not None:
             if not self.is_point_in_range(point):
@@ -1887,14 +1924,14 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                         raise ValueError('Disconnect detected in region.')
 
         cycles_ops = self.operations_with_cycles(
-            qudits_or_region=region,
-            exclude=True,
+            qudits_or_region=region, exclude=True,
         )
         points = [(cop[0], cop[1].location[0]) for cop in cycles_ops]
         known_to_never_reenter = set()
 
         # Walk back from max cycle
         for pt in sorted(points, key=lambda x: x[0], reverse=True):
+
             # Max cycle is valid in base case
             if pt[0] == region.max_cycle:
                 continue
@@ -2030,20 +2067,16 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         region = region.shift_left(len(idle_cycles))
 
         # Prep output
-        region = CircuitRegion(
-            {
-                qudit_index: (region.min_cycle, region[qudit_index][1])
-                for qudit_index in region
-            }
-        )
+        region = CircuitRegion({
+            qudit_index: (region.min_cycle, region[qudit_index][1])
+            for qudit_index in region
+        })
         net_new_cycles = shadow_length - len(idle_cycles)
-        shadow_region = CircuitRegion(
-            {
-                qudit_index: (shadow_start, shadow_map[qudit_index])
-                for qudit_index in shadow_qudits
-                if shadow_start <= shadow_map[qudit_index]
-            }
-        )
+        shadow_region = CircuitRegion({
+            qudit_index: (shadow_start, shadow_map[qudit_index])
+            for qudit_index in shadow_qudits
+            if shadow_start <= shadow_map[qudit_index]
+        })
         return region, net_new_cycles, shadow_region
 
     def fold(self, region: CircuitRegionLike) -> CircuitPoint:
@@ -2362,13 +2395,11 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             return CircuitRegion({})
 
         # Collect operations
-        ops_and_cycles = list(
-            {
-                (point[0], self[point])
-                for point in points
-                if not self.is_point_idle(point)
-            }
-        )
+        ops_and_cycles = list({
+            (point[0], self[point])
+            for point in points
+            if not self.is_point_idle(point)
+        })
 
         # Calculate the bounding region to be folded
         # The region is represented by the max and min cycle for each qudit.
@@ -2396,7 +2427,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         # Count operations within region
         ops_in_region = set()
         for qudit_index, bounds in region.items():
-            for i, cycle in enumerate(self._circuit[bounds[0] : bounds[1] + 1]):
+            for i, cycle in enumerate(self._circuit[bounds[0]:bounds[1] + 1]):
                 op = cycle[qudit_index]
                 if op is not None:
                     ops_in_region.add((bounds[0] + i, op))
@@ -2417,8 +2448,8 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         return self.get_region(CircuitRegion(region).points)
 
     def get_operations(
-        self,
-        points: Iterable[CircuitPointLike],
+            self,
+            points: Iterable[CircuitPointLike],
     ) -> list[Operation]:
         """Retrieve operations from `points` without throwing IndexError."""
         if not is_iterable(points):
@@ -2446,13 +2477,11 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         points = sorted(points)
 
         # Collect operations avoiding duplicates
-        ops_and_cycles: list[tuple[Operation, int]] = list(
-            {
-                (self[point], point[0])
-                for point in points
-                if not self.is_point_idle(point)
-            }
-        )
+        ops_and_cycles: list[tuple[Operation, int]] = list({
+            (self[point], point[0])
+            for point in points
+            if not self.is_point_idle(point)
+        })
 
         if len(ops_and_cycles) == 0:
             raise IndexError('No operations exists at any of the points.')
@@ -2493,7 +2522,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         param_index = 0
         for op in self:
             op.params = list(
-                params[param_index : param_index + op.num_params],
+                params[param_index: param_index + op.num_params],
             )
             param_index += op.num_params
 
@@ -2587,7 +2616,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         for op in self:
             if len(params) != 0:
-                gparams = params[param_index : param_index + op.num_params]
+                gparams = params[param_index:param_index + op.num_params]
                 utry.apply_right(op.get_unitary(gparams), op.location)
                 param_index += op.num_params
             else:
@@ -2631,7 +2660,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         for op in self:
             if len(params) != 0:
-                gparams = params[param_index : param_index + op.num_params]
+                gparams = params[param_index:param_index + op.num_params]
                 new_state.apply(op.get_unitary(gparams), op.location)
                 param_index += op.num_params
             else:
@@ -2644,8 +2673,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         return self.get_unitary_and_grad(params)[1]
 
     def get_unitary_and_grad(
-        self,
-        params: RealVector = [],
+        self, params: RealVector = [],
     ) -> tuple[UnitaryMatrix, npt.NDArray[np.complex128]]:
         """Return the unitary and gradient of the circuit."""
         if len(params) != 0:
@@ -2659,7 +2687,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
 
         for op in self:
             if len(params) != 0:
-                gparams = params[param_index : param_index + op.num_params]
+                gparams = params[param_index:param_index + op.num_params]
                 param_index += op.num_params
                 M, dM = op.get_unitary_and_grad(gparams)
                 matrices.append(M)
@@ -2890,42 +2918,44 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
     # region Collection and Iteration Methods
 
     @overload
-    def __getitem__(self, point: CircuitPointLike) -> Operation: ...
+    def __getitem__(self, point: CircuitPointLike) -> Operation:
+        ...
 
     @overload
     def __getitem__(
-        self,
-        points: Iterable[CircuitPointLike],
-    ) -> list[Operation]: ...
+            self, points: Iterable[CircuitPointLike],
+    ) -> list[Operation]:
+        ...
 
     @overload
-    def __getitem__(self, region: CircuitRegionLike) -> list[Operation]: ...
+    def __getitem__(self, region: CircuitRegionLike) -> list[Operation]:
+        ...
 
     @overload
     def __getitem__(
         self,
         slice: int | slice,
-    ) -> list[Operation]: ...
+    ) -> list[Operation]:
+        ...
 
     @overload
     def __getitem__(
         self,
         slices: tuple[Iterable[int] | slice, Iterable[int] | slice]
-        | tuple[int, Iterable[int] | slice]
-        | tuple[Iterable[int] | slice, int],
-    ) -> list[Operation]: ...
+            | tuple[int, Iterable[int] | slice]
+            | tuple[Iterable[int] | slice, int],
+    ) -> list[Operation]:
+        ...
 
     def __getitem__(
         self,
         indices: CircuitPointLike
-        | Iterable[CircuitPointLike]
-        | CircuitRegionLike
-        | int
-        | Iterable[int]
-        | slice
-        | tuple[Iterable[int] | slice, Iterable[int] | slice]
-        | tuple[int, Iterable[int] | slice]
-        | tuple[Iterable[int] | slice, int],
+            | Iterable[CircuitPointLike]
+            | CircuitRegionLike
+            | int | Iterable[int] | slice
+            | tuple[Iterable[int] | slice, Iterable[int] | slice]
+            | tuple[int, Iterable[int] | slice]
+            | tuple[Iterable[int] | slice, int],
     ) -> Operation | list[Operation]:
         """
         Retrieve operations from the circuit.
@@ -2969,7 +2999,11 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
             return self[CircuitRegion(indices).points]
 
         if is_integer(indices):
-            return list({op for op in self._circuit[indices] if op is not None})
+            return list({
+                op
+                for op in self._circuit[indices]
+                if op is not None
+            })
 
         # if is_iterable(indices):
         #     if all(is_integer(cycle_index) for cycle_index in indices):
@@ -3007,13 +3041,11 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
                     qudits = list(qudit_indices)
 
             if cycles is not None and qudits is not None:
-                return self[
-                    [
-                        CircuitPoint(cycle, qudit)
-                        for cycle in cycles
-                        for qudit in qudits
-                    ]
-                ]
+                return self[[
+                    CircuitPoint(cycle, qudit)
+                    for cycle in cycles
+                    for qudit in qudits
+                ]]
 
         raise TypeError(
             'Invalid index type. Expected point'
@@ -3214,8 +3246,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         utry = UnitaryMatrix(utry)
         circuit = Circuit(utry.num_qudits, utry.radixes)
         circuit.append_gate(
-            ConstantUnitaryGate(utry),
-            list(range(utry.num_qudits)),
+            ConstantUnitaryGate(utry), list(range(utry.num_qudits)),
         )
         return circuit
 
@@ -3226,9 +3257,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         circuit.append_gate(op.gate, list(range(circuit.num_qudits)), op.params)
         return circuit
 
-    def __reduce__(
-        self,
-    ) -> tuple[
+    def __reduce__(self) -> tuple[
         Callable[
             [int, tuple[int, ...], list[tuple[bool, bytes]], bytes],
             Circuit,
@@ -3248,6 +3277,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         cycles: list[list[tuple[int, tuple[int, ...], list[float]]]] = []
         last_cycle = -1
         for cycle, op in self.operations_with_cycles():
+
             if cycle != last_cycle:
                 last_cycle = cycle
                 cycles.append([])

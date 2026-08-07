@@ -1,5 +1,4 @@
 """This module tests the UnitaryBuilder class in bqskit.qis.unitary."""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
