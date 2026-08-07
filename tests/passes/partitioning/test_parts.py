@@ -11,6 +11,8 @@ from bqskit.ir.point import CircuitPoint
 from bqskit.passes import QuickPartitioner
 from bqskit.passes import UnfoldPass
 
+pytestmark = pytest.mark.slow
+
 
 if os.path.isdir(os.path.join(os.path.dirname(__file__), '_data')):
     params = os.listdir(os.path.join(os.path.dirname(__file__), '_data'))

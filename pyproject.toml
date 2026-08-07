@@ -1,46 +1,106 @@
-[build-system]
-requires = [
-    "wheel",
-    "setuptools>=40.1.0",
-    "oldest-supported-numpy",
+[project]
+name = "bqskit"
+description = "Berkeley Quantum Synthesis Toolkit"
+readme = "README.md"
+requires-python = ">=3.10, <4"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [
+  { name = "LBNL - BQSKit developers", email = "edyounis@lbl.gov" },
+]
+keywords = [
+  "berkeley",
+  "partitioning",
+  "quantum",
+  "synthesis",
+  "toolkit",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Software Development :: Compilers",
+  "Typing :: Typed",
+]
+dependencies = [
+  "bqskitrs>=0.4.1",
+  "dill>=0.3.8",
+  "lark",
+  "numpy>=1.22.0",
+  "openqudit>=0.3.4",
+  "scipy>=1.8.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/BQSKit/bqskit/issues"
+Documentation = "https://bqskit.readthedocs.io/en/latest"
+"Source Code" = "https://github.com/BQSKit/bqskit"
+
+[project.scripts]
+bqskit-manager = "bqskit.runtime.manager:start_manager"
+bqskit-server = "bqskit.runtime.detached:start_server"
+bqskit-worker = "bqskit.runtime.worker:start_worker_rank"
+
+[dependency-groups]
+dev = [
+  "pre-commit",
+  "ruff",
+  { include-group = "test" },
 ]
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-minversion = 3.3.0
-envlist = pre-commit,py38,py39,py310,py311,py312
-skip_missing_interpreters = true
+docs = [
+  "Sphinx>=4.5.0",
+  "jupyter-sphinx>=0.3.2",
+  "myst-parser>=0.15.2",
+  "nbsphinx>=0.8.7",
+  "pandoc>=2.1",
+  "sphinx-autodoc-typehints>=2.3.0",
+  "sphinx-rtd-theme>=1.0.0",
+  "sphinx-togglebutton>=0.2.3",
+  "sphinxcontrib-applehelp>=1.0.2",
+  "sphinxcontrib-devhelp>=1.0.2",
+  "sphinxcontrib-htmlhelp>=2.0.0",
+  "sphinxcontrib-jsmath>=1.0.1",
+  "sphinxcontrib-qthelp>=1.0.3",
+  "sphinxcontrib-serializinghtml>=1.1.5",
 
-[testenv]
-passenv =
-    TERM
-deps =
-    numpy>=1.22
-    pytest>=2.8
-    hypothesis[numpy,zoneinfo]>=6.14.5
-    qiskit>=0.37.1
-    pytket>=1.5.0
-    cirq>=1.0.0
-    qutip>=4.7.0
-    pytket-qiskit
-    tzdata
-commands =
-    pytest {posargs}
+  # bqskit.utils.test is documented via autosummary and needs pytest/hypothesis
+  "hypothesis[numpy]>=6.14.5",
+  "pytest>=7.2",
+]
+test = [
+  "cirq>=1.0.0",
+  "hypothesis[numpy]>=6.14.5",
+  "nbval",
+  "ply",
+  "psutil",
+  "pytest>=7.2",
+  "pytket>=1.5.0",
+  "pytket-qiskit",
+  "qiskit>=0.37.1",
+]
 
-[testenv:pre-commit]
-skip_install = true
-deps = pre-commit
-commands = pre-commit run --all-files --show-diff-on-failure
-basepython=py312
-"""
-
-[tool.pytest.ini_options]
-minversion = "2.8"
-testpaths = ["tests/"]
-python_files = "test*.py"
-norecursedirs = ".env"
-addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile*"
+[build-system]
+requires = [
+  "setuptools>=61",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
 
 [tool.mypy]
 check_untyped_defs = true
@@ -53,3 +113,83 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 pretty = true
 warn_unused_configs = true
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --ignore-glob=bqskit/compiler/compile*"
+markers = [
+  "slow: many randomized circuits / long-running synthesis; nightly only",
+]
+minversion = "7.2"
+python_files = "test*.py"
+testpaths = ["tests/"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 80
+# TODO / TEMP: Old toolchain never linted/formatted ipynb
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "D", "T10", "D212"]
+ignore = [
+  # "ECODE", # error-name; instances-in-codebase
+  # ignoring due to pre-existing lack of enforcement
+  "D102",  # undocumented-public-method; 766
+  "D212",  # multi-line-summary-first-line; 627
+  "D103",  # undocumented-public-function; 405
+  "UP031",  # printf-string-formatting; 203
+  "D101",  # undocumented-public-class; 156
+  "D105",  # undocumented-magic-method; 99
+  "D100",  # undocumented-public-module; 91
+  "D205",  # missing-blank-line-after-summary; 66
+  "E741",  # ambiguous-variable-name; 64
+  "D301",  # escape-sequence-in-docstring; 59
+  "D209",  # new-line-after-last-paragraph; 42
+  "D104",  # undocumented-public-package; 37
+  "D202",  # blank-line-after-function; 34
+  "D415",  # missing-terminal-punctuation; 22
+  "D417",  # undocumented-param; 21
+  "E731",  # lambda-assignment; 18
+  "UP007",  # non-pep604-annotation-union; 16
+  "D107",  # undocumented-public-init; 12
+  # TODO: TEMP (will fix in follow-up PR)
+  "I001",  # unsorted-imports; 111
+  "D412",  # blank-lines-between-header-and-content; 4
+  "E713",  # not-in-test; 3
+  "UP035",  # deprecated-import; 3
+  "UP039",  # unnecessary-class-parentheses; 3
+  "UP045",  # non-pep604-annotation-optional; 3
+  "D214",  # overindented-section; 2
+  "D405",  # non-capitalized-section-name; 2
+  "D411",  # no-blank-line-before-section; 2
+  "D300",  # triple-single-quotes; 1
+  "UP032",  # f-string; 1
+]
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+# Force single lines to match the old style
+force-single-line = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.setuptools.dynamic]
+version = { attr = "bqskit._version.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["bqskit*"]
+
+[tool.tox]
+requires = ["tox>=4.22"]
+env_list = ["py310", "py311", "py312", "py313", "py314"]
+skip_missing_interpreters = true
+
+[tool.tox.env_run_base]
+description = "run the test suite under {env_name}"
+runner = "uv-venv-lock-runner"
+dependency_groups = ["test"]
+pass_env = ["TERM"]
+commands = [
+  ["pytest", { replace = "posargs", default = [], extend = true }],
+]

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from bqskit.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate
@@ -7,6 +9,8 @@ from bqskit.ir.gates.constant.cx import CNOTGate
 from bqskit.ir.gates.parameterized.u3 import U3Gate
 from bqskit.passes import QFASTDecompositionPass
 from bqskit.qis import UnitaryMatrix
+
+pytestmark = pytest.mark.slow
 
 
 class TestQFAST:

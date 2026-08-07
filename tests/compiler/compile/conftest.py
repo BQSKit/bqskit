@@ -6,6 +6,14 @@ from typing import Any
 import pytest
 
 
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Mark every test collected in this directory as slow."""
+    here = os.path.dirname(__file__)
+    for item in items:
+        if str(item.path).startswith(here):
+            item.add_marker(pytest.mark.slow)
+
+
 @pytest.fixture(params=[1, 2, 3, 4])
 def optimization_level(request: Any) -> int:
     """All valid optimization_levels for the `compile` function."""
