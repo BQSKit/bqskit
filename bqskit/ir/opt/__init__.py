@@ -2,6 +2,7 @@
 instantiation and cost minimization."""
 from __future__ import annotations
 
+from bqskit.ir.opt.constrained import ConstrainedMinimizer
 from bqskit.ir.opt.cost.function import CostFunction
 from bqskit.ir.opt.cost.functions import HilbertSchmidtCost
 from bqskit.ir.opt.cost.functions import HilbertSchmidtCostGenerator
@@ -24,6 +25,7 @@ __all__ = [
     'QFactor',
     'Minimization',
     'Minimizer',
+    'ConstrainedMinimizer',
     'LBFGSMinimizer',
     'CostFunction',
     'CostFunctionGenerator',
