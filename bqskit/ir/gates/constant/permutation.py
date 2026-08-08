@@ -62,8 +62,8 @@ class PermutationGate(Gate, CachedClass):
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, PermutationGate)
-            and self._expr() == other._expr()
+            and self.get_unitary() == other.get_unitary()
         )
 
     def __hash__(self) -> int:
-        return hash(self._expr())
+        return hash(self.get_unitary())
