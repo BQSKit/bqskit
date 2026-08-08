@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from qiskit import ClassicalRegister
+from qiskit import QuantumCircuit
+from qiskit import QuantumRegister
+
+from bqskit.ext import qiskit_to_bqskit
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CNOTGate
 from bqskit.ir.gates import Reset
@@ -55,3 +60,98 @@ class TestCircuitGates:
             'reset q[0];\n'
         )
         assert qasm == expected
+
+    def test_classical_register(self) -> None:
+
+        # Section: Circuit
+        qr = QuantumRegister(2, name='qr')
+        cr = ClassicalRegister(2, name='cr')
+        qc = QuantumCircuit(qr, cr, name='qc')
+
+        qc.h(qr[0])
+        qc.cx(0, 1)
+
+        qc.measure(qr, cr)
+
+        bqc = qiskit_to_bqskit(qc)
+        print(bqc)
+
+        qasm = OPENQASM2Language().encode(bqc)
+        expected = (
+            'OPENQASM 2.0;\n'
+            'include "qelib1.inc";\n'
+            'qreg q[2];\n'
+            'creg cr[2];\n'
+            'h q[0];\n'
+            'cx q[0], q[1];\n'
+            'measure q[0] -> cr[0];\n'
+            'measure q[1] -> cr[1];\n'
+        )
+        assert qasm == expected
+
+    def test_multiple_classical_registers(self) -> None:
+        # Section: Circuit
+        qr = QuantumRegister(2, name='qr')
+        cr1 = ClassicalRegister(2, name='cr1')
+        cr2 = ClassicalRegister(2, name='cr2')
+        qc = QuantumCircuit(qr, cr1, cr2, name='qc')
+
+        qc.h(qr[0])
+        qc.h(qr[1])
+        qc.cx(qr[0], qr[1])
+
+        qc.measure(qr, cr1)
+        qc.measure(qr, cr2)
+
+        bqc = qiskit_to_bqskit(qc)
+        print(bqc)
+
+        qasm = OPENQASM2Language().encode(bqc)
+        expected = (
+            'OPENQASM 2.0;\n'
+            'include "qelib1.inc";\n'
+            'qreg q[2];\n'
+            'creg cr1[2];\n'
+            'creg cr2[2];\n'
+            'h q[0];\n'
+            'h q[1];\n'
+            'cx q[0], q[1];\n'
+            'measure q[0] -> cr1[0];\n'
+            'measure q[1] -> cr1[1];\n'
+            'measure q[0] -> cr2[0];\n'
+            'measure q[1] -> cr2[1];\n'
+        )
+        assert qasm == expected
+
+    def test_gate_count(self) -> None:
+        # Section: Circuit
+        qr = QuantumRegister(2, name='qr')
+        cr = ClassicalRegister(2, name='cr')
+        qc = QuantumCircuit(qr, cr, name='qc')
+
+        qc.h(qr[0])
+        qc.h(qr[1])
+        qc.cx(qr[0], qr[1])
+        qc.measure(qr, cr)
+
+        bqc = qiskit_to_bqskit(qc)
+        print(bqc)
+
+        qasm = OPENQASM2Language().encode(bqc)
+        expected = (
+            'OPENQASM 2.0;\n'
+            'include "qelib1.inc";\n'
+            'qreg q[2];\n'
+            'creg cr[2];\n'
+            'h q[0];\n'
+            'h q[1];\n'
+            'cx q[0], q[1];\n'
+            'measure q[0] -> cr[0];\n'
+            'measure q[1] -> cr[1];\n'
+        )
+        assert qasm == expected
+
+        print({
+            gate: bqc.count(gate)
+            for gate in bqc.gate_set
+        })
