@@ -5,8 +5,8 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Any
-from typing import cast
 from typing import NamedTuple
+from typing import cast
 
 import lark
 import numpy as np
@@ -72,7 +72,6 @@ from bqskit.ir.lang.language import LangException
 from bqskit.ir.lang.qasm2.parser import parse
 from bqskit.ir.location import CircuitLocation
 from bqskit.ir.operation import Operation
-
 
 _logger = logging.getLogger(__name__)
 

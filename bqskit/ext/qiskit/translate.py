@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from qiskit import QuantumCircuit
 
 from qiskit import qasm2
+
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.lang.qasm2 import OPENQASM2Language
 

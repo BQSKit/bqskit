@@ -33,7 +33,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.citation import cite
 
-
 _logger = logging.getLogger(__name__)
 
 

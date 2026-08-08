@@ -33,7 +33,6 @@ from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 from bqskit.runtime.worker import start_worker
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -714,7 +713,8 @@ def import_tests_package() -> None:
     credit: https://www.youtube.com/watch?v=t43zBsVcva0
     """
     sys.path.append(os.path.join(os.getcwd()))
-    import tests
     import pkgutil
+
+    import tests
     for mod in pkgutil.walk_packages(tests.__path__, f'{tests.__name__}.'):
         __import__(mod.name, fromlist=['_trash'])

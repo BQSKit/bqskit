@@ -17,7 +17,6 @@ from bqskit.qis.graph import CouplingGraph
 from bqskit.qis.permutation import PermutationMatrix
 from bqskit.runtime import get_runtime
 
-
 _logger = logging.getLogger(__name__)
 
 

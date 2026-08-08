@@ -7,9 +7,9 @@ from collections import defaultdict
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import overload
 from typing import TYPE_CHECKING
 from typing import Union
+from typing import overload
 
 import dill
 

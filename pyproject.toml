@@ -152,18 +152,6 @@ ignore = [
   "E731",  # lambda-assignment; 18
   "UP007",  # non-pep604-annotation-union; 16
   "D107",  # undocumented-public-init; 12
-  # TODO: TEMP (will fix in follow-up PR)
-  "I001",  # unsorted-imports; 111
-  "D412",  # blank-lines-between-header-and-content; 4
-  "E713",  # not-in-test; 3
-  "UP035",  # deprecated-import; 3
-  "UP039",  # unnecessary-class-parentheses; 3
-  "UP045",  # non-pep604-annotation-optional; 3
-  "D214",  # overindented-section; 2
-  "D405",  # non-capitalized-section-name; 2
-  "D411",  # no-blank-line-before-section; 2
-  "D300",  # triple-single-quotes; 1
-  "UP032",  # f-string; 1
 ]
 
 [tool.ruff.lint.isort]

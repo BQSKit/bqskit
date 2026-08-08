@@ -15,7 +15,6 @@ from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.runtime import get_runtime
 
-
 _logger = logging.getLogger(__name__)
 
 

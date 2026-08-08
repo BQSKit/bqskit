@@ -13,6 +13,7 @@ from bqskit.qis.unitary import UnitaryMatrix
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
+
 _logger = logging.getLogger(__name__)
 
 

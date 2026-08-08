@@ -6,7 +6,6 @@ from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 from bqskit.ir.gate import Gate
 from bqskit.utils.cachedclass import CachedClass
 
-
 _cpi_expr = _UnitaryExpression("""
 CPI<3, 3>() {
     [

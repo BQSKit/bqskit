@@ -58,6 +58,7 @@ from bqskit.ir.gates import YGate
 from bqskit.ir.gates import ZGate
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
+
 # from bqskit.ir.gates import CircuitGate
 # from bqskit.ir.gates import ControlledGate
 # from bqskit.ir.gates import PermutationGate

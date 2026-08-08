@@ -150,7 +150,7 @@ from bqskit.ir.gates.parameterized import __all__ as parameterized_all
 from bqskit.ir.gates.quditgate import QuditGate
 from bqskit.ir.gates.reset import Reset
 
-__all__ = composed_all + constant_all + parameterized_all
+__all__: list[str] = composed_all + constant_all + parameterized_all
 __all__ += ['ComposedGate']
 __all__ += ['QuditGate']
 __all__ += [

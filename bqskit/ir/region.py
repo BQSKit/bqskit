@@ -15,6 +15,7 @@ from bqskit.ir.point import CircuitPoint
 from bqskit.ir.point import CircuitPointLike
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_mapping
+
 _logger = logging.getLogger(__name__)
 
 

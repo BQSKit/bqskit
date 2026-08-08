@@ -10,19 +10,22 @@ from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Mapping
 from random import shuffle
-from typing import Any
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
 
 import numpy as np
 
 if TYPE_CHECKING:
     from typing import TypeGuard
+
     from bqskit.ir.location import CircuitLocationLike
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.utils.typing import is_integer
-from bqskit.utils.typing import is_iterable, is_mapping, is_real_number
+from bqskit.utils.typing import is_iterable
+from bqskit.utils.typing import is_mapping
+from bqskit.utils.typing import is_real_number
 
 _logger = logging.getLogger(__name__)
 

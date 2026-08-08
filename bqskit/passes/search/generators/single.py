@@ -12,6 +12,7 @@ from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.typing import is_sequence
+
 _logger = logging.getLogger(__name__)
 
 

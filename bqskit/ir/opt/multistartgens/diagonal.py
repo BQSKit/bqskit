@@ -11,6 +11,7 @@ from bqskit.utils.typing import is_integer
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix

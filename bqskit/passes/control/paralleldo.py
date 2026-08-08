@@ -6,8 +6,8 @@ from collections.abc import Callable
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.workflow import Workflow
 from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_iterable

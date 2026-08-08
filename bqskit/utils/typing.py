@@ -13,7 +13,6 @@ from typing import TypeGuard
 import numpy as np
 import numpy.typing as npt
 
-
 _logger = logging.getLogger(__name__)
 
 

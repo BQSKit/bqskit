@@ -15,6 +15,7 @@ from bqskit.passes.partitioning import ScanPartitioner
 from bqskit.passes.processing.scan import ScanningGateRemovalPass
 from bqskit.passes.util import UnfoldPass
 from bqskit.utils.typing import is_integer
+
 _logger = logging.getLogger(__name__)
 
 
