@@ -4,12 +4,12 @@ from __future__ import annotations
 import numpy as np
 from openqudit.expressions import UnitaryExpression as _UnitaryExpression
 
+from bqskit.ir.gates.constantgate import ConstantGate
 from bqskit.ir.gates.quditgate import QuditGate
-from bqskit.utils.cachedclass import CachedClass
 from bqskit.utils.typing import is_integer
 
 
-class CSUMGate(QuditGate, CachedClass):
+class CSUMGate(QuditGate, ConstantGate):
     """
     The two-qudit Conditional-SUM gate.
 
