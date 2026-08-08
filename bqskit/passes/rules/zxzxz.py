@@ -13,6 +13,12 @@ from bqskit.ir.gates.parameterized.rx import RXGate
 from bqskit.ir.gates.parameterized.rz import RZGate
 from bqskit.ir.gates.parameterized.u1 import U1Gate
 
+# Tolerance for recognizing the ZXZXZ middle rotation angle as Clifford (0 or
+# +-pi). This only has to separate those two values from every other angle
+# the decomposition produces, and both come out exact to floating-point
+# precision, so this can be tight.
+_CLIFFORD_ANGLE_TOL = 1e-10
+
 
 class ZXZXZDecomposition(BasePass):
     """
@@ -81,6 +87,22 @@ class ZXZXZDecomposition(BasePass):
         t = (t + np.pi) % (2 * np.pi) - np.pi
         p = (p + np.pi) % (2 * np.pi) - np.pi
         l = (l + np.pi) % (2 * np.pi) - np.pi
+
+        # When the middle rotation is Clifford (t == 0 or +-pi), the middle
+        # SX.RZ(t).SX block is diagonal (or X) and commutes with the outer RZ
+        # gates, so only l + p (or p - l) is actually determined by the
+        # target unitary -- how that total is split between the two outer
+        # gates is a free gauge choice. Splitting it evenly, as the formulas
+        # above do unconditionally, turns one gate that needs synthesis into
+        # two (e.g. every diagonal single-qubit unitary, which is common in
+        # practice -- any run of Z-axis rotations reduces to one). Collapse
+        # the gauge instead, so the whole rotation lands on one outer gate
+        # and the other becomes a free identity (angle 0, exact in both RZ
+        # and U1 parameterization).
+        if abs(abs(t) - np.pi) < _CLIFFORD_ANGLE_TOL:
+            l, p = 0.0, (l + p + np.pi) % (2 * np.pi) - np.pi
+        elif abs(t) < _CLIFFORD_ANGLE_TOL:
+            l, p = 0.0, (p - l + np.pi) % (2 * np.pi) - np.pi
 
         new_circuit = Circuit(1)
 
