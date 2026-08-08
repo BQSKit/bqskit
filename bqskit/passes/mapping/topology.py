@@ -55,7 +55,7 @@ def all_coupling_graphs_of_size(n: int) -> list[CouplingGraph]:
     return to_ret
 
 
-class GraphDAGNode():
+class GraphDAGNode:
     """A node in the GraphDAG."""
 
     def __init__(self, graph_id: int):
@@ -68,7 +68,7 @@ class GraphDAGNode():
         return self.indices[0]
 
 
-class GraphDAG():
+class GraphDAG:
     """
     DAG for organizing the embeddability relations of graphs.
 

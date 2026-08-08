@@ -7,6 +7,7 @@ from typing import TypeGuard
 from typing import Union
 
 from bqskit.utils.typing import is_integer
+
 _logger = logging.getLogger(__name__)
 
 

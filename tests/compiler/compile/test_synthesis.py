@@ -4,8 +4,8 @@ import itertools as it
 
 import pytest
 
-from bqskit import compile
 from bqskit import MachineModel
+from bqskit import compile
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.gateset import GateSet
 from bqskit.ext.cirq.models import google_gate_set

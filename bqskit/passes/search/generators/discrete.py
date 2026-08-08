@@ -20,7 +20,6 @@ from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_sequence
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -64,7 +63,7 @@ class DiscreteLayerGenerator(LayerGenerator):
 
             ValueError: If the radices of gates are different.
 
-        TODO:
+        Todo:
             Check universality of gateset.
         """
         if not is_sequence(gateset):

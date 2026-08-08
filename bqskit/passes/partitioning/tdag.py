@@ -3,12 +3,9 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections.abc import Callable
 from collections.abc import Sequence
-from typing import Callable
 
-from ._partitioning_utils import CachedSingleQuditIterator
-from ._partitioning_utils import PriorityQueueSet
-from ._partitioning_utils import SingleQuditIterator
 from bqskit.compiler.basepass import BasePass
 from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
@@ -17,6 +14,10 @@ from bqskit.ir.operation import Operation
 from bqskit.ir.region import CircuitRegion
 from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
+
+from ._partitioning_utils import CachedSingleQuditIterator
+from ._partitioning_utils import PriorityQueueSet
+from ._partitioning_utils import SingleQuditIterator
 
 
 class HasseGraphNode:

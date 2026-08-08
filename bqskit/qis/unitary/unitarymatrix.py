@@ -4,8 +4,8 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Any
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
 
 import numpy as np

@@ -14,7 +14,6 @@ from bqskit.runtime.detached import DetachedServer
 from bqskit.runtime.detached import ServerMailbox
 from bqskit.runtime.direction import MessageDirection
 
-
 _logger = logging.getLogger(__name__)
 
 

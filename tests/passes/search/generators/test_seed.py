@@ -9,6 +9,7 @@ from bqskit.ir.gates import HGate
 from bqskit.ir.gates import U3Gate
 from bqskit.passes.search.generators import SeedLayerGenerator
 from bqskit.utils.test.strategies import circuits
+
 # from hypothesis import assume
 
 

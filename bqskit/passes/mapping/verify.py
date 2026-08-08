@@ -13,8 +13,8 @@ from bqskit.passes.mapping.pam import PAMBlockResultDict
 from bqskit.passes.mapping.routing.pam import PAMRoutingPass
 from bqskit.passes.partitioning import QuickPartitioner
 from bqskit.passes.util.unfold import UnfoldPass
-from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import Sequence
+from bqskit.utils.typing import is_integer
 
 
 class TagPAMBlockDataPass(BasePass):

@@ -22,7 +22,6 @@ from bqskit.utils.citation import cite
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 
-
 _logger = logging.getLogger(__name__)
 
 

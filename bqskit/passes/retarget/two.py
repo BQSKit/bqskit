@@ -18,6 +18,7 @@ from bqskit.runtime import get_runtime
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_real_number
 from bqskit.utils.typing import is_sequence
+
 _logger = logging.getLogger(__name__)
 
 

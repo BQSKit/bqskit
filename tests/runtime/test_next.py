@@ -23,7 +23,7 @@ class TestNoDuplicateResult(BasePass):
         int_ids = await get_runtime().next(future)
         seen = [0]
         for int_id in int_ids:
-            assert not int_id[1] in seen
+            assert int_id[1] not in seen
             seen.append(int_id[1])
 
 
@@ -34,13 +34,13 @@ class TestNoDuplicateResultsInTwoNexts(BasePass):
         int_ids = await get_runtime().next(future)
 
         for int_id in int_ids:
-            assert not int_id[1] in seen
+            assert int_id[1] not in seen
             seen.append(int_id[1])
 
         int_ids = await get_runtime().next(future)
 
         for int_id in int_ids:
-            assert not int_id[1] in seen
+            assert int_id[1] not in seen
             seen.append(int_id[1])
 
 

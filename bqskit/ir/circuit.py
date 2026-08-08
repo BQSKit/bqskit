@@ -10,11 +10,10 @@ from collections.abc import Collection
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import cast
-from typing import Optional
 from typing import overload
-from typing import TYPE_CHECKING
 
 import dill
 import numpy as np
@@ -57,9 +56,9 @@ from bqskit.utils.typing import is_sequence_of_int
 from bqskit.utils.typing import is_valid_radixes
 
 if TYPE_CHECKING:
-    from bqskit.ir.opt.cost.function import CostFunction
     from bqskit.compiler.basepass import BasePass
     from bqskit.compiler.gateset import GateSet
+    from bqskit.ir.opt.cost.function import CostFunction
 
 _logger = logging.getLogger(__name__)
 
@@ -162,7 +161,7 @@ class Circuit(Unitary, StateVectorMap, Collection[Operation]):
         self._gate_info: dict[Gate, int] = {}
         self._graph_info: dict[tuple[int, int], int] = {}
 
-        _NodePtrs = dict[int, Optional[CircuitPoint]]
+        _NodePtrs = dict[int, CircuitPoint | None]
         self._front: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._rear: _NodePtrs = {i: None for i in range(self.num_qudits)}
         self._dag: dict[CircuitPoint, tuple[_NodePtrs, _NodePtrs]] = {}

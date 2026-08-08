@@ -12,7 +12,6 @@ from bqskit.ir.operation import Operation
 from bqskit.qis.graph import CouplingGraph
 from bqskit.utils.typing import is_integer
 
-
 _logger = logging.getLogger(__name__)
 
 

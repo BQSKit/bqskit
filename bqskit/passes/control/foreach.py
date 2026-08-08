@@ -5,8 +5,8 @@ import functools
 import logging
 from collections.abc import Callable
 
-from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.basepass import BasePass
+from bqskit.compiler.basepass import _sub_do_work
 from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow

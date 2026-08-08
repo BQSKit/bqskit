@@ -14,7 +14,6 @@ from bqskit.ir.opt.cost.functions import HilbertSchmidtResidualsGenerator
 from bqskit.ir.opt.cost.generator import CostFunctionGenerator
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
-
 theorized_bounds = [0, 0, 3, 14, 61, 252]
 
 

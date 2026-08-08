@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from hypothesis.control import assume
+from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import composite
 from hypothesis.strategies import deferred
 from hypothesis.strategies import dictionaries
@@ -17,7 +18,6 @@ from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
 from hypothesis.strategies import permutations
 from hypothesis.strategies import sampled_from
-from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 

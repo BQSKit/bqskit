@@ -4,10 +4,10 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
+
     from bqskit.ir.circuit import Circuit
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.state.system import StateSystem

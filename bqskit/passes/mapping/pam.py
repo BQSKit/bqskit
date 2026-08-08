@@ -5,8 +5,8 @@ import itertools as it
 import logging
 from collections.abc import Sequence
 from typing import Literal
-from typing import overload
 from typing import TypedDict
+from typing import overload
 
 import numpy as np
 

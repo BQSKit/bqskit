@@ -1,8 +1,8 @@
 """This module implements the Minimization class."""
 from __future__ import annotations
 
-from typing import Any
 from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
