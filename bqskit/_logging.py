@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from sys import stdout as _stdout
 
-
 _logging_initialized = False
 
 

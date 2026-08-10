@@ -9,9 +9,10 @@ from scipy.optimize import minimize
 from bqskit.ir.opt.minimizer import Minimizer
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+
     from bqskit.ir.opt.cost import CostFunction
     from bqskit.qis.unitary.unitary import RealVector
-    import numpy.typing as npt
 
 
 class ScipyMinimizer(Minimizer):

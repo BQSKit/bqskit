@@ -8,11 +8,11 @@ from bqskit.compiler.passdata import PassData
 from bqskit.compiler.workflow import Workflow
 
 if TYPE_CHECKING:
-    from bqskit.ir.circuit import Circuit
     from bqskit.compiler.workflow import WorkflowLike
+    from bqskit.ir.circuit import Circuit
 
 
-class CompilationTask():
+class CompilationTask:
     """
     A complete description of a quantum compilation task.
 

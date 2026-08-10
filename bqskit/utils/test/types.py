@@ -17,6 +17,7 @@ from hypothesis import given
 from hypothesis.extra.numpy import complex_number_dtypes
 from hypothesis.extra.numpy import floating_dtypes
 from hypothesis.extra.numpy import from_dtype
+from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import booleans
 from hypothesis.strategies import complex_numbers
 from hypothesis.strategies import data
@@ -27,7 +28,6 @@ from hypothesis.strategies import iterables
 from hypothesis.strategies import just
 from hypothesis.strategies import lists
 from hypothesis.strategies import one_of
-from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import sets
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
@@ -50,12 +50,10 @@ def _powerset(iterable: Iterable[Any]) -> Iterable[Any]:
     Calculate the powerset of an iterable.
 
     Examples:
-
         >>> list(_powerset([1,2,3]))
         [(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
 
     References:
-
         https://stackoverflow.com/questions/18035595/powersets-in-python-using-
         itertools.
     """

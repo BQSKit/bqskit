@@ -73,7 +73,6 @@ from bqskit.ir.region import CircuitRegion
 from bqskit.ir.region import CircuitRegionLike
 from bqskit.ir.structure import CircuitStructure
 
-
 # Register supported languages
 _register_language('qasm', _qasm())
 

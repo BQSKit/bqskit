@@ -5,10 +5,10 @@ import logging
 import typing
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import Any
-from typing import cast
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -21,8 +21,9 @@ from bqskit.utils.typing import is_vector
 
 if TYPE_CHECKING:
     from typing import TypeGuard
-    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
     from bqskit.ir.location import CircuitLocationLike
+    from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 
 _logger = logging.getLogger(__name__)
 

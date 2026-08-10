@@ -5,11 +5,11 @@ import logging
 import math
 import warnings
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Literal
-from typing import overload
-from typing import TYPE_CHECKING
 from typing import Union
+from typing import overload
 
 from bqskit.compiler.compiler import Compiler
 from bqskit.compiler.machine import MachineModel
@@ -32,8 +32,8 @@ from bqskit.ir.opt import HilbertSchmidtCostGenerator
 from bqskit.ir.opt import ScipyMinimizer
 from bqskit.ir.opt.minimizers.lbfgs import LBFGSMinimizer
 from bqskit.passes.control.foreach import ForEachBlockPass
-from bqskit.passes.control.foreach import gen_replace_filter
 from bqskit.passes.control.foreach import ReplaceFilterFn
+from bqskit.passes.control.foreach import gen_replace_filter
 from bqskit.passes.control.ifthenelse import IfThenElsePass
 from bqskit.passes.control.predicates.change import ChangePredicate
 from bqskit.passes.control.predicates.count import GateCountPredicate

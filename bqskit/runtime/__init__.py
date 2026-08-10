@@ -95,9 +95,9 @@ import faulthandler
 import os
 from collections.abc import Callable
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Protocol
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bqskit.runtime.future import RuntimeFuture

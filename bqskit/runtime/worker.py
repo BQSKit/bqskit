@@ -30,7 +30,6 @@ from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
 
-
 _logger = logging.getLogger(__name__)
 
 

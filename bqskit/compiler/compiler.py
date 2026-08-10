@@ -15,9 +15,9 @@ from multiprocessing.connection import Client
 from multiprocessing.connection import Connection
 from subprocess import Popen
 from types import FrameType
+from typing import TYPE_CHECKING
 from typing import Literal
 from typing import overload
-from typing import TYPE_CHECKING
 
 from bqskit.compiler.status import CompilationStatus
 from bqskit.compiler.task import CompilationTask
@@ -29,8 +29,9 @@ from bqskit.runtime.message import RuntimeMessage
 
 if TYPE_CHECKING:
     from typing import Any
-    from bqskit.ir.circuit import Circuit
+
     from bqskit.compiler.passdata import PassData
+    from bqskit.ir.circuit import Circuit
 
 _logger = logging.getLogger(__name__)
 

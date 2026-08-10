@@ -7,8 +7,8 @@ applied to a circuit.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import ClassVar
 from typing import TYPE_CHECKING
+from typing import ClassVar
 
 from bqskit.ir.location import CircuitLocation
 from bqskit.qis.unitary.unitary import Unitary
@@ -18,8 +18,9 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
     from openqudit.expressions import UnitaryExpression
-    from bqskit.qis.unitary.unitary import RealVector
+
     from bqskit.ir.gates.composed.frozenparam import FrozenParameterGate
+    from bqskit.qis.unitary.unitary import RealVector
 
 
 class Gate(Unitary):

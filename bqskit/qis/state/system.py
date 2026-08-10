@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from collections.abc import Mapping
-from typing import Any
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Union
 
 import numpy as np
@@ -12,8 +12,9 @@ import numpy as np
 from bqskit.qis.state.state import StateVector
 
 if TYPE_CHECKING:
-    import numpy.typing as npt
     from typing import TypeGuard
+
+    import numpy.typing as npt
 
 
 class StateSystem(Mapping[StateVector, StateVector]):

@@ -8,7 +8,6 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.point import CircuitPoint
 
-
 _logger = logging.getLogger(__name__)
 
 

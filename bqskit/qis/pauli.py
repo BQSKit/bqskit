@@ -5,8 +5,8 @@ import itertools as it
 from collections.abc import Iterable
 from collections.abc import Iterator
 from collections.abc import Sequence
-from typing import overload
 from typing import TYPE_CHECKING
+from typing import overload
 
 import numpy as np
 import numpy.typing as npt

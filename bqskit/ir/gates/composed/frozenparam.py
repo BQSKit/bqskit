@@ -83,10 +83,9 @@ class FrozenParameterGate(
             i for i in range(gate.num_params)
             if i not in self.frozen_params.keys()
         ]
-        self._name = '{}({}, {})'.format(
-            self.__class__.__name__,
-            self.gate.name,
-            str(self.frozen_params),
+        self._name = (
+            f'{self.__class__.__name__}'
+            f'({self.gate.name}, {str(self.frozen_params)})'
         )
         # TODO: If new gate is constant; cache its unitary
 

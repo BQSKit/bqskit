@@ -16,7 +16,6 @@ from bqskit.compiler.passdata import PassData
 from bqskit.ir.circuit import Circuit
 from bqskit.runtime import get_runtime
 
-
 # @pytest.mark.parametrize('num_workers', [1, -1])
 # def test_startup_shutdown_transparently(num_workers: int) -> None:
 #     in_num_childs = len(psutil.Process(os.getpid()).children(recursive=True))

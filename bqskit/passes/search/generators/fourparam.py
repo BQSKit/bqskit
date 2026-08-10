@@ -14,6 +14,7 @@ from bqskit.passes.search.generator import LayerGenerator
 from bqskit.qis.state.state import StateVector
 from bqskit.qis.state.system import StateSystem
 from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
+
 _logger = logging.getLogger(__name__)
 
 

@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 from bqskit.qis.state.system import StateSystem
 
 if TYPE_CHECKING:
-    from bqskit.ir.opt.cost import CostFunction
     from bqskit.ir.circuit import Circuit
+    from bqskit.ir.opt.cost import CostFunction
     from bqskit.qis.state.state import StateVector
     from bqskit.qis.unitary.unitarymatrix import UnitaryMatrix
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from bqskit import compile
 from bqskit import MachineModel
+from bqskit import compile
 from bqskit.compiler.compiler import Compiler
 from bqskit.ir.circuit import Circuit
 from bqskit.ir.gates import CircuitGate

@@ -7,7 +7,6 @@ from bqskit.compiler.machine import MachineModel
 from bqskit.compiler.workflow import Workflow
 from bqskit.compiler.workflow import WorkflowLike
 
-
 _compile_circuit_registry: dict[MachineModel, dict[int, Workflow]] = {}
 _compile_unitary_registry: dict[MachineModel, dict[int, Workflow]] = {}
 _compile_stateprep_registry: dict[MachineModel, dict[int, Workflow]] = {}

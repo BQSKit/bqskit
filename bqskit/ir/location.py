@@ -5,15 +5,16 @@ import logging
 from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Any
-from typing import overload
 from typing import TypeGuard
 from typing import Union
+from typing import overload
 
 from bqskit.utils.typing import is_integer
 from bqskit.utils.typing import is_iterable
 from bqskit.utils.typing import is_mapping
 from bqskit.utils.typing import is_sequence
 from bqskit.utils.typing import is_sequence_of_int
+
 _logger = logging.getLogger(__name__)
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from typing import cast
 from typing import TYPE_CHECKING
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -331,11 +331,12 @@ class UnitaryBuilder(Unitary):
         Calculates the environment matrix w.r.t.
 
         the specified location.
-                Args:
+
+        Args:
                     location (Sequence[int]): Calculate the environment matrix
                         with respect to the qudit indices in location.
 
-                Returns:
+        Returns:
                     np.ndarray: The environmental matrix.
         """
         left_perm = list(range(self.num_qudits))

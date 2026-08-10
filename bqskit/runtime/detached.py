@@ -14,18 +14,16 @@ from multiprocessing.connection import Listener
 from threading import Thread
 from typing import Any
 from typing import cast
-from typing import Optional
 
 from bqskit.runtime import default_server_port
 from bqskit.runtime.address import RuntimeAddress
+from bqskit.runtime.base import ServerBase
 from bqskit.runtime.base import import_tests_package
 from bqskit.runtime.base import parse_ipports
-from bqskit.runtime.base import ServerBase
 from bqskit.runtime.direction import MessageDirection
 from bqskit.runtime.message import RuntimeMessage
 from bqskit.runtime.result import RuntimeResult
 from bqskit.runtime.task import RuntimeTask
-
 
 _logger = logging.getLogger(__name__)
 
@@ -177,7 +175,7 @@ class DetachedServer(ServerBase):
                 self.handle_shutdown()
 
             elif msg == RuntimeMessage.WAITING:
-                p = cast(tuple[int, Optional[RuntimeAddress]], payload)
+                p = cast(tuple[int, RuntimeAddress | None], payload)
                 num_idle, read_receipt = p
                 self.handle_waiting(conn, num_idle, read_receipt)
 

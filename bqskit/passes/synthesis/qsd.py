@@ -467,14 +467,15 @@ class QSDPass(BasePass):
 
     @staticmethod
     def qsd(orig_u: UnitaryMatrix) -> Circuit:
-        '''
+        """
         Perform the Quantum Shannon Decomposition on a unitary matrix.
+
         Args:
             orig_u (UnitaryMatrix): The unitary matrix to decompose
 
         Returns:
             Circuit: The circuit that decomposes the unitary
-        '''
+        """
         # Shift the unitary qubits down by one
         u = QSDPass.mod_unitaries(orig_u)
 

@@ -24,7 +24,6 @@ from bqskit.ir.gates import U3Gate
 from bqskit.ir.gates import VariableUnitaryGate
 from bqskit.ir.gates.parameterized.pauli import PauliGate
 
-
 NATIVE_GATES: list[Gate] = [
     CRXGate(),
     CRYGate(),
