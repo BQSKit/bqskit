@@ -379,12 +379,13 @@ class StateVector(NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
+        copy: bool | None = None,
     ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the StateVector class."""
         if dtype != np.complex128:
             raise ValueError('StateVector only supports Complex128 dtype.')
 
-        return self._vec
+        return self._vec.copy() if copy else self._vec
 
     def __array_ufunc__(
         self,

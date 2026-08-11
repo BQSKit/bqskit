@@ -131,12 +131,13 @@ class PauliZMatrices(Sequence[npt.NDArray[np.complex128]]):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
+        copy: bool | None = None,
     ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the PauliZMatrices class."""
         if dtype != np.complex128:
             raise ValueError('PauliZMatrices only supports Complex128 dtype.')
 
-        return np.array(self.paulizs, dtype)
+        return np.array(self.paulizs, dtype=dtype, copy=copy)
 
     def get_projection_matrices(
             self, q_set: Iterable[int],

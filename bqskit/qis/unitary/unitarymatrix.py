@@ -469,12 +469,13 @@ class UnitaryMatrix(Unitary, StateVectorMap, NDArrayOperatorsMixin):
     def __array__(
         self,
         dtype: np.typing.DTypeLike = np.complex128,
+        copy: bool | None = None,
     ) -> npt.NDArray[np.complex128]:
         """Implements NumPy API for the UnitaryMatrix class."""
         if dtype != np.complex128:
             raise ValueError('UnitaryMatrix only supports Complex128 dtype.')
 
-        return self._utry
+        return self._utry.copy() if copy else self._utry
 
     def __array_ufunc__(
         self,
