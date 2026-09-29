@@ -25,6 +25,10 @@ class ResidualsFunction(CostFunction):
     def get_residuals(self, params: RealVector) -> npt.NDArray[np.float64]:
         """Return the vector of residuals given the input parameters."""
 
+    @abc.abstractmethod
+    def num_residuals(self) -> int:
+        """Return the number of residuals, should be nonnegative."""
+
     def __call__(  # type: ignore
         self,
         params: RealVector,
